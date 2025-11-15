@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Avatar, AvatarFallback } from "../../components/ui/avatar";
-import { Input } from "../../components/ui/input";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { Input } from "../components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
+} from "../components/ui/dialog";
+import { Label } from "../components/ui/label";
 import { Plus, Search, MoreVertical, Mail, Phone, Calendar } from "lucide-react";
 
 const clients = [

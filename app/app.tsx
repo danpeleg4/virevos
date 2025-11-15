@@ -9,16 +9,16 @@ import { Security } from "./pages/Security";
 import { PricingPage } from "./pages/PricingPage";
 import { Customers } from "./pages/Customers";
 import { Resources } from "./pages/Resources";
-import { Dashboard } from "./pages/app/Dashboard";
-import { Clients } from "./pages/app/Clients";
-import { Projects } from "./pages/app/Projects";
-import { Tasks } from "./pages/app/Tasks";
-import { Automations } from "./pages/app/Automations";
-import { Logs } from "./pages/app/Logs";
-import { Billing } from "./pages/app/Billing";
-import { Settings } from "./pages/app/Settings";
-import { Scheduling } from "./pages/app/Scheduling";
-import { Communications } from "./pages/app/Communications";
+import { Dashboard } from "@/app/workspace/Dashboard";
+import { Clients } from "@/app/workspace/Clients";
+import { Projects } from "@/app/workspace/Projects";
+import { Tasks } from "@/app/workspace/Tasks";
+import { Automations } from "@/app/workspace/Automations";
+import { Logs } from "@/app/workspace/Logs";
+import { Billing } from "@/app/workspace/Billing";
+import { Settings } from "@/app/workspace/Settings";
+import { Scheduling } from "@/app/workspace/Scheduling";
+import { Communications } from "@/app/workspace/Communications";
 
 function AppContent() {
   const { currentPath } = useRouter();
