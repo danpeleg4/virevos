@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "./ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
@@ -8,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useRouter } from "./Router";
+import { useRouter } from "next/navigation";
 
 const menuItems = [
   {
@@ -42,10 +44,10 @@ const menuItems = [
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const { navigate } = useRouter();
+  const router = useRouter();
 
   const handleNavigation = (path: string) => {
-    navigate(path);
+    router.push(path);
     setMobileMenuOpen(false);
     setOpenDropdown(null);
   };
@@ -113,8 +115,8 @@ export function Navigation() {
             transition={{ delay: 0.2 }}
             className="hidden md:flex md:items-center md:space-x-4"
           >
-            <Button variant="ghost" onClick={() => navigate("/app/dashboard")}>Sign In</Button>
-            <Button onClick={() => navigate("/app/dashboard")}>Start Free Trial</Button>
+            <Button variant="ghost" onClick={() => router.push("/app/dashboard")}>Sign In</Button>
+            <Button onClick={() => router.push("/app/dashboard")}>Start Free Trial</Button>
           </motion.div>
 
           {/* Mobile menu button */}

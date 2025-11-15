@@ -146,7 +146,7 @@ export function Billing() {
             <div>
               <h2 className="text-xl text-gray-900">Current Plan</h2>
               <p className="text-sm text-gray-600 mt-1">
-                You're on the {currentPlan.name} plan
+                You&#39;re on the {currentPlan.name} plan
               </p>
             </div>
             <Badge className="bg-blue-100 text-blue-700">Active</Badge>

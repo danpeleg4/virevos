@@ -1,12 +1,13 @@
+"use client"
+
 import { Button } from "./ui/button";
 import { ArrowRight, PlayCircle } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { motion } from "motion/react";
-import { useRouter } from "./Router";
+import {router} from "next/client";
 
 export function Hero() {
-  const { navigate } = useRouter();
-  
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white py-20 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -21,7 +22,7 @@ export function Hero() {
             >
               <span className="text-sm">🎉 New: AI-powered task suggestions</span>
             </motion.div>
-            
+
             <div className="space-y-4">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -37,7 +38,7 @@ export function Hero() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-xl text-gray-600 max-w-2xl"
               >
-                FlowTask helps teams organize, track, and deliver their best work. 
+                FlowTask helps teams organize, track, and deliver their best work.
                 Boost productivity by 10x with our intelligent task management platform.
               </motion.p>
             </div>
@@ -48,7 +49,7 @@ export function Hero() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-4"
             >
-              <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/app/dashboard")}>
+              <Button size="lg" className="text-lg px-8 py-6" onClick={() => router.push("/app/dashboard")}>
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -107,7 +108,7 @@ export function Hero() {
                 className="w-full h-auto"
               />
             </div>
-            
+
             {/* Floating Stats Card */}
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.8 }}
