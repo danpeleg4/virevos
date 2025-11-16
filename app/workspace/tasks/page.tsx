@@ -98,6 +98,12 @@ export default function Tasks() {
     const [searchQuery, setSearchQuery] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
+    const [newTitle, setNewTitle] = useState("");
+    const [newDescription, setNewDescription] = useState("");
+    const [newProject, setNewProject] = useState("");
+    const [newPriority, setNewPriority] = useState<"high" | "medium" | "low" | "">("");
+    const [newDueDate, setNewDueDate] = useState("");
+
 
     const toggleTaskStatus = (taskId: number) => {
         setTasks((prev) =>
@@ -111,6 +117,10 @@ export default function Tasks() {
             )
         );
     };
+
+    const addItem = (task: Task) => {
+        setTasks(prev => [...prev, task])
+    }
 
     const filteredTasks = tasks.filter((task) => {
         const matchesSearch = task.title
@@ -155,7 +165,13 @@ export default function Tasks() {
                         <div className="space-y-4 mt-4">
                             <div>
                                 <Label>Task Title</Label>
-                                <Input placeholder="Review designs" className="mt-2" />
+                                <Input
+                                    placeholder="Review designs"
+                                    className="mt-2"
+                                    value={newTitle}
+                                    onChange={(e) => setNewTitle(e.target.value)}
+                                />
+
                             </div>
                             <div>
                                 <Label>Description</Label>
@@ -167,8 +183,8 @@ export default function Tasks() {
                             </div>
                             <div>
                                 <Label>Project</Label>
-                                <Select>
-                                    <SelectTrigger className="mt-2">
+                                <Select onValueChange={setNewProject}>
+                                <SelectTrigger className="mt-2">
                                         <SelectValue placeholder="Select project" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -181,8 +197,8 @@ export default function Tasks() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label>Priority</Label>
-                                    <Select>
-                                        <SelectTrigger className="mt-2">
+                                    <Select onValueChange={(v) => setNewPriority(v as "high" | "medium" | "low" | "")}>
+                                    <SelectTrigger className="mt-2">
                                             <SelectValue placeholder="Priority" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -194,7 +210,7 @@ export default function Tasks() {
                                 </div>
                                 <div>
                                     <Label>Due Date</Label>
-                                    <Input type="date" className="mt-2" />
+                                    <Input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} />
                                 </div>
                             </div>
 
@@ -202,7 +218,31 @@ export default function Tasks() {
                                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
-                                <Button onClick={() => setDialogOpen(false)}>Create Task</Button>
+                                <Button
+                                    onClick={() => {
+                                        const newTask: Task = {
+                                            id: Date.now(),
+                                            title: newTitle,
+                                            project: newProject,
+                                            priority: newPriority as "high" | "medium" | "low",
+                                            status: "todo",
+                                            dueDate: newDueDate,
+                                            assignee: "You",
+                                        };
+
+                                        addItem(newTask);
+                                        setDialogOpen(false);
+
+                                        // Clear fields
+                                        setNewTitle("");
+                                        setNewDescription("");
+                                        setNewProject("");
+                                        setNewPriority("");
+                                        setNewDueDate("");
+                                    }}
+                                >
+                                    Create Task
+                                </Button>
                             </div>
                         </div>
                     </DialogContent>
