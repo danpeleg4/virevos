@@ -217,7 +217,9 @@ export function CommsHealthDashboard() {
             <h3 className="text-sm text-gray-700">Filter by Status</h3>
             <Select
               value={filterStatus}
-              onValueChange={(v: any) => setFilterStatus(v)}
+              onValueChange={(v: "all" | "healthy" | "at-risk" | "critical") =>
+                  setFilterStatus(v)
+              }
             >
               <SelectTrigger className="w-48">
                 <SelectValue />

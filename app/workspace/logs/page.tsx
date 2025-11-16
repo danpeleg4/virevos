@@ -37,7 +37,26 @@ import {
     ChevronRight,
 } from "lucide-react";
 
-const logs = [
+type AutomationAction = {
+    name: string;
+    status: string;
+    timestamp: string;
+    error?: string; // ← optional
+};
+
+type LogEntry = {
+    id: number;
+    automation: string;
+    status: string;
+    timestamp: string;
+    duration: string;
+    trigger: string;
+    actions: AutomationAction[];
+    retries: number;
+    nextRetry?: string;
+};
+
+const logs: LogEntry[] = [
     {
         id: 1,
         automation: "Invoice Reminder - DesignCo",
@@ -114,7 +133,7 @@ const logs = [
 ];
 
 export default function Logs() {
-    const [selectedLog, setSelectedLog] = useState<typeof logs[0] | null>(null);
+    const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
