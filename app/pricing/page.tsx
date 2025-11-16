@@ -5,6 +5,9 @@ import { Pricing } from "../components/Pricing";
 import { Card } from "../components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { Check, X } from "lucide-react";
+import React, {JSX} from "react";
+
+type FeatureValue = boolean | string | number | null | undefined;
 
 const comparisonFeatures = [
     {
@@ -81,7 +84,7 @@ const fadeInUp = {
     visible: { opacity: 1, y: 0 },
 };
 
-const renderValue = (value: any) => {
+const renderValue = (value: FeatureValue): JSX.Element => {
     if (typeof value === "boolean") {
         return value ? (
             <Check className="h-5 w-5 text-green-500 mx-auto" />
@@ -89,6 +92,11 @@ const renderValue = (value: any) => {
             <X className="h-5 w-5 text-gray-300 mx-auto" />
         );
     }
+
+    if (value == null) {
+        return <span className="text-gray-300">—</span>; // fallback for null/undefined
+    }
+
     return <span className="text-gray-700">{value}</span>;
 };
 
@@ -158,7 +166,7 @@ export default function PricingPage() {
                                 </thead>
                                 <tbody>
                                 {comparisonFeatures.map((category, categoryIndex) => (
-                                    <>
+                                    <React.Fragment key={`category-fragment-${categoryIndex}`}>
                                         <tr key={`category-${categoryIndex}`} className="bg-blue-50">
                                             <td colSpan={4} className="px-6 py-3 text-gray-900">
                                                 {category.category}
@@ -175,7 +183,7 @@ export default function PricingPage() {
                                                 <td className="px-6 py-4 text-center">{renderValue(feature.enterprise)}</td>
                                             </tr>
                                         ))}
-                                    </>
+                                    </React.Fragment>
                                 ))}
                                 </tbody>
                             </table>

@@ -8,7 +8,6 @@ import {Navigation} from "@/app/components/Navigation";
 export default function Page() {
   return (
     <>
-        <Navigation></Navigation>
       <Hero />
       <Features />
       <Pricing />
