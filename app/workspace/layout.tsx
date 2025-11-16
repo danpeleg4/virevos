@@ -1,4 +1,3 @@
-"use client"
 
 import {AppLayout} from "@/app/components/AppLayout";
 

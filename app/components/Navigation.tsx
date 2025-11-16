@@ -191,10 +191,10 @@ export function Navigation() {
                 ))}
                 
                 <div className="pt-4 space-y-2">
-                  <Button variant="outline" className="w-full" onClick={() => handleNavigation("/app/dashboard")}>
+                  <Button variant="outline" className="w-full" onClick={() => handleNavigation("/workspace/dashboard")}>
                     Sign In
                   </Button>
-                  <Button className="w-full" onClick={() => handleNavigation("/app/dashboard")}>Start Free Trial</Button>
+                  <Button className="w-full" onClick={() => handleNavigation("/workspace/dashboard")}>Start Free Trial</Button>
                 </div>
               </div>
             </motion.div>
