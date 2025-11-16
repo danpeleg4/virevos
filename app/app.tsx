@@ -1,14 +1,6 @@
 import { Navigation } from "./components/Navigation";
 import { Footer } from "./components/Footer";
 import { AppLayout } from "./components/AppLayout";
-import { Router, Route } from "./components/Router";
-import { Page } from "./page";
-import { AllFeatures } from "./pages/AllFeatures";
-import { Integrations } from "./pages/Integrations";
-import { Security } from "./pages/Security";
-import { PricingPage } from "./pages/PricingPage";
-import { Customers } from "./pages/Customers";
-import { Resources } from "./pages/Resources";
 import { Dashboard } from "@/app/workspace/Dashboard";
 import { Clients } from "@/app/workspace/Clients";
 import { Projects } from "@/app/workspace/Projects";
@@ -21,7 +13,6 @@ import { Scheduling } from "@/app/workspace/Scheduling";
 import { Communications } from "@/app/workspace/Communications";
 
 function AppContent() {
-  const { currentPath } = useRouter();
   const isAppRoute = currentPath.startsWith("/app/");
 
   if (isAppRoute) {

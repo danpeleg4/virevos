@@ -115,8 +115,8 @@ export function Navigation() {
             transition={{ delay: 0.2 }}
             className="hidden md:flex md:items-center md:space-x-4"
           >
-            <Button variant="ghost" onClick={() => router.push("/app/dashboard")}>Sign In</Button>
-            <Button onClick={() => router.push("/app/dashboard")}>Start Free Trial</Button>
+            <Button variant="ghost" onClick={() => router.push("/workspace/dashboard")}>Sign In</Button>
+            <Button onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
           </motion.div>
 
           {/* Mobile menu button */}
