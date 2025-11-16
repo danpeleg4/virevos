@@ -1,0 +1,339 @@
+"use client"
+
+import { useState } from "react";
+import { Card } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
+import { Progress } from "../../components/ui/progress";
+import { Input } from "../../components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "../../components/ui/dialog";
+import { Label } from "../../components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../../components/ui/select";
+import { Plus, Search, Clock, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
+
+const projects = [
+    {
+        id: 1,
+        name: "TechCorp Website Redesign",
+        client: "TechCorp Inc.",
+        status: "in-progress",
+        progress: 75,
+        dueDate: "Nov 15, 2025",
+        tasksCompleted: 15,
+        totalTasks: 20,
+        priority: "high",
+        health: "on-track",
+    },
+    {
+        id: 2,
+        name: "DesignCo Brand Refresh",
+        client: "DesignCo Agency",
+        status: "in-progress",
+        progress: 45,
+        dueDate: "Nov 12, 2025",
+        tasksCompleted: 9,
+        totalTasks: 20,
+        priority: "high",
+        health: "at-risk",
+    },
+    {
+        id: 3,
+        name: "StartupXYZ MVP Development",
+        client: "StartupXYZ",
+        status: "in-progress",
+        progress: 90,
+        dueDate: "Nov 18, 2025",
+        tasksCompleted: 27,
+        totalTasks: 30,
+        priority: "medium",
+        health: "on-track",
+    },
+    {
+        id: 4,
+        name: "Marketing Campaign Q4",
+        client: "TechCorp Inc.",
+        status: "planning",
+        progress: 10,
+        dueDate: "Dec 1, 2025",
+        tasksCompleted: 2,
+        totalTasks: 15,
+        priority: "medium",
+        health: "on-track",
+    },
+    {
+        id: 5,
+        name: "Mobile App Redesign",
+        client: "Enterprise Solutions",
+        status: "completed",
+        progress: 100,
+        dueDate: "Oct 30, 2025",
+        tasksCompleted: 25,
+        totalTasks: 25,
+        priority: "low",
+        health: "completed",
+    },
+];
+
+export default function Projects() {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("all");
+    const [projectsData, setProjectsData] = useState(projects);
+    const [projectName, setProjectName] = useState("");
+    const [client, setClient] = useState("");
+    const [dueDate, setDueDate] = useState("");
+    const [priority, setPriority] = useState("");
+
+    function formatDate(dateStr: string | number | Date) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
+    }
+
+    const handleCreateProject = () => {
+        const newProject = {
+            id: projectsData.length + 1,
+            name: projectName,
+            client,
+            status: "in-progress",
+            progress: 0,
+            dueDate: dueDate ? formatDate(dueDate) : "",
+            tasksCompleted: 0,
+            totalTasks: 10,
+            priority,
+            health: "on-track",
+        };
+
+        setProjectsData([...projectsData, newProject]);
+        setDialogOpen(false);
+
+        setProjectName("");
+        setClient("");
+        setDueDate("");
+        setPriority("");
+    };
+
+
+    const filteredProjects = projectsData
+        .filter((project) => {
+            const matchesSearch = project.name
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase());
+            const matchesTab =
+                activeTab === "all" ||
+                (activeTab === "active" && project.status !== "completed") ||
+                (activeTab === "completed" && project.status === "completed");
+            return matchesSearch && matchesTab;
+        });
+
+    return (
+        <div className="p-6 space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl text-gray-900">Projects</h1>
+                    <p className="text-gray-600 mt-1">Track and manage all your projects</p>
+                </div>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            New Project
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Create New Project</DialogTitle>
+                            <DialogDescription>
+                                Start a new project for your client
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4 mt-4">
+                            <div>
+                                <Label>Project Name</Label>
+                                <Input
+                                    placeholder="Website Redesign"
+                                    className="mt-2"
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <Label>Client</Label>
+                                <Select onValueChange={setClient}>
+                                    <SelectTrigger className="mt-2">
+                                        <SelectValue placeholder="Select client" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="TechCorp Inc.">TechCorp Inc.</SelectItem>
+                                        <SelectItem value="DesignCo Agency">DesignCo Agency</SelectItem>
+                                        <SelectItem value="StartupXYZ">StartupXYZ</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label>Due Date</Label>
+                                <Input
+                                    type="date"
+                                    className="mt-2"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <Label>Priority</Label>
+                                <Select onValueChange={setPriority}>
+                                    <SelectTrigger className="mt-2">
+                                        <SelectValue placeholder="Select priority" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="high">High</SelectItem>
+                                        <SelectItem value="medium">Medium</SelectItem>
+                                        <SelectItem value="low">Low</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex justify-end space-x-3 pt-4">
+                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleCreateProject}>
+                                    Create Project
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                    placeholder="Search projects..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                />
+            </div>
+
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList>
+                    <TabsTrigger value="all">
+                        All Projects ({projectsData.length})
+                    </TabsTrigger>
+
+                    <TabsTrigger value="active">
+                        Active ({projectsData.filter((p) => p.status !== "completed").length})
+                    </TabsTrigger>
+
+                    <TabsTrigger value="completed">
+                        Completed ({projectsData.filter((p) => p.status === "completed").length})
+                    </TabsTrigger>
+                </TabsList>
+
+
+                <TabsContent value={activeTab} className="mt-6">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {filteredProjects.map((project) => (
+                            <Card
+                                key={project.id}
+                                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                            >
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex-1">
+                                        <h3 className="text-lg text-gray-900 mb-1">{project.name}</h3>
+                                        <p className="text-sm text-gray-600">{project.client}</p>
+                                    </div>
+                                    <Badge
+                                        variant="outline"
+                                        className={
+                                            project.health === "on-track"
+                                                ? "border-green-200 text-green-700"
+                                                : project.health === "at-risk"
+                                                    ? "border-orange-200 text-orange-700"
+                                                    : "border-blue-200 text-blue-700"
+                                        }
+                                    >
+                                        {project.health === "on-track" && (
+                                            <TrendingUp className="h-3 w-3 mr-1" />
+                                        )}
+                                        {project.health === "at-risk" && (
+                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                        )}
+                                        {project.health === "completed" && (
+                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                        )}
+                                        {project.health === "on-track"
+                                            ? "On Track"
+                                            : project.health === "at-risk"
+                                                ? "At Risk"
+                                                : "Completed"}
+                                    </Badge>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm text-gray-600">Progress</span>
+                                            <span className="text-sm text-gray-900">
+                        {project.progress}%
+                      </span>
+                                        </div>
+                                        <Progress value={project.progress} />
+                                    </div>
+
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">Tasks</span>
+                                        <span className="text-gray-900">
+                      {project.tasksCompleted}/{project.totalTasks}
+                    </span>
+                                    </div>
+
+                                    <div className="flex items-center justify-between text-sm pt-4 border-t">
+                                        <div className="flex items-center text-gray-600">
+                                            <Clock className="h-4 w-4 mr-1" />
+                                            Due {project.dueDate}
+                                        </div>
+                                        <Badge
+                                            variant="outline"
+                                            className={
+                                                project.priority === "high"
+                                                    ? "border-red-200 text-red-700"
+                                                    : project.priority === "medium"
+                                                        ? "border-yellow-200 text-yellow-700"
+                                                        : "border-gray-200 text-gray-700"
+                                            }
+                                        >
+                                            {project.priority}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}
