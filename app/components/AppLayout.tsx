@@ -28,16 +28,16 @@ import {
 import { AIAssistant } from "./AIAssistant";
 
 const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/app/dashboard" },
-    { icon: Users, label: "Clients", path: "/app/clients" },
-    { icon: FolderKanban, label: "Projects", path: "/app/projects" },
-    { icon: CheckSquare, label: "Tasks", path: "/app/tasks" },
-    { icon: CalendarDays, label: "Scheduling", path: "/app/scheduling" },
-    { icon: Inbox, label: "Communications", path: "/app/communications" },
-    { icon: Zap, label: "Automations", path: "/app/automations" },
-    { icon: ScrollText, label: "Activity Logs", path: "/app/logs" },
-    { icon: CreditCard, label: "Billing", path: "/app/billing" },
-    { icon: Settings, label: "Settings", path: "/app/settings" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
+    { icon: Users, label: "Clients", path: "/workspace/clients" },
+    { icon: FolderKanban, label: "Projects", path: "/workspace/projects" },
+    { icon: CheckSquare, label: "Tasks", path: "/workspace/tasks" },
+    { icon: CalendarDays, label: "Scheduling", path: "/workspace/scheduling" },
+    { icon: Inbox, label: "Communications", path: "/workspace/communications" },
+    { icon: Zap, label: "Automations", path: "/workspace/automations" },
+    { icon: ScrollText, label: "Activity Logs", path: "/workspace/logs" },
+    { icon: CreditCard, label: "Billing", path: "/workspace/billing" },
+    { icon: Settings, label: "Settings", path: "/workspace/settings" },
 ];
 
 interface AppLayoutProps {
