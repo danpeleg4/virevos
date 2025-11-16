@@ -6,6 +6,8 @@ import { Card } from "../components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { Check, X } from "lucide-react";
 import React, {JSX} from "react";
+import {Navigation} from "@/app/components/Navigation";
+import {Footer} from "@/app/components/Footer";
 
 type FeatureValue = boolean | string | number | null | undefined;
 
@@ -103,6 +105,7 @@ const renderValue = (value: FeatureValue): JSX.Element => {
 export default function PricingPage() {
     return (
         <div className="min-h-screen bg-white">
+            <Navigation />
             {/* Hero Section */}
             <motion.section
                 initial="hidden"
@@ -224,6 +227,7 @@ export default function PricingPage() {
                     </Accordion>
                 </div>
             </motion.section>
+            <Footer />
         </div>
     );
 }

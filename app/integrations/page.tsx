@@ -5,6 +5,8 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { ExternalLink, Check } from "lucide-react";
+import {Navigation} from "@/app/components/Navigation";
+import {Footer} from "@/app/components/Footer";
 
 const integrations = [
     {
@@ -82,6 +84,7 @@ const fadeInUp = {
 export default function Integrations() {
     return (
         <div className="min-h-screen bg-white">
+            <Navigation />
             {/* Hero Section */}
             <motion.section
                 initial="hidden"
@@ -206,7 +209,7 @@ export default function Integrations() {
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                     <Card className="p-12 text-center">
                         <h2 className="text-3xl sm:text-4xl text-gray-900 mb-4">
-                            Don't see your tool?
+                            Don&#39;t see your tool?
                         </h2>
                         <p className="text-xl text-gray-600 mb-8">
                             Use our powerful API to build custom integrations. Full documentation and support available.
@@ -223,6 +226,7 @@ export default function Integrations() {
                     </Card>
                 </div>
             </motion.section>
+            <Footer />
         </div>
     );
 }

@@ -4,6 +4,8 @@ import { motion } from "motion/react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { BookOpen, FileText, Video, MessageCircle, ExternalLink, ArrowRight } from "lucide-react";
+import {Navigation} from "@/app/components/Navigation";
+import {Footer} from "@/app/components/Footer";
 
 const resources = [
     {
@@ -93,6 +95,7 @@ const colorClasses = {
 export default function Resources() {
     return (
         <div className="min-h-screen bg-white">
+            <Navigation />
             {/* Hero Section */}
             <motion.section
                 initial="hidden"
@@ -294,6 +297,7 @@ export default function Resources() {
                     </div>
                 </div>
             </motion.section>
+            <Footer />
         </div>
     );
 }

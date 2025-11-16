@@ -4,6 +4,8 @@ import { motion } from "motion/react";
 import { Card } from "../components/ui/card";
 import { Zap, Users, Calendar, BarChart3, Lock, CheckCircle, Smartphone, Globe, Workflow, Bell, FileText, Archive } from "lucide-react";
 import { Button } from "../components/ui/button";
+import {Navigation} from "@/app/components/Navigation";
+import {Footer} from "@/app/components/Footer";
 
 const featureCategories = [
     {
@@ -118,6 +120,7 @@ const fadeInUp = {
 export default function AllFeatures() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+            <Navigation />
             {/* Hero Section */}
             <motion.section
                 initial="hidden"
@@ -227,6 +230,7 @@ export default function AllFeatures() {
                     </Button>
                 </div>
             </motion.section>
+            <Footer />
         </div>
     );
 }

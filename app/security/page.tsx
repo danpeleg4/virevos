@@ -5,6 +5,8 @@ import { Card } from "../components/ui/card";
 import { Shield, Lock, Key, Eye, FileCheck, Server, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import {Navigation} from "@/app/components/Navigation";
+import {Footer} from "@/app/components/Footer";
 
 const securityFeatures = [
     {
@@ -55,6 +57,7 @@ const fadeInUp = {
 export default function Security() {
     return (
         <div className="min-h-screen bg-white">
+            <Navigation />
             {/* Hero Section */}
             <motion.section
                 initial="hidden"
@@ -257,6 +260,7 @@ export default function Security() {
                     </div>
                 </div>
             </motion.section>
+            <Footer />
         </div>
     );
 }

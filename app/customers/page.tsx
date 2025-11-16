@@ -6,6 +6,8 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { ArrowRight, Quote } from "lucide-react";
+import {Navigation} from "@/app/components/Navigation";
+import {Footer} from "@/app/components/Footer";
 
 const caseStudies = [
     {
@@ -57,6 +59,7 @@ const fadeInUp = {
 export default function Customers() {
     return (
         <div className="min-h-screen bg-white">
+            <Navigation />
             {/* Hero Section */}
             <motion.section
                 initial="hidden"
@@ -243,6 +246,7 @@ export default function Customers() {
                     </Button>
                 </div>
             </motion.section>
+            <Footer />
         </div>
     );
 }
