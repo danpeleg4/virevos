@@ -36,6 +36,12 @@ interface Task {
     assignee: string;
 }
 
+const projects = [
+    "TechCorp Website Redesign",
+    "DesignCo Brand Refresh",
+    "StartupXYZ MVP Development",
+];
+
 const initialTasks: Task[] = [
     {
         id: 1,
@@ -103,7 +109,6 @@ export default function Tasks() {
     const [newProject, setNewProject] = useState("");
     const [newPriority, setNewPriority] = useState<"high" | "medium" | "low" | "">("");
     const [newDueDate, setNewDueDate] = useState("");
-
 
     const toggleTaskStatus = (taskId: number) => {
         setTasks((prev) =>
@@ -184,13 +189,15 @@ export default function Tasks() {
                             <div>
                                 <Label>Project</Label>
                                 <Select onValueChange={setNewProject}>
-                                <SelectTrigger className="mt-2">
+                                    <SelectTrigger className="mt-2">
                                         <SelectValue placeholder="Select project" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">TechCorp Website Redesign</SelectItem>
-                                        <SelectItem value="2">DesignCo Brand Refresh</SelectItem>
-                                        <SelectItem value="3">StartupXYZ MVP Development</SelectItem>
+                                        {projects.map((project) => (
+                                            <SelectItem key={project} value={project}>
+                                                {project}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
