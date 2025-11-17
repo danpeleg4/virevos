@@ -21,6 +21,11 @@ import {
 } from "../ui/dropdown-menu";
 import { motion } from "motion/react";
 import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
+import {Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger} from "@/app/components/ui/dialog";
+import {Label} from "@/app/components/ui/label";
+import {Input} from "@/app/components/ui/input";
+import {Textarea} from "@/app/components/ui/textarea";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/app/components/ui/select";
 
 interface Meeting {
   id: string;
@@ -96,6 +101,7 @@ export function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [showMeetingDetails, setShowMeetingDetails] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const formattedDate = currentDate.toLocaleDateString("en-US", {
     month: "long",
@@ -158,7 +164,7 @@ export function CalendarView() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Today's Meetings</p>
+                <p className="text-sm text-gray-600">Today&#39;s Meetings</p>
                 <p className="text-2xl text-gray-900 mt-1">4</p>
               </div>
               <CalendarIcon className="h-8 w-8 text-blue-500" />
@@ -220,10 +226,18 @@ export function CalendarView() {
               </Button>
             </div>
             <div className="flex items-center space-x-2">
-              <Button size="sm">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Book Meeting
-              </Button>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button size="sm">
+                            <CalendarIcon className="h-4 w-4 mr-2" />
+                            Book Meeting
+                        </Button>
+                        </DialogTrigger>
+                    <DialogContent>
+                        <DialogTitle>Create New Event</DialogTitle>
+                        <DialogDescription>Add an event to your project</DialogDescription>
+                    </DialogContent>
+                </Dialog>
             </div>
           </div>
         </CardHeader>
