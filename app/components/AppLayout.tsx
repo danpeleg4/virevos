@@ -70,9 +70,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <nav className="flex-1 overflow-y-auto p-4 space-y-1">
                     {navItems.map((item) => {
                         const isActive = currentPath === item.path;
-
                         return (
                             <button
+                                style={{ cursor: isActive ? "default" : "pointer" }}
                                 key={item.path}
                                 onClick={() => navigate(item.path)}
                                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${

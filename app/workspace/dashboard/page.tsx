@@ -16,6 +16,7 @@ import {
     Clock,
     AlertCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const stats = [
     {
@@ -153,6 +154,7 @@ const fadeInUp = {
 };
 
 export default function Dashboard() {
+    const router = useRouter();
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -226,15 +228,20 @@ export default function Dashboard() {
                 <Card className="p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl text-gray-900">Recent Projects</h2>
-                        <Button variant="ghost" size="sm">
-                            View All
+                        <Button
+                            style={{ cursor: "pointer" }}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push('/workspace/projects')}
+                        >
+                        View All
                         </Button>
                     </div>
 
                     <div className="space-y-4">
                         {recentProjects.map((project) => (
-                            <div key={project.id} className="space-y-3">
-                                <div className="flex items-start justify-between">
+                            <div key={project.id} className="space-y-3 items-start justify-between space-x-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div className="flex">
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2 mb-1">
                                             <h3 className="text-gray-900">{project.name}</h3>
@@ -277,7 +284,12 @@ export default function Dashboard() {
                 <Card className="p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl text-gray-900">Upcoming Tasks</h2>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                            style={{ cursor: "pointer" }}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push('/workspace/tasks')}
+                        >
                             View All
                         </Button>
                     </div>
@@ -320,7 +332,12 @@ export default function Dashboard() {
             <Card className="p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl text-gray-900">Recent Automations</h2>
-                    <Button variant="ghost" size="sm">
+                    <Button
+                        style={{ cursor: "pointer" }}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push('/workspace/logs')}
+                    >
                         View Logs
                     </Button>
                 </div>
