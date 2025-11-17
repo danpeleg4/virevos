@@ -228,7 +228,7 @@ export function CalendarView() {
             <div className="flex items-center space-x-2">
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button size="sm">
+                        <Button size="sm" className="cursor-pointer">
                             <CalendarIcon className="h-4 w-4 mr-2" />
                             Book Meeting
                         </Button>
