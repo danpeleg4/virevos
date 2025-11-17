@@ -90,6 +90,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
                 <div className="p-4 border-t border-gray-200">
                     <Button
+                        style={{ cursor: "pointer" }}
                         variant="outline"
                         className="w-full justify-start"
                         onClick={() => setAiOpen(!aiOpen)}
@@ -105,11 +106,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                         <Avatar>
                             <AvatarFallback>JD</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0" >
                             <p className="text-sm text-gray-900 truncate">John Doe</p>
                             <p className="text-xs text-gray-500">john@example.com</p>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+                        <Button style={{ cursor: "pointer" }} variant="ghost" size="icon" onClick={() => navigate("/")}>
                             <LogOut className="h-4 w-4" />
                         </Button>
                     </div>
@@ -216,6 +217,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         <div className="flex-1" />
 
                         <Button
+                            style={{ cursor: "pointer" }}
                             variant="outline"
                             size="sm"
                             onClick={() => setAiOpen(!aiOpen)}

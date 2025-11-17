@@ -77,6 +77,7 @@ export function Navigation() {
               <DropdownMenu key={index}>
                 <DropdownMenuTrigger asChild>
                   <Button
+                      style={{ cursor: "pointer" }}
                     variant="ghost"
                     className="text-gray-600 hover:text-gray-900 transition-colors"
                   >
@@ -115,8 +116,8 @@ export function Navigation() {
             transition={{ delay: 0.2 }}
             className="hidden md:flex md:items-center md:space-x-4"
           >
-            <Button variant="ghost" onClick={() => router.push("/workspace/dashboard")}>Sign In</Button>
-            <Button onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
+            <Button style={{ cursor: "pointer" }} variant="ghost" onClick={() => router.push("/workspace/dashboard")}>Sign In</Button>
+            <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
           </motion.div>
 
           {/* Mobile menu button */}

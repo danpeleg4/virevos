@@ -46,11 +46,6 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
       id: "1",
       role: "assistant",
       content: "Hi! I'm your FlowTask AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
-      suggestions: [
-        "Create a new automation",
-        "Show overdue tasks",
-        "Suggest next actions",
-      ],
     },
   ]);
   const [input, setInput] = useState("");
@@ -69,27 +64,21 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     // Simulate AI response
     setTimeout(() => {
       let response = "";
-      let suggestions: string[] = [];
 
       if (input.toLowerCase().includes("automation")) {
         response = "I can help you create an automation! Here are some templates I recommend: Invoice Reminders (sends automatic payment reminders), Client Onboarding (automates welcome emails and task creation), or Project Closure (handles final deliverables and feedback). Which would you like to set up?";
-        suggestions = ["Invoice Reminders", "Client Onboarding", "Project Closure"];
       } else if (input.toLowerCase().includes("overdue")) {
         response = "You have 3 overdue tasks: 1) TechCorp website redesign review (due 2 days ago), 2) DesignCo proposal (due yesterday), 3) Monthly analytics report (due today). Would you like me to reschedule any of these?";
-        suggestions = ["Reschedule all", "Show task details", "Send reminders"];
       } else if (input.toLowerCase().includes("next") || input.toLowerCase().includes("action")) {
         response = "Based on your current projects and deadlines, I suggest: 1) Follow up with TechCorp on their milestone (due in 2 days), 2) Prepare for DesignCo kickoff meeting tomorrow, 3) Review this week's automation performance. Would you like me to create tasks for any of these?";
-        suggestions = ["Create tasks", "Show more suggestions", "Schedule meetings"];
       } else {
         response = "I can help you with task management, automation setup, project tracking, and workflow optimization. What specific area would you like assistance with?";
-        suggestions = ["Task management", "Automations", "Reports"];
       }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: response,
-        suggestions,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -124,7 +113,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 <p className="text-xs text-gray-500">Suggest Mode</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button style={{ cursor: "pointer" }} variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
           </div>
