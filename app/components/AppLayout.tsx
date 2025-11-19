@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { AIAssistant } from "./AIAssistant";
+import Link from "next/link";
 
 const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
@@ -71,10 +72,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                     {navItems.map((item) => {
                         const isActive = currentPath === item.path;
                         return (
-                            <button
-                                style={{ cursor: isActive ? "default" : "pointer" }}
+                            <Link
                                 key={item.path}
-                                onClick={() => navigate(item.path)}
+                                href={item.path}
                                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                                     isActive
                                         ? "bg-blue-50 text-blue-600"
@@ -83,7 +83,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                             >
                                 <item.icon className="h-5 w-5" />
                                 <span>{item.label}</span>
-                            </button>
+                            </Link>
                         );
                     })}
                 </nav>

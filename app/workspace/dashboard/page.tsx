@@ -17,6 +17,7 @@ import {
     AlertCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const stats = [
     {
@@ -232,9 +233,10 @@ export default function Dashboard() {
                             style={{ cursor: "pointer" }}
                             variant="ghost"
                             size="sm"
-                            onClick={() => router.push('/workspace/projects')}
                         >
-                        View All
+                            <Link href="/workspace/projects">
+                                View All
+                            </Link>
                         </Button>
                     </div>
 
@@ -290,7 +292,9 @@ export default function Dashboard() {
                             size="sm"
                             onClick={() => router.push('/workspace/tasks')}
                         >
-                            View All
+                            <Link href="/workspace/tasks">
+                                View All
+                            </Link>
                         </Button>
                     </div>
 

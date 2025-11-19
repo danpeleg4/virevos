@@ -21,16 +21,14 @@ import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 
-// ----------------------
 // Types
-// ----------------------
 export type MeetingType = "zoom" | "google-meet" | "in-person";
 
 export interface NewMeeting {
     id: string;
     title: string;
     description: string;
-    time: string; // "14:00" from <input type="time" />
+    time: string;
     duration: number;
     type: MeetingType;
     attendees: { name: string; initials: string }[];
@@ -43,9 +41,6 @@ interface BookMeetingDialogProps {
     addMeeting: (meeting: NewMeeting) => void;
 }
 
-// ----------------------
-// Component
-// ----------------------
 export function BookMeetingDialog({
                                       dialogOpen,
                                       setDialogOpen,
