@@ -156,7 +156,7 @@ export default function Tasks() {
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="cursor-pointer">
                             <Plus className="h-4 w-4 mr-2" />
                             New Task
                         </Button>
@@ -189,7 +189,7 @@ export default function Tasks() {
                             <div>
                                 <Label>Project</Label>
                                 <Select onValueChange={setNewProject}>
-                                    <SelectTrigger className="mt-2">
+                                    <SelectTrigger className="mt-2 cursor-pointer">
                                         <SelectValue placeholder="Select project" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -205,7 +205,7 @@ export default function Tasks() {
                                 <div>
                                     <Label>Priority</Label>
                                     <Select onValueChange={(v) => setNewPriority(v as "high" | "medium" | "low" | "")}>
-                                    <SelectTrigger className="mt-2">
+                                    <SelectTrigger className="mt-2 cursor-pointer">
                                             <SelectValue placeholder="Priority" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -216,16 +216,17 @@ export default function Tasks() {
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label>Due Date</Label>
+                                    <Label className="mt-2">Due Date</Label>
                                     <Input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} />
                                 </div>
                             </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                <Button className="cursor-pointer" variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
                                 <Button
+                                    className="cursor-pointer"
                                     onClick={() => {
                                         const newTask: Task = {
                                             id: Date.now(),

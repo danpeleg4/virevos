@@ -153,7 +153,7 @@ export default function Projects() {
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="cursor-pointer">
                             <Plus className="h-4 w-4 mr-2" />
                             New Project
                         </Button>
@@ -179,7 +179,7 @@ export default function Projects() {
                             <div>
                                 <Label>Client</Label>
                                 <Select onValueChange={setClient}>
-                                    <SelectTrigger className="mt-2">
+                                    <SelectTrigger className="mt-2 cursor-pointer">
                                         <SelectValue placeholder="Select client" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -201,7 +201,7 @@ export default function Projects() {
                             <div>
                                 <Label>Priority</Label>
                                 <Select onValueChange={setPriority}>
-                                    <SelectTrigger className="mt-2">
+                                    <SelectTrigger className="mt-2 cursor-pointer">
                                         <SelectValue placeholder="Select priority" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -213,10 +213,10 @@ export default function Projects() {
                             </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                <Button className="cursor-pointer" variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
-                                <Button onClick={handleCreateProject}>
+                                <Button className="cursor-pointer" onClick={handleCreateProject}>
                                     Create Project
                                 </Button>
                             </div>

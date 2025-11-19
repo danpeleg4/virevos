@@ -84,7 +84,7 @@ export default function Clients() {
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="cursor-pointer">
                             <Plus className="h-4 w-4 mr-2" />
                             Add Client
                         </Button>
@@ -116,10 +116,10 @@ export default function Clients() {
                             </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                <Button className="cursor-pointer" variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
-                                <Button onClick={() => setDialogOpen(false)}>Add Client</Button>
+                                <Button className="cursor-pointer" onClick={() => setDialogOpen(false)}>Add Client</Button>
                             </div>
                         </div>
                     </DialogContent>
