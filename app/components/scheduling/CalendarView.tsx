@@ -29,7 +29,7 @@ interface Meeting {
     time: string;
     duration: number;
     type: "zoom" | "google-meet" | "in-person";
-    attendees: { name: string; initials: string }[];
+    attendees?: { name: string; initials: string }[];
     status: "scheduled" | "rescheduled" | "conflict" | "completed";
     conflictReason?: string;
     autoRescheduled?: boolean;
@@ -60,7 +60,6 @@ const mockMeetings: Meeting[] = [
         time: "11:00 AM",
         duration: 30,
         type: "google-meet",
-        attendees: [{ name: "Alex Kim", initials: "AK" }],
         status: "scheduled",
     },
     {
@@ -166,7 +165,7 @@ export function CalendarView() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Today's Meetings</p>
+                                <p className="text-sm text-gray-600">Today&#39;s Meetings</p>
                                 <p className="text-2xl text-gray-900 mt-1">{meetings.length}</p>
                             </div>
                             <CalendarIcon className="h-8 w-8 text-blue-500" />
@@ -312,15 +311,17 @@ export function CalendarView() {
                                   {meeting.duration} min
                                 </span>
 
-                                                                <div className="flex -space-x-2">
-                                                                    {meeting.attendees.map((attendee, i) => (
-                                                                        <Avatar key={i} className="h-6 w-6 border-2 border-white">
-                                                                            <AvatarFallback className="text-xs">
-                                                                                {attendee.initials}
-                                                                            </AvatarFallback>
-                                                                        </Avatar>
-                                                                    ))}
-                                                                </div>
+                                                                {meeting.attendees && (
+                                                                    <div className="flex -space-x-2">
+                                                                        {meeting.attendees.map((attendee, i) => (
+                                                                            <Avatar key={i} className="h-6 w-6 border-2 border-white">
+                                                                                <AvatarFallback className="text-xs">
+                                                                                    {attendee.initials}
+                                                                                </AvatarFallback>
+                                                                            </Avatar>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             <div className="flex items-center space-x-1">

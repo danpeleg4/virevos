@@ -124,25 +124,31 @@ export function MeetingDetailsDialog({
         <div className="space-y-6 mt-6">
           {/* Attendees */}
           <div>
-            <h3 className="text-sm text-gray-700 mb-3 flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              Attendees
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {meeting.attendees.map((attendee, i) => (
-                <div
-                  key={i}
-                  className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2"
-                >
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="text-xs">
-                      {attendee.initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm text-gray-700">{attendee.name}</span>
-                </div>
-              ))}
-            </div>
+              {meeting.attendees?.length > 0 && (
+                  <div>
+                      <h3 className="text-sm text-gray-700 mb-3 flex items-center">
+                          <Users className="h-4 w-4 mr-2" />
+                          Attendees
+                      </h3>
+
+                      <div className="flex flex-wrap gap-2">
+                          {meeting.attendees.map((attendee, i) => (
+                              <div
+                                  key={i}
+                                  className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2"
+                              >
+                                  <Avatar className="h-6 w-6">
+                                      <AvatarFallback className="text-xs">
+                                          {attendee.initials}
+                                      </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm text-gray-700">{attendee.name}</span>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              )}
+
           </div>
 
           {/* Meeting Link */}
