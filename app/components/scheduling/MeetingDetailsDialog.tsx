@@ -20,18 +20,7 @@ import {
   Copy,
   Mic,
 } from "lucide-react";
-
-interface Meeting {
-  id: string;
-  title: string;
-  time: string;
-  duration: number;
-  type: "zoom" | "google-meet" | "in-person";
-  attendees: { name: string; initials: string }[];
-  status: "scheduled" | "rescheduled" | "conflict" | "completed";
-  hasNotes?: boolean;
-  hasTranscript?: boolean;
-}
+import type { Meeting } from "@/types/meeting";
 
 interface MeetingDetailsDialogProps {
   meeting: Meeting;
@@ -124,7 +113,7 @@ export function MeetingDetailsDialog({
         <div className="space-y-6 mt-6">
           {/* Attendees */}
           <div>
-              {meeting.attendees?.length > 0 && (
+              {meeting.attendees && (
                   <div>
                       <h3 className="text-sm text-gray-700 mb-3 flex items-center">
                           <Users className="h-4 w-4 mr-2" />

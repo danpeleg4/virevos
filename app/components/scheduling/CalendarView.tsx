@@ -22,20 +22,7 @@ import {
 import { motion } from "motion/react";
 import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
-
-interface Meeting {
-    id: string;
-    title: string;
-    time: string;
-    duration: number;
-    type: "zoom" | "google-meet" | "in-person";
-    attendees?: { name: string; initials: string }[];
-    status: "scheduled" | "rescheduled" | "conflict" | "completed";
-    conflictReason?: string;
-    autoRescheduled?: boolean;
-    hasNotes?: boolean;
-    hasTranscript?: boolean;
-}
+import type { Meeting } from "@/types/meeting";
 
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM - 9 PM
 
