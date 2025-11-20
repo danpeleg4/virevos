@@ -27,6 +27,7 @@ import {
 
 import { AIAssistant } from "./AIAssistant";
 import Link from "next/link";
+import {useUser} from "@clerk/nextjs";
 
 const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
@@ -49,8 +50,17 @@ export function AppLayout({ children }: AppLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [aiOpen, setAiOpen] = useState(false);
 
+    const { isSignedIn, user, isLoaded } = useUser()
     const router = useRouter();
     const currentPath = usePathname();
+
+    if (!isLoaded) return <div>Loading...</div>
+
+    const getInitials = (first?: string | null, last?: string | null) => {
+        const f = first?.charAt(0) ?? "";
+        const l = last?.charAt(0) ?? "";
+        return (f + l).toUpperCase();
+    };
 
     const navigate = (path: string) => router.push(path);
 
@@ -104,11 +114,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <div className="p-4 border-t border-gray-200">
                     <div className="flex items-center space-x-3">
                         <Avatar>
-                            <AvatarFallback>JD</AvatarFallback>
+                            <AvatarFallback>
+                                {user?.firstName?.[0]?.toUpperCase() ??
+                                    user?.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0" >
-                            <p className="text-sm text-gray-900 truncate">John Doe</p>
-                            <p className="text-xs text-gray-500">john@example.com</p>
+                            <p className="text-sm text-gray-900 truncate">{`${user?.firstName} ${user?.lastName}`}</p>
+                            <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
                         </div>
                         <Button style={{ cursor: "pointer" }} variant="ghost" size="icon" onClick={() => navigate("/")}>
                             <LogOut className="h-4 w-4" />
@@ -188,11 +201,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                             <div className="p-4 border-t border-gray-200">
                                 <div className="flex items-center space-x-3">
                                     <Avatar>
-                                        <AvatarFallback>JD</AvatarFallback>
+                                        <AvatarFallback>
+                                            {user?.firstName?.[0]?.toUpperCase() ??
+                                                user?.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-gray-900 truncate">John Doe</p>
-                                        <p className="text-xs text-gray-500">john@example.com</p>
+                                        <p className="text-sm text-gray-900 truncate">{`${user?.firstName} ${user?.lastName}`}</p>
+                                        <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
                                     </div>
                                 </div>
                             </div>
