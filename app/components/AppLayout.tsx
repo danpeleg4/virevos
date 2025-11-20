@@ -27,7 +27,7 @@ import {
 
 import { AIAssistant } from "./AIAssistant";
 import Link from "next/link";
-import {useUser} from "@clerk/nextjs";
+import {UserButton, useUser} from "@clerk/nextjs";
 
 const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
@@ -113,12 +113,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
                 <div className="p-4 border-t border-gray-200">
                     <div className="flex items-center space-x-3">
-                        <Avatar>
-                            <AvatarFallback>
-                                {user?.firstName?.[0]?.toUpperCase() ??
-                                    user?.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
+                        <UserButton />
                         <div className="flex-1 min-w-0" >
                             <p className="text-sm text-gray-900 truncate">{`${user?.firstName} ${user?.lastName}`}</p>
                             <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
@@ -200,12 +195,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
                             <div className="p-4 border-t border-gray-200">
                                 <div className="flex items-center space-x-3">
-                                    <Avatar>
-                                        <AvatarFallback>
-                                            {user?.firstName?.[0]?.toUpperCase() ??
-                                                user?.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
+                                    <UserButton />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm text-gray-900 truncate">{`${user?.firstName} ${user?.lastName}`}</p>
                                         <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
