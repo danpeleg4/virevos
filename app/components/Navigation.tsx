@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import {SignedOut, SignInButton, SignOutButton} from "@clerk/nextjs";
+import {SignInButton, SignOutButton, useUser} from "@clerk/nextjs";
 
 const menuItems = [
   {
@@ -47,14 +47,18 @@ export function Navigation() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const router = useRouter();
 
+  const { isSignedIn, user, isLoaded } = useUser()
+
   const handleNavigation = (path: string) => {
     router.push(path);
     setMobileMenuOpen(false);
     setOpenDropdown(null);
   };
 
+  if (!isLoaded) return <div>Loading...</div>
+
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -117,9 +121,17 @@ export function Navigation() {
             transition={{ delay: 0.2 }}
             className="hidden md:flex md:items-center md:space-x-4"
           >
-              <SignInButton className="cursor-pointer"></SignInButton>
-              <SignOutButton className="cursor-pointer"></SignOutButton>
-            <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
+              {isSignedIn ? (
+                  <div className="space-x-4">
+                      <SignOutButton className="cursor-pointer"></SignOutButton>
+                      <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Go to Dashboard</Button>
+                  </div>
+              ) : (
+                  <div className="space-x-4">
+                  <SignInButton className="cursor-pointer"></SignInButton>
+                  <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
+                  </div>
+              )}
           </motion.div>
 
           {/* Mobile menu button */}
