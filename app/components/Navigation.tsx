@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+import {SignedOut, SignInButton, SignOutButton} from "@clerk/nextjs";
 
 const menuItems = [
   {
@@ -116,7 +117,8 @@ export function Navigation() {
             transition={{ delay: 0.2 }}
             className="hidden md:flex md:items-center md:space-x-4"
           >
-            <Button style={{ cursor: "pointer" }} variant="ghost" onClick={() => router.push("/workspace/dashboard")}>Sign In</Button>
+              <SignInButton className="cursor-pointer"></SignInButton>
+              <SignOutButton className="cursor-pointer"></SignOutButton>
             <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
           </motion.div>
 
