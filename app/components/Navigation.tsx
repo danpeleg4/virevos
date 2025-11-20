@@ -123,12 +123,16 @@ export function Navigation() {
           >
               {isSignedIn ? (
                   <div className="space-x-4">
-                      <SignOutButton className="cursor-pointer"></SignOutButton>
+                      <SignOutButton>
+                          <Button className="cursor-pointer" variant="ghost">Sign Out</Button>
+                      </SignOutButton>
                       <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Go to Dashboard</Button>
                   </div>
               ) : (
                   <div className="space-x-4">
-                  <SignInButton className="cursor-pointer"></SignInButton>
+                  <SignInButton>
+                      <Button className="cursor-pointer" variant="ghost">Sign In</Button>
+                  </SignInButton>
                   <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
                   </div>
               )}
