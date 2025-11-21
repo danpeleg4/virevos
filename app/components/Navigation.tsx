@@ -210,10 +210,21 @@ export function Navigation() {
                 ))}
                 
                 <div className="pt-4 space-y-2">
-                  <Button variant="outline" className="w-full" onClick={() => handleNavigation("/workspace/dashboard")}>
-                    Sign In
-                  </Button>
-                  <Button className="w-full" onClick={() => handleNavigation("/workspace/dashboard")}>Start Free Trial</Button>
+                    {isSignedIn ? (
+                        <div className="space-x-4">
+                            <SignOutButton>
+                                <Button className="cursor-pointer" variant="ghost">Sign Out</Button>
+                            </SignOutButton>
+                            <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Go to Dashboard</Button>
+                        </div>
+                    ) : (
+                        <div className="space-x-4">
+                            <SignInButton>
+                                <Button className="cursor-pointer" variant="ghost">Sign In</Button>
+                            </SignInButton>
+                            <Button style={{ cursor: "pointer" }} onClick={() => router.push("/workspace/dashboard")}>Start Free Trial</Button>
+                        </div>
+                    )}
                 </div>
               </div>
             </motion.div>
