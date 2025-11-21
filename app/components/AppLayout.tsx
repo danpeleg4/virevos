@@ -56,12 +56,6 @@ export function AppLayout({ children }: AppLayoutProps) {
 
     if (!isLoaded) return <div>Loading...</div>
 
-    const getInitials = (first?: string | null, last?: string | null) => {
-        const f = first?.charAt(0) ?? "";
-        const l = last?.charAt(0) ?? "";
-        return (f + l).toUpperCase();
-    };
-
     const navigate = (path: string) => router.push(path);
 
     return (
