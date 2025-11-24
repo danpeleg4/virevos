@@ -1,6 +1,8 @@
 export interface Meeting {
     id: string;
     title: string;
+    description: string;
+    date: string;
     time: string;
     duration: number;
     type: "zoom" | "google-meet" | "in-person";

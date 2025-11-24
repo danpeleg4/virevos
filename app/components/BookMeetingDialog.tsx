@@ -19,7 +19,6 @@ import {
 import { Button } from "./ui/button";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
 
 // Types
 export type MeetingType = "zoom" | "google-meet" | "in-person";
@@ -28,6 +27,7 @@ export interface NewMeeting {
     id: string;
     title: string;
     description: string;
+    date: string;
     time: string;
     duration: number;
     type: MeetingType;
@@ -49,14 +49,23 @@ export function BookMeetingDialog({
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [meetingType, setMeetingType] = useState<MeetingType | "">("");
+    const [date, setDate] = useState("");
     const [time, setTime] = useState("");
     const [duration, setDuration] = useState("");
+
+    function convertTimeToLabel(time24: string) {
+        if (!time24) return "";
+        const [h, m] = time24.split(":").map(Number);
+        const suffix = h >= 12 ? "PM" : "AM";
+        const hour = h % 12 === 0 ? 12 : h % 12;
+        return `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
+    }
 
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
                 <Button size="sm" className="cursor-pointer">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    <CalendarIcon className="h-4 w-4 mr-2 cursor-pointer" />
                     Book Meeting
                 </Button>
             </DialogTrigger>
@@ -111,8 +120,20 @@ export function BookMeetingDialog({
                         </Select>
                     </div>
 
-                    {/* Time + Duration */}
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* DATE + TIME + DURATION */}
+                    <div className="grid grid-cols-3 gap-4">
+                        {/* Date */}
+                        <div>
+                            <Label>Date</Label>
+                            <Input
+                                type="date"
+                                className="mt-2"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Time */}
                         <div>
                             <Label>Time</Label>
                             <Input
@@ -123,6 +144,7 @@ export function BookMeetingDialog({
                             />
                         </div>
 
+                        {/* Duration */}
                         <div>
                             <Label>Duration (minutes)</Label>
                             <Input
@@ -137,19 +159,24 @@ export function BookMeetingDialog({
 
                     {/* Buttons */}
                     <div className="flex justify-end space-x-3 pt-4">
-                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                        <Button
+                            className="cursor-pointer"
+                            variant="outline"
+                            onClick={() => setDialogOpen(false)}
+                        >
                             Cancel
                         </Button>
 
                         <Button
+                            className="cursor-pointer"
                             onClick={() => {
-                                if (!meetingType) return;
-
+                                if (!meetingType || !date || !time) return;
                                 addMeeting({
                                     id: Date.now().toString(),
                                     title,
                                     description,
-                                    time,
+                                    date,
+                                    time: convertTimeToLabel(time),
                                     duration: Number(duration),
                                     type: meetingType,
                                     attendees: [],
@@ -161,6 +188,7 @@ export function BookMeetingDialog({
                                 setTitle("");
                                 setDescription("");
                                 setMeetingType("");
+                                setDate("");
                                 setTime("");
                                 setDuration("");
                             }}

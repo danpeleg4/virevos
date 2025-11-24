@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -23,75 +25,66 @@ import { motion } from "motion/react";
 import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
 import type { Meeting } from "@/types/meeting";
+import axios from "axios";
 
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM - 9 PM
 
-const mockMeetings: Meeting[] = [
-    {
-        id: "1",
-        title: "Client Onboarding - Acme Corp",
-        time: "9:00 AM",
-        duration: 60,
-        type: "zoom",
-        attendees: [
-            { name: "Sarah Johnson", initials: "SJ" },
-            { name: "Mike Chen", initials: "MC" },
-        ],
-        status: "completed",
-        hasNotes: true,
-        hasTranscript: true,
-    },
-    {
-        id: "2",
-        title: "Design Review",
-        time: "11:00 AM",
-        duration: 30,
-        type: "google-meet",
-        status: "scheduled",
-    },
-    {
-        id: "3",
-        title: "Sprint Planning",
-        time: "2:00 PM",
-        duration: 90,
-        type: "zoom",
-        attendees: [
-            { name: "Team", initials: "T" },
-            { name: "John Doe", initials: "JD" },
-        ],
-        status: "rescheduled",
-        autoRescheduled: true,
-        conflictReason: "Overlapped with urgent client call",
-    },
-    {
-        id: "4",
-        title: "Q4 Planning Session",
-        time: "4:00 PM",
-        duration: 60,
-        type: "zoom",
-        attendees: [
-            { name: "Emily Davis", initials: "ED" },
-            { name: "Robert Wilson", initials: "RW" },
-        ],
-        status: "conflict",
-        conflictReason: "Exceeds daily meeting capacity (6 hours)",
-    },
-];
-
 export function CalendarView() {
-    // Now we store meetings in state:
-    const [meetings, setMeetings] = useState<Meeting[]>(mockMeetings);
-
+    const [meetings, setMeetings] = useState<Meeting[]>([]);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const [showMeetingDetails, setShowMeetingDetails] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
+
+    function parseLocalDate(dateStr: string) {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day); // LOCAL date, not UTC
+    }
+
+    const dayMeetings = meetings.filter(m => {
+        const meetingDate = parseLocalDate(m.date).toDateString();
+        const selectedDate = currentDate.toDateString();
+        return meetingDate === selectedDate;
+    });
+
+    useEffect(() => {
+        async function load(){
+            try {
+                const res = await axios.get("/api/meetings");
+                const data: Meeting[] = res.data;
+
+                // Ensure attendees array exists to avoid runtime crashes
+                const normalized = data.map(m => ({
+                    ...m,
+                    attendees: m.attendees ?? [],
+                }));
+                console.log("Fetched meetings:", normalized);
+
+                setMeetings(normalized);
+            } catch (err) {
+                // If fetch fails, keep mockMeetings and optionally log
+                console.error("Failed to load meetings:", err);
+            }
+        }
+        load();
+    }, []);
 
     const formattedDate = currentDate.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
         year: "numeric",
     });
+
+    function parseHour(timeStr: string) {
+        const [timePart, modifier] = timeStr.split(" ");
+        const [h] = timePart.split(":");
+        let hour = parseInt(h);
+
+        if (modifier === "PM" && hour !== 12) hour += 12;
+        if (modifier === "AM" && hour === 12) hour = 0;
+
+        return hour;
+    }
 
     const handlePrevDay = () => {
         const newDate = new Date(currentDate);
@@ -114,8 +107,18 @@ export function CalendarView() {
         setShowMeetingDetails(true);
     };
 
-    const addMeeting = (meeting: Meeting) => {
-        setMeetings((prev) => [...prev, meeting]);
+    const addMeeting = async (meeting: Meeting) => {
+        try {
+            const res = await axios.post("/api/meetings", meeting);
+            const saved: Meeting = res.data;
+
+            // Normalize attendees presence
+            setMeetings(prev => [...prev, { ...saved, attendees: saved.attendees ?? [] }]);
+        } catch (err) {
+            console.error("Failed to save meeting:", err);
+            // Optionally: optimistic update fallback
+            setMeetings(prev => [...prev, meeting]);
+        }
     };
 
     const getStatusColor = (status: Meeting["status"]) => {
@@ -153,7 +156,7 @@ export function CalendarView() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-gray-600">Today&#39;s Meetings</p>
-                                <p className="text-2xl text-gray-900 mt-1">{meetings.length}</p>
+                                <p className="text-2xl text-gray-900 mt-1">{dayMeetings.length}</p>
                             </div>
                             <CalendarIcon className="h-8 w-8 text-blue-500" />
                         </div>
@@ -166,11 +169,11 @@ export function CalendarView() {
                             <div>
                                 <p className="text-sm text-gray-600">Auto-Rescheduled</p>
                                 <p className="text-2xl text-gray-900 mt-1">
-                                    {meetings.filter((m) => m.autoRescheduled).length}
+                                    {dayMeetings.filter((m) => m.autoRescheduled).length}
                                 </p>
                             </div>
-                            <Clock className="h-8 w-8 text-yellow-500" />
                         </div>
+                            <Clock className="h-8 w-8 text-yellow-500" />
                     </CardContent>
                 </Card>
 
@@ -180,7 +183,7 @@ export function CalendarView() {
                             <div>
                                 <p className="text-sm text-gray-600">Conflicts Detected</p>
                                 <p className="text-2xl text-gray-900 mt-1">
-                                    {meetings.filter((m) => m.status === "conflict").length}
+                                    {dayMeetings.filter((m) => m.status === "conflict").length}
                                 </p>
                             </div>
                             <AlertCircle className="h-8 w-8 text-red-500" />
@@ -194,7 +197,7 @@ export function CalendarView() {
                             <div>
                                 <p className="text-sm text-gray-600">Meeting Hours</p>
                                 <p className="text-2xl text-gray-900 mt-1">
-                                    {(meetings.reduce((a, m) => a + m.duration, 0) / 60).toFixed(1)}h
+                                    {(dayMeetings.reduce((a, m) => a + (m.duration || 0), 0) / 60).toFixed(1)}h
                                 </p>
                             </div>
                             <CheckCircle className="h-8 w-8 text-green-500" />
@@ -240,9 +243,7 @@ export function CalendarView() {
                                     hour >= 12 ? "PM" : "AM"
                                 }`;
 
-                                const meetingsAtTime = meetings.filter(
-                                    (m) => m.time === timeLabel
-                                );
+                                const meetingsAtTime = dayMeetings.filter(m => parseHour(m.time) === hour);
 
                                 return (
                                     <div key={hour} className="flex hover:bg-gray-50">
