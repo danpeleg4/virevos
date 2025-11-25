@@ -29,7 +29,7 @@ export function CTA() {
               Ready to boost your productivity?
             </h2>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl">
-              Join thousands of teams who are already working smarter with FlowTask. 
+              Join thousands of teams who are already working smarter with Virevos. 
               Start your free 14-day trial today—no credit card required.
             </p>
             

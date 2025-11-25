@@ -73,7 +73,7 @@ export default function Settings() {
 
                             <div>
                                 <Label>Company</Label>
-                                <Input defaultValue="FlowTask Inc." className="mt-2" />
+                                <Input defaultValue="Virevos Inc." className="mt-2" />
                             </div>
 
                             <div>

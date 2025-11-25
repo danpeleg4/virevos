@@ -16,13 +16,13 @@ const caseStudies = [
         teamSize: "200+ employees",
         image: "https://images.unsplash.com/photo-1652177217044-4f62dacf0ceb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9kdWN0aXZlJTIwd29ya3NwYWNlJTIwZGVza3xlbnwxfHx8fDE3NjI3MTgxMzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
         challenge: "TechCorp struggled with project visibility across distributed teams, leading to missed deadlines and duplicated work.",
-        solution: "Implemented FlowTask's enterprise plan with custom workflows and integrations with their existing tools.",
+        solution: "Implemented Virevos's enterprise plan with custom workflows and integrations with their existing tools.",
         results: [
             "40% reduction in project completion time",
             "95% increase in team collaboration",
             "50% fewer missed deadlines",
         ],
-        quote: "FlowTask transformed how we work. Our teams are more aligned than ever, and we're shipping faster without sacrificing quality.",
+        quote: "Virevos transformed how we work. Our teams are more aligned than ever, and we're shipping faster without sacrificing quality.",
         author: "Sarah Chen",
         role: "VP of Product",
     },
@@ -32,20 +32,20 @@ const caseStudies = [
         teamSize: "50+ employees",
         image: "https://images.unsplash.com/photo-1739298061740-5ed03045b280?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWFtJTIwY29sbGFib3JhdGlvbiUyMG9mZmljZXxlbnwxfHx8fDE3NjI2OTQ5Nzh8MA&ixlib=rb-4.1.0&q=80&w=1080",
         challenge: "Managing multiple client projects with different requirements and deadlines was becoming overwhelming.",
-        solution: "Adopted FlowTask Pro with custom templates for each client type and automated workflows.",
+        solution: "Adopted Virevos Pro with custom templates for each client type and automated workflows.",
         results: [
             "60% faster client onboarding",
             "3x more projects managed simultaneously",
             "Client satisfaction increased to 98%",
         ],
-        quote: "We can now handle triple the number of clients without increasing headcount. FlowTask's flexibility is exactly what we needed.",
+        quote: "We can now handle triple the number of clients without increasing headcount. Virevos's flexibility is exactly what we needed.",
         author: "Emily Thompson",
         role: "Creative Director",
     },
 ];
 
 const stats = [
-    { value: "2,000+", label: "Companies trust FlowTask" },
+    { value: "2,000+", label: "Companies trust Virevos" },
     { value: "50K+", label: "Active users worldwide" },
     { value: "127%", label: "Average productivity increase" },
     { value: "4.9/5", label: "Customer satisfaction rating" },
@@ -83,7 +83,7 @@ export default function Customers() {
                             transition={{ duration: 0.5, delay: 0.1 }}
                             className="text-xl text-gray-600"
                         >
-                            See how companies like yours are achieving incredible results with FlowTask
+                            See how companies like yours are achieving incredible results with Virevos
                         </motion.p>
                     </div>
                 </div>
@@ -238,7 +238,7 @@ export default function Customers() {
                         Join thousands of successful teams
                     </h2>
                     <p className="text-xl text-gray-600 mb-8">
-                        Start your free trial today and see how FlowTask can transform your workflow
+                        Start your free trial today and see how Virevos can transform your workflow
                     </p>
                     <Button size="lg" className="text-lg px-8 py-6">
                         Start Free Trial

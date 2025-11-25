@@ -223,7 +223,7 @@ export function IntegrationSettings() {
         <CardHeader>
           <CardTitle>Video Meeting Preferences</CardTitle>
           <CardDescription>
-            Configure how FlowTask handles video meetings
+            Configure how Virevos handles video meetings
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -255,7 +255,7 @@ export function IntegrationSettings() {
           {autoTranscription && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <h4 className="text-sm text-purple-900 mb-2">
-                After transcription, FlowTask will:
+                After transcription, Virevos will:
               </h4>
               <ul className="space-y-1 text-sm text-purple-800">
                 <li className="flex items-start">
@@ -285,7 +285,7 @@ export function IntegrationSettings() {
         <CardHeader>
           <CardTitle>Calendar Sync Preferences</CardTitle>
           <CardDescription>
-            Manage how FlowTask syncs with your calendars
+            Manage how Virevos syncs with your calendars
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -293,7 +293,7 @@ export function IntegrationSettings() {
             <div className="space-y-1">
               <Label>Two-Way Sync</Label>
               <p className="text-sm text-gray-600">
-                Changes in FlowTask update your calendar and vice versa
+                Changes in Virevos update your calendar and vice versa
               </p>
             </div>
             <Switch checked={twoWaySync} onCheckedChange={setTwoWaySync} />
@@ -316,11 +316,11 @@ export function IntegrationSettings() {
             <ul className="space-y-1 text-sm text-blue-800">
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>New meetings in FlowTask appear on your calendar</span>
+                <span>New meetings in Virevos appear on your calendar</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Calendar events are imported to FlowTask</span>
+                <span>Calendar events are imported to Virevos</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />

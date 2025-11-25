@@ -67,7 +67,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         className="text-2xl text-gray-900 cursor-pointer"
                         onClick={() => router.push("/")}
                     >
-                        FlowTask
+                        Virevos
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">Workspace Pro</p>
                 </div>
@@ -140,7 +140,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         >
                             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                                 <div>
-                                    <h1 className="text-2xl text-gray-900">FlowTask</h1>
+                                    <h1 className="text-2xl text-gray-900">Virevos</h1>
                                     <p className="text-sm text-gray-500 mt-1">Workspace Pro</p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>

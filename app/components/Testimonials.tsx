@@ -7,7 +7,7 @@ const testimonials = [
     name: "Sarah Chen",
     role: "Product Manager at TechCorp",
     image: "https://i.pravatar.cc/150?img=5",
-    content: "FlowTask has completely transformed how our team collaborates. We've seen a 40% increase in productivity since switching.",
+    content: "Virevos has completely transformed how our team collaborates. We've seen a 40% increase in productivity since switching.",
     rating: 5,
   },
   {
@@ -42,7 +42,7 @@ const testimonials = [
     name: "Alex Turner",
     role: "Freelance Consultant",
     image: "https://i.pravatar.cc/150?img=15",
-    content: "As a solo consultant, FlowTask helps me stay organized across multiple client projects. The free plan is perfect for my needs!",
+    content: "As a solo consultant, Virevos helps me stay organized across multiple client projects. The free plan is perfect for my needs!",
     rating: 5,
   },
 ];
@@ -57,7 +57,7 @@ export function Testimonials() {
             Loved by teams worldwide
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Join thousands of satisfied customers who have transformed their productivity with FlowTask.
+            Join thousands of satisfied customers who have transformed their productivity with Virevos.
           </p>
         </div>
 

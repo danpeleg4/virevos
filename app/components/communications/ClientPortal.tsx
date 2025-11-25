@@ -33,7 +33,7 @@ export function ClientPortal() {
     "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
   );
 
-  const portalUrl = customDomain || "portal.flowtask.com/acme-corp";
+  const portalUrl = customDomain || "portal.virevos.com/acme-corp";
 
   return (
     <div className="space-y-6">

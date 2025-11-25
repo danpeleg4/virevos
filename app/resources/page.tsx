@@ -11,7 +11,7 @@ const resources = [
     {
         icon: BookOpen,
         title: "Documentation",
-        description: "Comprehensive guides and API documentation to help you get the most out of FlowTask.",
+        description: "Comprehensive guides and API documentation to help you get the most out of Virevos.",
         link: "/docs",
         color: "blue",
     },
@@ -32,7 +32,7 @@ const resources = [
     {
         icon: MessageCircle,
         title: "Community Forum",
-        description: "Connect with other FlowTask users, share tips, and get help from the community.",
+        description: "Connect with other Virevos users, share tips, and get help from the community.",
         link: "/community",
         color: "orange",
     },
@@ -56,21 +56,21 @@ const articles = [
     {
         category: "Case Study",
         title: "How DesignCo Tripled Their Output",
-        excerpt: "Learn how a creative agency used FlowTask to manage 3x more clients without adding headcount.",
+        excerpt: "Learn how a creative agency used Virevos to manage 3x more clients without adding headcount.",
         date: "Oct 28, 2025",
         readTime: "6 min read",
     },
     {
         category: "Integration",
         title: "Slack Integration Best Practices",
-        excerpt: "Make the most of the FlowTask-Slack integration with these expert tips and tricks.",
+        excerpt: "Make the most of the Virevos-Slack integration with these expert tips and tricks.",
         date: "Oct 25, 2025",
         readTime: "4 min read",
     },
 ];
 
 const helpTopics = [
-    "Getting Started with FlowTask",
+    "Getting Started with Virevos",
     "Managing Projects and Tasks",
     "Team Collaboration Features",
     "Integrations Setup Guide",
@@ -119,7 +119,7 @@ export default function Resources() {
                             transition={{ duration: 0.5, delay: 0.1 }}
                             className="text-xl text-gray-600"
                         >
-                            Everything you need to master FlowTask and boost your team&#39;s productivity
+                            Everything you need to master Virevos and boost your team&#39;s productivity
                         </motion.p>
                     </div>
                 </div>
@@ -181,7 +181,7 @@ export default function Resources() {
                                 Latest from our blog
                             </h2>
                             <p className="text-xl text-gray-600">
-                                Tips, insights, and updates from the FlowTask team
+                                Tips, insights, and updates from the Virevos team
                             </p>
                         </div>
                         <Button variant="outline" className="hidden sm:flex">

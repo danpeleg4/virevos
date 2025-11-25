@@ -38,7 +38,7 @@ export function Hero() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-xl text-gray-600 max-w-2xl"
               >
-                FlowTask helps teams organize, track, and deliver their best work.
+                Virevos helps teams organize, track, and deliver their best work.
                 Boost productivity by 10x with our intelligent task management platform.
               </motion.p>
             </div>
@@ -92,7 +92,7 @@ export function Hero() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">
-                  <span className="text-gray-900">2,000+</span> teams already using FlowTask
+                  <span className="text-gray-900">2,000+</span> teams already using Virevos
                 </p>
               </div>
             </motion.div>

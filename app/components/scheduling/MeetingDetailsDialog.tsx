@@ -30,7 +30,7 @@ interface MeetingDetailsDialogProps {
 
 const mockTranscript = `Sarah Johnson: Good morning everyone! Thanks for joining this onboarding call for Acme Corp.
 
-Mike Chen: Happy to be here. We're excited to get started with FlowTask.
+Mike Chen: Happy to be here. We're excited to get started with Virevos.
 
 Sarah Johnson: Great! Let me walk you through the key features we discussed in our sales call. First, the automation capabilities...
 

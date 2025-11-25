@@ -108,7 +108,7 @@ Please let me know your preferred time, and I'll send over a calendar invitation
 
 Best regards,
 John Doe
-Project Manager, FlowTask`,
+Project Manager, Virevos`,
 
   empathetic: `Hi Sarah,
 

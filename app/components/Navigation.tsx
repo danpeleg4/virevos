@@ -68,7 +68,7 @@ export function Navigation() {
             className="flex items-center cursor-pointer"
             onClick={() => handleNavigation("/")}
           >
-            <h1 className="text-2xl text-gray-900">FlowTask</h1>
+            <h1 className="text-2xl text-gray-900">Virevos</h1>
           </motion.div>
 
           {/* Desktop Navigation */}

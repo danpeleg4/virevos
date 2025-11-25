@@ -77,7 +77,7 @@ const faqs = [
     },
     {
         question: "Can I get a refund?",
-        answer: "We offer a 30-day money-back guarantee. If you're not satisfied with FlowTask for any reason, contact us within 30 days of your purchase for a full refund.",
+        answer: "We offer a 30-day money-back guarantee. If you're not satisfied with Virevos for any reason, contact us within 30 days of your purchase for a full refund.",
     },
 ];
 

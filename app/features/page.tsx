@@ -144,7 +144,7 @@ export default function AllFeatures() {
                             transition={{ duration: 0.5, delay: 0.1 }}
                             className="text-xl text-gray-600"
                         >
-                            Discover all the tools and capabilities that make FlowTask the ultimate productivity platform.
+                            Discover all the tools and capabilities that make Virevos the ultimate productivity platform.
                         </motion.p>
                     </div>
                 </div>
@@ -223,7 +223,7 @@ export default function AllFeatures() {
                         Ready to experience all these features?
                     </h2>
                     <p className="text-xl text-gray-600 mb-8">
-                        Start your free 14-day trial and see how FlowTask can transform your workflow.
+                        Start your free 14-day trial and see how Virevos can transform your workflow.
                     </p>
                     <Button size="lg" className="text-lg px-8 py-6">
                         Start Free Trial

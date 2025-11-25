@@ -26,7 +26,7 @@ const integrations = [
     {
         name: "Zoom",
         category: "Video",
-        description: "Schedule and join Zoom meetings directly from FlowTask. All meeting links stored with tasks.",
+        description: "Schedule and join Zoom meetings directly from Virevos. All meeting links stored with tasks.",
         features: ["One-click scheduling", "Meeting links", "Calendar integration", "Automatic reminders"],
         popular: true,
     },
@@ -61,7 +61,7 @@ const integrations = [
     {
         name: "Jira",
         category: "Development",
-        description: "Sync tasks between FlowTask and Jira. Perfect for teams using both platforms.",
+        description: "Sync tasks between Virevos and Jira. Perfect for teams using both platforms.",
         features: ["Two-way sync", "Status mapping", "Custom fields", "Sprint planning"],
         popular: false,
     },
@@ -117,7 +117,7 @@ export default function Integrations() {
                             transition={{ duration: 0.5, delay: 0.2 }}
                             className="text-xl text-gray-600 mb-8"
                         >
-                            FlowTask integrates seamlessly with the tools you already use. Build your perfect workflow.
+                            Virevos integrates seamlessly with the tools you already use. Build your perfect workflow.
                         </motion.p>
 
                         <motion.div
