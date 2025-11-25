@@ -3,7 +3,6 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
 import { users, meetings, meetingAttendees, events } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import {serial, varchar} from "drizzle-orm/pg-core";
 
 type AttendeeInput = {
     name: string;
