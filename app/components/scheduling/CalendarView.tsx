@@ -50,7 +50,7 @@ export function CalendarView() {
     useEffect(() => {
         async function load(){
             try {
-                const res = await axios.get("/api/meetings");
+                const res = await axios.get("/api/test");
                 const data: Meeting[] = res.data;
 
                 // Ensure attendees array exists to avoid runtime crashes
