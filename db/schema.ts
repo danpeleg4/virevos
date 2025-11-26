@@ -50,6 +50,18 @@ export const meetingAttendees = pgTable("meeting_attendees", {
     initials: text("initials").notNull()
 });
 
+export const zoomTokens = pgTable("zoom_tokens", {
+    id: serial("id").primaryKey(),
+    access_token: text("access_token").notNull(),
+    refresh_token: text("refresh_token").notNull(),
+    expires_in: integer("expires_in").notNull(),
+    connected: boolean("connected").default(false),
+
+    userId: varchar("user_id")
+        .notNull()
+        .references(() => users.user_id, { onDelete: "cascade" }),
+});
+
 // Relations
 export const meetingsRelations = relations(meetings, ({ many }) => ({
     attendees: many(meetingAttendees),

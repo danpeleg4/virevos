@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Settings,
 } from "lucide-react";
+import axios from "axios";
 
 interface Integration {
   id: string;
@@ -33,7 +34,7 @@ export function IntegrationSettings() {
       name: "Zoom",
       description: "Video conferencing and meeting recordings",
       icon: Video,
-      connected: true,
+      connected: false,
       syncStatus: "synced",
       lastSync: "2 minutes ago",
       features: [
@@ -48,7 +49,7 @@ export function IntegrationSettings() {
       name: "Google Meet",
       description: "Google's video conferencing platform",
       icon: Video,
-      connected: true,
+      connected: false,
       syncStatus: "synced",
       lastSync: "5 minutes ago",
       features: [
@@ -63,7 +64,7 @@ export function IntegrationSettings() {
       name: "Google Calendar",
       description: "Sync with your Google Calendar",
       icon: Calendar,
-      connected: true,
+      connected: false,
       syncStatus: "synced",
       lastSync: "1 minute ago",
       features: [
@@ -93,33 +94,45 @@ export function IntegrationSettings() {
   const [autoTranscription, setAutoTranscription] = useState(true);
   const [twoWaySync, setTwoWaySync] = useState(true);
   const [syncConflicts, setSyncConflicts] = useState(true);
+  const [isZoomConnected, setIsZoomConnected] = useState(false);
 
-  const toggleConnection = (id: string) => {
-    setIntegrations(
-      integrations.map((integration) =>
-        integration.id === id
-          ? {
-              ...integration,
-              connected: !integration.connected,
-              syncStatus: !integration.connected ? "syncing" : "not-connected",
+    const toggleConnection = (id: string) => {
+        setIntegrations((prevIntegrations) => {
+            const integration = prevIntegrations.find((i) => i.id === id);
+
+            // If Zoom is toggled ON → redirect BEFORE updating state
+            if (id === "zoom" && integration && !integration.connected) {
+                const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
+                const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
+
+                const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
+                    redirectUri
+                )}`;
+
+                window.location.href = zoomAuthUrl;
+                return prevIntegrations; // leave UI unchanged, redirect will occur
             }
-          : integration
-      )
-    );
 
-    // Simulate connection
-    if (!integrations.find((i) => i.id === id)?.connected) {
-      setTimeout(() => {
-        setIntegrations((prev) =>
-          prev.map((integration) =>
-            integration.id === id
-              ? { ...integration, syncStatus: "synced", lastSync: "Just now" }
-              : integration
-          )
-        );
-      }, 2000);
-    }
-  };
+            // Default toggle behavior for other integrations
+            return prevIntegrations.map((int) =>
+                int.id === id
+                    ? {
+                        ...int,
+                        connected: !int.connected,
+                        syncStatus: !int.connected ? "syncing" : "not-connected",
+                    }
+                    : int
+            );
+        });
+    };
+
+    useEffect(() => {
+        async function isConnected() {
+            const check = await axios.get(`/api/zoom/connected`)
+            setIsZoomConnected(check.data);
+        }
+        isConnected();
+    }, [])
 
   const getSyncStatusBadge = (status: Integration["syncStatus"]) => {
     switch (status) {
@@ -177,7 +190,7 @@ export function IntegrationSettings() {
                     </div>
                   </div>
                   <Switch
-                    checked={integration.connected}
+                    checked={isZoomConnected}
                     onCheckedChange={() => toggleConnection(integration.id)}
                   />
                 </div>
@@ -223,7 +236,7 @@ export function IntegrationSettings() {
         <CardHeader>
           <CardTitle>Video Meeting Preferences</CardTitle>
           <CardDescription>
-            Configure how Virevos handles video meetings
+            Configure how virevos handles video meetings
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -255,7 +268,7 @@ export function IntegrationSettings() {
           {autoTranscription && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <h4 className="text-sm text-purple-900 mb-2">
-                After transcription, Virevos will:
+                After transcription, virevos will:
               </h4>
               <ul className="space-y-1 text-sm text-purple-800">
                 <li className="flex items-start">
@@ -285,7 +298,7 @@ export function IntegrationSettings() {
         <CardHeader>
           <CardTitle>Calendar Sync Preferences</CardTitle>
           <CardDescription>
-            Manage how Virevos syncs with your calendars
+            Manage how virevos syncs with your calendars
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -293,7 +306,7 @@ export function IntegrationSettings() {
             <div className="space-y-1">
               <Label>Two-Way Sync</Label>
               <p className="text-sm text-gray-600">
-                Changes in Virevos update your calendar and vice versa
+                Changes in virevos update your calendar and vice versa
               </p>
             </div>
             <Switch checked={twoWaySync} onCheckedChange={setTwoWaySync} />
@@ -316,11 +329,11 @@ export function IntegrationSettings() {
             <ul className="space-y-1 text-sm text-blue-800">
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>New meetings in Virevos appear on your calendar</span>
+                <span>New meetings in virevos appear on your calendar</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Calendar events are imported to Virevos</span>
+                <span>Calendar events are imported to virevos</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
