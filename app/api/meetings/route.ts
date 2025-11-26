@@ -26,11 +26,6 @@ type MeetingInput = {
 };
 
 export async function GET() {
-    const { isAuthenticated } = await auth();
-    if (!isAuthenticated) {
-        return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const user = await currentUser();
     if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 });
@@ -62,12 +57,6 @@ export async function GET() {
 
 export async function POST(req: Request) {
     const body: MeetingInput & { date: string } = await req.json();
-
-    const { isAuthenticated } = await auth();
-    if (!isAuthenticated) {
-        return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const user = await currentUser();
     if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 });
