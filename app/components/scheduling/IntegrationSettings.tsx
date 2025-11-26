@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {ComponentType, SVGProps, useEffect, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -20,7 +20,7 @@ interface Integration {
   id: string;
   name: string;
   description: string;
-  icon: any;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   connected: boolean;
   syncStatus: "synced" | "syncing" | "error" | "not-connected";
   lastSync?: string;
@@ -28,73 +28,74 @@ interface Integration {
 }
 
 export function IntegrationSettings() {
-  const [integrations, setIntegrations] = useState<Integration[]>([
-    {
-      id: "zoom",
-      name: "Zoom",
-      description: "Video conferencing and meeting recordings",
-      icon: Video,
-      connected: false,
-      syncStatus: "synced",
-      lastSync: "2 minutes ago",
-      features: [
-        "Auto-create Zoom links for meetings",
-        "Record meetings automatically",
-        "Generate transcripts",
-        "Import meeting attendees",
-      ],
-    },
-    {
-      id: "google-meet",
-      name: "Google Meet",
-      description: "Google's video conferencing platform",
-      icon: Video,
-      connected: false,
-      syncStatus: "synced",
-      lastSync: "5 minutes ago",
-      features: [
-        "Auto-create Meet links",
-        "Access meeting recordings",
-        "Live transcription",
-        "Calendar integration",
-      ],
-    },
-    {
-      id: "google-calendar",
-      name: "Google Calendar",
-      description: "Sync with your Google Calendar",
-      icon: Calendar,
-      connected: false,
-      syncStatus: "synced",
-      lastSync: "1 minute ago",
-      features: [
-        "Two-way calendar sync",
-        "Conflict detection",
-        "Automatic event creation",
-        "Availability management",
-      ],
-    },
-    {
-      id: "outlook",
-      name: "Microsoft Outlook",
-      description: "Sync with Outlook Calendar",
-      icon: Calendar,
-      connected: false,
-      syncStatus: "not-connected",
-      features: [
-        "Two-way calendar sync",
-        "Teams meeting integration",
-        "Email notifications",
-        "Contact sync",
-      ],
-    },
-  ]);
-
   const [autoRecording, setAutoRecording] = useState(true);
   const [autoTranscription, setAutoTranscription] = useState(true);
   const [twoWaySync, setTwoWaySync] = useState(true);
   const [syncConflicts, setSyncConflicts] = useState(true);
   const [isZoomConnected, setIsZoomConnected] = useState(false);
+  const [isGoogleMeets, setisGoogleMeets] = useState(false);
+
+    const [integrations, setIntegrations] = useState<Integration[]>([
+        {
+            id: "zoom",
+            name: "Zoom",
+            description: "Video conferencing and meeting recordings",
+            icon: Video,
+            connected: false,
+            syncStatus: "synced",
+            lastSync: "2 minutes ago",
+            features: [
+                "Auto-create Zoom links for meetings",
+                "Record meetings automatically",
+                "Generate transcripts",
+                "Import meeting attendees",
+            ],
+        },
+        {
+            id: "google-meet",
+            name: "Google Meet",
+            description: "Google's video conferencing platform",
+            icon: Video,
+            connected: false,
+            syncStatus: "synced",
+            lastSync: "5 minutes ago",
+            features: [
+                "Auto-create Meet links",
+                "Access meeting recordings",
+                "Live transcription",
+                "Calendar integration",
+            ],
+        },
+        {
+            id: "google-calendar",
+            name: "Google Calendar",
+            description: "Sync with your Google Calendar",
+            icon: Calendar,
+            connected: false,
+            syncStatus: "synced",
+            lastSync: "1 minute ago",
+            features: [
+                "Two-way calendar sync",
+                "Conflict detection",
+                "Automatic event creation",
+                "Availability management",
+            ],
+        },
+        {
+            id: "outlook",
+            name: "Microsoft Outlook",
+            description: "Sync with Outlook Calendar",
+            icon: Calendar,
+            connected: false,
+            syncStatus: "not-connected",
+            features: [
+                "Two-way calendar sync",
+                "Teams meeting integration",
+                "Email notifications",
+                "Contact sync",
+            ],
+        },
+    ]);
 
     const toggleConnection = (id: string) => {
         setIntegrations((prevIntegrations) => {
@@ -127,12 +128,21 @@ export function IntegrationSettings() {
     };
 
     useEffect(() => {
-        async function isConnected() {
-            const check = await axios.get(`/api/zoom/connected`)
-            setIsZoomConnected(check.data);
+        async function loadConnections() {
+            const check = await axios.get("/api/zoom/connected");
+            const { zoom, googleMeetsConnected } = check.data;
+
+            setIntegrations(prev =>
+                prev.map(int => {
+                    if (int.id === "zoom") return { ...int, connected: zoom };
+                    if (int.id === "google-meet") return { ...int, connected: googleMeetsConnected };
+                    return int;
+                })
+            );
         }
-        isConnected();
-    }, [])
+
+        loadConnections();
+    }, []);
 
   const getSyncStatusBadge = (status: Integration["syncStatus"]) => {
     switch (status) {
@@ -190,7 +200,7 @@ export function IntegrationSettings() {
                     </div>
                   </div>
                   <Switch
-                    checked={isZoomConnected}
+                    checked={integration.connected}
                     onCheckedChange={() => toggleConnection(integration.id)}
                   />
                 </div>
