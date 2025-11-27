@@ -42,11 +42,7 @@ export async function GET(request: Request) {
     );
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
-    /*    const zoomUserId = await axios.get("https://api.zoom.us/v2/users", {
-            headers: { Authorization: `Bearer ${access_token}` },
-        })
-        const id = zoomUserId.data.id;
-    */
+
     // Check if user already has zoom tokens
     const existing = await db
         .select()
