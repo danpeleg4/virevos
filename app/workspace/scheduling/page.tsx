@@ -23,12 +23,12 @@ export default function Scheduling() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
-                    <TabsTrigger value="calendar">Calendar</TabsTrigger>
-                    <TabsTrigger value="availability">Availability</TabsTrigger>
-                    <TabsTrigger value="meeting-types">Meeting Types</TabsTrigger>
-                    <TabsTrigger value="notes">Meeting Notes</TabsTrigger>
-                    <TabsTrigger value="auto-schedule">Auto-Schedule</TabsTrigger>
-                    <TabsTrigger value="integrations">Integrations</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="calendar">Calendar</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="availability">Availability</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="meeting-types">Meeting Types</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="notes">Meeting Notes</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="auto-schedule">Auto-Schedule</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="integrations">Integrations</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="calendar">

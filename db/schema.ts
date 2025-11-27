@@ -3,6 +3,21 @@ import {pgTable, text, integer, boolean, timestamp, serial, varchar, date} from 
 import { relations } from "drizzle-orm";
 
 // Meetings Table
+export const users = pgTable("users", {
+    id: serial("id").primaryKey(),
+    user_id: varchar("user_id").notNull().unique(),
+    name: text("name"),
+    email: text("email").notNull(),
+    image: text("image"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const events = pgTable("events", {
+    id: serial("id").primaryKey(),
+    event: varchar("event"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const meetings = pgTable("meetings", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
@@ -15,10 +30,12 @@ export const meetings = pgTable("meetings", {
 
     hasNotes: boolean("has_notes").default(false),
     hasTranscript: boolean("has_transcript").default(false),
-
     autoRescheduled: boolean("auto_rescheduled").default(false),
     conflictReason: text("conflict_reason"),
-    userId: varchar("user_id").notNull(),
+
+    userId: varchar("user_id")
+        .notNull()
+        .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
 // Meeting Attendees Table
@@ -33,6 +50,18 @@ export const meetingAttendees = pgTable("meeting_attendees", {
     initials: text("initials").notNull()
 });
 
+export const zoomTokens = pgTable("zoom_tokens", {
+    id: serial("id").primaryKey(),
+    access_token: text("access_token").notNull(),
+    refresh_token: text("refresh_token").notNull(),
+    expires_in: integer("expires_in").notNull(),
+    connected: boolean("connected").default(false),
+
+    userId: varchar("user_id")
+        .notNull()
+        .references(() => users.user_id, { onDelete: "cascade" }),
+});
+
 // Relations
 export const meetingsRelations = relations(meetings, ({ many }) => ({
     attendees: many(meetingAttendees),
@@ -45,18 +74,10 @@ export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) =
     }),
 }));
 
-
-export const users = pgTable("users", {
-    id: serial("id").primaryKey(),
-    user_id: varchar("user_id").notNull(),
-    name: text("name"),
-    email: text("email").notNull(),
-    image: text("image"),
-    createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const events = pgTable("events", {
-    id: serial("id").primaryKey(),
-    event: varchar("event"),
-    createdAt: timestamp("created_at").defaultNow(),
-});
+export const meetingsUsersRelations = relations(meetings, ({ one, many }) => ({
+    user: one(users, {
+        fields: [meetings.userId],
+        references: [users.user_id],
+    }),
+    attendees: many(meetingAttendees),
+}));

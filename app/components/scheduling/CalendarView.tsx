@@ -172,8 +172,8 @@ export function CalendarView() {
                                     {dayMeetings.filter((m) => m.autoRescheduled).length}
                                 </p>
                             </div>
-                        </div>
                             <Clock className="h-8 w-8 text-yellow-500" />
+                        </div>
                     </CardContent>
                 </Card>
 

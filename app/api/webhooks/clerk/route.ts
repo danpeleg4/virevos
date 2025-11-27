@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
     if (evt.type === "user.created") {
         const { id, email_addresses, first_name, last_name } = evt.data;
-        console.log(evt.data);
+        //console.log(evt.data);
         await db.insert(users).values({
             user_id: id,
             email: email_addresses[0]?.email_address || "",
