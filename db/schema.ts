@@ -12,12 +12,6 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const events = pgTable("events", {
-    id: serial("id").primaryKey(),
-    event: varchar("event"),
-    createdAt: timestamp("created_at").defaultNow(),
-});
-
 export const meetings = pgTable("meetings", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
