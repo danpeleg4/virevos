@@ -24,7 +24,7 @@ import {
 import { motion } from "motion/react";
 import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
-import type { Meeting } from "@/types/meeting";
+import type { Meeting, NewMeetingInput } from "@/types/meeting";
 import axios from "axios";
 
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM - 9 PM
@@ -107,7 +107,7 @@ export function CalendarView() {
         setShowMeetingDetails(true);
     };
 
-    const addMeeting = async (meeting: Meeting) => {
+    const addMeeting = async (meeting: NewMeetingInput) => {
         try {
             const res = await axios.post("/api/meetings", meeting);
             const saved: Meeting = res.data;
@@ -117,7 +117,17 @@ export function CalendarView() {
         } catch (err) {
             console.error("Failed to save meeting:", err);
             // Optionally: optimistic update fallback
-            setMeetings(prev => [...prev, meeting]);
+            // Optimistic fallback assumes link may be missing, so coerce a link placeholder
+            const optimistic: Meeting = {
+                link: "",
+                attendees: meeting.attendees ?? [],
+                hasNotes: meeting.hasNotes ?? false,
+                hasTranscript: meeting.hasTranscript ?? false,
+                autoRescheduled: meeting.autoRescheduled ?? false,
+                conflictReason: meeting.conflictReason ?? undefined,
+                ...meeting,
+            };
+            setMeetings(prev => [...prev, optimistic]);
         }
     };
 

@@ -16,6 +16,7 @@ export const meetings = pgTable("meetings", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
+    link: text("link"),
     date: date("date").notNull().default("2025-01-01"),
     time: text("time").notNull(),
     duration: integer("duration").notNull(),
