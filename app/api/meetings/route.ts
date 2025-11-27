@@ -42,7 +42,7 @@ export async function GET() {
         return new NextResponse("User not found", { status: 404 });
     }
 
-    const internalUserId = dbUser[0].id.toString();
+    const internalUserId = dbUser[0].user_id;
 
     // Fetch meetings + attendees
     const rows = await db.query.meetings.findMany({
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         return new NextResponse("User not found", { status: 404 });
     }
 
-    const internalUserId = dbUser[0].id.toString();
+    const internalUserId = dbUser[0].user_id;
 
     // Insert meeting
     const inserted = await db
