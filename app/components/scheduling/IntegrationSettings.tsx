@@ -9,7 +9,6 @@ import {
   Video,
   Calendar,
   CheckCircle,
-  AlertCircle,
   RefreshCw,
   ExternalLink,
   Settings,
@@ -32,10 +31,7 @@ export function IntegrationSettings() {
   const [autoTranscription, setAutoTranscription] = useState(true);
   const [twoWaySync, setTwoWaySync] = useState(true);
   const [syncConflicts, setSyncConflicts] = useState(true);
-  const [isZoomConnected, setIsZoomConnected] = useState(false);
-  const [isGoogleMeets, setisGoogleMeets] = useState(false);
-
-    const [integrations, setIntegrations] = useState<Integration[]>([
+  const [integrations, setIntegrations] = useState<Integration[]>([
         {
             id: "zoom",
             name: "Zoom",
@@ -97,6 +93,10 @@ export function IntegrationSettings() {
         },
     ]);
 
+    async function caller() {
+        await axios.post("/api/integrations/zoom/disconnect");
+    }
+
     const toggleConnection = (id: string) => {
         setIntegrations((prevIntegrations) => {
             const integration = prevIntegrations.find((i) => i.id === id);
@@ -114,6 +114,16 @@ export function IntegrationSettings() {
                 return prevIntegrations; // leave UI unchanged, redirect will occur
             }
 
+            if (id === "zoom" && integration && integration.connected) {
+                caller()
+
+                return prevIntegrations.map(int =>
+                    int.id === "zoom"
+                        ? { ...int, connected: false, syncStatus: "not-connected" }
+                        : int
+                );
+            }
+
             // Default toggle behavior for other integrations
             return prevIntegrations.map((int) =>
                 int.id === id
@@ -129,7 +139,7 @@ export function IntegrationSettings() {
 
     useEffect(() => {
         async function loadConnections() {
-            const check = await axios.get("/api/zoom/connected");
+            const check = await axios.get("/api/integrations/zoom/connected");
             const { zoom, googleMeetsConnected } = check.data;
 
             setIntegrations(prev =>
@@ -143,34 +153,6 @@ export function IntegrationSettings() {
 
         loadConnections();
     }, []);
-
-  const getSyncStatusBadge = (status: Integration["syncStatus"]) => {
-    switch (status) {
-      case "synced":
-        return (
-          <Badge className="bg-green-100 text-green-700">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Connected
-          </Badge>
-        );
-      case "syncing":
-        return (
-          <Badge className="bg-blue-100 text-blue-700">
-            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-            Syncing...
-          </Badge>
-        );
-      case "error":
-        return (
-          <Badge className="bg-red-100 text-red-700">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Error
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">Not Connected</Badge>;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -189,17 +171,19 @@ export function IntegrationSettings() {
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
                         <CardTitle className="text-lg">{integration.name}</CardTitle>
-                        {getSyncStatusBadge(integration.syncStatus)}
+                        {integration.connected ?
+                            (
+                                <Badge className="bg-green-100 text-green-700">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Connected
+                                </Badge>
+                            ) : (<Badge variant="outline">Not Connected</Badge>)}
                       </div>
                       <CardDescription>{integration.description}</CardDescription>
-                      {integration.lastSync && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Last synced: {integration.lastSync}
-                        </p>
-                      )}
                     </div>
                   </div>
                   <Switch
+                    className="cursor-pointer"
                     checked={integration.connected}
                     onCheckedChange={() => toggleConnection(integration.id)}
                   />
