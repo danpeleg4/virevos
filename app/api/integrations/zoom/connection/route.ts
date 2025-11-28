@@ -19,3 +19,11 @@ export async function GET(req: NextRequest) {
         { status: 200 }
     );
 }
+
+export async function POST(req: NextRequest) {
+    await db
+        .delete(zoomTokens)
+        .where(eq(zoomTokens.connected, true));
+
+    return new Response(JSON.stringify({ success: true }));
+}
