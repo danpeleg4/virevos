@@ -154,7 +154,7 @@ export async function POST(req: Request) {
     const inserted = await db
         .insert(meetings)
         .values({
-            id: body.id,
+            id: zoomData.id,
             title: body.title,
             description: body.description,
             link: zoomData.join_url,
