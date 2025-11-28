@@ -72,5 +72,5 @@ export async function GET(request: Request) {
         });
     }
 
-    return NextResponse.redirect("http://localhost:3000/workspace/scheduling");
+    return NextResponse.redirect("https://virevos.com/workspace/scheduling");
 }
