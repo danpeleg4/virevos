@@ -94,7 +94,7 @@ export function IntegrationSettings() {
     ]);
 
     async function caller() {
-        await axios.post("/api/integrations/zoom/disconnect");
+        await axios.post("/api/integrations/zoom/connection");
     }
 
     const toggleConnection = (id: string) => {
@@ -105,12 +105,15 @@ export function IntegrationSettings() {
             if (id === "zoom" && integration && !integration.connected) {
                 const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
                 const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
+                const redirectUriProd = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI_PROD
 
                 const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
                     redirectUri
                 )}`;
 
-                window.location.href = zoomAuthUrl;
+                const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/`
+
+                window.location.href = zoomAuthUrlProd;
                 return prevIntegrations; // leave UI unchanged, redirect will occur
             }
 
@@ -139,7 +142,7 @@ export function IntegrationSettings() {
 
     useEffect(() => {
         async function loadConnections() {
-            const check = await axios.get("/api/integrations/zoom/connected");
+            const check = await axios.get("/api/integrations/zoom/connection");
             const { zoom, googleMeetsConnected } = check.data;
 
             setIntegrations(prev =>
