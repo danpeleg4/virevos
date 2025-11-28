@@ -5,6 +5,8 @@ import { zoomTokens } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 
+/** Zoom redirect URL Path: /api/integrations/zoom **/
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
