@@ -27,19 +27,16 @@ export async function GET(request: Request) {
     // Exchange code for access token
     const tokenResponse = await axios.post(
         "https://zoom.us/oauth/token",
-        null,
+        new URLSearchParams({
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: redirectUri
+        }),
         {
-            params: {
-                grant_type: "authorization_code",
-                code,
-                redirect_uri: redirectUri,
-            },
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                Authorization:
-                    "Basic " +
-                    Buffer.from(`${clientId}:${clientSecret}`).toString("base64"),
-            },
+                Authorization: "Basic " + Buffer.from(`${clientId}:${clientSecret}`).toString("base64"),
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
         }
     );
 
@@ -72,5 +69,5 @@ export async function GET(request: Request) {
         });
     }
 
-    return NextResponse.redirect("https://virevos.com/workspace/scheduling");
+    return NextResponse.redirect("https://www.virevos.com/workspace/scheduling");
 }
