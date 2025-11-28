@@ -221,17 +221,17 @@ export function CalendarView() {
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                            <Button variant="outline" size="sm" onClick={handlePrevDay}>
+                            <Button className="cursor-pointer" variant="outline" size="sm" onClick={handlePrevDay}>
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
 
                             <CardTitle>{formattedDate}</CardTitle>
 
-                            <Button variant="outline" size="sm" onClick={handleNextDay}>
+                            <Button className="cursor-pointer" variant="outline" size="sm" onClick={handleNextDay}>
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
 
-                            <Button variant="outline" size="sm" onClick={handleToday}>
+                            <Button className="cursor-pointer" variant="outline" size="sm" onClick={handleToday}>
                                 Today
                             </Button>
                         </div>

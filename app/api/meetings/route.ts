@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import {users, meetings, meetingAttendees, zoomTokens} from "@/db/schema";
+import {users, meetings, zoomTokens} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import type { NewMeetingInput } from "@/types/meeting";
 
@@ -170,18 +170,5 @@ export async function POST(req: Request) {
             userId: internalUserId
         })
         .returning();
-
-    // Insert attendees
-    if (body.attendees?.length) {
-        await db.insert(meetingAttendees).values(
-            body.attendees.map((a) => ({
-                meetingId: body.id,
-                name: a.name,
-                initials: a.initials,
-            }))
-        );
-    }
-
-
     return NextResponse.json(inserted[0]);
 }
