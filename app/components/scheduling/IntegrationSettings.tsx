@@ -111,7 +111,7 @@ export function IntegrationSettings() {
                     redirectUri
                 )}`;
 
-                const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/`
+                const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
 
                 window.location.href = zoomAuthUrlProd;
                 return prevIntegrations; // leave UI unchanged, redirect will occur
