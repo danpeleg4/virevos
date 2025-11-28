@@ -98,7 +98,11 @@ export function MeetingDetailsDialog({
                 </div>
                 <div className="flex items-center">
                   <Video className="h-4 w-4 mr-1" />
-                  {meeting.type === "zoom" ? "Zoom" : "Google Meet"}
+                  {meeting.type === "zoom"
+                    ? "Zoom"
+                    : meeting.type === "google-meet"
+                      ? "Google Meet"
+                      : "In-Person"}
                 </div>
               </div>
             </div>
@@ -147,7 +151,7 @@ export function MeetingDetailsDialog({
               <input
                 type="text"
                 readOnly
-                value="https://zoom.us/j/123456789"
+                value={meeting.link || ""}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50"
               />
               <Button size="sm" variant="outline">

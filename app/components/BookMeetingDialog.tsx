@@ -19,26 +19,14 @@ import {
 import { Button } from "./ui/button";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
+import type { MeetingType, NewMeetingInput } from "@/types/meeting";
 
-// Types
-export type MeetingType = "zoom" | "google-meet" | "in-person";
-
-export interface NewMeeting {
-    id: string;
-    title: string;
-    description: string;
-    date: string;
-    time: string;
-    duration: number;
-    type: MeetingType;
-    attendees: { name: string; initials: string }[];
-    status: "scheduled";
-}
+// Types moved to shared: MeetingType, NewMeetingInput
 
 interface BookMeetingDialogProps {
     dialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
-    addMeeting: (meeting: NewMeeting) => void;
+    addMeeting: (meeting: NewMeetingInput) => void;
 }
 
 export function BookMeetingDialog({
@@ -171,7 +159,7 @@ export function BookMeetingDialog({
                             className="cursor-pointer"
                             onClick={() => {
                                 if (!meetingType || !date || !time) return;
-                                addMeeting({
+                                const payload: NewMeetingInput = {
                                     id: Date.now().toString(),
                                     title,
                                     description,
@@ -181,7 +169,9 @@ export function BookMeetingDialog({
                                     type: meetingType,
                                     attendees: [],
                                     status: "scheduled",
-                                });
+                                };
+
+                                addMeeting(payload);
 
                                 // Reset form
                                 setDialogOpen(false);
