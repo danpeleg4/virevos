@@ -73,3 +73,5 @@ next-env.d.ts
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
+/db/migrations/meta/0014_snapshot.json
+/db/migrations/0014_illegal_sharon_ventura.sql

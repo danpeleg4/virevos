@@ -312,12 +312,6 @@ export function AutoScheduleSettings() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Actions */}
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline">Reset to Defaults</Button>
-        <Button>Save Settings</Button>
-      </div>
     </div>
   );
 }

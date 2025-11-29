@@ -34,7 +34,7 @@ const navItems = [
     { icon: Users, label: "Clients", path: "/workspace/clients" },
     { icon: FolderKanban, label: "Projects", path: "/workspace/projects" },
     { icon: CheckSquare, label: "Tasks", path: "/workspace/tasks" },
-    { icon: CalendarDays, label: "Scheduling", path: "/workspace/scheduling" },
+    { icon: CalendarDays, label: "Calendar", path: "/workspace/calendar" },
     { icon: Inbox, label: "Communications", path: "/workspace/communications" },
     { icon: Zap, label: "Automations", path: "/workspace/automations" },
     { icon: ScrollText, label: "Activity Logs", path: "/workspace/logs" },
@@ -50,7 +50,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [aiOpen, setAiOpen] = useState(false);
 
-    const { isSignedIn, user, isLoaded } = useUser()
+    const { user, isLoaded } = useUser()
     const router = useRouter();
     const currentPath = usePathname();
 

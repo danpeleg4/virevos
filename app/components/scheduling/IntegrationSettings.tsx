@@ -93,10 +93,7 @@ export function IntegrationSettings() {
         },
     ]);
 
-    async function caller() {
-        await axios.post("/api/integrations/zoom/connection");
-    }
-
+    async function caller() { await axios.post("/api/integrations/zoom/connection"); }
     const toggleConnection = (id: string) => {
         setIntegrations((prevIntegrations) => {
             const integration = prevIntegrations.find((i) => i.id === id);
@@ -105,15 +102,15 @@ export function IntegrationSettings() {
             if (id === "zoom" && integration && !integration.connected) {
                 const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
                 const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
-                const redirectUriProd = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI_PROD
-
+                const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
                 const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
                     redirectUri
                 )}`;
 
-                const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
-
-                window.location.href = zoomAuthUrlProd;
+                window.location.href =
+                    process.env.NODE_ENV === "production"
+                        ? zoomAuthUrlProd
+                        : zoomAuthUrl;
                 return prevIntegrations; // leave UI unchanged, redirect will occur
             }
 
@@ -344,12 +341,6 @@ export function IntegrationSettings() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Actions */}
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline">Disconnect All</Button>
-        <Button>Save Changes</Button>
-      </div>
     </div>
   );
 }
