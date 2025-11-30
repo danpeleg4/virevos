@@ -71,5 +71,17 @@ export async function POST(req: Request) {
         }
     }
 
+    else if (json.event === "recording.transcript_completed") {
+        const meetingId = json.payload.meeting_id;
+        const file = json.payload.object.recording_files.find(
+            (f: { file_type: string; }) => f.file_type === "TRANSCRIPT"
+        );
+
+        if (!file) return new NextResponse("No transcript", {status: 200});
+        console.log("Transcript:", file.download_url);
+        //await processTranscript(meetingId, file.download_url)
+    }
+
+
     return NextResponse.json({ received: true });
 }

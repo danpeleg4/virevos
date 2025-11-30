@@ -18,7 +18,7 @@ import {
 } from "./ui/select";
 import { Button } from "./ui/button";
 import { CalendarIcon } from "lucide-react";
-import {ChangeEvent, useState} from "react";
+import { useState } from "react";
 import type { MeetingType, NewMeetingInput } from "@/types/meeting";
 
 // Types moved to shared: MeetingType, NewMeetingInput

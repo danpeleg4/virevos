@@ -14,12 +14,10 @@ import {
 } from "../ui/select";
 import {
   Brain,
-  Calendar,
   AlertTriangle,
   CheckCircle,
   Clock,
   Zap,
-  ShieldCheck,
 } from "lucide-react";
 
 export function AutoScheduleSettings() {

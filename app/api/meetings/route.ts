@@ -134,9 +134,13 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 topic: body.title,
-                type: 1, // instant meeting
+                agenda: body.description ? body.description : "",
+                type: 2,
+                start_time: body.date + "T" + body.time + ":00Z",
+                duration: body.duration,
                 settings: {
                     host_video: true,
+                    auto_recording: "cloud",
                     participant_video: false,
                 },
             }),
