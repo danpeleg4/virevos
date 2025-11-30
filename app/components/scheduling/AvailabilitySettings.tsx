@@ -293,21 +293,6 @@ export function AvailabilitySettings() {
               </Select>
             </div>
           </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Auto-Decline Conflicts</Label>
-              <p className="text-sm text-gray-600">
-                Automatically decline new meetings that exceed your limits
-              </p>
-            </div>
-            <Switch
-              checked={autoDeclineConflicts}
-              onCheckedChange={setAutoDeclineConflicts}
-            />
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -14,6 +14,7 @@ import {
     Settings,
 } from "lucide-react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 interface Integration {
     id: string;
@@ -93,6 +94,8 @@ export function IntegrationSettings() {
         },
     ]);
 
+    const router = useRouter();
+
     async function caller() {
         await axios.post("/api/integrations/zoom/connection");
     }
@@ -104,12 +107,16 @@ export function IntegrationSettings() {
             // If Zoom is toggled ON → redirect BEFORE updating state
             if (id === "zoom" && integration && !integration.connected) {
                 const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
-                const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=http://localhost:3000/api/integrations/zoom}`;
+                const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
+                const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
+                    redirectUri
+                )}`;
                 const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
 
-                window.location.href = process.env.NODE_ENV === "development"
+                router.push(zoomAuthUrl);
+                /*window.location.href = process.env.NODE_ENV === "development"
                     ? zoomAuthUrl
-                    : zoomAuthUrlProd;
+                    : zoomAuthUrlProd;*/
                 return prevIntegrations; // leave UI unchanged, redirect will occur
             }
 
@@ -340,12 +347,6 @@ export function IntegrationSettings() {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Actions */}
-            <div className="flex justify-end space-x-2">
-                <Button variant="outline">Disconnect All</Button>
-                <Button>Save Changes</Button>
-            </div>
         </div>
     );
 }

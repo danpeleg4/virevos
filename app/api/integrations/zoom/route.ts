@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     }
 
     const apiUrl = process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/workspace/scheduling"
+        ? "http://localhost:3000/workspace/calendar"
         : "https://www.virevos.com/workspace/scheduling";
 
     return NextResponse.redirect(apiUrl);
