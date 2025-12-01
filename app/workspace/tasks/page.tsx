@@ -155,7 +155,7 @@ export default function Tasks() {
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="cursor-pointer">
                             <Plus className="h-4 w-4 mr-2" />
                             New Task
                         </Button>
@@ -213,10 +213,10 @@ export default function Tasks() {
                             </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                <Button className="cursor-pointer" variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
-                                <Button onClick={() => setDialogOpen(false)}>Create Task</Button>
+                                <Button className="cursor-pointer" onClick={() => setDialogOpen(false)}>Create Task</Button>
                             </div>
                         </div>
                     </DialogContent>

@@ -131,22 +131,6 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
     }
   };
 
-  const addComment = () => {
-    if (newComment.trim()) {
-      setComments([
-        ...comments,
-        {
-          id: String(comments.length + 1),
-          author: "You",
-          initials: "ME",
-          content: newComment,
-          timestamp: "Just now",
-        },
-      ]);
-      setNewComment("");
-    }
-  };
-
   const completedSubtasks = subtasks.filter((st) => st.completed).length;
   const subtaskProgress = (completedSubtasks / subtasks.length) * 100;
 
@@ -160,7 +144,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
                 <Input
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-xl mb-2"
+                  className="text-xl mb-2 max-w-sm w-full"
                 />
               ) : (
                 <DialogTitle className="text-2xl mb-2">{task.title}</DialogTitle>
@@ -188,6 +172,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
             </div>
             <div className="flex items-center space-x-2">
               <Button
+                  className="cursor-pointer"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(!isEditing)}
@@ -195,7 +180,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
                 <Edit className="h-4 w-4 mr-2" />
                 {isEditing ? "Save" : "Edit"}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button className="cursor-pointer" variant="outline" size="sm">
                 <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </div>
@@ -255,6 +240,9 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
                     >
                       {subtask.title}
                     </span>
+                      <Button className="cursor-pointer" variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
                   </div>
                 ))}
               </div>
@@ -353,25 +341,6 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
                       Low
                     </span>
                   </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Assignee */}
-            <div>
-              <Label className="flex items-center mb-2">
-                <User className="h-4 w-4 mr-2" />
-                Assignee
-              </Label>
-              <Select defaultValue={task.assignee}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="You">You</SelectItem>
-                  <SelectItem value="Team">Team</SelectItem>
-                  <SelectItem value="John Doe">John Doe</SelectItem>
-                  <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
                 </SelectContent>
               </Select>
             </div>
