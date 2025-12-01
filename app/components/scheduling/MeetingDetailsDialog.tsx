@@ -82,7 +82,7 @@ export function MeetingDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -154,14 +154,29 @@ export function MeetingDetailsDialog({
                 value={meeting.link || ""}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50"
               />
-              <Button size="sm" variant="outline">
-                <Copy className="h-4 w-4 mr-2" />
-                Copy
-              </Button>
-              <Button size="sm">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Join
-              </Button>
+                <Button
+                    className="cursor-pointer"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                        navigator.clipboard.writeText(meeting.link || "");
+                    }}
+                >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                </Button>
+                <Button
+                    className="cursor-pointer"
+                    size="sm"
+                    onClick={() => {
+                        if (meeting.link) {
+                            window.open(meeting.link, "_blank");
+                        }
+                    }}
+                >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Join
+                </Button>
             </div>
           </div>
 
@@ -281,17 +296,6 @@ export function MeetingDetailsDialog({
               )}
             </>
           )}
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
-            </Button>
-            <Button variant="outline">Reschedule</Button>
-            {meeting.status === "scheduled" && (
-              <Button>Join Meeting</Button>
-            )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>
