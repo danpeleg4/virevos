@@ -305,55 +305,6 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
                 Add Attachment
               </Button>
             </div>
-
-            <Separator />
-
-            {/* Comments */}
-            <div>
-              <Label className="flex items-center mb-3">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Comments ({comments.length})
-              </Label>
-
-              <div className="space-y-3 mb-4">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">
-                        {comment.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm text-gray-900">
-                          {comment.author}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {comment.timestamp}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
-                        {comment.content}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex space-x-2">
-                <Textarea
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  rows={2}
-                  className="flex-1"
-                />
-                <Button onClick={addComment}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Post
-                </Button>
-              </div>
-            </div>
           </div>
 
           {/* Sidebar */}

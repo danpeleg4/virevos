@@ -58,7 +58,7 @@ export function BookMeetingDialog({
                 </Button>
             </DialogTrigger>
 
-            <DialogContent>
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Schedule a Meeting</DialogTitle>
                     <DialogDescription>
@@ -134,7 +134,7 @@ export function BookMeetingDialog({
 
                         {/* Duration */}
                         <div>
-                            <Label>Duration (minutes)</Label>
+                            <Label>Duration</Label>
                             <Select
                                 value={duration}
                                 onValueChange={(e) => setDuration(e)}

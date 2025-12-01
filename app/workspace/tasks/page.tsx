@@ -160,7 +160,7 @@ export default function Tasks() {
                             New Task
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Create New Task</DialogTitle>
                             <DialogDescription>Add a task to your project</DialogDescription>
