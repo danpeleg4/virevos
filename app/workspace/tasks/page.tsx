@@ -1,32 +1,15 @@
 "use client"
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../../components/ui/select";
-import { Plus, Search, Clock, Flag } from "lucide-react";
+import { Search, Clock, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 import AddNewTask from "@/app/components/AddNewTask";
+import axios from "axios";
 
 interface Task {
     id: number;
@@ -101,6 +84,14 @@ export default function Tasks() {
     const [activeTab, setActiveTab] = useState("all");
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+
+    useEffect(() => {
+        const getTasks = async () => {
+            const res = await axios.get("/api/tasks");
+            setTasks(res.data);
+        }
+        getTasks();
+    }, [])
 
     const toggleTaskStatus = (taskId: number) => {
         setTasks((prev) =>
