@@ -69,5 +69,9 @@ export async function GET(request: Request) {
         });
     }
 
-    return NextResponse.redirect("https://www.virevos.com/workspace/scheduling");
+    const apiUrl = process.env.NODE_ENV === "development"
+        ? "http://localhost:3000/workspace/calendar"
+        : "https://www.virevos.com/workspace/scheduling";
+
+    return NextResponse.redirect(apiUrl);
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {meetingAttendees, meetings} from "@/db/schema";
 import { db } from "@/db/db";
 import {eq} from "drizzle-orm";
+import axios from "axios";
 
 function verifyZoomSignature(req: Request, body: string) {
     const secretToken = process.env.ZOOM_SECRET_TOKEN;
@@ -70,6 +71,21 @@ export async function POST(req: Request) {
 
         }
     }
+/*
+    if (json.event === "recording.transcript_completed") {
+        const meetingId = json.payload.meeting_id;
+        const file = json.payload.object.recording_files.find(
+            (f: { file_type: string; }) => f.file_type === "TRANSCRIPT"
+        );
 
+        if (!file) return new NextResponse("No transcript", {status: 200});
+        console.log("Transcript:", file.download_url);
+        await axios.post(process.env.NODE_ENV == "development" ?
+            "http://localhost:8080/api/v1/transcript" :
+            "https://www.virevos.com/api/v1/transcript", // TODO: replace with production URL
+            {meetingId, transcriptUrl: file.download_url});
+        //await processTranscript(meetingId, file.download_url)
+    }
+*/
     return NextResponse.json({ received: true });
 }

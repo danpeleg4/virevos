@@ -54,7 +54,7 @@ export function BookMeetingDialog({
             <DialogTrigger asChild>
                 <Button size="sm" className="cursor-pointer">
                     <CalendarIcon className="h-4 w-4 mr-2 cursor-pointer" />
-                    Book Meeting
+                    Add Event
                 </Button>
             </DialogTrigger>
 
@@ -95,7 +95,7 @@ export function BookMeetingDialog({
                         <Label>Meeting Type</Label>
                         <Select
                             value={meetingType}
-                            onValueChange={(v: MeetingType) => setMeetingType(v)}
+                            onValueChange={(v) => setMeetingType(v as MeetingType)}
                         >
                             <SelectTrigger className="mt-2">
                                 <SelectValue placeholder="Select type" />
@@ -135,13 +135,19 @@ export function BookMeetingDialog({
                         {/* Duration */}
                         <div>
                             <Label>Duration (minutes)</Label>
-                            <Input
-                                type="number"
-                                className="mt-2"
-                                placeholder="60"
+                            <Select
                                 value={duration}
-                                onChange={(e) => setDuration(e.target.value)}
-                            />
+                                onValueChange={(e) => setDuration(e)}
+                            >
+                                <SelectTrigger className="mt-2">
+                                    <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="30">30 minutes</SelectItem>
+                                    <SelectItem value="45">45 minutes</SelectItem>
+                                    <SelectItem value="60">60 minutes</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 

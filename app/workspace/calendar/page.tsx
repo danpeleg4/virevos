@@ -9,7 +9,7 @@ import { IntegrationSettings } from "../../components/scheduling/IntegrationSett
 import { AutoScheduleSettings } from "../../components/scheduling/AutoScheduleSettings";
 import { MeetingNotes } from "../../components/scheduling/MeetingNotes";
 
-export default function Scheduling() {
+export default function Calendar() {
     const [activeTab, setActiveTab] = useState("calendar");
 
     return (

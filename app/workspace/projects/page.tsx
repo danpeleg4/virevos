@@ -24,6 +24,7 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { Plus, Search, Clock, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
+import {ProjectDetailView} from "@/app/components/projects/ProjectDetailView";
 
 const projects = [
     {
@@ -97,6 +98,31 @@ export default function Projects() {
     const [client, setClient] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState("");
+    const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null);
+
+    const filteredProjects = projects
+        .filter((project) => {
+            const matchesSearch = project.name
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase());
+            const matchesTab =
+                activeTab === "all" ||
+                (activeTab === "active" && project.status !== "completed") ||
+                (activeTab === "completed" && project.status === "completed");
+            return matchesSearch && matchesTab;
+        });
+
+    // If a project is selected, show the detail view
+    if (selectedProject) {
+        return (
+            <div className="p-6">
+                <ProjectDetailView
+                    project={selectedProject}
+                    onBack={() => setSelectedProject(null)}
+                />
+            </div>
+        );
+    }
 
     function formatDate(dateStr: string | number | Date) {
         const date = new Date(dateStr);
@@ -129,19 +155,6 @@ export default function Projects() {
         setDueDate("");
         setPriority("");
     };
-
-
-    const filteredProjects = projectsData
-        .filter((project) => {
-            const matchesSearch = project.name
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase());
-            const matchesTab =
-                activeTab === "all" ||
-                (activeTab === "active" && project.status !== "completed") ||
-                (activeTab === "completed" && project.status === "completed");
-            return matchesSearch && matchesTab;
-        });
 
     return (
         <div className="p-6 space-y-6">
@@ -259,6 +272,7 @@ export default function Projects() {
                             <Card
                                 key={project.id}
                                 className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                                onClick={() => setSelectedProject(project)}
                             >
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex-1">

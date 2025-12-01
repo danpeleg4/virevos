@@ -14,12 +14,10 @@ import {
 } from "../ui/select";
 import {
   Brain,
-  Calendar,
   AlertTriangle,
   CheckCircle,
   Clock,
   Zap,
-  ShieldCheck,
 } from "lucide-react";
 
 export function AutoScheduleSettings() {
@@ -312,12 +310,6 @@ export function AutoScheduleSettings() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Actions */}
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline">Reset to Defaults</Button>
-        <Button>Save Settings</Button>
-      </div>
     </div>
   );
 }

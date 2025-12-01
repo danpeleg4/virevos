@@ -16,7 +16,6 @@ import {
     Clock,
     AlertCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const stats = [
@@ -155,7 +154,6 @@ const fadeInUp = {
 };
 
 export default function Dashboard() {
-    const router = useRouter();
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -290,7 +288,6 @@ export default function Dashboard() {
                             style={{ cursor: "pointer" }}
                             variant="ghost"
                             size="sm"
-                            onClick={() => router.push('/workspace/tasks')}
                         >
                             <Link href="/workspace/tasks">
                                 View All
@@ -340,9 +337,10 @@ export default function Dashboard() {
                         style={{ cursor: "pointer" }}
                         variant="ghost"
                         size="sm"
-                        onClick={() => router.push('/workspace/logs')}
                     >
-                        View Logs
+                        <Link href="/workspace/logs">
+                            View Logs
+                        </Link>
                     </Button>
                 </div>
 
