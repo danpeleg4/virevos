@@ -25,6 +25,7 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { Plus, Search, Clock, Flag } from "lucide-react";
+import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 
 interface Task {
     id: number;
@@ -35,12 +36,6 @@ interface Task {
     dueDate: string;
     assignee: string;
 }
-
-const projects = [
-    "TechCorp Website Redesign",
-    "DesignCo Brand Refresh",
-    "StartupXYZ MVP Development",
-];
 
 const initialTasks: Task[] = [
     {
@@ -104,11 +99,8 @@ export default function Tasks() {
     const [searchQuery, setSearchQuery] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
-    const [newTitle, setNewTitle] = useState("");
-    const [newDescription, setNewDescription] = useState("");
-    const [newProject, setNewProject] = useState("");
-    const [newPriority, setNewPriority] = useState<"high" | "medium" | "low" | "">("");
-    const [newDueDate, setNewDueDate] = useState("");
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
     const toggleTaskStatus = (taskId: number) => {
         setTasks((prev) =>
@@ -123,9 +115,16 @@ export default function Tasks() {
         );
     };
 
-    const addItem = (task: Task) => {
-        setTasks(prev => [...prev, task])
-    }
+    const handleTaskClick = (task: Task) => {
+        setSelectedTask(task);
+        setTaskDetailOpen(true);
+    };
+
+    const handleTaskUpdate = (updatedTask: Task) => {
+        setTasks((prev) =>
+            prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+        );
+    };
 
     const filteredTasks = tasks.filter((task) => {
         const matchesSearch = task.title
@@ -156,7 +155,7 @@ export default function Tasks() {
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="cursor-pointer">
+                        <Button>
                             <Plus className="h-4 w-4 mr-2" />
                             New Task
                         </Button>
@@ -170,13 +169,7 @@ export default function Tasks() {
                         <div className="space-y-4 mt-4">
                             <div>
                                 <Label>Task Title</Label>
-                                <Input
-                                    placeholder="Review designs"
-                                    className="mt-2"
-                                    value={newTitle}
-                                    onChange={(e) => setNewTitle(e.target.value)}
-                                />
-
+                                <Input placeholder="Review designs" className="mt-2" />
                             </div>
                             <div>
                                 <Label>Description</Label>
@@ -188,24 +181,22 @@ export default function Tasks() {
                             </div>
                             <div>
                                 <Label>Project</Label>
-                                <Select onValueChange={setNewProject}>
-                                    <SelectTrigger className="mt-2 cursor-pointer">
+                                <Select>
+                                    <SelectTrigger className="mt-2">
                                         <SelectValue placeholder="Select project" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {projects.map((project) => (
-                                            <SelectItem key={project} value={project}>
-                                                {project}
-                                            </SelectItem>
-                                        ))}
+                                        <SelectItem value="1">TechCorp Website Redesign</SelectItem>
+                                        <SelectItem value="2">DesignCo Brand Refresh</SelectItem>
+                                        <SelectItem value="3">StartupXYZ MVP Development</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label>Priority</Label>
-                                    <Select onValueChange={(v) => setNewPriority(v as "high" | "medium" | "low" | "")}>
-                                    <SelectTrigger className="mt-2 cursor-pointer">
+                                    <Select>
+                                        <SelectTrigger className="mt-2">
                                             <SelectValue placeholder="Priority" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -216,41 +207,16 @@ export default function Tasks() {
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label className="mt-2">Due Date</Label>
-                                    <Input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} />
+                                    <Label>Due Date</Label>
+                                    <Input type="date" className="mt-2" />
                                 </div>
                             </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Button className="cursor-pointer" variant="outline" onClick={() => setDialogOpen(false)}>
+                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
-                                <Button
-                                    className="cursor-pointer"
-                                    onClick={() => {
-                                        const newTask: Task = {
-                                            id: Date.now(),
-                                            title: newTitle,
-                                            project: newProject,
-                                            priority: newPriority as "high" | "medium" | "low",
-                                            status: "todo",
-                                            dueDate: newDueDate,
-                                            assignee: "You",
-                                        };
-
-                                        addItem(newTask);
-                                        setDialogOpen(false);
-
-                                        // Clear fields
-                                        setNewTitle("");
-                                        setNewDescription("");
-                                        setNewProject("");
-                                        setNewPriority("");
-                                        setNewDueDate("");
-                                    }}
-                                >
-                                    Create Task
-                                </Button>
+                                <Button onClick={() => setDialogOpen(false)}>Create Task</Button>
                             </div>
                         </div>
                     </DialogContent>
@@ -306,13 +272,15 @@ export default function Tasks() {
                         {filteredTasks.map((task) => (
                             <div
                                 key={task.id}
-                                className="p-4 hover:bg-gray-50 transition-colors"
+                                className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                                onClick={() => handleTaskClick(task)}
                             >
                                 <div className="flex items-start space-x-4">
                                     <Checkbox
                                         checked={task.status === "completed"}
                                         onCheckedChange={() => toggleTaskStatus(task.id)}
                                         className="mt-1"
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between mb-2">
@@ -382,6 +350,14 @@ export default function Tasks() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Task Detail Modal */}
+            <TaskDetailModal
+                task={selectedTask}
+                open={taskDetailOpen}
+                onOpenChange={setTaskDetailOpen}
+                onUpdate={handleTaskUpdate}
+            />
         </div>
     );
 }

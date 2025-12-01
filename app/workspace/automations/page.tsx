@@ -33,7 +33,9 @@ import {
     Settings,
     Play,
     Pause,
+    Wrench,
 } from "lucide-react";
+import { AutomationBuilder } from "../../components/automations/AutomationBuilder";
 
 const templates = [
     {
@@ -72,7 +74,7 @@ const templates = [
         description: "Streamline project completion with automated final deliverables and feedback requests",
         icon: CheckCircle,
         color: "purple",
-        triggers: ["All tasks completed"],
+        triggers: ["All tasks completed", "Manual trigger"],
         actions: [
             "Send final invoice",
             "Request client feedback",
@@ -122,6 +124,7 @@ export default function Automations() {
     const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
     const [automations, setAutomations] = useState(myAutomations);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [showBuilder, setShowBuilder] = useState(false);
 
     const toggleAutomation = (id: number) => {
         setAutomations((prev) =>
@@ -136,6 +139,20 @@ export default function Automations() {
         );
     };
 
+    if (showBuilder) {
+        return (
+            <div className="h-screen flex flex-col">
+                <AutomationBuilder
+                    onSave={(nodes) => {
+                        console.log("Saved automation:", nodes);
+                        setShowBuilder(false);
+                    }}
+                    onClose={() => setShowBuilder(false)}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -146,78 +163,84 @@ export default function Automations() {
                         Automate repetitive tasks and streamline your workflow
                     </p>
                 </div>
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Automation
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Create New Automation</DialogTitle>
-                            <DialogDescription>
-                                Choose a template or create a custom automation from scratch
-                            </DialogDescription>
-                        </DialogHeader>
+                <div className="flex items-center space-x-2">
+                    <Button variant="outline" onClick={() => setShowBuilder(true)}>
+                        <Wrench className="h-4 w-4 mr-2" />
+                        Automation Builder
+                    </Button>
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Create Automation
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>Create New Automation</DialogTitle>
+                                <DialogDescription>
+                                    Choose a template or create a custom automation from scratch
+                                </DialogDescription>
+                            </DialogHeader>
 
-                        <div className="space-y-6 mt-4">
-                            <div>
-                                <Label>Automation Name</Label>
-                                <Input placeholder="e.g., Weekly Status Updates" className="mt-2" />
-                            </div>
+                            <div className="space-y-6 mt-4">
+                                <div>
+                                    <Label>Automation Name</Label>
+                                    <Input placeholder="e.g., Weekly Status Updates" className="mt-2" />
+                                </div>
 
-                            <div>
-                                <Label>Select Template</Label>
-                                <Select onValueChange={(value) => setSelectedTemplate(Number(value))}>
-                                    <SelectTrigger className="mt-2">
-                                        <SelectValue placeholder="Choose a template" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {templates.map((template) => (
-                                            <SelectItem key={template.id} value={template.id.toString()}>
-                                                {template.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                <div>
+                                    <Label>Select Template</Label>
+                                    <Select onValueChange={(value) => setSelectedTemplate(Number(value))}>
+                                        <SelectTrigger className="mt-2">
+                                            <SelectValue placeholder="Choose a template" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {templates.map((template) => (
+                                                <SelectItem key={template.id} value={template.id.toString()}>
+                                                    {template.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
 
-                            <div>
-                                <Label>Description</Label>
-                                <Textarea
-                                    placeholder="Describe what this automation does..."
-                                    className="mt-2"
-                                    rows={3}
-                                />
-                            </div>
+                                <div>
+                                    <Label>Description</Label>
+                                    <Textarea
+                                        placeholder="Describe what this automation does..."
+                                        className="mt-2"
+                                        rows={3}
+                                    />
+                                </div>
 
-                            <div>
-                                <Label>Trigger</Label>
-                                <Select>
-                                    <SelectTrigger className="mt-2">
-                                        <SelectValue placeholder="Select trigger" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="new-client">New client added</SelectItem>
-                                        <SelectItem value="invoice-overdue">Invoice overdue</SelectItem>
-                                        <SelectItem value="task-complete">All tasks completed</SelectItem>
-                                        <SelectItem value="manual">Manual trigger</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                <div>
+                                    <Label>Trigger</Label>
+                                    <Select>
+                                        <SelectTrigger className="mt-2">
+                                            <SelectValue placeholder="Select trigger" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="new-client">New client added</SelectItem>
+                                            <SelectItem value="invoice-overdue">Invoice overdue</SelectItem>
+                                            <SelectItem value="task-complete">All tasks completed</SelectItem>
+                                            <SelectItem value="manual">Manual trigger</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
 
-                            <div className="flex justify-end space-x-3 pt-4">
-                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button onClick={() => setDialogOpen(false)}>
-                                    Create Automation
-                                </Button>
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button onClick={() => setDialogOpen(false)}>
+                                        Create Automation
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             {/* Templates */}
