@@ -75,3 +75,30 @@ export async function GET(request: Request) {
 
     return NextResponse.redirect(apiUrl);
 }
+
+export async function POST(req: Request) {
+    const data = await req.json();
+    if (data.action === "disconnect") {
+        await db
+            .delete(zoomTokens)
+            .where(eq(zoomTokens.connected, true));
+
+        return new Response(JSON.stringify({ success: true }));
+    }
+    if (data.action === "connect") {
+        const zoomRows = await db
+            .select()
+            .from(zoomTokens)
+            .where(eq(zoomTokens.connected, true));
+
+        const zoomConnected = zoomRows.length > 0;
+
+        return new Response(
+            JSON.stringify({
+                zoom: zoomConnected,
+                googleMeetsConnected: false // placeholder until implemented
+            }),
+            { status: 200 }
+        );
+    }
+}

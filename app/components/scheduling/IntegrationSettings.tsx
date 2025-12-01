@@ -97,7 +97,9 @@ export function IntegrationSettings() {
     const router = useRouter();
 
     async function caller() {
-        await axios.post("/api/integrations/zoom/connection");
+        await axios.post("/api/integrations/zoom", {
+            action: "disconnect",
+        });
     }
 
     const toggleConnection = (id: string) => {
@@ -143,7 +145,9 @@ export function IntegrationSettings() {
 
     useEffect(() => {
         async function loadConnections() {
-            const check = await axios.get("/api/integrations/zoom/connection");
+            const check = await axios.post("/api/integrations/zoom", {
+                action: "connect",
+            });
             const { zoom, googleMeetsConnected } = check.data;
 
             setIntegrations(prev =>

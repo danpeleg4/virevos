@@ -74,7 +74,7 @@ const templates = [
         description: "Streamline project completion with automated final deliverables and feedback requests",
         icon: CheckCircle,
         color: "purple",
-        triggers: ["All tasks completed", "Manual trigger"],
+        triggers: ["All tasks completed"],
         actions: [
             "Send final invoice",
             "Request client feedback",
