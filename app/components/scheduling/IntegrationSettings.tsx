@@ -108,15 +108,13 @@ export function IntegrationSettings() {
             if (id === "zoom" && integration && !integration.connected) {
                 const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
                 const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
-                const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
-                    redirectUri
-                )}`;
+                const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
                 const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
-
-                router.push(zoomAuthUrl);
-                /*window.location.href = process.env.NODE_ENV === "development"
+                const redirect = process.env.NODE_ENV === "development"
                     ? zoomAuthUrl
-                    : zoomAuthUrlProd;*/
+                    : zoomAuthUrlProd;
+
+                router.push(redirect);
                 return prevIntegrations; // leave UI unchanged, redirect will occur
             }
 

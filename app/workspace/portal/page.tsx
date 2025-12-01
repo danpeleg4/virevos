@@ -1,12 +1,14 @@
+"use client"
+
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Avatar, AvatarFallback } from "../components/ui/avatar";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
+import { Progress } from "../../components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Avatar, AvatarFallback } from "../../components/ui/avatar";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
 import {
   Calendar,
   CheckCircle,
@@ -22,7 +24,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 
-export function ClientPortal() {
+export default function Page() {
   const [activeTab, setActiveTab] = useState("overview");
   const [newMessage, setNewMessage] = useState("");
 

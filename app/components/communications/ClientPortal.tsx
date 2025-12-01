@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
+import Link from "next/link";
 
 export function ClientPortal() {
   const [portalEnabled, setPortalEnabled] = useState(true);
@@ -72,7 +73,9 @@ export function ClientPortal() {
                   </Button>
                   <Button size="sm" variant="outline">
                     <Eye className="h-4 w-4 mr-2" />
-                    Preview
+                      <Link href="/workspace/portal">
+                          Preview
+                      </Link>
                   </Button>
                 </div>
               </div>
