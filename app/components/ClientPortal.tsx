@@ -171,7 +171,7 @@ export function ClientPortal() {
             Welcome back, {client.name.split(" ")[0]}!
           </h1>
           <p className="text-gray-600">
-            Here's what's happening with your projects
+            Here&#39;s what&#39;s happening with your projects
           </p>
         </div>
 
