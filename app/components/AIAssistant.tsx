@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
@@ -18,7 +20,6 @@ import {
     Loader2,
     ChevronRight
 } from "lucide-react";
-import { ScrollArea } from "./ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface AIAssistantProps {

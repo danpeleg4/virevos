@@ -234,7 +234,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <div className="space-y-2 text-xs text-gray-600">
                 <p>Created 3 days ago</p>
                 <p>Last updated 2 hours ago</p>
-                <p>2 comments</p>
               </div>
             </div>
           </div>

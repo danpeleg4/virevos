@@ -6,7 +6,7 @@ import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { Search, Clock, Flag } from "lucide-react";
+import { Search, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 import AddNewTask from "@/app/components/AddNewTask";
 import axios from "axios";
@@ -63,7 +63,8 @@ const initialTasks: Task[] = [
 ];
 
 export default function Tasks() {
-    const [tasks, setTasks] = useState<Task[]>(initialTasks);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
     const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
@@ -73,9 +74,10 @@ export default function Tasks() {
         const getTasks = async () => {
             const res = await axios.get(`/api/tasks`);
             setTasks(res.data);
-        }
+            setLoading(false);
+        };
         getTasks();
-    }, [])
+    }, []);
 
     const toggleTaskStatus = (taskId: number) => {
         setTasks((prev) =>
@@ -119,6 +121,14 @@ export default function Tasks() {
         inProgress: tasks.filter((t) => t.status === "in-progress").length,
         completed: tasks.filter((t) => t.status === "completed").length,
     };
+
+    if (loading) {
+        return (
+            <div className="p-6">
+                <p className="text-gray-500">Loading tasks...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 space-y-6">
@@ -165,12 +175,12 @@ export default function Tasks() {
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
-                    <TabsTrigger value="all">All ({taskCounts.all})</TabsTrigger>
-                    <TabsTrigger value="todo">To Do ({taskCounts.todo})</TabsTrigger>
-                    <TabsTrigger value="in-progress">
+                    <TabsTrigger className="cursor-pointer" value="all">All ({taskCounts.all})</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="todo">To Do ({taskCounts.todo})</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="in-progress">
                         In Progress ({taskCounts.inProgress})
                     </TabsTrigger>
-                    <TabsTrigger value="completed">
+                    <TabsTrigger className="cursor-pointer" value="completed">
                         Completed ({taskCounts.completed})
                     </TabsTrigger>
                 </TabsList>
