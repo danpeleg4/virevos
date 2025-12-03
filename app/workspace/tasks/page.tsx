@@ -11,16 +11,6 @@ import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 import AddNewTask from "@/app/components/AddNewTask";
 import axios from "axios";
 
-interface Task {
-    id: number;
-    title: string;
-    project: string;
-    priority: "high" | "medium" | "low";
-    status: "todo" | "in-progress" | "completed";
-    dueDate: string;
-    assignee: string;
-}
-
 const initialTasks: Task[] = [
     {
         id: 1,
@@ -82,13 +72,14 @@ export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
     useEffect(() => {
         const getTasks = async () => {
             const res = await axios.get("/api/tasks");
-            setTasks(res.data);
+            setTasks(res.data.tasks);
+            //setSub(res.data.subtasks);
         }
         getTasks();
     }, [])

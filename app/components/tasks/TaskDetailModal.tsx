@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client"
+
+import {useEffect, useState} from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +11,6 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
-import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import {
@@ -22,50 +23,16 @@ import {
 import { Separator } from "../ui/separator";
 import {
   Calendar,
-  Clock,
   Flag,
-  User,
   Tag,
   Paperclip,
-  MessageSquare,
   Trash2,
   Edit,
   CheckCircle,
   Plus,
   FileText,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-
-interface Task {
-  id: number;
-  title: string;
-  project: string;
-  priority: "high" | "medium" | "low";
-  status: "todo" | "in-progress" | "completed";
-  dueDate: string;
-  assignee: string;
-}
-
-interface TaskDetailModalProps {
-  task: Task | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUpdate: (task: Task) => void;
-}
-
-interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-interface Comment {
-  id: string;
-  author: string;
-  content: string;
-  timestamp: string;
-  initials: string;
-}
+import axios from "axios";
 
 const mockSubtasks: Subtask[] = [
   { id: "1", title: "Gather client feedback", completed: true },
@@ -74,62 +41,56 @@ const mockSubtasks: Subtask[] = [
   { id: "4", title: "Schedule design review meeting", completed: false },
 ];
 
-const mockComments: Comment[] = [
-  {
-    id: "1",
-    author: "John Doe",
-    initials: "JD",
-    content: "I've reviewed the initial wireframes. Looks good overall, but we should adjust the navigation layout.",
-    timestamp: "2 hours ago",
-  },
-  {
-    id: "2",
-    author: "Sarah Johnson",
-    initials: "SJ",
-    content: "Agreed! I'll make those changes and update the file by EOD.",
-    timestamp: "1 hour ago",
-  },
-];
-
 const mockAttachments = [
   { id: "1", name: "wireframe_v2.fig", size: "3.2 MB" },
   { id: "2", name: "client_feedback.pdf", size: "1.5 MB" },
 ];
 
-export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task?.title || "");
+  const [sub, setSub] = useState<Subtask>();
   const [description, setDescription] = useState(
     "Review the latest wireframes from the design team and provide feedback on the user flow, layout, and component hierarchy. Make sure to check accessibility considerations and mobile responsiveness."
   );
-  const [subtasks, setSubtasks] = useState<Subtask[]>(mockSubtasks);
-  const [comments, setComments] = useState<Comment[]>(mockComments);
-  const [newComment, setNewComment] = useState("");
-  const [newSubtask, setNewSubtask] = useState("");
 
-  if (!task) return null;
+    const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+    const [newSubtask, setNewSubtask] = useState("");
 
-  const toggleSubtask = (id: string) => {
-    setSubtasks(
-      subtasks.map((st) =>
-        st.id === id ? { ...st, completed: !st.completed } : st
-      )
-    );
-  };
+    useEffect(() => {
+        if (!task?.id) return;
 
-  const addSubtask = () => {
-    if (newSubtask.trim()) {
-      setSubtasks([
-        ...subtasks,
-        {
-          id: String(subtasks.length + 1),
-          title: newSubtask,
-          completed: false,
-        },
-      ]);
-      setNewSubtask("");
-    }
-  };
+        const fetchSubtasks = async () => {
+            const res = await axios.get(`/api/tasks/${task.id}/subtasks`);
+            setSubtasks(res.data.subtasks || []);
+        };
+
+        fetchSubtasks();
+    }, [task?.id]);
+
+    const toggleSubtask = async (id: string) => {
+        setSubtasks((prev) =>
+            prev.map((st) =>
+                st.id === id ? { ...st, completed: !st.completed } : st
+            )
+        );
+
+        await axios.patch(`/api/subtasks/${id}`, {
+            completed: !subtasks.find((s) => s.id === id)?.completed
+        });
+    };
+
+    const addSubtask = async () => {
+        if (!newSubtask.trim()) return;
+
+        const res = await axios.post(`/api/tasks/${task.id}/subtasks`, {
+            title: newSubtask,
+        });
+
+        setSubtasks((prev) => [...prev, res.data.subtask]);
+        setNewSubtask("");
+    };
+
 
   const completedSubtasks = subtasks.filter((st) => st.completed).length;
   const subtaskProgress = (completedSubtasks / subtasks.length) * 100;
