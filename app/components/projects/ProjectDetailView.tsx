@@ -270,28 +270,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
     }
   };
 
-  const getStageStatusColor = (status: ProjectStage["status"]) => {
-    switch (status) {
-      case "completed":
-        return "text-green-600 bg-green-100";
-      case "in-progress":
-        return "text-blue-600 bg-blue-100";
-      case "pending":
-        return "text-gray-600 bg-gray-100";
-    }
-  };
-
-  const getStageIcon = (status: ProjectStage["status"]) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case "in-progress":
-        return <Circle className="h-5 w-5 text-blue-600 animate-pulse" />;
-      case "pending":
-        return <Circle className="h-5 w-5 text-gray-400" />;
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}

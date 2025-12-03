@@ -10,24 +10,65 @@ export async function GET(req: NextRequest) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // 1. Get all projects for this user
-    const userProjects = await db
-        .select()
-        .from(projects)
-        .where(eq(projects.userId, user.id));
-
-    if (userProjects.length === 0) {
-        return NextResponse.json([]); // no projects → no tasks
-    }
-
-    // 2. Extract IDs
-    const projectIds = userProjects.map((p) => p.id);
-
-    // 3. Get tasks where project_id is in the user's project IDs
     const allTasks = await db
         .select()
         .from(tasks)
-        .where(inArray(tasks.project_id, projectIds));
+        .where(eq(tasks.user_id, user.id));
 
     return NextResponse.json(allTasks);
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const user = await currentUser();
+        if (!user?.id) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        const body = await req.json();
+        const { title, description, priority, dueDate, project } = body;
+
+        if (!title) {
+            return new NextResponse("Missing required fields", { status: 400 });
+        }
+
+        // Validate project if provided
+        let projectId = null;
+
+        if (project) {
+            const foundProject = await db
+                .select()
+                .from(projects)
+                .where(eq(projects.id, Number(project)));
+
+            if (!foundProject.length) {
+                return new NextResponse("Project does not exist", { status: 400 });
+            }
+
+            if (foundProject[0].userId !== user.id) {
+                return new NextResponse("Unauthorized project", { status: 403 });
+            }
+
+            projectId = Number(project);
+        }
+
+        const newTask = await db
+            .insert(tasks)
+            .values({
+                title,
+                description,
+                priority,
+                dueDate,
+                project_id: projectId,
+                user_id: user.id,
+                status: "in-progress",
+                completed: false,
+            })
+            .returning();
+
+        return NextResponse.json({ success: true, task: newTask[0] });
+
+    } catch (err: any) {
+        return new NextResponse(err.message, { status: 500 });
+    }
 }

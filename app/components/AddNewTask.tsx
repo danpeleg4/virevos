@@ -28,10 +28,16 @@ export default function AddNewTask() {
         await axios.post("/api/tasks", {
             title,
             description,
-            project,
             priority,
             dueDate,
+            project,
         });
+
+        setTitle("");
+        setDescription("");
+        setProject("");
+        setPriority("");
+        setDueDate("");
     };
 
     return (

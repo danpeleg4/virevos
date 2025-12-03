@@ -23,6 +23,7 @@ export const projects = pgTable("projects", {
 
 export const tasks = pgTable("tasks", {
     id: serial("id").primaryKey(),
+    user_id: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     description: text("description"),
     project_id: integer().references(() => projects.id, { onDelete: "cascade" }),
