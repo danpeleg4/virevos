@@ -353,13 +353,13 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                 <Sparkles className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <h3 className="text-white">FlowTask AI</h3>
-                                <p className="text-xs text-gray-400">Reasoning Mode</p>
+                                <h3 className="text-gray-900">FlowTask AI</h3>
+                                <p className="text-xs text-gray-500">Reasoning Mode</p>
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
                             <Select value={selectedModel} onValueChange={setSelectedModel}>
-                                <SelectTrigger className="w-[120px] h-8 bg-gray-800 border-gray-700 text-white text-xs">
+                                <SelectTrigger className="w-[120px] h-8 bg-white border-gray-300 text-gray-900 text-xs">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -368,7 +368,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                     <SelectItem value="claude">Claude</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
+                            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 hover:text-gray-900">
                                 <X className="h-5 w-5" />
                             </Button>
                         </div>
@@ -386,41 +386,41 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                     transition={{ delay: index * 0.1 }}
                                 >
                                     <Card
-                                        className="p-3 hover:bg-gray-300 transition-colors cursor-pointer bg-[#252525] border-gray-200"
+                                        className="p-3 transition-colors cursor-pointer bg-white border-gray-200 hover:bg-gray-100"
                                     >
                                         <div className="flex items-start space-x-3">
                                             <div className={`p-2 rounded-lg ${
                                                 action.priority === "high"
-                                                    ? "bg-red-500/20"
+                                                    ? "bg-red-50"
                                                     : action.priority === "medium"
-                                                        ? "bg-yellow-500/20"
-                                                        : "bg-green-500/20"
+                                                        ? "bg-yellow-50"
+                                                        : "bg-green-50"
                                             }`}>
                                                 <action.icon className={`h-4 w-4 ${
                                                     action.priority === "high"
-                                                        ? "text-red-400"
+                                                        ? "text-red-600"
                                                         : action.priority === "medium"
-                                                            ? "text-yellow-400"
-                                                            : "text-green-400"
+                                                            ? "text-yellow-600"
+                                                            : "text-green-600"
                                                 }`} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between mb-1">
-                                                    <p className="text-sm text-white">{action.title}</p>
+                                                    <p className="text-sm text-gray-900">{action.title}</p>
                                                     <Badge
                                                         variant="outline"
                                                         className={`text-xs border ${
                                                             action.priority === "high"
-                                                                ? "border-red-500/50 text-red-400"
+                                                                ? "border-red-200 text-red-700"
                                                                 : action.priority === "medium"
-                                                                    ? "border-yellow-500/50 text-yellow-400"
-                                                                    : "border-green-500/50 text-green-400"
+                                                                    ? "border-yellow-200 text-yellow-700"
+                                                                    : "border-green-200 text-green-700"
                                                         }`}
                                                     >
                                                         {action.priority}
                                                     </Badge>
                                                 </div>
-                                                <p className="text-xs text-gray-400">{action.description}</p>
+                                                <p className="text-xs text-gray-600">{action.description}</p>
                                             </div>
                                         </div>
                                     </Card>
@@ -464,9 +464,9 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
                                             {/* Streamed or Final Content */}
                                             {(message.streamedContent || message.content) && (
-                                                <div className="bg-[#252525] border border-gray-200 rounded-lg px-4 py-3">
-                                                    <div className="prose prose-invert prose-sm max-w-none">
-                                                        <p className="text-sm text-gray-200 whitespace-pre-wrap">
+                                                <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                                                    <div className="prose prose-sm max-w-none">
+                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap">
                                                             {message.streamedContent || message.content}
                                                             {message.streamedContent && (
                                                                 <motion.span
@@ -487,7 +487,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                                                     animate={{ opacity: 1, x: 0 }}
                                                                     transition={{ delay: index * 0.1 }}
                                                                     onClick={() => handleSuggestionClick(suggestion)}
-                                                                    className="block w-full text-left text-xs px-3 py-2 bg-gray-800 text-gray-300 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-600 transition-colors"
+                                                                    className="block w-full text-left text-xs px-3 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
                                                                 >
                                                                     {suggestion}
                                                                 </motion.button>
@@ -511,7 +511,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={(e) => e.key === "Enter" && handleSend()}
                                 placeholder="Plan, search, build anything..."
-                                className="flex-1 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                                className="flex-1 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                             />
                             <Button
                                 onClick={handleSend}
@@ -552,10 +552,10 @@ function ThinkingStepComponent({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.15 }}
-            className="bg-[#252525] border border-gray-200 rounded-lg overflow-hidden"
+            className="bg-white border border-gray-200 rounded-lg overflow-hidden"
         >
             <div
-                className="p-3 cursor-pointer hover:bg-gray-800/50 transition-colors"
+                className="p-3 cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <div className="flex items-start space-x-3">
@@ -570,23 +570,23 @@ function ThinkingStepComponent({
                         ) : step.status === "completed" ? (
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
                         ) : (
-                            <Circle className="h-4 w-4 text-gray-600" />
+                            <Circle className="h-4 w-4 text-gray-400" />
                         )}
                     </div>
                     <div className="flex-1">
                         <div className="flex items-center justify-between">
-                            <p className="text-sm text-white">{step.title}</p>
+                            <p className="text-sm text-gray-900">{step.title}</p>
                             {(step.details || step.files) && (
                                 <motion.div
                                     animate={{ rotate: isExpanded ? 180 : 0 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    <ChevronDown className="h-4 w-4 text-gray-500" />
                                 </motion.div>
                             )}
                         </div>
                         {step.description && (
-                            <p className="text-xs text-gray-400 mt-1">{step.description}</p>
+                            <p className="text-xs text-gray-600 mt-1">{step.description}</p>
                         )}
                     </div>
                 </div>
@@ -602,7 +602,7 @@ function ThinkingStepComponent({
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden border-t border-gray-200"
                     >
-                        <div className="px-3 py-2 bg-[#1f1f1f]">
+                        <div className="px-3 py-2 bg-gray-50">
                             {step.files && step.files.length > 0 && (
                                 <div className="space-y-1.5 mb-2">
                                     {step.files.map((file, fileIndex) => (
@@ -611,14 +611,14 @@ function ThinkingStepComponent({
                                             initial={{ opacity: 0, y: -5 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: fileIndex * 0.05 }}
-                                            className="flex items-center justify-between p-2 bg-gray-800/50 rounded hover:bg-gray-800 transition-colors group"
+                                            className="flex items-center justify-between p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors group"
                                         >
                                             <div className="flex items-center space-x-2">
-                                                <FileCode className="h-3.5 w-3.5 text-blue-400" />
-                                                <span className="text-xs text-gray-300">{file.name}</span>
+                                                <FileCode className="h-3.5 w-3.5 text-blue-600" />
+                                                <span className="text-xs text-gray-700">{file.name}</span>
                                             </div>
                                             <div className="flex items-center space-x-2">
-                                                <span className="text-xs text-green-400">{file.changes}</span>
+                                                <span className="text-xs text-green-600">{file.changes}</span>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -640,9 +640,9 @@ function ThinkingStepComponent({
                                             initial={{ opacity: 0, x: -10 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: detailIndex * 0.05 }}
-                                            className="text-xs text-gray-400 flex items-start space-x-2"
+                                            className="text-xs text-gray-600 flex items-start space-x-2"
                                         >
-                                            <ChevronRight className="h-3 w-3 mt-0.5 text-gray-600 flex-shrink-0" />
+                                            <ChevronRight className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
                                             <span>{detail}</span>
                                         </motion.li>
                                     ))}
