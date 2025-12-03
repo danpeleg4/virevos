@@ -28,18 +28,9 @@ import {
   Paperclip,
   Trash2,
   Edit,
-  CheckCircle,
   Plus,
   FileText,
 } from "lucide-react";
-import axios from "axios";
-
-const mockSubtasks: Subtask[] = [
-  { id: "1", title: "Gather client feedback", completed: true },
-  { id: "2", title: "Review design specifications", completed: true },
-  { id: "3", title: "Create wireframe annotations", completed: false },
-  { id: "4", title: "Schedule design review meeting", completed: false },
-];
 
 const mockAttachments = [
   { id: "1", name: "wireframe_v2.fig", size: "3.2 MB" },
@@ -49,55 +40,11 @@ const mockAttachments = [
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task?.title || "");
-  const [sub, setSub] = useState<Subtask>();
-  const [description, setDescription] = useState(
-    "Review the latest wireframes from the design team and provide feedback on the user flow, layout, and component hierarchy. Make sure to check accessibility considerations and mobile responsiveness."
-  );
-
-    const [subtasks, setSubtasks] = useState<Subtask[]>([]);
-    const [newSubtask, setNewSubtask] = useState("");
-
-    useEffect(() => {
-        if (!task?.id) return;
-
-        const fetchSubtasks = async () => {
-            const res = await axios.get(`/api/tasks/${task.id}/subtasks`);
-            setSubtasks(res.data.subtasks || []);
-        };
-
-        fetchSubtasks();
-    }, [task?.id]);
-
-    const toggleSubtask = async (id: string) => {
-        setSubtasks((prev) =>
-            prev.map((st) =>
-                st.id === id ? { ...st, completed: !st.completed } : st
-            )
-        );
-
-        await axios.patch(`/api/subtasks/${id}`, {
-            completed: !subtasks.find((s) => s.id === id)?.completed
-        });
-    };
-
-    const addSubtask = async () => {
-        if (!newSubtask.trim()) return;
-
-        const res = await axios.post(`/api/tasks/${task.id}/subtasks`, {
-            title: newSubtask,
-        });
-
-        setSubtasks((prev) => [...prev, res.data.subtask]);
-        setNewSubtask("");
-    };
-
-
-  const completedSubtasks = subtasks.filter((st) => st.completed).length;
-  const subtaskProgress = (completedSubtasks / subtasks.length) * 100;
+  const [description, setDescription] = useState("Review the latest wireframes from the design team and provide feedback on the user flow, layout, and component hierarchy. Make sure to check accessibility considerations and mobile responsiveness.");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="m-4 max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -166,60 +113,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               ) : (
                 <p className="text-sm text-gray-700">{description}</p>
               )}
-            </div>
-
-            <Separator />
-
-            {/* Subtasks */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <Label className="flex items-center">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Subtasks ({completedSubtasks}/{subtasks.length})
-                </Label>
-                <span className="text-xs text-gray-600">
-                  {Math.round(subtaskProgress)}% complete
-                </span>
-              </div>
-
-              <div className="space-y-2 mb-3">
-                {subtasks.map((subtask) => (
-                  <div
-                    key={subtask.id}
-                    className="flex items-center space-x-3 p-2 rounded hover:bg-gray-50"
-                  >
-                    <Checkbox
-                      checked={subtask.completed}
-                      onCheckedChange={() => toggleSubtask(subtask.id)}
-                    />
-                    <span
-                      className={`text-sm flex-1 ${
-                        subtask.completed
-                          ? "line-through text-gray-500"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      {subtask.title}
-                    </span>
-                      <Button className="cursor-pointer" variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Add a subtask..."
-                  value={newSubtask}
-                  onChange={(e) => setNewSubtask(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && addSubtask()}
-                  className="flex-1"
-                />
-                <Button size="sm" onClick={addSubtask}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
 
             <Separator />

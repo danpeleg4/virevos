@@ -4,7 +4,7 @@ import { projects, tasks } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
     const user = await currentUser();
     if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 });

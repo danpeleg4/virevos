@@ -19,7 +19,6 @@ const initialTasks: Task[] = [
         priority: "high",
         status: "todo",
         dueDate: "Today",
-        assignee: "You",
     },
     {
         id: 2,
@@ -28,7 +27,6 @@ const initialTasks: Task[] = [
         priority: "high",
         status: "todo",
         dueDate: "Today",
-        assignee: "You",
     },
     {
         id: 3,
@@ -37,7 +35,6 @@ const initialTasks: Task[] = [
         priority: "medium",
         status: "in-progress",
         dueDate: "Tomorrow",
-        assignee: "You",
     },
     {
         id: 4,
@@ -46,7 +43,6 @@ const initialTasks: Task[] = [
         priority: "high",
         status: "in-progress",
         dueDate: "Tomorrow",
-        assignee: "Team",
     },
     {
         id: 5,
@@ -55,7 +51,6 @@ const initialTasks: Task[] = [
         priority: "medium",
         status: "completed",
         dueDate: "Yesterday",
-        assignee: "You",
     },
     {
         id: 6,
@@ -64,7 +59,6 @@ const initialTasks: Task[] = [
         priority: "low",
         status: "completed",
         dueDate: "2 days ago",
-        assignee: "Team",
     },
 ];
 
@@ -72,14 +66,13 @@ export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
-    const [selectedTask, setSelectedTask] = useState<Task>();
+    const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
     useEffect(() => {
         const getTasks = async () => {
-            const res = await axios.get("/api/tasks");
-            setTasks(res.data.tasks);
-            //setSub(res.data.subtasks);
+            const res = await axios.get(`/api/tasks`);
+            setTasks(res.data);
         }
         getTasks();
     }, [])
@@ -243,14 +236,6 @@ export default function Tasks() {
                                                             : "To Do"}
                                                 </Badge>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                            <div className="flex items-center">
-                                                <Clock className="h-4 w-4 mr-1" />
-                                                {task.dueDate}
-                                            </div>
-                                            <span>•</span>
-                                            <span>{task.assignee}</span>
                                         </div>
                                     </div>
                                 </div>

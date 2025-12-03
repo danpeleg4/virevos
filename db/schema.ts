@@ -31,7 +31,6 @@ export const tasks = pgTable("tasks", {
     status: text("status").notNull().default("in-progress"),
     dueDate: date("due_date").notNull().default("2025-01-01"),
     completed: boolean("completed").default(false),
-    subtasks: text("subtasks").default("[]"),
 });
 
 export const meetings = pgTable("meetings", {
