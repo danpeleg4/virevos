@@ -1,41 +1,15 @@
 "use client"
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../../components/ui/select";
-import { Plus, Search, Clock, Flag } from "lucide-react";
+import { Search, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
-
-interface Task {
-    id: number;
-    title: string;
-    project: string;
-    priority: "high" | "medium" | "low";
-    status: "todo" | "in-progress" | "completed";
-    dueDate: string;
-    assignee: string;
-}
+import AddNewTask from "@/app/components/AddNewTask";
+import axios from "axios";
 
 const initialTasks: Task[] = [
     {
@@ -45,7 +19,6 @@ const initialTasks: Task[] = [
         priority: "high",
         status: "todo",
         dueDate: "Today",
-        assignee: "You",
     },
     {
         id: 2,
@@ -54,7 +27,6 @@ const initialTasks: Task[] = [
         priority: "high",
         status: "todo",
         dueDate: "Today",
-        assignee: "You",
     },
     {
         id: 3,
@@ -63,7 +35,6 @@ const initialTasks: Task[] = [
         priority: "medium",
         status: "in-progress",
         dueDate: "Tomorrow",
-        assignee: "You",
     },
     {
         id: 4,
@@ -72,7 +43,6 @@ const initialTasks: Task[] = [
         priority: "high",
         status: "in-progress",
         dueDate: "Tomorrow",
-        assignee: "Team",
     },
     {
         id: 5,
@@ -81,7 +51,6 @@ const initialTasks: Task[] = [
         priority: "medium",
         status: "completed",
         dueDate: "Yesterday",
-        assignee: "You",
     },
     {
         id: 6,
@@ -90,17 +59,25 @@ const initialTasks: Task[] = [
         priority: "low",
         status: "completed",
         dueDate: "2 days ago",
-        assignee: "Team",
     },
 ];
 
 export default function Tasks() {
-    const [tasks, setTasks] = useState<Task[]>(initialTasks);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [dialogOpen, setDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+
+    useEffect(() => {
+        const getTasks = async () => {
+            const res = await axios.get(`/api/tasks`);
+            setTasks(res.data);
+            setLoading(false);
+        };
+        getTasks();
+    }, []);
 
     const toggleTaskStatus = (taskId: number) => {
         setTasks((prev) =>
@@ -145,6 +122,14 @@ export default function Tasks() {
         completed: tasks.filter((t) => t.status === "completed").length,
     };
 
+    if (loading) {
+        return (
+            <div className="p-6">
+                <p className="text-gray-500">Loading tasks...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -153,74 +138,7 @@ export default function Tasks() {
                     <h1 className="text-3xl text-gray-900">Tasks</h1>
                     <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
                 </div>
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="cursor-pointer">
-                            <Plus className="h-4 w-4 mr-2" />
-                            New Task
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Create New Task</DialogTitle>
-                            <DialogDescription>Add a task to your project</DialogDescription>
-                        </DialogHeader>
-
-                        <div className="space-y-4 mt-4">
-                            <div>
-                                <Label>Task Title</Label>
-                                <Input placeholder="Review designs" className="mt-2" />
-                            </div>
-                            <div>
-                                <Label>Description</Label>
-                                <Textarea
-                                    placeholder="Task details..."
-                                    className="mt-2"
-                                    rows={3}
-                                />
-                            </div>
-                            <div>
-                                <Label>Project</Label>
-                                <Select>
-                                    <SelectTrigger className="mt-2">
-                                        <SelectValue placeholder="Select project" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="1">TechCorp Website Redesign</SelectItem>
-                                        <SelectItem value="2">DesignCo Brand Refresh</SelectItem>
-                                        <SelectItem value="3">StartupXYZ MVP Development</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label>Priority</Label>
-                                    <Select>
-                                        <SelectTrigger className="mt-2">
-                                            <SelectValue placeholder="Priority" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="high">High</SelectItem>
-                                            <SelectItem value="medium">Medium</SelectItem>
-                                            <SelectItem value="low">Low</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label>Due Date</Label>
-                                    <Input type="date" className="mt-2" />
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end space-x-3 pt-4">
-                                <Button className="cursor-pointer" variant="outline" onClick={() => setDialogOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button className="cursor-pointer" onClick={() => setDialogOpen(false)}>Create Task</Button>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <AddNewTask />
             </div>
 
             {/* Search */}
@@ -257,12 +175,12 @@ export default function Tasks() {
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
-                    <TabsTrigger value="all">All ({taskCounts.all})</TabsTrigger>
-                    <TabsTrigger value="todo">To Do ({taskCounts.todo})</TabsTrigger>
-                    <TabsTrigger value="in-progress">
+                    <TabsTrigger className="cursor-pointer" value="all">All ({taskCounts.all})</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="todo">To Do ({taskCounts.todo})</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="in-progress">
                         In Progress ({taskCounts.inProgress})
                     </TabsTrigger>
-                    <TabsTrigger value="completed">
+                    <TabsTrigger className="cursor-pointer" value="completed">
                         Completed ({taskCounts.completed})
                     </TabsTrigger>
                 </TabsList>
@@ -328,14 +246,6 @@ export default function Tasks() {
                                                             : "To Do"}
                                                 </Badge>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                            <div className="flex items-center">
-                                                <Clock className="h-4 w-4 mr-1" />
-                                                {task.dueDate}
-                                            </div>
-                                            <span>•</span>
-                                            <span>{task.assignee}</span>
                                         </div>
                                     </div>
                                 </div>

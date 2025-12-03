@@ -6,7 +6,6 @@ import { Progress } from "../ui/progress";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Checkbox } from "../ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import {
   Dialog,
@@ -19,14 +18,12 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
-  Users,
   FileText,
   Upload,
   Plus,
   CheckCircle,
   Circle,
   Edit,
-  Trash2,
   Tag,
   Download,
   MoreVertical,
@@ -39,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { motion } from "motion/react";
+import AddNewTask from "@/app/components/AddNewTask";
 
 interface ProjectStage {
   id: string;
@@ -272,28 +270,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
     }
   };
 
-  const getStageStatusColor = (status: ProjectStage["status"]) => {
-    switch (status) {
-      case "completed":
-        return "text-green-600 bg-green-100";
-      case "in-progress":
-        return "text-blue-600 bg-blue-100";
-      case "pending":
-        return "text-gray-600 bg-gray-100";
-    }
-  };
-
-  const getStageIcon = (status: ProjectStage["status"]) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case "in-progress":
-        return <Circle className="h-5 w-5 text-blue-600 animate-pulse" />;
-      case "pending":
-        return <Circle className="h-5 w-5 text-gray-400" />;
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -384,101 +360,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Stages Timeline */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Project Stages */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="h-5 w-5 mr-2 text-blue-600" />
-                Project Timeline & Stages
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                {/* Vertical Timeline Line */}
-                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
-
-                {/* Stages */}
-                <div className="space-y-6">
-                  {stages.map((stage, index) => (
-                    <motion.div
-                      key={stage.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="relative"
-                    >
-                      {/* Stage Indicator */}
-                      <div className="absolute left-0 top-0 flex items-center">
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white ${
-                            stage.status === "completed"
-                              ? "bg-green-500"
-                              : stage.status === "in-progress"
-                              ? "bg-blue-500"
-                              : "bg-gray-300"
-                          }`}
-                        >
-                          {getStageIcon(stage.status)}
-                        </div>
-                      </div>
-
-                      {/* Stage Content */}
-                      <div className="ml-20 pb-6">
-                        <Card
-                          className={`${
-                            stage.status === "in-progress"
-                              ? "border-blue-500 shadow-md"
-                              : ""
-                          }`}
-                        >
-                          <CardContent className="pt-6">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h3 className="text-lg text-gray-900 mb-1">
-                                  {stage.name}
-                                </h3>
-                                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                  <span>{stage.startDate}</span>
-                                  <span>→</span>
-                                  <span>{stage.endDate}</span>
-                                </div>
-                              </div>
-                              <Badge className={getStageStatusColor(stage.status)}>
-                                {stage.status === "in-progress"
-                                  ? "In Progress"
-                                  : stage.status === "completed"
-                                  ? "Completed"
-                                  : "Pending"}
-                              </Badge>
-                            </div>
-
-                            {/* Progress Bar */}
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">Progress</span>
-                                <span className="text-gray-900">
-                                  {stage.progress}%
-                                </span>
-                              </div>
-                              <Progress value={stage.progress} />
-                            </div>
-
-                            {/* Task Count */}
-                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
-                              <span className="text-sm text-gray-600">Tasks</span>
-                              <span className="text-sm text-gray-900">
-                                {stage.completedTasks}/{stage.tasks} completed
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Tasks List */}
           <Card>
@@ -488,30 +369,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Task
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Task</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <Input
-                        placeholder="Task title..."
-                        value={newTask}
-                        onChange={(e) => setNewTask(e.target.value)}
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline">Cancel</Button>
-                        <Button onClick={addTask}>Add Task</Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                  <AddNewTask />
               </div>
             </CardHeader>
             <CardContent>

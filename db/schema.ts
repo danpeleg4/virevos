@@ -12,6 +12,29 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const projects = pgTable("projects", {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    userId: varchar("user_id")
+        .notNull()
+        .references(() => users.user_id, { onDelete: "cascade" }),
+});
+
+export const tasks = pgTable("tasks", {
+    id: serial("id").primaryKey(),
+    user_id: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    project_id: integer().references(() => projects.id, { onDelete: "cascade" }),
+    priority: text("priority").notNull().default("Low"),
+    status: text("status").notNull().default("in-progress"),
+    dueDate: date("due_date").notNull().default("2025-01-01"),
+    completed: boolean("completed").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const meetings = pgTable("meetings", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
@@ -58,6 +81,17 @@ export const zoomTokens = pgTable("zoom_tokens", {
 });
 
 // Relations
+export const projectsRelations = relations(projects, ({ many }) => ({
+    tasks: many(tasks)
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+    project: one(projects, {
+        fields: [tasks.project_id],
+        references: [projects.id],
+    }),
+}));
+
 export const meetingsRelations = relations(meetings, ({ many }) => ({
     attendees: many(meetingAttendees),
 }));
