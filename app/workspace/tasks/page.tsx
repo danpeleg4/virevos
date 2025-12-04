@@ -73,7 +73,11 @@ export default function Tasks() {
     useEffect(() => {
         const getTasks = async () => {
             const res = await axios.get(`/api/tasks`);
-            setTasks(res.data);
+            if (res.data.length === 0) {
+                setTasks(initialTasks)
+            } else {
+                setTasks(res.data);
+            }
             setLoading(false);
         };
         getTasks();
@@ -122,14 +126,6 @@ export default function Tasks() {
         completed: tasks.filter((t) => t.status === "completed").length,
     };
 
-    if (loading) {
-        return (
-            <div className="p-6">
-                <p className="text-gray-500">Loading tasks...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -141,7 +137,13 @@ export default function Tasks() {
                 <AddNewTask />
             </div>
 
-            {/* Search */}
+            {
+                loading ? (
+                        <div className="p-6">
+                            <p className="text-gray-500">Loading tasks...</p>
+                        </div>
+                ) :
+                        (<>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -268,6 +270,8 @@ export default function Tasks() {
                 onOpenChange={setTaskDetailOpen}
                 onUpdate={handleTaskUpdate}
             />
+            </>
+            )}
         </div>
-    );
+    )
 }

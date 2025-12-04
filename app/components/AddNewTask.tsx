@@ -43,7 +43,7 @@ export default function AddNewTask() {
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button className="cursor-pointer">
                     <Plus className="h-4 w-4 mr-2" />
                     New Task
                 </Button>
