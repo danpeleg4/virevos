@@ -107,6 +107,10 @@ export default function Tasks() {
         );
     };
 
+    const addTaskToList = (newTask: Task) => {
+        setTasks(prev => [newTask, ...prev]);
+    };
+
     const filteredTasks = tasks.filter((task) => {
         const matchesSearch = task.title
             .toLowerCase()
@@ -134,7 +138,7 @@ export default function Tasks() {
                     <h1 className="text-3xl text-gray-900">Tasks</h1>
                     <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
                 </div>
-                <AddNewTask />
+                <AddNewTask onTaskCreated={addTaskToList}/>
             </div>
 
             {

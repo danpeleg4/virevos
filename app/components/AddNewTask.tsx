@@ -13,7 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import axios from "axios";
 
-export default function AddNewTask() {
+type AddNewTaskProps = {
+    onTaskCreated: (task: Task) => void;
+};
+
+export default function AddNewTask({ onTaskCreated }: AddNewTaskProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const [title, setTitle] = useState("");
@@ -25,13 +29,16 @@ export default function AddNewTask() {
     const submitTask = async () => {
         setDialogOpen(false);
 
-        await axios.post("/api/tasks", {
+        const res = await axios.post("/api/tasks", {
             title,
             description,
             priority,
             dueDate,
             project,
         });
+        console.log("RES DATA:", res.data);
+
+        onTaskCreated(res.data.task);
 
         setTitle("");
         setDescription("");

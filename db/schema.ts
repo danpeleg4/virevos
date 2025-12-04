@@ -16,9 +16,17 @@ export const projects = pgTable("projects", {
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
+    files: integer("files").default(0),
+    notes: text("notes").default(""),
     userId: varchar("user_id")
         .notNull()
         .references(() => users.user_id, { onDelete: "cascade" }),
+});
+
+export const tags = pgTable("tags", {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull().unique(),
+    projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
 });
 
 export const tasks = pgTable("tasks", {
