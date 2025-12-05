@@ -27,16 +27,14 @@ export default function Clients() {
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
 
-    // GET CLIENTS FROM BACKEND
-    async function fetchClients() {
-        const res = await axios.get("/api/clients");
-        const data = await res.data;
-        setClients(data);
-    }
-
     useEffect(() => {
+        async function fetchClients() {
+            const res = await axios.get("/api/clients");
+            const data = await res.data;
+            setClients(data);
+        }
         fetchClients();
-    }, []);
+    }, [name]);
 
     // ADD CLIENT
     async function handleAddClient() {
@@ -48,7 +46,6 @@ export default function Clients() {
                 setName("");
                 setEmail("");
                 setPhone("");
-                fetchClients(); // refresh list
             }
         } catch (error) {
             alert("Failed to add client");
