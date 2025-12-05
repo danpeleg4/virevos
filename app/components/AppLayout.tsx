@@ -28,6 +28,7 @@ import {
 import { AIAssistant } from "./AIAssistant";
 import Link from "next/link";
 import {UserButton, useUser} from "@clerk/nextjs";
+import Image from "next/image";
 
 const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
@@ -64,9 +65,10 @@ export function AppLayout({ children }: AppLayoutProps) {
             <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                     <h1
-                        className="text-2xl text-gray-900 cursor-pointer"
+                        className="text-2xl text-gray-900 cursor-pointer flex items-center gap-2"
                         onClick={() => router.push("/")}
                     >
+                        <Image src="/sparkles.svg" alt="logo" width={25} height={25}></Image>
                         Virevos
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">Workspace Pro</p>

@@ -12,12 +12,20 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const clients = pgTable("clients", {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+})
+
 export const projects = pgTable("projects", {
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
     files: integer("files").default(0),
-    notes: text("notes").default(""),
     userId: varchar("user_id")
         .notNull()
         .references(() => users.user_id, { onDelete: "cascade" }),
@@ -28,6 +36,13 @@ export const tags = pgTable("tags", {
     name: text("name").notNull().unique(),
     projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
 });
+
+export const notes = pgTable("notes", {
+    id: serial("id").primaryKey(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+})
 
 export const tasks = pgTable("tasks", {
     id: serial("id").primaryKey(),
