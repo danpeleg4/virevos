@@ -105,9 +105,10 @@ export default function Projects() {
 
     useEffect(() => {
         const getClients = async () => {
-            const res = await axios.get("/api/clients");
+            const res = await axios.get("/api/clients")
             setClients(res.data);
         }
+
         getClients();
     }, [])
 

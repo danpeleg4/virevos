@@ -42,14 +42,19 @@ export const clients = pgTable("clients", {
 
 export const projects = pgTable("projects", {
     id: serial("id").primaryKey(),
-
-    client_id: integer("client_id")
+    client: integer("client")
         .notNull()
         .references(() => clients.id, { onDelete: "cascade" }),
 
-    title: text("title").notNull(),
+    name: text("title").notNull(),
     description: text("description"),
-
+    status: text("status").notNull().default("in-progress"),
+    progress: integer("progress").notNull().default(0),
+    dueDate: date("due_date").notNull().default("2025-01-01"),
+    totalTasks: integer("total_tasks").notNull().default(0),
+    tasksCompleted: integer("tasks_completed").notNull().default(0),
+    priority: text("priority").notNull().default("low"),
+    health: text("health").notNull().default("On Track"),
     userId: varchar("user_id")
         .notNull()
         .references(() => users.user_id, { onDelete: "cascade" }),
@@ -196,7 +201,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
         references: [users.user_id],
     }),
     client: one(clients, {
-        fields: [projects.client_id],
+        fields: [projects.client],
         references: [clients.id],
     }),
     tasks: many(tasks),
