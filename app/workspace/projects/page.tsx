@@ -144,7 +144,7 @@ export default function Projects() {
         });
     }
 
-    const handleCreateProject = () => {
+    const handleCreateProject = async () => {
         const newProject = {
             id: projectsData.length + 1,
             name: projectName,
@@ -153,10 +153,15 @@ export default function Projects() {
             progress: 0,
             dueDate: dueDate ? formatDate(dueDate) : "",
             tasksCompleted: 0,
-            totalTasks: 10,
+            totalTasks: 0,
             priority,
             health: "on-track",
         };
+
+        const res = await axios.post("/api/projects", newProject);
+        if (res.status == 200) {
+            projects.push(newProject);
+        }
 
         setProjectsData([...projectsData, newProject]);
         setDialogOpen(false);

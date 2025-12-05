@@ -1,8 +1,14 @@
 import 'dotenv/config';
-import {pgTable, text, integer, boolean, timestamp, serial, varchar, date} from "drizzle-orm/pg-core";
+import {
+    pgTable, text, integer, boolean, timestamp,
+    serial, varchar, date
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-// Meetings Table
+/* ======================
+       USERS TABLE
+====================== */
+
 export const users = pgTable("users", {
     id: serial("id").primaryKey(),
     user_id: varchar("user_id").notNull().unique(),
@@ -12,57 +18,108 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
+/* ======================
+       CLIENTS
+====================== */
+
 export const clients = pgTable("clients", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull(),
     phone: text("phone"),
+
+    user_id: varchar("user_id")
+        .notNull()
+        .references(() => users.user_id, { onDelete: "cascade" }),
+
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
-})
+});
+
+/* ======================
+       PROJECTS
+====================== */
 
 export const projects = pgTable("projects", {
     id: serial("id").primaryKey(),
+
+    client_id: integer("client_id")
+        .notNull()
+        .references(() => clients.id, { onDelete: "cascade" }),
+
     title: text("title").notNull(),
     description: text("description"),
-    files: integer("files").default(0),
+
     userId: varchar("user_id")
         .notNull()
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
+/* ======================
+        TAGS
+====================== */
+
 export const tags = pgTable("tags", {
     id: serial("id").primaryKey(),
     name: text("name").notNull().unique(),
-    projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+
+    projectId: integer("project_id")
+        .notNull()
+        .references(() => projects.id, { onDelete: "cascade" }),
 });
+
+/* ======================
+        NOTES
+====================== */
 
 export const notes = pgTable("notes", {
     id: serial("id").primaryKey(),
     content: text("content").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
-})
+
+    // Optional linking fields:
+    userId: varchar("user_id").references(() => users.user_id),
+    projectId: integer("project_id").references(() => projects.id),
+    meetingId: text("meeting_id").references(() => meetings.id),
+});
+
+/* ======================
+        TASKS
+====================== */
 
 export const tasks = pgTable("tasks", {
     id: serial("id").primaryKey(),
-    user_id: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
+
+    user_id: varchar("user_id")
+        .notNull()
+        .references(() => users.user_id, { onDelete: "cascade" }),
+
     title: text("title").notNull(),
     description: text("description"),
-    project_id: integer().references(() => projects.id, { onDelete: "cascade" }),
+
+    project_id: integer("project_id")
+        .references(() => projects.id, { onDelete: "cascade" }),
+
     priority: text("priority").notNull().default("Low"),
     status: text("status").notNull().default("in-progress"),
     dueDate: date("due_date").notNull().default("2025-01-01"),
     completed: boolean("completed").default(false),
+
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+/* ======================
+        MEETINGS
+====================== */
 
 export const meetings = pgTable("meetings", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
     link: text("link"),
+
     date: date("date").notNull().default("2025-01-01"),
     time: text("time").notNull(),
     duration: integer("duration").notNull(),
@@ -79,17 +136,24 @@ export const meetings = pgTable("meetings", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// Meeting Attendees Table
+/* ======================
+   MEETING ATTENDEES
+====================== */
+
 export const meetingAttendees = pgTable("meeting_attendees", {
     id: serial("id").primaryKey(),
 
     meetingId: text("meeting_id")
-        .references(() => meetings.id, { onDelete: "cascade" })
-        .notNull(),
+        .notNull()
+        .references(() => meetings.id, { onDelete: "cascade" }),
 
     name: text("name").notNull(),
     initials: text("initials").notNull()
 });
+
+/* ======================
+      ZOOM TOKENS
+====================== */
 
 export const zoomTokens = pgTable("zoom_tokens", {
     id: serial("id").primaryKey(),
@@ -103,22 +167,90 @@ export const zoomTokens = pgTable("zoom_tokens", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// Relations
-export const projectsRelations = relations(projects, ({ many }) => ({
-    tasks: many(tasks)
+/* ======================
+       RELATIONS
+====================== */
+
+// USERS
+export const usersRelations = relations(users, ({ many }) => ({
+    clients: many(clients),
+    projects: many(projects),
+    tasks: many(tasks),
+    meetings: many(meetings),
+    zoomTokens: many(zoomTokens),
 }));
 
+// CLIENTS
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+    user: one(users, {
+        fields: [clients.user_id],
+        references: [users.user_id],
+    }),
+    projects: many(projects),
+}));
+
+// PROJECTS
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+    user: one(users, {
+        fields: [projects.userId],
+        references: [users.user_id],
+    }),
+    client: one(clients, {
+        fields: [projects.client_id],
+        references: [clients.id],
+    }),
+    tasks: many(tasks),
+    tags: many(tags),
+    notes: many(notes),
+}));
+
+// TASKS
 export const tasksRelations = relations(tasks, ({ one }) => ({
+    user: one(users, {
+        fields: [tasks.user_id],
+        references: [users.user_id],
+    }),
     project: one(projects, {
         fields: [tasks.project_id],
         references: [projects.id],
     }),
 }));
 
-export const meetingsRelations = relations(meetings, ({ many }) => ({
-    attendees: many(meetingAttendees),
+// TAGS
+export const tagsRelations = relations(tags, ({ one }) => ({
+    project: one(projects, {
+        fields: [tags.projectId],
+        references: [projects.id],
+    }),
 }));
 
+// NOTES
+export const notesRelations = relations(notes, ({ one }) => ({
+    user: one(users, {
+        fields: [notes.userId],
+        references: [users.user_id],
+    }),
+    project: one(projects, {
+        fields: [notes.projectId],
+        references: [projects.id],
+    }),
+    meeting: one(meetings, {
+        fields: [notes.meetingId],
+        references: [meetings.id],
+    }),
+}));
+
+// MEETINGS
+export const meetingsRelations = relations(meetings, ({ one, many }) => ({
+    user: one(users, {
+        fields: [meetings.userId],
+        references: [users.user_id],
+    }),
+    attendees: many(meetingAttendees),
+    notes: many(notes),
+}));
+
+// MEETING ATTENDEES
 export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) => ({
     meeting: one(meetings, {
         fields: [meetingAttendees.meetingId],
@@ -126,10 +258,10 @@ export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) =
     }),
 }));
 
-export const meetingsUsersRelations = relations(meetings, ({ one, many }) => ({
+// ZOOM TOKENS
+export const zoomRelations = relations(zoomTokens, ({ one }) => ({
     user: one(users, {
-        fields: [meetings.userId],
+        fields: [zoomTokens.userId],
         references: [users.user_id],
     }),
-    attendees: many(meetingAttendees),
 }));
