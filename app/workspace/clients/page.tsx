@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -16,13 +16,46 @@ import {
 } from "../../components/ui/dialog";
 import { Label } from "../../components/ui/label";
 import { Plus, Search, Mail, Phone, Calendar } from "lucide-react";
-import {clients} from "@/app/lib/mockData";
+import axios from "axios";
+import {clients} from "@/types/clients";
 
 export default function Clients() {
     const [searchQuery, setSearchQuery] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [clients, setClients] = useState<clients[]>([]);
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
 
-    const filteredClients = clients.filter((client) =>
+    // GET CLIENTS FROM BACKEND
+    async function fetchClients() {
+        const res = await axios.get("/api/clients");
+        const data = await res.data;
+        setClients(data);
+    }
+
+    useEffect(() => {
+        fetchClients();
+    }, []);
+
+    // ADD CLIENT
+    async function handleAddClient() {
+        try {
+            const res = await axios.post("/api/clients", {name, email, phone});
+
+            if (res.status === 200) {
+                setDialogOpen(false);
+                setName("");
+                setEmail("");
+                setPhone("");
+                fetchClients(); // refresh list
+            }
+        } catch (error) {
+            alert("Failed to add client");
+        }
+    }
+
+    const filteredClients = clients.filter((client: clients) =>
         client.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -36,44 +69,58 @@ export default function Clients() {
                         Manage your client relationships
                     </p>
                 </div>
+
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="cursor-pointer">
+                        <Button>
                             <Plus className="h-4 w-4 mr-2" />
                             Add Client
                         </Button>
                     </DialogTrigger>
+
                     <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Add New Client</DialogTitle>
-                            <DialogDescription>
-                                Create a new client profile
-                            </DialogDescription>
+                            <DialogDescription>Create a new client profile</DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 mt-4">
                             <div>
                                 <Label>Client Name</Label>
-                                <Input placeholder="Acme Corporation" className="mt-2" />
+                                <Input
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Acme Corporation"
+                                    className="mt-2"
+                                />
                             </div>
+
                             <div>
                                 <Label>Email</Label>
                                 <Input
                                     type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     placeholder="contact@acme.com"
                                     className="mt-2"
                                 />
                             </div>
+
                             <div>
                                 <Label>Phone</Label>
-                                <Input placeholder="+1 (555) 000-0000" className="mt-2" />
+                                <Input
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="+1 (555) 000-0000"
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Button className="cursor-pointer" variant="outline" onClick={() => setDialogOpen(false)}>
+                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
-                                <Button className="cursor-pointer" onClick={() => setDialogOpen(false)}>Add Client</Button>
+                                <Button onClick={handleAddClient}>Add Client</Button>
                             </div>
                         </div>
                     </DialogContent>
@@ -91,78 +138,33 @@ export default function Clients() {
                 />
             </div>
 
-            {/* Stats */}
-            <div className="grid gap-6 sm:grid-cols-4">
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">Total Clients</p>
-                    <p className="text-3xl text-gray-900 mt-2">{clients.length}</p>
-                </Card>
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">Active Clients</p>
-                    <p className="text-3xl text-gray-900 mt-2">
-                        {clients.filter((c) => c.status === "active").length}
-                    </p>
-                </Card>
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">Active Projects</p>
-                    <p className="text-3xl text-gray-900 mt-2">
-                        {clients.reduce((sum, c) => sum + c.activeProjects, 0)}
-                    </p>
-                </Card>
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">Completed Projects</p>
-                    <p className="text-3xl text-gray-900 mt-2">
-                        {clients.reduce((sum, c) => sum + c.completedProjects, 0)}
-                    </p>
-                </Card>
-            </div>
-
             {/* Clients Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredClients.map((client) => (
+                {filteredClients.map((client: clients) => (
                     <Card key={client.id} className="cursor-pointer p-6 hover:shadow-lg transition-shadow">
                         <div className="flex items-start justify-between mb-4">
                             <Avatar className="h-12 w-12">
                                 <AvatarFallback className="bg-blue-100 text-blue-600">
-                                    {client.avatar}
+                                    {client.name[0]}
                                 </AvatarFallback>
                             </Avatar>
-                            <Badge
-                                className={
-                                    client.status === "active"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-gray-100 text-gray-700"
-                                }
-                            >
-                                {client.status}
-                            </Badge>
+                            <Badge className="bg-green-100 text-green-700">active</Badge>
                         </div>
 
                         <h3 className="text-lg text-gray-900 mb-4">{client.name}</h3>
 
                         <div className="space-y-2 mb-4">
                             <div className="flex items-center text-sm text-gray-600">
-                                <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                                <Mail className="h-4 w-4 mr-2" />
                                 {client.email}
                             </div>
                             <div className="flex items-center text-sm text-gray-600">
-                                <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
-                                {client.phone}
+                                <Phone className="h-4 w-4 mr-2" />
+                                {client.phone || "N/A"}
                             </div>
                             <div className="flex items-center text-sm text-gray-600">
-                                <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                                Since {client.joinedDate}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t">
-                            <div>
-                                <p className="text-xs text-gray-500">Active</p>
-                                <p className="text-lg text-gray-900">{client.activeProjects}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Completed</p>
-                                <p className="text-lg text-gray-900">{client.completedProjects}</p>
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Joined {new Date(client.createdAt).toLocaleDateString()}
                             </div>
                         </div>
                     </Card>
