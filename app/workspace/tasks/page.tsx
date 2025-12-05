@@ -88,7 +88,7 @@ export default function Tasks() {
                     <h1 className="text-3xl text-gray-900">Tasks</h1>
                     <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
                 </div>
-                <AddNewTask onTaskCreated={addTaskToList}/>
+                <AddNewTask onTaskCreatedAction={addTaskToList}/>
             </div>
 
             {

@@ -14,10 +14,10 @@ import { useState } from "react";
 import axios from "axios";
 
 type AddNewTaskProps = {
-    onTaskCreated: (task: Task) => void;
+    onTaskCreatedAction: (task: Task) => void;
 };
 
-export default function AddNewTask({ onTaskCreated }: AddNewTaskProps) {
+export default function AddNewTask({ onTaskCreatedAction }: AddNewTaskProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const [title, setTitle] = useState("");
@@ -38,7 +38,7 @@ export default function AddNewTask({ onTaskCreated }: AddNewTaskProps) {
         });
         console.log("RES DATA:", res.data);
 
-        onTaskCreated(res.data.task);
+        onTaskCreatedAction(res.data.task);
 
         setTitle("");
         setDescription("");
