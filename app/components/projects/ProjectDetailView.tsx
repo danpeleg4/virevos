@@ -3,26 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
-import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Checkbox } from "../ui/checkbox";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
 import {
   ArrowLeft,
   Calendar,
-  Clock,
   FileText,
   Upload,
   Plus,
   CheckCircle,
-  Circle,
   Edit,
   Tag,
   Download,
@@ -35,28 +24,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { motion } from "motion/react";
 import AddNewTask from "@/app/components/AddNewTask";
-
-interface ProjectStage {
-  id: string;
-  name: string;
-  status: "completed" | "in-progress" | "pending";
-  startDate: string;
-  endDate: string;
-  progress: number;
-  tasks: number;
-  completedTasks: number;
-}
-
-interface ProjectTask {
-  id: string;
-  title: string;
-  completed: boolean;
-  assignee?: string;
-  dueDate?: string;
-  priority: "high" | "medium" | "low";
-}
+import { initialTasks } from "@/app/lib/mockData"
 
 interface ProjectFile {
   id: string;
@@ -86,101 +55,6 @@ interface ProjectDetailViewProps {
   };
   onBack: () => void;
 }
-
-const mockStages: ProjectStage[] = [
-  {
-    id: "1",
-    name: "Discovery & Planning",
-    status: "completed",
-    startDate: "Oct 15, 2025",
-    endDate: "Oct 25, 2025",
-    progress: 100,
-    tasks: 8,
-    completedTasks: 8,
-  },
-  {
-    id: "2",
-    name: "Design & Mockups",
-    status: "completed",
-    startDate: "Oct 26, 2025",
-    endDate: "Nov 5, 2025",
-    progress: 100,
-    tasks: 12,
-    completedTasks: 12,
-  },
-  {
-    id: "3",
-    name: "Development",
-    status: "in-progress",
-    startDate: "Nov 6, 2025",
-    endDate: "Nov 20, 2025",
-    progress: 65,
-    tasks: 20,
-    completedTasks: 13,
-  },
-  {
-    id: "4",
-    name: "Testing & QA",
-    status: "pending",
-    startDate: "Nov 21, 2025",
-    endDate: "Nov 28, 2025",
-    progress: 0,
-    tasks: 10,
-    completedTasks: 0,
-  },
-  {
-    id: "5",
-    name: "Launch & Deployment",
-    status: "pending",
-    startDate: "Nov 29, 2025",
-    endDate: "Dec 3, 2025",
-    progress: 0,
-    tasks: 5,
-    completedTasks: 0,
-  },
-];
-
-const mockTasks: ProjectTask[] = [
-  {
-    id: "1",
-    title: "Build responsive navigation component",
-    completed: true,
-    assignee: "JD",
-    dueDate: "Nov 8, 2025",
-    priority: "high",
-  },
-  {
-    id: "2",
-    title: "Implement user authentication flow",
-    completed: true,
-    assignee: "SJ",
-    dueDate: "Nov 10, 2025",
-    priority: "high",
-  },
-  {
-    id: "3",
-    title: "Create dashboard analytics widgets",
-    completed: false,
-    assignee: "MC",
-    dueDate: "Nov 15, 2025",
-    priority: "medium",
-  },
-  {
-    id: "4",
-    title: "Integrate payment gateway",
-    completed: false,
-    assignee: "JD",
-    dueDate: "Nov 18, 2025",
-    priority: "high",
-  },
-  {
-    id: "5",
-    title: "Setup email notification system",
-    completed: false,
-    dueDate: "Nov 20, 2025",
-    priority: "low",
-  },
-];
 
 const mockFiles: ProjectFile[] = [
   {
@@ -225,20 +99,11 @@ const mockNotes: ProjectNote[] = [
 ];
 
 export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
-  const [stages] = useState<ProjectStage[]>(mockStages);
-  const [tasks, setTasks] = useState<ProjectTask[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
   const [newNote, setNewNote] = useState("");
   const [newTask, setNewTask] = useState("");
-
-  const toggleTask = (taskId: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
-  };
 
   const addNote = () => {
     if (newNote.trim()) {
@@ -255,27 +120,16 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
     }
   };
 
-  const addTask = () => {
-    if (newTask.trim()) {
-      setTasks([
-        ...tasks,
-        {
-          id: String(tasks.length + 1),
-          title: newTask,
-          completed: false,
-          priority: "medium",
-        },
-      ]);
-      setNewTask("");
-    }
-  };
+    const addTaskToList = (newTask: Task) => {
+        setTasks(prev => [newTask, ...prev]);
+    };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button className="cursor-pointer" variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -369,7 +223,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                  <AddNewTask />
+                  <AddNewTask onTaskCreated={addTaskToList}/>
               </div>
             </CardHeader>
             <CardContent>
@@ -385,7 +239,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                   >
                     <Checkbox
                       checked={task.completed}
-                      onCheckedChange={() => toggleTask(task.id)}
+                      //onCheckedChange={() => toggleTask(task.id)}
                     />
                     <div className="flex-1 min-w-0">
                       <p
@@ -398,16 +252,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                         {task.title}
                       </p>
                       <div className="flex items-center space-x-3 mt-1">
-                        {task.assignee && (
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Avatar className="h-4 w-4 mr-1">
-                              <AvatarFallback className="text-xs">
-                                {task.assignee}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{task.assignee}</span>
-                          </div>
-                        )}
                         {task.dueDate && (
                           <span className="text-xs text-gray-500">
                             Due {task.dueDate}

@@ -10,57 +10,7 @@ import { Search, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 import AddNewTask from "@/app/components/AddNewTask";
 import axios from "axios";
-
-const initialTasks: Task[] = [
-    {
-        id: 1,
-        title: "Review TechCorp wireframes",
-        project: "TechCorp Website Redesign",
-        priority: "high",
-        status: "todo",
-        dueDate: "Today",
-    },
-    {
-        id: 2,
-        title: "Send invoice to DesignCo",
-        project: "DesignCo Brand Refresh",
-        priority: "high",
-        status: "todo",
-        dueDate: "Today",
-    },
-    {
-        id: 3,
-        title: "Update project timeline",
-        project: "TechCorp Website Redesign",
-        priority: "medium",
-        status: "in-progress",
-        dueDate: "Tomorrow",
-    },
-    {
-        id: 4,
-        title: "Client meeting with StartupXYZ",
-        project: "StartupXYZ MVP Development",
-        priority: "high",
-        status: "in-progress",
-        dueDate: "Tomorrow",
-    },
-    {
-        id: 5,
-        title: "Design mockups review",
-        project: "DesignCo Brand Refresh",
-        priority: "medium",
-        status: "completed",
-        dueDate: "Yesterday",
-    },
-    {
-        id: 6,
-        title: "Testing phase completion",
-        project: "StartupXYZ MVP Development",
-        priority: "low",
-        status: "completed",
-        dueDate: "2 days ago",
-    },
-];
+import { initialTasks } from "@/app/lib/mockData";
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);

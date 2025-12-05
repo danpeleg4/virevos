@@ -6,6 +6,7 @@ interface Task {
     priority: "high" | "medium" | "low";
     status: "todo" | "in-progress" | "completed";
     dueDate: string;
+    completed: boolean;
 }
 
 interface TaskDetailModalProps {
