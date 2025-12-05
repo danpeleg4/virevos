@@ -25,78 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import AddNewTask from "@/app/components/AddNewTask";
-import { initialTasks } from "@/app/lib/mockData"
-
-interface ProjectFile {
-  id: string;
-  name: string;
-  size: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  type: string;
-}
-
-interface ProjectNote {
-  id: string;
-  content: string;
-  author: string;
-  createdAt: string;
-}
-
-interface ProjectDetailViewProps {
-  project: {
-    id: number;
-    name: string;
-    client: string;
-    status: string;
-    progress: number;
-    dueDate: string;
-    priority: string;
-  };
-  onBack: () => void;
-}
-
-const mockFiles: ProjectFile[] = [
-  {
-    id: "1",
-    name: "Design_Mockups_v3.fig",
-    size: "12.4 MB",
-    uploadedBy: "Sarah Johnson",
-    uploadedAt: "Nov 5, 2025",
-    type: "figma",
-  },
-  {
-    id: "2",
-    name: "Project_Requirements.pdf",
-    size: "2.1 MB",
-    uploadedBy: "John Doe",
-    uploadedAt: "Oct 20, 2025",
-    type: "pdf",
-  },
-  {
-    id: "3",
-    name: "Brand_Assets.zip",
-    size: "45.8 MB",
-    uploadedBy: "Client",
-    uploadedAt: "Oct 18, 2025",
-    type: "zip",
-  },
-];
-
-const mockNotes: ProjectNote[] = [
-  {
-    id: "1",
-    content: "Client requested to change the primary color scheme from blue to green. Updated design files accordingly.",
-    author: "Sarah Johnson",
-    createdAt: "Nov 8, 2025",
-  },
-  {
-    id: "2",
-    content: "Meeting with stakeholders went well. They approved the new dashboard layout. Next step: start development.",
-    author: "John Doe",
-    createdAt: "Nov 6, 2025",
-  },
-];
+import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 
 export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);

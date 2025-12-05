@@ -10,113 +10,24 @@ import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import { Checkbox } from "../components/ui/checkbox";
-import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import {
     Check,
     ChevronRight,
     ChevronLeft,
     Zap,
     Calendar,
-    Video,
-    Mail,
     Upload,
     Sparkles,
     CreditCard,
-    Building2,
     Users,
     Brain,
     FileSpreadsheet,
 } from "lucide-react";
+import {integrations, plans} from "@/app/lib/mockData";
 
 interface OnboardingProps {
     onComplete: () => void;
 }
-
-const plans = [
-    {
-        id: "starter",
-        name: "Starter",
-        price: 29,
-        period: "month",
-        description: "Perfect for freelancers and solo entrepreneurs",
-        features: [
-            "Up to 5 clients",
-            "10 active projects",
-            "Basic automation",
-            "Email support",
-            "1 team member",
-        ],
-        highlighted: false,
-    },
-    {
-        id: "professional",
-        name: "Professional",
-        price: 79,
-        period: "month",
-        description: "For growing teams and agencies",
-        features: [
-            "Unlimited clients",
-            "Unlimited projects",
-            "Advanced automation",
-            "Priority support",
-            "Up to 5 team members",
-            "Custom integrations",
-            "AI assistant",
-        ],
-        highlighted: true,
-    },
-    {
-        id: "enterprise",
-        name: "Enterprise",
-        price: 199,
-        period: "month",
-        description: "For large organizations",
-        features: [
-            "Everything in Professional",
-            "Unlimited team members",
-            "Dedicated support",
-            "Custom onboarding",
-            "SLA guarantee",
-            "White-label options",
-        ],
-        highlighted: false,
-    },
-];
-
-const integrations = [
-    {
-        id: "google-calendar",
-        name: "Google Calendar",
-        icon: Calendar,
-        description: "Sync your schedule and meetings",
-        color: "bg-blue-100 text-blue-600",
-        category: "calendar",
-    },
-    {
-        id: "outlook",
-        name: "Outlook Calendar",
-        icon: Mail,
-        description: "Connect your Microsoft calendar",
-        color: "bg-blue-100 text-blue-600",
-        category: "calendar",
-    },
-    {
-        id: "zoom",
-        name: "Zoom",
-        icon: Video,
-        description: "Enable video meetings",
-        color: "bg-purple-100 text-purple-600",
-        category: "video",
-    },
-    {
-        id: "google-meet",
-        name: "Google Meet",
-        icon: Video,
-        description: "Connect Google Meet",
-        color: "bg-green-100 text-green-600",
-        category: "video",
-    },
-];
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
     const [currentStep, setCurrentStep] = useState(0);

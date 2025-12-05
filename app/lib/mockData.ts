@@ -1,3 +1,5 @@
+import {Calendar, Mail, Video} from "lucide-react";
+
 export const initialTasks: Task[] = [
     {
         id: 1,
@@ -53,5 +55,180 @@ export const initialTasks: Task[] = [
         status: "completed",
         dueDate: "2 days ago",
         completed: false,
+    },
+];
+
+export const clients = [
+    {
+        id: 1,
+        name: "TechCorp Inc.",
+        email: "contact@techcorp.com",
+        phone: "+1 (555) 123-4567",
+        activeProjects: 2,
+        completedProjects: 5,
+        status: "active",
+        joinedDate: "Jan 2024",
+        avatar: "TC",
+    },
+    {
+        id: 2,
+        name: "DesignCo Agency",
+        email: "hello@designco.com",
+        phone: "+1 (555) 234-5678",
+        activeProjects: 1,
+        completedProjects: 3,
+        status: "active",
+        joinedDate: "Mar 2024",
+        avatar: "DC",
+    },
+    {
+        id: 3,
+        name: "StartupXYZ",
+        email: "team@startupxyz.com",
+        phone: "+1 (555) 345-6789",
+        activeProjects: 1,
+        completedProjects: 1,
+        status: "active",
+        joinedDate: "Aug 2025",
+        avatar: "SX",
+    },
+    {
+        id: 4,
+        name: "Enterprise Solutions",
+        email: "info@enterprise.com",
+        phone: "+1 (555) 456-7890",
+        activeProjects: 0,
+        completedProjects: 8,
+        status: "inactive",
+        joinedDate: "Jun 2023",
+        avatar: "ES",
+    },
+];
+
+export const  mockNotes: ProjectNote[] = [
+    {
+        id: "1",
+        content: "Client requested to change the primary color scheme from blue to green. Updated design files accordingly.",
+        author: "Sarah Johnson",
+        createdAt: "Nov 8, 2025",
+    },
+    {
+        id: "2",
+        content: "Meeting with stakeholders went well. They approved the new dashboard layout. Next step: start development.",
+        author: "John Doe",
+        createdAt: "Nov 6, 2025",
+    },
+];
+
+export const mockFiles: ProjectFile[] = [
+    {
+        id: "1",
+        name: "Design_Mockups_v3.fig",
+        size: "12.4 MB",
+        uploadedBy: "Sarah Johnson",
+        uploadedAt: "Nov 5, 2025",
+        type: "figma",
+    },
+    {
+        id: "2",
+        name: "Project_Requirements.pdf",
+        size: "2.1 MB",
+        uploadedBy: "John Doe",
+        uploadedAt: "Oct 20, 2025",
+        type: "pdf",
+    },
+    {
+        id: "3",
+        name: "Brand_Assets.zip",
+        size: "45.8 MB",
+        uploadedBy: "Client",
+        uploadedAt: "Oct 18, 2025",
+        type: "zip",
+    },
+];
+
+export const plans = [
+    {
+        id: "starter",
+        name: "Starter",
+        price: 29,
+        period: "month",
+        description: "Perfect for freelancers and solo entrepreneurs",
+        features: [
+            "Up to 5 clients",
+            "10 active projects",
+            "Basic automation",
+            "Email support",
+            "1 team member",
+        ],
+        highlighted: false,
+    },
+    {
+        id: "professional",
+        name: "Professional",
+        price: 79,
+        period: "month",
+        description: "For growing teams and agencies",
+        features: [
+            "Unlimited clients",
+            "Unlimited projects",
+            "Advanced automation",
+            "Priority support",
+            "Up to 5 team members",
+            "Custom integrations",
+            "AI assistant",
+        ],
+        highlighted: true,
+    },
+    {
+        id: "enterprise",
+        name: "Enterprise",
+        price: 199,
+        period: "month",
+        description: "For large organizations",
+        features: [
+            "Everything in Professional",
+            "Unlimited team members",
+            "Dedicated support",
+            "Custom onboarding",
+            "SLA guarantee",
+            "White-label options",
+        ],
+        highlighted: false,
+    },
+];
+
+export const integrations = [
+    {
+        id: "google-calendar",
+        name: "Google Calendar",
+        icon: Calendar,
+        description: "Sync your schedule and meetings",
+        color: "bg-blue-100 text-blue-600",
+        category: "calendar",
+    },
+    {
+        id: "outlook",
+        name: "Outlook Calendar",
+        icon: Mail,
+        description: "Connect your Microsoft calendar",
+        color: "bg-blue-100 text-blue-600",
+        category: "calendar",
+    },
+    {
+        id: "zoom",
+        name: "Zoom",
+        icon: Video,
+        description: "Enable video meetings",
+        color: "bg-purple-100 text-purple-600",
+        category: "video",
+    },
+    {
+        id: "google-meet",
+        name: "Google Meet",
+        icon: Video,
+        description: "Connect Google Meet",
+        color: "bg-green-100 text-green-600",
+        category: "video",
     },
 ];

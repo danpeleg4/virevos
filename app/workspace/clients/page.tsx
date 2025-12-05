@@ -16,53 +16,7 @@ import {
 } from "../../components/ui/dialog";
 import { Label } from "../../components/ui/label";
 import { Plus, Search, Mail, Phone, Calendar } from "lucide-react";
-
-const clients = [
-    {
-        id: 1,
-        name: "TechCorp Inc.",
-        email: "contact@techcorp.com",
-        phone: "+1 (555) 123-4567",
-        activeProjects: 2,
-        completedProjects: 5,
-        status: "active",
-        joinedDate: "Jan 2024",
-        avatar: "TC",
-    },
-    {
-        id: 2,
-        name: "DesignCo Agency",
-        email: "hello@designco.com",
-        phone: "+1 (555) 234-5678",
-        activeProjects: 1,
-        completedProjects: 3,
-        status: "active",
-        joinedDate: "Mar 2024",
-        avatar: "DC",
-    },
-    {
-        id: 3,
-        name: "StartupXYZ",
-        email: "team@startupxyz.com",
-        phone: "+1 (555) 345-6789",
-        activeProjects: 1,
-        completedProjects: 1,
-        status: "active",
-        joinedDate: "Aug 2025",
-        avatar: "SX",
-    },
-    {
-        id: 4,
-        name: "Enterprise Solutions",
-        email: "info@enterprise.com",
-        phone: "+1 (555) 456-7890",
-        activeProjects: 0,
-        completedProjects: 8,
-        status: "inactive",
-        joinedDate: "Jun 2023",
-        avatar: "ES",
-    },
-];
+import {clients} from "@/app/lib/mockData";
 
 export default function Clients() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -166,7 +120,7 @@ export default function Clients() {
             {/* Clients Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredClients.map((client) => (
-                    <Card key={client.id} className="p-6 hover:shadow-lg transition-shadow">
+                    <Card key={client.id} className="cursor-pointer p-6 hover:shadow-lg transition-shadow">
                         <div className="flex items-start justify-between mb-4">
                             <Avatar className="h-12 w-12">
                                 <AvatarFallback className="bg-blue-100 text-blue-600">
@@ -211,10 +165,6 @@ export default function Clients() {
                                 <p className="text-lg text-gray-900">{client.completedProjects}</p>
                             </div>
                         </div>
-
-                        <Button variant="outline" className="w-full">
-                            View Details
-                        </Button>
                     </Card>
                 ))}
             </div>
