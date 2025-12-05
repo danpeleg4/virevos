@@ -161,7 +161,10 @@ export default function Clients() {
                             </div>
                             <div className="flex items-center text-sm text-gray-600">
                                 <Calendar className="h-4 w-4 mr-2" />
-                                Joined {new Date(client.createdAt).toLocaleDateString()}
+                                Joined{" "}
+                                {client.createdAt
+                                    ? new Date(client.createdAt).toLocaleDateString()
+                                    : "N/A"}
                             </div>
                         </div>
                     </Card>

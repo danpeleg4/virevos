@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -25,6 +25,8 @@ import {
 } from "../../components/ui/select";
 import { Plus, Search, Clock, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 import {ProjectDetailView} from "@/app/components/projects/ProjectDetailView";
+import axios from "axios";
+import {clients} from "@/types/clients";
 
 const projects = [
     {
@@ -99,6 +101,15 @@ export default function Projects() {
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState("");
     const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null);
+    const [clients, setClients] = useState([]);
+
+    useEffect(() => {
+        const getClients = async () => {
+            const res = await axios.get("/api/clients");
+            setClients(res.data);
+        }
+        getClients();
+    }, [])
 
     const filteredProjects = projects
         .filter((project) => {
@@ -196,9 +207,13 @@ export default function Projects() {
                                         <SelectValue placeholder="Select client" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="TechCorp Inc.">TechCorp Inc.</SelectItem>
-                                        <SelectItem value="DesignCo Agency">DesignCo Agency</SelectItem>
-                                        <SelectItem value="StartupXYZ">StartupXYZ</SelectItem>
+                                        {
+                                            clients.map((client: clients) => (
+                                                <SelectItem key={client.id} value={client.name}>
+                                                    {client.name}
+                                                </SelectItem>
+                                            ))
+                                        }
                                     </SelectContent>
                                 </Select>
                             </div>
