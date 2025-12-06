@@ -112,7 +112,7 @@ export default function Projects() {
         getClients();
     }, [])
 
-    const filteredProjects = projects
+    const filteredProjects = projectsData
         .filter((project) => {
             const matchesSearch = project.name
                 .toLowerCase()
@@ -160,9 +160,7 @@ export default function Projects() {
         };
 
         const res = await axios.post("/api/projects", newProject);
-        if (res.status == 200) {
-            projects.push(newProject);
-        }
+        setProjectsData(res.data);
 
         setProjectsData([...projectsData, newProject]);
         setDialogOpen(false);

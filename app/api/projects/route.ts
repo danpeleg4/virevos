@@ -1,21 +1,41 @@
-import {NextRequest, NextResponse} from "next/server";
-import {db} from "@/db/db";
-import {projects} from "@/db/schema";
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db/db";
+import { projects } from "@/db/schema";
+import {currentUser} from "@clerk/nextjs/server";
 
 export async function GET() {
-
+    const result = await db.select().from(projects);
+    return NextResponse.json(result);
 }
 
-export async function POST(req: NextRequest, res: NextResponse){
+export async function POST(req: NextRequest) {
+    const user = await currentUser();
+    if (!user?.id) {
+        return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const body = await req.json();
-    const { id, name, client, status, progress, dueDate, tasksCompleted, totalTasks, priority, health  } = body;
-    if (!id || !name || !client || !status || !progress || !dueDate || !tasksCompleted || !totalTasks || !priority || !health) {
+    const { name, client, dueDate, priority } = body;
+
+    if (!name || !client || !dueDate || !priority) {
         return NextResponse.json({ message: "Missing data" }, { status: 400 });
     }
 
-    const created = await db.insert(projects).values(body).returning({
-        id, name, client, status, progress, dueDate, tasksCompleted, totalTasks, priority, health
-    })
+    const created = await db
+        .insert(projects)
+        .values({
+            name,
+            client,
+            status: "in-progress",
+            progress: 0,
+            dueDate,
+            tasksCompleted: 0,
+            totalTasks: 0,
+            priority,
+            health: "on-track",
+            userId: user.id
+        })
+        .returning();
 
-    return NextResponse.json(created);
+    return NextResponse.json(created[0]);
 }

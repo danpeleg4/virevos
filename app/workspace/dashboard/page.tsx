@@ -22,7 +22,6 @@ const stats = [
     {
         label: "Active Clients",
         value: "24",
-        change: "+12%",
         trend: "up",
         icon: Users,
         color: "blue",
@@ -30,7 +29,6 @@ const stats = [
     {
         label: "Active Projects",
         value: "18",
-        change: "+8%",
         trend: "up",
         icon: FolderKanban,
         color: "green",
@@ -38,7 +36,6 @@ const stats = [
     {
         label: "Tasks Completed",
         value: "142",
-        change: "+23%",
         trend: "up",
         icon: CheckSquare,
         color: "purple",
@@ -46,7 +43,6 @@ const stats = [
     {
         label: "Automations Run",
         value: "89",
-        change: "-5%",
         trend: "down",
         icon: Zap,
         color: "orange",
@@ -201,18 +197,6 @@ export default function Dashboard() {
                                                         : "text-orange-600"
                                         }`}
                                     />
-                                </div>
-                                <div
-                                    className={`flex items-center text-sm ${
-                                        stat.trend === "up" ? "text-green-600" : "text-red-600"
-                                    }`}
-                                >
-                                    {stat.trend === "up" ? (
-                                        <ArrowUpRight className="h-4 w-4 mr-1" />
-                                    ) : (
-                                        <ArrowDownRight className="h-4 w-4 mr-1" />
-                                    )}
-                                    <span>{stat.change}</span>
                                 </div>
                             </div>
                             <p className="text-2xl text-gray-900 mb-1">{stat.value}</p>

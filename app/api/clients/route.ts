@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { clients } from "@/db/schema";
+import {currentUser} from "@clerk/nextjs/server";
 
 export async function GET() {
     try {
@@ -14,6 +15,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
+        const user = await currentUser();
+        if (!user?.id) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
         const body = await req.json();
         const { name, email, phone } = body;
 
@@ -32,6 +37,7 @@ export async function POST(req: Request) {
                 name,
                 email,
                 phone: phone ? phone : null,
+                user_id: user.id
             })
             .returning();
 

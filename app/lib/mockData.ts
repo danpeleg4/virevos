@@ -58,7 +58,7 @@ export const initialTasks: Task[] = [
     },
 ];
 
-export const clients = [
+export const clientsMockData = [
     {
         id: 1,
         name: "TechCorp Inc.",

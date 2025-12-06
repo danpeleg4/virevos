@@ -24,7 +24,7 @@ export const users = pgTable("users", {
 
 export const clients = pgTable("clients", {
     id: serial("id").primaryKey(),
-    name: text("name").notNull(),
+    name: text("name").notNull().unique(),
     email: text("email").notNull(),
     phone: text("phone"),
 
@@ -42,9 +42,9 @@ export const clients = pgTable("clients", {
 
 export const projects = pgTable("projects", {
     id: serial("id").primaryKey(),
-    client: integer("client")
-        .notNull()
-        .references(() => clients.id, { onDelete: "cascade" }),
+    client: text("client")
+        .notNull().unique()
+        .references(() => clients.name, { onDelete: "cascade" }),
 
     name: text("title").notNull(),
     description: text("description"),
