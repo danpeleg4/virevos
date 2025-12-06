@@ -152,7 +152,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                  <AddNewTask onTaskCreatedAction={addTaskToList} isProject={true}/>
+                  <AddNewTask onTaskCreatedAction={addTaskToList} isProject={true} projectName={project.name}/>
               </div>
             </CardHeader>
             <CardContent>

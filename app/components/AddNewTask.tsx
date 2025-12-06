@@ -16,13 +16,14 @@ import axios from "axios";
 type AddNewTaskProps = {
     onTaskCreatedAction: (task: Task) => void;
     isProject?: boolean;
+    projectName?: string;
 };
 
-export default function AddNewTask({ onTaskCreatedAction, isProject = false }: AddNewTaskProps) {
+export default function AddNewTask({ onTaskCreatedAction, isProject = false, projectName }: AddNewTaskProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [project, setProject] = useState("");
+    const [project, setProject] = useState(() => projectName ? isProject : "");
     const [projects, setProjects] = useState<Project[]>([])
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");
@@ -43,7 +44,7 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false }: A
             description,
             priority,
             dueDate,
-            project: project ? project : "",
+            project: project
         });
         console.log("RES DATA:", res.data);
 
