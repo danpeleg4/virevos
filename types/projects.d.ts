@@ -26,3 +26,15 @@ interface ProjectDetailViewProps {
     };
     onBack: () => void;
 }
+
+interface Project {
+    name,
+    client,
+    status,
+    progress,
+    dueDate,
+    tasksCompleted,
+    totalTasks,
+    priority,
+    health,
+}

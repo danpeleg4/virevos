@@ -74,7 +74,7 @@ export const tags = pgTable("tags", {
 });
 
 /* ======================
-        NOTES
+        NOTES`
 ====================== */
 
 export const notes = pgTable("notes", {

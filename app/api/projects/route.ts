@@ -4,8 +4,16 @@ import { projects } from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
 
 export async function GET() {
-    const result = await db.select().from(projects);
-    return NextResponse.json(result);
+    const user = await currentUser();
+    if (!user?.id) {
+        return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const projects = await db.query.projects.findMany({
+        where: (fields, { eq }) => eq(fields.userId, user.id),
+    });
+
+    return NextResponse.json(projects);
 }
 
 export async function POST(req: NextRequest) {

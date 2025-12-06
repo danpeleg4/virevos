@@ -24,83 +24,21 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { Plus, Search, Clock, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
-import {ProjectDetailView} from "@/app/components/projects/ProjectDetailView";
+import { ProjectDetailView } from "@/app/components/projects/ProjectDetailView";
 import axios from "axios";
 import {clients} from "@/types/clients";
-
-const projects = [
-    {
-        id: 1,
-        name: "TechCorp Website Redesign",
-        client: "TechCorp Inc.",
-        status: "in-progress",
-        progress: 75,
-        dueDate: "Nov 15, 2025",
-        tasksCompleted: 15,
-        totalTasks: 20,
-        priority: "high",
-        health: "on-track",
-    },
-    {
-        id: 2,
-        name: "DesignCo Brand Refresh",
-        client: "DesignCo Agency",
-        status: "in-progress",
-        progress: 45,
-        dueDate: "Nov 12, 2025",
-        tasksCompleted: 9,
-        totalTasks: 20,
-        priority: "high",
-        health: "at-risk",
-    },
-    {
-        id: 3,
-        name: "StartupXYZ MVP Development",
-        client: "StartupXYZ",
-        status: "in-progress",
-        progress: 90,
-        dueDate: "Nov 18, 2025",
-        tasksCompleted: 27,
-        totalTasks: 30,
-        priority: "medium",
-        health: "on-track",
-    },
-    {
-        id: 4,
-        name: "Marketing Campaign Q4",
-        client: "TechCorp Inc.",
-        status: "planning",
-        progress: 10,
-        dueDate: "Dec 1, 2025",
-        tasksCompleted: 2,
-        totalTasks: 15,
-        priority: "medium",
-        health: "on-track",
-    },
-    {
-        id: 5,
-        name: "Mobile App Redesign",
-        client: "Enterprise Solutions",
-        status: "completed",
-        progress: 100,
-        dueDate: "Oct 30, 2025",
-        tasksCompleted: 25,
-        totalTasks: 25,
-        priority: "low",
-        health: "completed",
-    },
-];
+import { projectsMockData } from '@/app/lib/mockData'
 
 export default function Projects() {
     const [searchQuery, setSearchQuery] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
-    const [projectsData, setProjectsData] = useState(projects);
+    const [projectsData, setProjectsData] = useState(projectsMockData);
     const [projectName, setProjectName] = useState("");
     const [client, setClient] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState("");
-    const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null);
+    const [selectedProject, setSelectedProject] = useState<typeof projectsMockData[0] | null>(null);
     const [clients, setClients] = useState([]);
 
     useEffect(() => {
@@ -111,6 +49,14 @@ export default function Projects() {
 
         getClients();
     }, [])
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            const res = await axios.get("/api/projects");
+            setProjectsData(res.data);
+        };
+        fetchProjects();
+    }, []);
 
     const filteredProjects = projectsData
         .filter((project) => {
