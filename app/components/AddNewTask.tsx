@@ -10,28 +10,45 @@ import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
 
-export default function AddNewTask() {
-    const [dialogOpen, setDialogOpen] = useState(false);
+type AddNewTaskProps = {
+    onTaskCreatedAction: (task: Task) => void;
+    isProject?: boolean;
+    projectName?: string;
+};
 
+export default function AddNewTask({ onTaskCreatedAction, isProject = false, projectName }: AddNewTaskProps) {
+    const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [project, setProject] = useState("");
+    const [project, setProject] = useState(() => projectName ? isProject : "");
+    const [projects, setProjects] = useState<Project[]>([])
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");
+
+    useEffect(() => {
+        const getProjects = async () => {
+            const res = await axios.get("/api/projects");
+            setProjects(res.data);
+        }
+        getProjects();
+    }, [])
 
     const submitTask = async () => {
         setDialogOpen(false);
 
-        await axios.post("/api/tasks", {
+        const res = await axios.post("/api/tasks", {
             title,
             description,
             priority,
             dueDate,
-            project,
+            project: project
         });
+        console.log("RES DATA:", res.data);
+
+        onTaskCreatedAction(res.data.task);
 
         setTitle("");
         setDescription("");
@@ -43,7 +60,7 @@ export default function AddNewTask() {
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button className="cursor-pointer">
                     <Plus className="h-4 w-4 mr-2" />
                     New Task
                 </Button>
@@ -78,19 +95,22 @@ export default function AddNewTask() {
                         />
                     </div>
 
-                    <div>
-                        <Label>Project</Label>
-                        <Select onValueChange={setProject}>
-                            <SelectTrigger className="mt-2">
-                                <SelectValue placeholder="Select project" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="1">TechCorp Website Redesign</SelectItem>
-                                <SelectItem value="2">DesignCo Brand Refresh</SelectItem>
-                                <SelectItem value="3">StartupXYZ MVP Development</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {!isProject &&
+                        <div>
+                            <Label>Project</Label>
+                            <Select onValueChange={setProject}>
+                                <SelectTrigger className="mt-2">
+                                    <SelectValue placeholder="Select project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {projects.map(project => (
+                                        <SelectItem value={project.name} key={project.name}>{project.name}</SelectItem>
+                                    ))
+                                    }
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    }
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>

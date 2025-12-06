@@ -1,1 +1,0 @@
-ALTER TABLE "tasks" ADD COLUMN "status" text DEFAULT 'in-progress' NOT NULL;

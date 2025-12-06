@@ -9,6 +9,9 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
     title: "Virevos",
     description: "Virevos productivity app",
+    icons: {
+        icon: "/sparkles.svg",
+    }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -17,7 +17,7 @@ export function Footer() {
           <div className="col-span-2">
             <h3 className="text-2xl text-white mb-4">Virevos</h3>
             <p className="text-gray-400 mb-6 max-w-sm">
-              The productivity platform that helps teams accomplish more, together.
+                The productivity platform that helps you accomplish more, effortlessly.
             </p>
             {/* Social Links */}
             <div className="flex space-x-4">

@@ -10,57 +10,7 @@ import { Search, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 import AddNewTask from "@/app/components/AddNewTask";
 import axios from "axios";
-
-const initialTasks: Task[] = [
-    {
-        id: 1,
-        title: "Review TechCorp wireframes",
-        project: "TechCorp Website Redesign",
-        priority: "high",
-        status: "todo",
-        dueDate: "Today",
-    },
-    {
-        id: 2,
-        title: "Send invoice to DesignCo",
-        project: "DesignCo Brand Refresh",
-        priority: "high",
-        status: "todo",
-        dueDate: "Today",
-    },
-    {
-        id: 3,
-        title: "Update project timeline",
-        project: "TechCorp Website Redesign",
-        priority: "medium",
-        status: "in-progress",
-        dueDate: "Tomorrow",
-    },
-    {
-        id: 4,
-        title: "Client meeting with StartupXYZ",
-        project: "StartupXYZ MVP Development",
-        priority: "high",
-        status: "in-progress",
-        dueDate: "Tomorrow",
-    },
-    {
-        id: 5,
-        title: "Design mockups review",
-        project: "DesignCo Brand Refresh",
-        priority: "medium",
-        status: "completed",
-        dueDate: "Yesterday",
-    },
-    {
-        id: 6,
-        title: "Testing phase completion",
-        project: "StartupXYZ MVP Development",
-        priority: "low",
-        status: "completed",
-        dueDate: "2 days ago",
-    },
-];
+import { initialTasks } from "@/app/lib/mockData";
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -73,7 +23,11 @@ export default function Tasks() {
     useEffect(() => {
         const getTasks = async () => {
             const res = await axios.get(`/api/tasks`);
-            setTasks(res.data);
+            if (res.data.length === 0) {
+                setTasks(initialTasks)
+            } else {
+                setTasks(res.data);
+            }
             setLoading(false);
         };
         getTasks();
@@ -103,6 +57,10 @@ export default function Tasks() {
         );
     };
 
+    const addTaskToList = (newTask: Task) => {
+        setTasks(prev => [newTask, ...prev]);
+    };
+
     const filteredTasks = tasks.filter((task) => {
         const matchesSearch = task.title
             .toLowerCase()
@@ -122,14 +80,6 @@ export default function Tasks() {
         completed: tasks.filter((t) => t.status === "completed").length,
     };
 
-    if (loading) {
-        return (
-            <div className="p-6">
-                <p className="text-gray-500">Loading tasks...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -138,10 +88,16 @@ export default function Tasks() {
                     <h1 className="text-3xl text-gray-900">Tasks</h1>
                     <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
                 </div>
-                <AddNewTask />
+                <AddNewTask onTaskCreatedAction={addTaskToList}/>
             </div>
 
-            {/* Search */}
+            {
+                loading ? (
+                        <div className="p-6">
+                            <p className="text-gray-500">Loading tasks...</p>
+                        </div>
+                ) :
+                        (<>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -268,6 +224,8 @@ export default function Tasks() {
                 onOpenChange={setTaskDetailOpen}
                 onUpdate={handleTaskUpdate}
             />
+            </>
+            )}
         </div>
-    );
+    )
 }

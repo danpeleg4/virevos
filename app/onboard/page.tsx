@@ -10,113 +10,24 @@ import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import { Checkbox } from "../components/ui/checkbox";
-import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import {
     Check,
     ChevronRight,
     ChevronLeft,
     Zap,
     Calendar,
-    Video,
-    Mail,
     Upload,
     Sparkles,
     CreditCard,
-    Building2,
     Users,
     Brain,
     FileSpreadsheet,
 } from "lucide-react";
+import {integrations, plans} from "@/app/lib/mockData";
 
 interface OnboardingProps {
     onComplete: () => void;
 }
-
-const plans = [
-    {
-        id: "starter",
-        name: "Starter",
-        price: 29,
-        period: "month",
-        description: "Perfect for freelancers and solo entrepreneurs",
-        features: [
-            "Up to 5 clients",
-            "10 active projects",
-            "Basic automation",
-            "Email support",
-            "1 team member",
-        ],
-        highlighted: false,
-    },
-    {
-        id: "professional",
-        name: "Professional",
-        price: 79,
-        period: "month",
-        description: "For growing teams and agencies",
-        features: [
-            "Unlimited clients",
-            "Unlimited projects",
-            "Advanced automation",
-            "Priority support",
-            "Up to 5 team members",
-            "Custom integrations",
-            "AI assistant",
-        ],
-        highlighted: true,
-    },
-    {
-        id: "enterprise",
-        name: "Enterprise",
-        price: 199,
-        period: "month",
-        description: "For large organizations",
-        features: [
-            "Everything in Professional",
-            "Unlimited team members",
-            "Dedicated support",
-            "Custom onboarding",
-            "SLA guarantee",
-            "White-label options",
-        ],
-        highlighted: false,
-    },
-];
-
-const integrations = [
-    {
-        id: "google-calendar",
-        name: "Google Calendar",
-        icon: Calendar,
-        description: "Sync your schedule and meetings",
-        color: "bg-blue-100 text-blue-600",
-        category: "calendar",
-    },
-    {
-        id: "outlook",
-        name: "Outlook Calendar",
-        icon: Mail,
-        description: "Connect your Microsoft calendar",
-        color: "bg-blue-100 text-blue-600",
-        category: "calendar",
-    },
-    {
-        id: "zoom",
-        name: "Zoom",
-        icon: Video,
-        description: "Enable video meetings",
-        color: "bg-purple-100 text-purple-600",
-        category: "video",
-    },
-    {
-        id: "google-meet",
-        name: "Google Meet",
-        icon: Video,
-        description: "Connect Google Meet",
-        color: "bg-green-100 text-green-600",
-        category: "video",
-    },
-];
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
     const [currentStep, setCurrentStep] = useState(0);
@@ -219,9 +130,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                             <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white">F</span>
+                                <Sparkles className="h-4 w-4 text-white"/>
                             </div>
-                            <span className="text-xl text-gray-900">FlowTask</span>
+                            <span className="text-xl text-gray-900">Virevos</span>
                         </div>
                         <span className="text-sm text-gray-600">
               Step {currentStep + 1} of {steps.length}
@@ -314,11 +225,11 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
                     <Sparkles className="h-10 w-10 text-white" />
                 </motion.div>
                 <h1 className="text-3xl text-gray-900 mb-4">
-                    Welcome to FlowTask!
+                    Welcome to Virevos!
                 </h1>
                 <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
                     Let&#39;s get you set up in just a few minutes. We&#39;ll help you create your
-                    account, choose the perfect plan, and personalize FlowTask to match your
+                    account, choose the perfect plan, and personalize Virevos to match your
                     workflow.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -737,7 +648,7 @@ function ImportDataStep({ formData, updateFormData, onNext }: any) {
             <CardHeader>
                 <CardTitle className="text-2xl">Import Your Data</CardTitle>
                 <p className="text-gray-600">
-                    Bring your existing clients and projects into FlowTask
+                    Bring your existing clients and projects into Virevos
                 </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -817,7 +728,7 @@ function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
                     <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg">
                         <Brain className="h-6 w-6 text-white" />
                     </div>
-                    <CardTitle className="text-2xl">Teach FlowTask About You</CardTitle>
+                    <CardTitle className="text-2xl">Teach Virevos About You</CardTitle>
                 </div>
                 <p className="text-gray-600">
                     Help our AI assistant understand your work style and provide better
@@ -847,7 +758,7 @@ function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
                 </div>
 
                 <div>
-                    <Label>What are your main goals with FlowTask?</Label>
+                    <Label>What are your main goals with Virevos?</Label>
                     <Textarea
                         placeholder="e.g., Better client communication, automate invoicing, track project progress..."
                         value={formData.mainGoals}
@@ -871,7 +782,7 @@ function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
                 <div>
                     <Label>Tell the AI anything else about you and your work</Label>
                     <Textarea
-                        placeholder="Share anything that would help FlowTask serve you better - your preferences, challenges, typical workflows, client types, etc."
+                        placeholder="Share anything that would help Virevos serve you better - your preferences, challenges, typical workflows, client types, etc."
                         value={formData.aiContext}
                         onChange={(e) => updateFormData("aiContext", e.target.value)}
                         className="mt-2"

@@ -38,9 +38,17 @@ const mockAttachments = [
 ];
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(task?.title || "");
-  const [description, setDescription] = useState("Review the latest wireframes from the design team and provide feedback on the user flow, layout, and component hierarchy. Make sure to check accessibility considerations and mobile responsiveness.");
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTitle, setEditedTitle] = useState("");
+    const [description, setDescription] = useState("");
+
+    // Sync when clicking a new task
+    useEffect(() => {
+        if (task) {
+            setEditedTitle(task.title || "");
+            setDescription(task.description || "");
+        }
+    }, [task]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -24,83 +24,43 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { Plus, Search, Clock, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
-import {ProjectDetailView} from "@/app/components/projects/ProjectDetailView";
-
-const projects = [
-    {
-        id: 1,
-        name: "TechCorp Website Redesign",
-        client: "TechCorp Inc.",
-        status: "in-progress",
-        progress: 75,
-        dueDate: "Nov 15, 2025",
-        tasksCompleted: 15,
-        totalTasks: 20,
-        priority: "high",
-        health: "on-track",
-    },
-    {
-        id: 2,
-        name: "DesignCo Brand Refresh",
-        client: "DesignCo Agency",
-        status: "in-progress",
-        progress: 45,
-        dueDate: "Nov 12, 2025",
-        tasksCompleted: 9,
-        totalTasks: 20,
-        priority: "high",
-        health: "at-risk",
-    },
-    {
-        id: 3,
-        name: "StartupXYZ MVP Development",
-        client: "StartupXYZ",
-        status: "in-progress",
-        progress: 90,
-        dueDate: "Nov 18, 2025",
-        tasksCompleted: 27,
-        totalTasks: 30,
-        priority: "medium",
-        health: "on-track",
-    },
-    {
-        id: 4,
-        name: "Marketing Campaign Q4",
-        client: "TechCorp Inc.",
-        status: "planning",
-        progress: 10,
-        dueDate: "Dec 1, 2025",
-        tasksCompleted: 2,
-        totalTasks: 15,
-        priority: "medium",
-        health: "on-track",
-    },
-    {
-        id: 5,
-        name: "Mobile App Redesign",
-        client: "Enterprise Solutions",
-        status: "completed",
-        progress: 100,
-        dueDate: "Oct 30, 2025",
-        tasksCompleted: 25,
-        totalTasks: 25,
-        priority: "low",
-        health: "completed",
-    },
-];
+import { ProjectDetailView } from "@/app/components/projects/ProjectDetailView";
+import axios from "axios";
+import {clients} from "@/types/clients";
+import { projectsMockData } from '@/app/lib/mockData'
 
 export default function Projects() {
     const [searchQuery, setSearchQuery] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
-    const [projectsData, setProjectsData] = useState(projects);
+    const [projectsData, setProjectsData] = useState(projectsMockData);
     const [projectName, setProjectName] = useState("");
     const [client, setClient] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState("");
-    const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null);
+    const [selectedProject, setSelectedProject] = useState<typeof projectsMockData[0] | null>(null);
+    const [clients, setClients] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const filteredProjects = projects
+    useEffect(() => {
+        const getClients = async () => {
+            const res = await axios.get("/api/clients")
+                setClients(res.data);
+        }
+
+        getClients();
+    }, [])
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            const res = await axios.get("/api/projects");
+            if (res.status === 200) setLoading(false);
+            setProjectsData(res.data);
+        };
+        fetchProjects();
+    }, []);
+
+    const filteredProjects = projectsData
         .filter((project) => {
             const matchesSearch = project.name
                 .toLowerCase()
@@ -133,7 +93,7 @@ export default function Projects() {
         });
     }
 
-    const handleCreateProject = () => {
+    const handleCreateProject = async () => {
         const newProject = {
             id: projectsData.length + 1,
             name: projectName,
@@ -142,10 +102,13 @@ export default function Projects() {
             progress: 0,
             dueDate: dueDate ? formatDate(dueDate) : "",
             tasksCompleted: 0,
-            totalTasks: 10,
+            totalTasks: 0,
             priority,
             health: "on-track",
         };
+
+        const res = await axios.post("/api/projects", newProject);
+        setProjectsData(res.data);
 
         setProjectsData([...projectsData, newProject]);
         setDialogOpen(false);
@@ -196,9 +159,13 @@ export default function Projects() {
                                         <SelectValue placeholder="Select client" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="TechCorp Inc.">TechCorp Inc.</SelectItem>
-                                        <SelectItem value="DesignCo Agency">DesignCo Agency</SelectItem>
-                                        <SelectItem value="StartupXYZ">StartupXYZ</SelectItem>
+                                        {
+                                            clients.map((client: clients) => (
+                                                <SelectItem key={client.id} value={client.name}>
+                                                    {client.name}
+                                                </SelectItem>
+                                            ))
+                                        }
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -238,6 +205,13 @@ export default function Projects() {
                 </Dialog>
             </div>
 
+            {
+                loading ? (
+                        <div className="p-6">
+                            <p className="text-gray-500">Loading tasks...</p>
+                        </div>
+                    ) :
+                    (<>
             {/* Search */}
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -348,6 +322,6 @@ export default function Projects() {
                     </div>
                 </TabsContent>
             </Tabs>
+                    </>)}
         </div>
-    );
-}
+    )}
