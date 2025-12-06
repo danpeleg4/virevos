@@ -40,11 +40,12 @@ export default function Projects() {
     const [priority, setPriority] = useState("");
     const [selectedProject, setSelectedProject] = useState<typeof projectsMockData[0] | null>(null);
     const [clients, setClients] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const getClients = async () => {
             const res = await axios.get("/api/clients")
-            setClients(res.data);
+                setClients(res.data);
         }
 
         getClients();
@@ -53,6 +54,7 @@ export default function Projects() {
     useEffect(() => {
         const fetchProjects = async () => {
             const res = await axios.get("/api/projects");
+            if (res.status === 200) setLoading(false);
             setProjectsData(res.data);
         };
         fetchProjects();
@@ -203,6 +205,13 @@ export default function Projects() {
                 </Dialog>
             </div>
 
+            {
+                loading ? (
+                        <div className="p-6">
+                            <p className="text-gray-500">Loading tasks...</p>
+                        </div>
+                    ) :
+                    (<>
             {/* Search */}
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -313,6 +322,6 @@ export default function Projects() {
                     </div>
                 </TabsContent>
             </Tabs>
+                    </>)}
         </div>
-    );
-}
+    )}

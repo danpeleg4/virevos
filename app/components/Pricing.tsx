@@ -5,51 +5,50 @@ import { Check } from "lucide-react";
 
 const plans = [
   {
-    name: "Starter",
+    name: "Basic",
     price: "0",
     period: "Forever free",
     description: "Perfect for individuals getting started",
     features: [
       "Up to 5 projects",
       "Basic task management",
-      "1GB storage",
-      "Mobile app access",
+      "500MB storage",
       "Email support",
+      "10 AI Credits per month"
     ],
     cta: "Get Started",
     popular: false,
   },
   {
     name: "Pro",
-    price: "12",
+    price: "29",
     period: "per user/month",
     description: "For small teams that need more power",
     features: [
       "Unlimited projects",
+      "Unlimited tasks",
       "Advanced task management",
       "50GB storage",
       "Priority support",
       "Team collaboration",
       "Custom workflows",
-      "Analytics & reporting",
+        "35 AI Credits per month"
     ],
     cta: "Start Free Trial",
     popular: true,
   },
   {
-    name: "Enterprise",
-    price: "49",
+    name: "Business",
+    price: "79",
     period: "per user/month",
     description: "For large organizations with advanced needs",
     features: [
       "Everything in Pro",
       "Unlimited storage",
-      "Advanced security",
-      "SSO & SAML",
       "Dedicated account manager",
       "Custom integrations",
-      "SLA guarantee",
       "24/7 phone support",
+        "75 AI Credits per month"
     ],
     cta: "Contact Sales",
     popular: false,

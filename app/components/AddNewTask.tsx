@@ -19,7 +19,6 @@ type AddNewTaskProps = {
 
 export default function AddNewTask({ onTaskCreatedAction }: AddNewTaskProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
-
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [project, setProject] = useState("");
@@ -34,7 +33,7 @@ export default function AddNewTask({ onTaskCreatedAction }: AddNewTaskProps) {
             description,
             priority,
             dueDate,
-            project,
+            project: project ? project : "",
         });
         console.log("RES DATA:", res.data);
 
