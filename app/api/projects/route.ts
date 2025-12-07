@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { projects } from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
+import {eq} from "drizzle-orm";
 
 export async function GET() {
     const user = await currentUser();
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
         .insert(projects)
         .values({
             name,
-            client,
+            clientName: client,
             status: "in-progress",
             progress: 0,
             dueDate,

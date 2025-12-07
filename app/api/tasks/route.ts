@@ -13,7 +13,7 @@ export async function GET() {
     const allTasks = await db
         .select()
         .from(tasks)
-        .where(eq(tasks.user_id, user.id));
+        .where(eq(tasks.userId, user.id));
 
     return NextResponse.json(allTasks);
 }
@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
                 description,
                 priority,
                 dueDate,
-                project_id: projectId,
-                user_id: user.id,
+                projectId: projectId,
+                userId: user.id,
                 status: "in-progress",
                 completed: false,
             })

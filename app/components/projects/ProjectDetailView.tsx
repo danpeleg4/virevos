@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -26,6 +26,7 @@ import {
 } from "../ui/dropdown-menu";
 import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
+import axios from "axios";
 
 export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -33,6 +34,14 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
   const [newNote, setNewNote] = useState("");
   const [newTask, setNewTask] = useState("");
+
+  useEffect(() => {
+      const getProjectTasks = async () => {
+          const res = await axios.get(`/api/projects/${project.id}/tasks`)
+          setTasks(tasks)
+      }
+      getProjectTasks()
+  })
 
   const addNote = () => {
     if (newNote.trim()) {
