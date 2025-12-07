@@ -10,9 +10,14 @@ export async function GET() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Fetch all tasks with project name
     const allTasks = await db
-        .select()
+        .select({
+            tasks: tasks,          // all task fields
+            projectName: projects.name // add project name
+        })
         .from(tasks)
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
         .where(eq(tasks.userId, user.id));
 
     return NextResponse.json(allTasks);

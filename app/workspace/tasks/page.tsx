@@ -23,10 +23,14 @@ export default function Tasks() {
     useEffect(() => {
         const getTasks = async () => {
             const res = await axios.get(`/api/tasks`);
-            if (res.data.length === 0) {
-                setTasks(initialTasks)
+            const tasksWithProjectName = res.data.map((t: any) => ({
+                ...t.tasks,              // all task fields
+                projectName: t.projectName || "No Project", // replace projectId
+            }));
+            if (tasksWithProjectName.length === 0) {
+                setTasks(initialTasks);
             } else {
-                setTasks(res.data);
+                setTasks(tasksWithProjectName);
             }
             setLoading(false);
         };
@@ -143,7 +147,7 @@ export default function Tasks() {
 
                 <TabsContent value={activeTab} className="mt-6">
                     <Card className="divide-y">
-                        {filteredTasks.map((task) => (
+                        {tasks.map((task) => (
                             <div
                                 key={task.id}
                                 className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -169,7 +173,7 @@ export default function Tasks() {
                                                     {task.title}
                                                 </h3>
                                                 <p className="text-sm text-gray-600 mt-1">
-                                                    {task.project}
+                                                    {task.projectName}
                                                 </p>
                                             </div>
                                             <div className="flex items-center space-x-2 ml-4">
