@@ -37,7 +37,7 @@ export default function Tasks() {
         getTasks();
     }, []);
 
-    const toggleTaskStatus = (taskId: number) => {
+    const toggleTaskStatus = async (taskId: number) => {
         setTasks((prev) =>
             prev.map((task) =>
                 task.id === taskId
@@ -48,7 +48,24 @@ export default function Tasks() {
                     : task
             )
         );
+
+        // Send request to backend
+        const task = tasks.find(t => t.id === taskId);
+        const newStatus = task?.status === "completed" ? "todo" : "completed";
+
+        try {
+            await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+        } catch (err) {
+            console.error("Failed to update status:", err);
+            // Optionally revert optimistic update
+            setTasks((prev) =>
+                prev.map((task) =>
+                    task.id === taskId ? { ...task, status: task?.status } : task
+                )
+            );
+        }
     };
+
 
     const handleTaskClick = (task: Task) => {
         setSelectedTask(task);
