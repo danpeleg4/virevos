@@ -2,7 +2,7 @@ import {Calendar, Mail, Video} from "lucide-react";
 
 export const initialTasks: Task[] = [
     {
-        id: 1,
+        id: 11,
         title: "Review TechCorp wireframes",
         project: "TechCorp Website Redesign",
         priority: "high",
@@ -11,7 +11,7 @@ export const initialTasks: Task[] = [
         completed: false,
     },
     {
-        id: 2,
+        id: 22,
         title: "Send invoice to DesignCo",
         project: "DesignCo Brand Refresh",
         priority: "high",
@@ -20,7 +20,7 @@ export const initialTasks: Task[] = [
         completed: false,
     },
     {
-        id: 3,
+        id: 33,
         title: "Update project timeline",
         project: "TechCorp Website Redesign",
         priority: "medium",
@@ -29,7 +29,7 @@ export const initialTasks: Task[] = [
         completed: false,
     },
     {
-        id: 4,
+        id: 44,
         title: "Client meeting with StartupXYZ",
         project: "StartupXYZ MVP Development",
         priority: "high",
@@ -38,7 +38,7 @@ export const initialTasks: Task[] = [
         completed: false,
     },
     {
-        id: 5,
+        id: 55,
         title: "Design mo" +
             "ckups review",
         project: "DesignCo Brand Refresh",
@@ -48,7 +48,7 @@ export const initialTasks: Task[] = [
         completed: false,
     },
     {
-        id: 6,
+        id: 66,
         title: "Testing phase completion",
         project: "StartupXYZ MVP Development",
         priority: "low",

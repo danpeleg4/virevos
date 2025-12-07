@@ -28,6 +28,7 @@ interface ProjectDetailViewProps {
 }
 
 interface Project {
+    id,
     name,
     client,
     status,

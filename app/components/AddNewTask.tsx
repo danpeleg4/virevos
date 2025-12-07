@@ -23,7 +23,8 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [project, setProject] = useState(() => projectName ? isProject : "");
+    // Hold the selected project as its id (string). If opened from a project context, we'll resolve by name to id after loading projects.
+    const [project, setProject] = useState<string>("");
     const [projects, setProjects] = useState<Project[]>([])
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");
@@ -32,6 +33,11 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
         const getProjects = async () => {
             const res = await axios.get("/api/projects");
             setProjects(res.data);
+            // If invoked from a project context and we have a project name, preselect its id
+            if (projectName) {
+                const match = (res.data as Project[]).find(p => p.name === projectName);
+                if (match) setProject(String(match.id));
+            }
         }
         getProjects();
     }, [])
@@ -39,13 +45,15 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
     const submitTask = async () => {
         setDialogOpen(false);
 
-        const res = await axios.post("/api/tasks", {
+        const payload: any = {
             title,
             description,
             priority,
-            dueDate,
-            project: project
-        });
+        };
+        if (dueDate) payload.dueDate = dueDate; // only include when set
+        if (project) payload.project = project; // send project id
+
+        const res = await axios.post("/api/tasks", payload);
         console.log("RES DATA:", res.data);
 
         onTaskCreatedAction(res.data.task);
@@ -104,7 +112,7 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
                                 </SelectTrigger>
                                 <SelectContent>
                                     {projects.map(project => (
-                                        <SelectItem value={project.name} key={project.name}>{project.name}</SelectItem>
+                                        <SelectItem value={String(project.id)} key={project.id}>{project.name}</SelectItem>
                                     ))
                                     }
                                 </SelectContent>

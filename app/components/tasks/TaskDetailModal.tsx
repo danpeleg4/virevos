@@ -11,7 +11,6 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
-import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import {
   Select,

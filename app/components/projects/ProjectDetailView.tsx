@@ -27,6 +27,7 @@ import {
 import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
+import {projects} from "@/db/schema";
 
 export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -37,11 +38,13 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
 
   useEffect(() => {
       const getProjectTasks = async () => {
-          const res = await axios.get(`/api/projects/${project.id}/tasks`)
-          setTasks(tasks)
+          const res = await axios.post(`/api/projects/tasks`, {
+              data: project.id
+          })
+          setTasks(res.data)
       }
       getProjectTasks()
-  })
+  }, [])
 
   const addNote = () => {
     if (newNote.trim()) {
