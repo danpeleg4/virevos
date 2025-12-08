@@ -66,7 +66,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               )}
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="text-xs">
-                  {task.project}
+                  {task.projectName || "No Project"}
                 </Badge>
                 <Badge
                   className={
@@ -123,37 +123,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             </div>
 
             <Separator />
-
-            {/* Attachments */}
-            <div>
-              <Label className="flex items-center mb-3">
-                <Paperclip className="h-4 w-4 mr-2" />
-                Attachments ({mockAttachments.length})
-              </Label>
-              <div className="space-y-2">
-                {mockAttachments.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Paperclip className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-900">{file.name}</p>
-                        <p className="text-xs text-gray-500">{file.size}</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      Download
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Button variant="outline" size="sm" className="mt-2">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Attachment
-              </Button>
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -213,24 +182,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 Due Date
               </Label>
               <Input type="date" defaultValue="2025-11-15" />
-            </div>
-
-            <Separator />
-
-            {/* Tags */}
-            <div>
-              <Label className="flex items-center mb-2">
-                <Tag className="h-4 w-4 mr-2" />
-                Tags
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Design</Badge>
-                <Badge variant="secondary">Urgent</Badge>
-                <Button variant="outline" size="sm" className="h-6">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-              </div>
             </div>
 
             <Separator />
