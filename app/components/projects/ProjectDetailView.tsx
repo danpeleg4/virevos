@@ -27,6 +27,7 @@ import {
 import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
+import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 
 export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -34,6 +35,8 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
   const [newNote, setNewNote] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
+  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
   //TODO Figure out the thing
   const toggleTaskStatus = async (taskId: number) => {
@@ -73,6 +76,17 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
       }
       getProjectTasks()
   }, [])
+
+    const handleTaskClick = (task: Task) => {
+        setSelectedTask(task);
+        setTaskDetailOpen(true);
+    };
+
+    const handleTaskUpdate = (updatedTask: Task) => {
+        setTasks((prev) =>
+            prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+        );
+    };
 
   const addNote = () => {
     if (newNote.trim()) {
@@ -211,7 +225,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                     <Checkbox
                         checked={task.status === "completed"}
                         onCheckedChange={() => toggleTaskStatus(task.id)}
-                      //onCheckedChange={() => toggleTaskStatus(task.id)}
                     />
                     <div className="flex-1 min-w-0">
                       <p
@@ -250,7 +263,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="cursor-pointer">Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">Edit</DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600 cursor-pointer">
                           Delete
                         </DropdownMenuItem>
@@ -366,6 +379,13 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
           </Card>
         </div>
       </div>
+        {/* Task Detail Modal */}
+        <TaskDetailModal
+            task={selectedTask}
+            open={taskDetailOpen}
+            onOpenChange={setTaskDetailOpen}
+            onUpdate={handleTaskUpdate}
+        />
     </div>
   );
 }

@@ -23,18 +23,10 @@ import { Separator } from "../ui/separator";
 import {
   Calendar,
   Flag,
-  Tag,
-  Paperclip,
   Trash2,
   Edit,
-  Plus,
   FileText,
 } from "lucide-react";
-
-const mockAttachments = [
-  { id: "1", name: "wireframe_v2.fig", size: "3.2 MB" },
-  { id: "2", name: "client_feedback.pdf", size: "1.5 MB" },
-];
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
