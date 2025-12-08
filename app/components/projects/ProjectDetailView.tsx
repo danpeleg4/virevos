@@ -42,34 +42,28 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const progressPercent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
   //TODO Figure out the thing
-  const toggleTaskStatus = async (taskId: number) => {
-      setTasks((prev) =>
-          prev.map((task) =>
-              task.id === taskId
-                  ? {
+    const toggleTaskStatus = async (taskId: number) => {
+        setTasks((prev) => {
+            return prev.map((task) =>
+                task.id === taskId
+                    ? {
                         ...task,
                         status: task.status === "completed" ? "todo" : "completed",
                     }
                     : task
-          )
-      );
+            );
+        });
 
-      // Send request to backend
-      const task = tasks.find(t => t.id === taskId);
-      const newStatus = task?.status === "completed" ? "todo" : "completed";
+        // Send request to backend using the *new* status
+        const updated = tasks.find(t => t.id === taskId);
+        const newStatus = updated?.status === "completed" ? "todo" : "completed";
 
-      try {
-          await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
-      } catch (err) {
-          console.error("Failed to update status:", err);
-          // Optionally revert optimistic update
-          setTasks((prev) =>
-              prev.map((task) =>
-                  task.id === taskId ? { ...task, status: task?.status } : task
-              )
-          );
-      }
-  };
+        try {
+            await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+        } catch (err) {
+            console.error("Failed to update status:", err);
+        }
+    };
 
   useEffect(() => {
       const getProjectTasks = async () => {
@@ -173,7 +167,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
               <div>
                 <p className="text-sm text-gray-600">Total Tasks</p>
                 <p className="text-2xl text-gray-900 mt-1">
-                  {tasks.filter((t) => t.completed).length}/{tasks.length}
+                    {tasks.filter((t) => t.status === "completed").length}/{tasks.length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />

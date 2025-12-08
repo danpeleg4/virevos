@@ -32,7 +32,7 @@ export async function PATCH(
 
     await db
         .update(tasks)
-        .set({ status })
+        .set({status, completed: status === "completed"})
         .where(eq(tasks.id, taskId));
 
     return NextResponse.json({ success: true, id: taskId, status });
