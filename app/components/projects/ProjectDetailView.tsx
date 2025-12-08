@@ -12,7 +12,6 @@ import {
   Upload,
   Plus,
   CheckCircle,
-  Edit,
   Tag,
   Download,
   MoreVertical,
@@ -37,6 +36,10 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+
+  const completedTasks = tasks.filter(t => t.status === "completed").length;
+  const totalTasks = tasks.length;
+  const progressPercent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
   //TODO Figure out the thing
   const toggleTaskStatus = async (taskId: number) => {
@@ -135,10 +138,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
           >
             {project.priority} priority
           </Badge>
-          <Button variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Project
-          </Button>
         </div>
       </div>
 
@@ -149,9 +148,9 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                <p className="text-2xl text-gray-900 mt-1">{project.progress}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{progressPercent}%</p>
               </div>
-              <Progress value={project.progress} className="w-16 h-16" />
+                <Progress value={progressPercent} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>
