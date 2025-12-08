@@ -4,7 +4,7 @@ export const initialTasks: Task[] = [
     {
         id: 11,
         title: "Review TechCorp wireframes",
-        project: "TechCorp Website Redesign",
+        projectId: "TechCorp Website Redesign",
         priority: "high",
         status: "todo",
         dueDate: "Today",
@@ -13,7 +13,7 @@ export const initialTasks: Task[] = [
     {
         id: 22,
         title: "Send invoice to DesignCo",
-        project: "DesignCo Brand Refresh",
+        projectId: "DesignCo Brand Refresh",
         priority: "high",
         status: "todo",
         dueDate: "Today",
@@ -22,7 +22,7 @@ export const initialTasks: Task[] = [
     {
         id: 33,
         title: "Update project timeline",
-        project: "TechCorp Website Redesign",
+        projectId: "TechCorp Website Redesign",
         priority: "medium",
         status: "in-progress",
         dueDate: "Tomorrow",
@@ -31,7 +31,7 @@ export const initialTasks: Task[] = [
     {
         id: 44,
         title: "Client meeting with StartupXYZ",
-        project: "StartupXYZ MVP Development",
+        projectId: "StartupXYZ MVP Development",
         priority: "high",
         status: "in-progress",
         dueDate: "Tomorrow",
@@ -41,7 +41,7 @@ export const initialTasks: Task[] = [
         id: 55,
         title: "Design mo" +
             "ckups review",
-        project: "DesignCo Brand Refresh",
+        projectId: "DesignCo Brand Refresh",
         priority: "medium",
         status: "completed",
         dueDate: "Yesterday",
@@ -50,7 +50,7 @@ export const initialTasks: Task[] = [
     {
         id: 66,
         title: "Testing phase completion",
-        project: "StartupXYZ MVP Development",
+        projectId: "StartupXYZ MVP Development",
         priority: "low",
         status: "completed",
         dueDate: "2 days ago",
