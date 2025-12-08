@@ -27,21 +27,20 @@ import {
 import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
-import {projects} from "@/db/schema";
 
 export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
   const [newNote, setNewNote] = useState("");
+  const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState("");
 
   useEffect(() => {
       const getProjectTasks = async () => {
-          const res = await axios.post(`/api/projects/tasks`, {
-              data: project.id
-          })
+          const res = await axios.get(`/api/projects/${project.id}/tasks`)
           setTasks(res.data)
+          setLoading(false)
       }
       getProjectTasks()
   }, [])
@@ -64,6 +63,8 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
     const addTaskToList = (newTask: Task) => {
         setTasks(prev => [newTask, ...prev]);
     };
+
+    if (loading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">

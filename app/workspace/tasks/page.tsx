@@ -66,7 +66,6 @@ export default function Tasks() {
         }
     };
 
-
     const handleTaskClick = (task: Task) => {
         setSelectedTask(task);
         setTaskDetailOpen(true);
@@ -164,7 +163,7 @@ export default function Tasks() {
 
                 <TabsContent value={activeTab} className="mt-6">
                     <Card className="divide-y">
-                        {tasks.map((task) => (
+                        {filteredTasks.map((task) => (
                             <div
                                 key={task.id}
                                 className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
