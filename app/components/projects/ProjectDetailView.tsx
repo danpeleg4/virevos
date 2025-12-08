@@ -34,7 +34,36 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
   const [newNote, setNewNote] = useState("");
   const [loading, setLoading] = useState(true);
-  const [newTask, setNewTask] = useState("");
+
+  //TODO Figure out the thing
+  const toggleTaskStatus = async (taskId: number) => {
+      setTasks((prev) =>
+          prev.map((task) =>
+              task.id === taskId
+                  ? {
+                        ...task,
+                        status: task.status === "completed" ? "todo" : "completed",
+                    }
+                    : task
+          )
+      );
+
+      // Send request to backend
+      const task = tasks.find(t => t.id === taskId);
+      const newStatus = task?.status === "completed" ? "todo" : "completed";
+
+      try {
+          await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+      } catch (err) {
+          console.error("Failed to update status:", err);
+          // Optionally revert optimistic update
+          setTasks((prev) =>
+              prev.map((task) =>
+                  task.id === taskId ? { ...task, status: task?.status } : task
+              )
+          );
+      }
+  };
 
   useEffect(() => {
       const getProjectTasks = async () => {
@@ -180,8 +209,9 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                     }`}
                   >
                     <Checkbox
-                      checked={task.completed}
-                      //onCheckedChange={() => toggleTask(task.id)}
+                        checked={task.status === "completed"}
+                        onCheckedChange={() => toggleTaskStatus(task.id)}
+                      //onCheckedChange={() => toggleTaskStatus(task.id)}
                     />
                     <div className="flex-1 min-w-0">
                       <p
@@ -215,13 +245,13 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="cursor-pointer">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem className="cursor-pointer">Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600 cursor-pointer">
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
