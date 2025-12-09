@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { projects, tasks } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import {eq, sql} from "drizzle-orm";
 
 export async function GET() {
     const user = await currentUser();
@@ -93,6 +93,14 @@ export async function POST(req: NextRequest) {
         }
 
         const newTask = await db.insert(tasks).values(values).returning();
+        if (newTask.length > 0) {
+            await db
+                .update(projects)
+                .set({
+                    totalTasks: sql`${projects.totalTasks} + 1`
+                })
+                .where(eq(projects.id, Number(projectId)));
+        }
         return NextResponse.json({ success: true, task: newTask[0] }, { status: 201 });
 
     } catch (err: unknown) {

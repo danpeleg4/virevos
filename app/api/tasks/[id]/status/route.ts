@@ -1,8 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/db/db";
-import { tasks } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import {projects, tasks} from "@/db/schema";
+import {eq, sql} from "drizzle-orm";
 
 interface Params {
     id: string;
@@ -31,6 +31,10 @@ export async function PATCH(
         .update(tasks)
         .set({status, completed: status === "completed"})
         .where(eq(tasks.id, taskId));
+
+    await db.update(projects).set({
+        tasksCompleted: sql`${projects.tasksCompleted} + ${status === "completed" ? 1 : 0}`
+    })
 
     return NextResponse.json({ success: true, id: taskId, status });
 }
