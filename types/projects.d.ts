@@ -26,6 +26,7 @@ interface ProjectDetailViewProps {
     };
     onBack: () => void;
     onDelete: (number) => void;
+    onTaskUpdate: (projectId, updatedCompleted, updatedTotal) => void;
 }
 
 interface Project {

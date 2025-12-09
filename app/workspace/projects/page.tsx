@@ -73,6 +73,26 @@ export default function Projects() {
             return matchesSearch && matchesTab;
         });
 
+    function handleTaskUpdate(
+        projectId: number,
+        updatedCompleted: number,
+        updatedTotal: number
+    ) {
+        setProjectsData(prev =>
+            prev.map(p =>
+                p.id === projectId
+                    ? {
+                        ...p,
+                        tasksCompleted: updatedCompleted,
+                        totalTasks: updatedTotal
+                    }
+                    : p
+            )
+        );
+    }
+
+
+
     const handleDeleteProject = (projectId: number) => {
         setProjectsData(prev => prev.filter(p => p.id !== projectId));
         setSelectedProject(null); // go back to list
@@ -86,6 +106,7 @@ export default function Projects() {
                     project={selectedProject}
                     onBack={() => setSelectedProject(null)}
                     onDelete={handleDeleteProject}
+                    onTaskUpdate={handleTaskUpdate}
                 />
             </div>
         );
@@ -236,15 +257,15 @@ export default function Projects() {
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
-                    <TabsTrigger value="all">
+                    <TabsTrigger className="cursor-pointer" value="all">
                         All Projects ({projectsData.length})
                     </TabsTrigger>
 
-                    <TabsTrigger value="active">
+                    <TabsTrigger className="cursor-pointer" value="active">
                         Active ({projectsData.filter((p) => p.status !== "completed").length})
                     </TabsTrigger>
 
-                    <TabsTrigger value="completed">
+                    <TabsTrigger className="cursor-pointer" value="completed">
                         Completed ({projectsData.filter((p) => p.status === "completed").length})
                     </TabsTrigger>
                 </TabsList>

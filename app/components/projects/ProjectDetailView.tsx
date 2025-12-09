@@ -27,7 +27,7 @@ import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 
-export function ProjectDetailView({ project, onBack, onDelete }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
@@ -55,6 +55,13 @@ export function ProjectDetailView({ project, onBack, onDelete }: ProjectDetailVi
 
         try {
             await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+            const updatedTasks = await axios.get(`/api/projects/${project.id}/tasks`);
+            onTaskUpdate(
+                project.id,
+                updatedTasks.data.filter((t: { status: string; }) => t.status === "completed").length,
+                updatedTasks.data.length
+            );
+
         } catch (err) {
             console.error("Failed to update status:", err);
         }
