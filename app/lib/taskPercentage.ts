@@ -1,10 +1,16 @@
-export function taskPercentage(input: Task[] | {completed: number, total: number}) {
+export function taskPercentage(
+    input: Task[] | { completed: number; total: number }
+): number {
+    let completed: number;
+    let total: number;
+
     if (Array.isArray(input)) {
-        const completed = input.filter(t => t.status === "completed").length;
-        const total = input.length;
-        return total === 0 ? 0 : Math.round((completed / total) * 100);
+        completed = input.filter(t => t.status === "completed").length;
+        total = input.length;
     } else {
-        const { completed, total } = input;
-        return total === 0 ? 0 : Math.round((completed / total) * 100);
+        ({ completed, total } = input);
     }
+
+    if (total <= 0) return 0;
+    return Math.round((completed / total) * 100);
 }

@@ -304,7 +304,7 @@ export default function Projects() {
                                         <Progress value={taskPercentage({
                                             completed: project.tasksCompleted,
                                             total: project.totalTasks
-                                        })} />
+                                        })}/>
                                     </div>
 
                                     <div className="flex items-center justify-between text-sm">

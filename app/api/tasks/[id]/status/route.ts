@@ -1,4 +1,3 @@
-import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import {projects, tasks} from "@/db/schema";
@@ -27,14 +26,34 @@ export async function PATCH(
         return new NextResponse("Invalid status", { status: 400 });
     }
 
+// get existing task
+    const existing = await db.query.tasks.findFirst({
+        where: eq(tasks.id, taskId),
+    });
+
+    if (!existing) {
+        return new NextResponse("Task not found", { status: 404 });
+    }
+
+    const prevStatus = existing.status;
+
     await db
         .update(tasks)
-        .set({status, completed: status === "completed"})
+        .set({ status, completed: status === "completed" })
         .where(eq(tasks.id, taskId));
 
-    await db.update(projects).set({
-        tasksCompleted: sql`${projects.tasksCompleted} + ${status === "completed" ? 1 : 0}`
-    })
+    // only update if status changed
+    if (prevStatus !== status) {
+        const diff = status === "completed" ? 1 : -1;
+
+        await db
+            .update(projects)
+            .set({
+                tasksCompleted: sql`${projects.tasksCompleted} + ${diff}`
+            })
+            .where(eq(projects.id, Number(existing.projectId)));
+    }
+
 
     return NextResponse.json({ success: true, id: taskId, status });
 }
