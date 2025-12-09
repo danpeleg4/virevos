@@ -100,6 +100,11 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
     }
   };
 
+  const deleteTask = async (taskId: number) => {
+      const res = await axios.delete(`/api/tasks/${taskId}/status`)
+      if (res.status == 200) setTasks(tasks.filter(t => t.id !== taskId))
+  }
+
     const addTaskToList = (newTask: Task) => {
         setTasks(prev => [newTask, ...prev]);
     };
@@ -257,7 +262,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 cursor-pointer">
+                        <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => deleteTask(task.id)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -271,27 +276,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
 
         {/* Right Column - Files & Notes */}
         <div className="space-y-6">
-          {/* Tags */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-base">
-                <Tag className="h-4 w-4 mr-2 text-purple-600" />
-                Tags
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Web Design</Badge>
-                <Badge variant="secondary">Responsive</Badge>
-                <Badge variant="secondary">E-commerce</Badge>
-                <Button size="sm" variant="outline" className="h-6">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Files */}
           <Card>
             <CardHeader>

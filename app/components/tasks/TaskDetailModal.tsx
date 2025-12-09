@@ -27,6 +27,7 @@ import {
   Edit,
   FileText,
 } from "lucide-react";
+import axios from "axios";
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
@@ -41,7 +42,18 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         }
     }, [task]);
 
-  return (
+    async function deleteTask (taskId: number){
+        await axios.delete(`/api/tasks/${taskId}/status`)
+    }
+
+    async function saveTask() {
+        await axios.put(`/api/tasks/${task.id}`, {
+            title: editedTitle,
+            description,
+        });
+    }
+
+    return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="m-4 max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -78,18 +90,26 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Button
-                  className="cursor-pointer"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                {isEditing ? "Save" : "Edit"}
-              </Button>
-              <Button className="cursor-pointer" variant="outline" size="sm">
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
+                <Button
+                    className="cursor-pointer"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                        if (isEditing) saveTask();
+                        setIsEditing(!isEditing);
+                    }}
+                >
+                    <Edit className="h-4 w-4 mr-2" />
+                    {isEditing ? "Save" : "Edit"}
+                </Button>
+                <Button
+                    className="cursor-pointer"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteTask(task.id)}
+                >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
             </div>
           </div>
         </DialogHeader>

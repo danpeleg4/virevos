@@ -84,13 +84,16 @@ export default function Projects() {
         );
     }
 
-    function formatDate(dateStr: string | number | Date) {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        });
+    function formatDate(dateStr: string) {
+        const [year, month, day] = dateStr.split("-");
+        return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString(
+            "en-US",
+            {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            }
+        );
     }
 
     const handleCreateProject = async () => {

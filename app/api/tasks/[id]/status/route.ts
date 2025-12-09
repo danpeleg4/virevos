@@ -15,9 +15,6 @@ export async function PATCH(
     const resolvedParams = await params; // <-- unwrap the promise
     const { id } = resolvedParams;
 
-    const user = await currentUser();
-    if (!user?.id) return new NextResponse("Unauthorized", { status: 401 });
-
     const taskId = Number(id);
     if (isNaN(taskId)) {
         return new NextResponse("Invalid task id", { status: 400 });
@@ -36,4 +33,22 @@ export async function PATCH(
         .where(eq(tasks.id, taskId));
 
     return NextResponse.json({ success: true, id: taskId, status });
+}
+
+export async function DELETE(
+    req: Request,
+    { params }: { params: Promise<Params> }
+) {
+    const user = await currentUser();
+    if (!user?.id) return new NextResponse("Unauthorized", { status: 401 });
+    const resolvedParams = await params; // <-- unwrap the promise
+    const { id } = resolvedParams;
+    const taskId = Number(id);
+    if (isNaN(taskId)) {
+        return new NextResponse("Invalid task id", { status: 400 });
+    }
+
+    await db.delete(tasks).where(eq(tasks.id, taskId));
+    return NextResponse.json({ success: true, id: taskId });
+
 }
