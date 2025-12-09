@@ -32,7 +32,7 @@ interface ProjectDetailViewProps {
 interface Project {
     id,
     name,
-    client,
+    clientName,
     status,
     progress,
     dueDate,
