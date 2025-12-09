@@ -47,7 +47,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
     }
 
     async function saveTask() {
-        await axios.put(`/api/tasks/${task.id}`, {
+        await axios.put(`/api/tasks/${task.id}/status`, {
             title: editedTitle,
             description,
         });
