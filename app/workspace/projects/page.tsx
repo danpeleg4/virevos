@@ -72,6 +72,11 @@ export default function Projects() {
             return matchesSearch && matchesTab;
         });
 
+    const handleDeleteProject = (projectId: number) => {
+        setProjectsData(prev => prev.filter(p => p.id !== projectId));
+        setSelectedProject(null); // go back to list
+    };
+
     // If a project is selected, show the detail view
     if (selectedProject) {
         return (
@@ -79,6 +84,7 @@ export default function Projects() {
                 <ProjectDetailView
                     project={selectedProject}
                     onBack={() => setSelectedProject(null)}
+                    onDelete={handleDeleteProject}
                 />
             </div>
         );

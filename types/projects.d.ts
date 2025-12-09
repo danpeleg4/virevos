@@ -25,6 +25,7 @@ interface ProjectDetailViewProps {
         priority: string;
     };
     onBack: () => void;
+    onDelete: (number) => void;
 }
 
 interface Project {

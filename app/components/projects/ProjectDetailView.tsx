@@ -6,16 +6,16 @@ import { Progress } from "../ui/progress";
 import { Textarea } from "../ui/textarea";
 import { Checkbox } from "../ui/checkbox";
 import {
-  ArrowLeft,
-  Calendar,
-  FileText,
-  Upload,
-  Plus,
-  CheckCircle,
-  Tag,
-  Download,
-  MoreVertical,
-  Paperclip,
+    ArrowLeft,
+    Calendar,
+    FileText,
+    Upload,
+    Plus,
+    CheckCircle,
+    Tag,
+    Download,
+    MoreVertical,
+    Paperclip, Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,7 +28,7 @@ import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 
-export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, onBack, onDelete }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
@@ -100,6 +100,15 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
     }
   };
 
+    const deleteProject = async (projectId: number) => {
+        try {
+            await axios.delete(`/api/projects/${projectId}/project`);
+            onDelete(projectId);      // <--- update parent state
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
   const deleteTask = async (taskId: number) => {
       const res = await axios.delete(`/api/tasks/${taskId}/status`)
       if (res.status == 200) setTasks(tasks.filter(t => t.id !== taskId))
@@ -137,6 +146,14 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
           >
             {project.priority} priority
           </Badge>
+            <Button
+                className="cursor-pointer"
+                variant="outline"
+                size="sm"
+                onClick={() => deleteProject(project.id)}
+            >
+                <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
         </div>
       </div>
 
