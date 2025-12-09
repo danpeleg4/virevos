@@ -171,12 +171,14 @@ const fadeInUp = {
 
 export default function Dashboard() {
     const [projects, setProjects] = useState<Project[]>(recentProjects);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const getProjects = async () => {
             try {
                 const res = await axios.get("/api/projects");
                 setProjects(res.data);
+                setLoading(false);
             } catch {
                 console.log("Failed to fetch projects — using fallback");
             }
@@ -250,49 +252,52 @@ export default function Dashboard() {
                         </Button>
                     </div>
 
-                    <div className="space-y-4">
-                        {projects.map((project) => (
-                            <div
-                                key={project.id}
-                                className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                                <div className="flex">
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-2 mb-1">
-                                            <h3 className="text-gray-900">{project.name}</h3>
-                                            <Badge
-                                                variant="outline"
-                                                className={
-                                                    project.status === "on-track"
-                                                        ? "border-green-200 text-green-700"
-                                                        : "border-orange-200 text-orange-700"
-                                                }
-                                            >
-                                                {project.status === "on-track" ? (
-                                                    <TrendingUp className="h-3 w-3 mr-1" />
-                                                ) : (
-                                                    <AlertCircle className="h-3 w-3 mr-1" />
-                                                )}
-                                                {project.status === "on-track" ? "On Track" : "At Risk"}
-                                            </Badge>
+                    {
+                        loading ? <p className="text-gray-600">Loading projects...</p> :
+                            <div className="space-y-4">
+                                {projects.map((project) => (
+                                    <div
+                                        key={project.id}
+                                        className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                                    >
+                                        <div className="flex">
+                                            <div className="flex-1">
+                                                <div className="flex items-center space-x-2 mb-1">
+                                                    <h3 className="text-gray-900">{project.name}</h3>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={
+                                                            project.status === "on-track"
+                                                                ? "border-green-200 text-green-700"
+                                                                : "border-orange-200 text-orange-700"
+                                                        }
+                                                    >
+                                                        {project.status === "on-track" ? (
+                                                            <TrendingUp className="h-3 w-3 mr-1" />
+                                                        ) : (
+                                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                                        )}
+                                                        {project.status === "on-track" ? "On Track" : "At Risk"}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm text-gray-600">{project.clientName}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm text-gray-900">{taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})}%</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {project.tasksCompleted}/{project.totalTasks} tasks
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-gray-600">{project.clientName}</p>
+                                        <Progress value={taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})} />
+                                        <div className="flex items-center text-xs text-gray-500">
+                                            <Clock className="h-3 w-3 mr-1" />
+                                            Due: {project.dueDate}
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm text-gray-900">{taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})}%</p>
-                                        <p className="text-xs text-gray-500">
-                                            {project.tasksCompleted}/{project.totalTasks} tasks
-                                        </p>
-                                    </div>
-                                </div>
-                                <Progress value={taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})} />
-                                <div className="flex items-center text-xs text-gray-500">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    Due: {project.dueDate}
-                                </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                    }
                 </Card>
 
                 {/* Upcoming Tasks */}
