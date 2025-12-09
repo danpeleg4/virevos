@@ -10,9 +10,7 @@ import {
     Calendar,
     FileText,
     Upload,
-    Plus,
     CheckCircle,
-    Tag,
     Download,
     MoreVertical,
     Paperclip, Trash2,
@@ -27,6 +25,7 @@ import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
+import {taskPercentage} from "@/app/lib/taskPercentage";
 
 export function ProjectDetailView({ project, onBack, onDelete }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -36,10 +35,6 @@ export function ProjectDetailView({ project, onBack, onDelete }: ProjectDetailVi
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
-
-  const completedTasks = tasks.filter(t => t.status === "completed").length;
-  const totalTasks = tasks.length;
-  const progressPercent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
   //TODO Figure out the thing
     const toggleTaskStatus = async (taskId: number) => {
@@ -164,9 +159,9 @@ export function ProjectDetailView({ project, onBack, onDelete }: ProjectDetailVi
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                  <p className="text-2xl text-gray-900 mt-1">{progressPercent}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(tasks)}%</p>
               </div>
-                <Progress value={progressPercent} className="w-16 h-16" />
+                <Progress value={taskPercentage(tasks)} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>

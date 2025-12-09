@@ -28,6 +28,7 @@ import { ProjectDetailView } from "@/app/components/projects/ProjectDetailView";
 import axios from "axios";
 import {clients} from "@/types/clients";
 import { projectsMockData } from '@/app/lib/mockData'
+import {taskPercentage} from "@/app/lib/taskPercentage";
 
 export default function Projects() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -294,10 +295,16 @@ export default function Projects() {
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm text-gray-600">Progress</span>
                                             <span className="text-sm text-gray-900">
-                        {project.progress}%
-                      </span>
+                                                {taskPercentage({
+                                                    completed: project.tasksCompleted,
+                                                    total: project.totalTasks
+                                                })}%
+                                            </span>
                                         </div>
-                                        <Progress value={project.progress} />
+                                        <Progress value={taskPercentage({
+                                            completed: project.tasksCompleted,
+                                            total: project.totalTasks
+                                        })} />
                                     </div>
 
                                     <div className="flex items-center justify-between text-sm">
