@@ -79,19 +79,22 @@ export default function Projects() {
         updatedTotal: number
     ) {
         setProjectsData(prev =>
-            prev.map(p =>
-                p.id === projectId
-                    ? {
-                        ...p,
-                        tasksCompleted: updatedCompleted,
-                        totalTasks: updatedTotal
-                    }
-                    : p
-            )
+            prev.map(p => {
+                if (p.id !== projectId) return p;
+
+                const isCompleted =
+                    updatedTotal > 0 && updatedCompleted === updatedTotal;
+
+                return {
+                    ...p,
+                    tasksCompleted: updatedCompleted,
+                    totalTasks: updatedTotal,
+                    status: isCompleted ? "completed" : "in-progress",
+                    health: isCompleted ? "completed" : "on-track"
+                };
+            })
         );
     }
-
-
 
     const handleDeleteProject = (projectId: number) => {
         setProjectsData(prev => prev.filter(p => p.id !== projectId));
