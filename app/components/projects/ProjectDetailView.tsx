@@ -369,7 +369,14 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
                   >
                     <p className="text-sm text-gray-700 mb-2">{note.content}</p>
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{note.createdAt}</span>
+                      <span>{new Date(note.createdAt).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                      })}</span>
                     </div>
                   </div>
                 ))}
