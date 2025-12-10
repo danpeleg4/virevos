@@ -2,7 +2,8 @@ interface Task {
     id: number;
     title: string;
     description?: string;
-    project?: string;
+    projectId?: string;
+    projectName?: string;
     priority: "high" | "medium" | "low";
     status: "todo" | "in-progress" | "completed";
     dueDate: string;

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { motion } from "motion/react";
 import { Card } from "../../components/ui/card";
@@ -10,13 +10,27 @@ import {
     FolderKanban,
     CheckSquare,
     Zap,
-    ArrowUpRight,
-    ArrowDownRight,
     TrendingUp,
     Clock,
     AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { taskPercentage } from "@/app/lib/taskPercentage";
+
+type Project = {
+    id: number;
+    name: string;
+    clientName: string;
+    progress: number;
+    status: "on-track" | "at-risk";
+    dueDate: string;
+    priority: string;
+    tasksCompleted: number;
+    totalTasks: number;
+    health: string;
+};
 
 const stats = [
     {
@@ -49,36 +63,42 @@ const stats = [
     },
 ];
 
-const recentProjects = [
+const recentProjects: Project[] = [
     {
         id: 1,
         name: "TechCorp Website Redesign",
-        client: "TechCorp Inc.",
+        clientName: "TechCorp Inc.",
         progress: 75,
         status: "on-track",
         dueDate: "Nov 15, 2025",
+        priority: "high",
         tasksCompleted: 15,
         totalTasks: 20,
+        health: "on-track",
     },
     {
         id: 2,
         name: "DesignCo Brand Refresh",
-        client: "DesignCo Agency",
+        clientName: "DesignCo Agency",
         progress: 45,
         status: "at-risk",
         dueDate: "Nov 12, 2025",
+        priority: "high",
         tasksCompleted: 9,
         totalTasks: 20,
+        health: "on-track",
     },
     {
         id: 3,
         name: "StartupXYZ MVP Development",
-        client: "StartupXYZ",
+        clientName: "StartupXYZ",
         progress: 90,
         status: "on-track",
         dueDate: "Nov 18, 2025",
+        priority: "high",
         tasksCompleted: 27,
         totalTasks: 30,
+        health: "on-track",
     },
 ];
 
@@ -150,15 +170,31 @@ const fadeInUp = {
 };
 
 export default function Dashboard() {
+    const [projects, setProjects] = useState<Project[]>(recentProjects);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const getProjects = async () => {
+            try {
+                const res = await axios.get("/api/projects");
+                setProjects(res.data);
+                setLoading(false);
+            } catch {
+                console.log("Failed to fetch projects — using fallback");
+            }
+        };
+        getProjects();
+    }, []);
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
             <div>
                 <h1 className="text-3xl text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-1">Welcome back! Here&#39;s what&#39;s happening today.</p>
+                <p className="text-gray-600 mt-1">Welcome back! Here&#39;s what’s happening today.</p>
             </div>
 
-            {/* Stats Grid */}
+            {/* Stats */}
             <motion.div
                 initial="hidden"
                 animate="visible"
@@ -211,71 +247,65 @@ export default function Dashboard() {
                 <Card className="p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl text-gray-900">Recent Projects</h2>
-                        <Button
-                            style={{ cursor: "pointer" }}
-                            variant="ghost"
-                            size="sm"
-                        >
-                            <Link href="/workspace/projects">
-                                View All
-                            </Link>
+                        <Button variant="ghost" size="sm">
+                            <Link href="/workspace/projects">View All</Link>
                         </Button>
                     </div>
 
-                    <div className="space-y-4">
-                        {recentProjects.map((project) => (
-                            <div key={project.id} className="space-y-3 items-start justify-between space-x-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div className="flex">
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-2 mb-1">
-                                            <h3 className="text-gray-900">{project.name}</h3>
-                                            <Badge
-                                                variant="outline"
-                                                className={
-                                                    project.status === "on-track"
-                                                        ? "border-green-200 text-green-700"
-                                                        : "border-orange-200 text-orange-700"
-                                                }
-                                            >
-                                                {project.status === "on-track" ? (
-                                                    <TrendingUp className="h-3 w-3 mr-1" />
-                                                ) : (
-                                                    <AlertCircle className="h-3 w-3 mr-1" />
-                                                )}
-                                                {project.status === "on-track" ? "On Track" : "At Risk"}
-                                            </Badge>
+                    {
+                        loading ? <p className="text-gray-600">Loading projects...</p> :
+                            <div className="space-y-4">
+                                {projects.map((project) => (
+                                    <div
+                                        key={project.id}
+                                        className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                                    >
+                                        <div className="flex">
+                                            <div className="flex-1">
+                                                <div className="flex items-center space-x-2 mb-1">
+                                                    <h3 className="text-gray-900">{project.name}</h3>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={
+                                                            project.status === "on-track"
+                                                                ? "border-green-200 text-green-700"
+                                                                : "border-orange-200 text-orange-700"
+                                                        }
+                                                    >
+                                                        {project.status === "on-track" ? (
+                                                            <TrendingUp className="h-3 w-3 mr-1" />
+                                                        ) : (
+                                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                                        )}
+                                                        {project.status === "on-track" ? "On Track" : "At Risk"}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm text-gray-600">{project.clientName}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm text-gray-900">{taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})}%</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {project.tasksCompleted}/{project.totalTasks} tasks
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-gray-600">{project.client}</p>
+                                        <Progress value={taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})} />
+                                        <div className="flex items-center text-xs text-gray-500">
+                                            <Clock className="h-3 w-3 mr-1" />
+                                            Due: {project.dueDate}
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm text-gray-900">{project.progress}%</p>
-                                        <p className="text-xs text-gray-500">
-                                            {project.tasksCompleted}/{project.totalTasks} tasks
-                                        </p>
-                                    </div>
-                                </div>
-                                <Progress value={project.progress} />
-                                <div className="flex items-center text-xs text-gray-500">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    Due: {project.dueDate}
-                                </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                    }
                 </Card>
 
                 {/* Upcoming Tasks */}
                 <Card className="p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl text-gray-900">Upcoming Tasks</h2>
-                        <Button
-                            style={{ cursor: "pointer" }}
-                            variant="ghost"
-                            size="sm"
-                        >
-                            <Link href="/workspace/tasks">
-                                View All
-                            </Link>
+                        <Button variant="ghost" size="sm">
+                            <Link href="/workspace/tasks">View All</Link>
                         </Button>
                     </div>
 
@@ -317,14 +347,8 @@ export default function Dashboard() {
             <Card className="p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl text-gray-900">Recent Automations</h2>
-                    <Button
-                        style={{ cursor: "pointer" }}
-                        variant="ghost"
-                        size="sm"
-                    >
-                        <Link href="/workspace/logs">
-                            View Logs
-                        </Link>
+                    <Button variant="ghost" size="sm">
+                        <Link href="/workspace/logs">View Logs</Link>
                     </Button>
                 </div>
 

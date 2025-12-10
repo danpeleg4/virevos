@@ -25,11 +25,14 @@ interface ProjectDetailViewProps {
         priority: string;
     };
     onBack: () => void;
+    onDelete: (number) => void;
+    onTaskUpdate: (projectId, updatedCompleted, updatedTotal) => void;
 }
 
 interface Project {
+    id,
     name,
-    client,
+    clientName,
     status,
     progress,
     dueDate,

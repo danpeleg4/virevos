@@ -37,7 +37,7 @@ export async function POST(req: Request) {
                 name,
                 email,
                 phone: phone ? phone : null,
-                user_id: user.id
+                userId: user.id
             })
             .returning();
 

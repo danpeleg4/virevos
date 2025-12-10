@@ -33,9 +33,8 @@ export async function POST(req: NextRequest) {
         .insert(projects)
         .values({
             name,
-            client,
+            clientName: client,
             status: "in-progress",
-            progress: 0,
             dueDate,
             tasksCompleted: 0,
             totalTasks: 0,

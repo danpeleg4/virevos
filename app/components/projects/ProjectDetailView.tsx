@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -6,17 +6,14 @@ import { Progress } from "../ui/progress";
 import { Textarea } from "../ui/textarea";
 import { Checkbox } from "../ui/checkbox";
 import {
-  ArrowLeft,
-  Calendar,
-  FileText,
-  Upload,
-  Plus,
-  CheckCircle,
-  Edit,
-  Tag,
-  Download,
-  MoreVertical,
-  Paperclip,
+    ArrowLeft,
+    Calendar,
+    FileText,
+    Upload,
+    CheckCircle,
+    Download,
+    MoreVertical,
+    Paperclip, Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,13 +23,68 @@ import {
 } from "../ui/dropdown-menu";
 import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
+import axios from "axios";
+import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
+import {taskPercentage} from "@/app/lib/taskPercentage";
 
-export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
   const [newNote, setNewNote] = useState("");
-  const [newTask, setNewTask] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
+  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+
+    const toggleTaskStatus = async (taskId: number) => {
+        setTasks((prev) => {
+            return prev.map((task) =>
+                task.id === taskId
+                    ? {
+                        ...task,
+                        status: task.status === "completed" ? "todo" : "completed",
+                    }
+                    : task
+            );
+        });
+
+        // Send request to backend using the *new* status
+        const updated = tasks.find(t => t.id === taskId);
+        const newStatus = updated?.status === "completed" ? "todo" : "completed";
+
+        try {
+            await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+            const updatedTasks = await axios.get(`/api/projects/${project.id}/tasks`);
+            onTaskUpdate(
+                project.id,
+                updatedTasks.data.filter((t: { status: string; }) => t.status === "completed").length,
+                updatedTasks.data.length
+            );
+
+        } catch (err) {
+            console.error("Failed to update status:", err);
+        }
+    };
+
+  useEffect(() => {
+      const getProjectTasks = async () => {
+          const res = await axios.get(`/api/projects/${project.id}/tasks`)
+          setTasks(res.data)
+          setLoading(false)
+      }
+      getProjectTasks()
+  }, [])
+
+    const handleTaskClick = (task: Task) => {
+        setSelectedTask(task);
+        setTaskDetailOpen(true);
+    };
+
+    const handleTaskUpdate = (updatedTask: Task) => {
+        setTasks((prev) =>
+            prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+        );
+    };
 
   const addNote = () => {
     if (newNote.trim()) {
@@ -49,9 +101,25 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
     }
   };
 
+    const deleteProject = async (projectId: number) => {
+        try {
+            await axios.delete(`/api/projects/${projectId}/project`);
+            onDelete(projectId);      // <--- update parent state
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+  const deleteTask = async (taskId: number) => {
+      const res = await axios.delete(`/api/tasks/${taskId}/status`)
+      if (res.status == 200) setTasks(tasks.filter(t => t.id !== taskId))
+  }
+
     const addTaskToList = (newTask: Task) => {
         setTasks(prev => [newTask, ...prev]);
     };
+
+    if (loading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">
@@ -79,10 +147,14 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
           >
             {project.priority} priority
           </Badge>
-          <Button variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Project
-          </Button>
+            <Button
+                className="cursor-pointer"
+                variant="outline"
+                size="sm"
+                onClick={() => deleteProject(project.id)}
+            >
+                <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
         </div>
       </div>
 
@@ -93,9 +165,9 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                <p className="text-2xl text-gray-900 mt-1">{project.progress}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(tasks)}%</p>
               </div>
-              <Progress value={project.progress} className="w-16 h-16" />
+                <Progress value={taskPercentage(tasks)} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>
@@ -118,7 +190,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
               <div>
                 <p className="text-sm text-gray-600">Total Tasks</p>
                 <p className="text-2xl text-gray-900 mt-1">
-                  {tasks.filter((t) => t.completed).length}/{tasks.length}
+                    {tasks.filter((t) => t.status === "completed").length}/{tasks.length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -167,8 +239,8 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                     }`}
                   >
                     <Checkbox
-                      checked={task.completed}
-                      //onCheckedChange={() => toggleTask(task.id)}
+                        checked={task.status === "completed"}
+                        onCheckedChange={() => toggleTaskStatus(task.id)}
                     />
                     <div className="flex-1 min-w-0">
                       <p
@@ -202,13 +274,13 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="cursor-pointer">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => deleteTask(task.id)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -222,27 +294,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
 
         {/* Right Column - Files & Notes */}
         <div className="space-y-6">
-          {/* Tags */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-base">
-                <Tag className="h-4 w-4 mr-2 text-purple-600" />
-                Tags
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Web Design</Badge>
-                <Badge variant="secondary">Responsive</Badge>
-                <Badge variant="secondary">E-commerce</Badge>
-                <Button size="sm" variant="outline" className="h-6">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Files */}
           <Card>
             <CardHeader>
@@ -323,6 +374,13 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
           </Card>
         </div>
       </div>
+        {/* Task Detail Modal */}
+        <TaskDetailModal
+            task={selectedTask}
+            open={taskDetailOpen}
+            onOpenChange={setTaskDetailOpen}
+            onUpdate={handleTaskUpdate}
+        />
     </div>
   );
 }

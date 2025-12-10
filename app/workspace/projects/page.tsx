@@ -28,6 +28,7 @@ import { ProjectDetailView } from "@/app/components/projects/ProjectDetailView";
 import axios from "axios";
 import {clients} from "@/types/clients";
 import { projectsMockData } from '@/app/lib/mockData'
+import {taskPercentage} from "@/app/lib/taskPercentage";
 
 export default function Projects() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -72,6 +73,34 @@ export default function Projects() {
             return matchesSearch && matchesTab;
         });
 
+    function handleTaskUpdate(
+        projectId: number,
+        updatedCompleted: number,
+        updatedTotal: number
+    ) {
+        setProjectsData(prev =>
+            prev.map(p => {
+                if (p.id !== projectId) return p;
+
+                const isCompleted =
+                    updatedTotal > 0 && updatedCompleted === updatedTotal;
+
+                return {
+                    ...p,
+                    tasksCompleted: updatedCompleted,
+                    totalTasks: updatedTotal,
+                    status: isCompleted ? "completed" : "in-progress",
+                    health: isCompleted ? "completed" : "on-track"
+                };
+            })
+        );
+    }
+
+    const handleDeleteProject = (projectId: number) => {
+        setProjectsData(prev => prev.filter(p => p.id !== projectId));
+        setSelectedProject(null); // go back to list
+    };
+
     // If a project is selected, show the detail view
     if (selectedProject) {
         return (
@@ -79,18 +108,23 @@ export default function Projects() {
                 <ProjectDetailView
                     project={selectedProject}
                     onBack={() => setSelectedProject(null)}
+                    onDelete={handleDeleteProject}
+                    onTaskUpdate={handleTaskUpdate}
                 />
             </div>
         );
     }
 
-    function formatDate(dateStr: string | number | Date) {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        });
+    function formatDate(dateStr: string) {
+        const [year, month, day] = dateStr.split("-");
+        return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString(
+            "en-US",
+            {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            }
+        );
     }
 
     const handleCreateProject = async () => {
@@ -226,15 +260,15 @@ export default function Projects() {
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
-                    <TabsTrigger value="all">
+                    <TabsTrigger className="cursor-pointer" value="all">
                         All Projects ({projectsData.length})
                     </TabsTrigger>
 
-                    <TabsTrigger value="active">
+                    <TabsTrigger className="cursor-pointer" value="active">
                         Active ({projectsData.filter((p) => p.status !== "completed").length})
                     </TabsTrigger>
 
-                    <TabsTrigger value="completed">
+                    <TabsTrigger className="cursor-pointer" value="completed">
                         Completed ({projectsData.filter((p) => p.status === "completed").length})
                     </TabsTrigger>
                 </TabsList>
@@ -285,10 +319,16 @@ export default function Projects() {
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm text-gray-600">Progress</span>
                                             <span className="text-sm text-gray-900">
-                        {project.progress}%
-                      </span>
+                                                {taskPercentage({
+                                                    completed: project.tasksCompleted,
+                                                    total: project.totalTasks
+                                                })}%
+                                            </span>
                                         </div>
-                                        <Progress value={project.progress} />
+                                        <Progress value={taskPercentage({
+                                            completed: project.tasksCompleted,
+                                            total: project.totalTasks
+                                        })}/>
                                     </div>
 
                                     <div className="flex items-center justify-between text-sm">

@@ -23,17 +23,21 @@ export default function Tasks() {
     useEffect(() => {
         const getTasks = async () => {
             const res = await axios.get(`/api/tasks`);
-            if (res.data.length === 0) {
-                setTasks(initialTasks)
+            const tasksWithProjectName = res.data.map((t: any) => ({
+                ...t.tasks,              // all task fields
+                projectName: t.projectName || "No Project", // replace projectId
+            }));
+            if (tasksWithProjectName.length === 0) {
+                setTasks(initialTasks);
             } else {
-                setTasks(res.data);
+                setTasks(tasksWithProjectName);
             }
             setLoading(false);
         };
         getTasks();
     }, []);
 
-    const toggleTaskStatus = (taskId: number) => {
+    const toggleTaskStatus = async (taskId: number) => {
         setTasks((prev) =>
             prev.map((task) =>
                 task.id === taskId
@@ -44,6 +48,22 @@ export default function Tasks() {
                     : task
             )
         );
+
+        // Send request to backend
+        const task = tasks.find(t => t.id === taskId);
+        const newStatus = task?.status === "completed" ? "todo" : "completed";
+
+        try {
+            await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+        } catch (err) {
+            console.error("Failed to update status:", err);
+            // Optionally revert optimistic update
+            setTasks((prev) =>
+                prev.map((task) =>
+                    task.id === taskId ? { ...task, status: task?.status } : task
+                )
+            );
+        }
     };
 
     const handleTaskClick = (task: Task) => {
@@ -169,7 +189,7 @@ export default function Tasks() {
                                                     {task.title}
                                                 </h3>
                                                 <p className="text-sm text-gray-600 mt-1">
-                                                    {task.project}
+                                                    {task.projectName}
                                                 </p>
                                             </div>
                                             <div className="flex items-center space-x-2 ml-4">

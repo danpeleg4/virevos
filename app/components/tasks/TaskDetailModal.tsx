@@ -11,7 +11,6 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
-import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -24,18 +23,11 @@ import { Separator } from "../ui/separator";
 import {
   Calendar,
   Flag,
-  Tag,
-  Paperclip,
   Trash2,
   Edit,
-  Plus,
   FileText,
 } from "lucide-react";
-
-const mockAttachments = [
-  { id: "1", name: "wireframe_v2.fig", size: "3.2 MB" },
-  { id: "2", name: "client_feedback.pdf", size: "1.5 MB" },
-];
+import axios from "axios";
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
@@ -50,7 +42,18 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         }
     }, [task]);
 
-  return (
+    async function deleteTask (taskId: number){
+        await axios.delete(`/api/tasks/${taskId}/status`)
+    }
+
+    async function saveTask() {
+        await axios.put(`/api/tasks/${task.id}/status`, {
+            title: editedTitle,
+            description,
+        });
+    }
+
+    return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="m-4 max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -67,7 +70,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               )}
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="text-xs">
-                  {task.project}
+                  {task.projectName || "No Project"}
                 </Badge>
                 <Badge
                   className={
@@ -87,18 +90,26 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Button
-                  className="cursor-pointer"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                {isEditing ? "Save" : "Edit"}
-              </Button>
-              <Button className="cursor-pointer" variant="outline" size="sm">
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
+                <Button
+                    className="cursor-pointer"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                        if (isEditing) saveTask();
+                        setIsEditing(!isEditing);
+                    }}
+                >
+                    <Edit className="h-4 w-4 mr-2" />
+                    {isEditing ? "Save" : "Edit"}
+                </Button>
+                <Button
+                    className="cursor-pointer"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteTask(task.id)}
+                >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
             </div>
           </div>
         </DialogHeader>
@@ -124,37 +135,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             </div>
 
             <Separator />
-
-            {/* Attachments */}
-            <div>
-              <Label className="flex items-center mb-3">
-                <Paperclip className="h-4 w-4 mr-2" />
-                Attachments ({mockAttachments.length})
-              </Label>
-              <div className="space-y-2">
-                {mockAttachments.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Paperclip className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-900">{file.name}</p>
-                        <p className="text-xs text-gray-500">{file.size}</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      Download
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Button variant="outline" size="sm" className="mt-2">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Attachment
-              </Button>
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -214,24 +194,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 Due Date
               </Label>
               <Input type="date" defaultValue="2025-11-15" />
-            </div>
-
-            <Separator />
-
-            {/* Tags */}
-            <div>
-              <Label className="flex items-center mb-2">
-                <Tag className="h-4 w-4 mr-2" />
-                Tags
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Design</Badge>
-                <Badge variant="secondary">Urgent</Badge>
-                <Button variant="outline" size="sm" className="h-6">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-              </div>
             </div>
 
             <Separator />

@@ -22,16 +22,51 @@ import {
     Users,
     Brain,
     FileSpreadsheet,
+    type LucideIcon,
 } from "lucide-react";
 import {integrations, plans} from "@/app/lib/mockData";
 
-interface OnboardingProps {
-    onComplete: () => void;
+type BillingCycle = "monthly" | "yearly" | string;
+
+interface OnboardingFormData {
+    // Account
+    fullName: string;
+    email: string;
+    password: string;
+    companyName: string;
+
+    // Subscription
+    selectedPlan: string;
+    billingCycle: BillingCycle;
+
+    // Payment
+    cardNumber: string;
+    cardExpiry: string;
+    cardCVC: string;
+    billingAddress: string;
+
+    // Integrations
+    selectedIntegrations: string[];
+
+    // Import Data
+    importMethod: string;
+
+    // AI Personalization
+    industry: string;
+    teamSize: string;
+    mainGoals: string;
+    workStyle: string;
+    aiContext: string;
 }
 
-export default function Onboarding({ onComplete }: OnboardingProps) {
+type UpdateFormData = <K extends keyof OnboardingFormData>(
+    field: K,
+    value: OnboardingFormData[K]
+) => void;
+
+export default function Onboarding() {
     const [currentStep, setCurrentStep] = useState(0);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<OnboardingFormData>({
         // Step 1: Account
         fullName: "",
         email: "",
@@ -62,7 +97,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         aiContext: "",
     });
 
-    const steps = [
+    const steps: { id: number; name: string; icon: LucideIcon }[] = [
         { id: 0, name: "Welcome", icon: Sparkles },
         { id: 1, name: "Account", icon: Users },
         { id: 2, name: "Plan", icon: Zap },
@@ -74,7 +109,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
     const progress = ((currentStep + 1) / steps.length) * 100;
 
-    const updateFormData = (field: string, value: any) => {
+    const updateFormData: UpdateFormData = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -90,8 +125,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     const nextStep = () => {
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
-        } else {
-            onComplete();
         }
     };
 
@@ -265,7 +298,13 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 }
 
 // Account Step
-function AccountStep({ formData, updateFormData, onNext }: any) {
+interface StepWithFormProps {
+    formData: OnboardingFormData;
+    updateFormData: UpdateFormData;
+    onNext: () => void;
+}
+
+function AccountStep({ formData, updateFormData, onNext }: StepWithFormProps) {
     return (
         <Card className="border-0 shadow-xl">
             <CardHeader>
@@ -344,7 +383,7 @@ function AccountStep({ formData, updateFormData, onNext }: any) {
 }
 
 // Plan Step
-function PlanStep({ formData, updateFormData, onNext }: any) {
+function PlanStep({ formData, updateFormData, onNext }: StepWithFormProps) {
     return (
         <div className="space-y-6">
             <div className="text-center mb-8">
@@ -408,7 +447,7 @@ function PlanStep({ formData, updateFormData, onNext }: any) {
 }
 
 // Payment Step
-function PaymentStep({ formData, updateFormData, onNext }: any) {
+function PaymentStep({ formData, updateFormData, onNext }: StepWithFormProps) {
     const selectedPlan = plans.find((p) => p.id === formData.selectedPlan);
 
     return (
@@ -498,7 +537,13 @@ function PaymentStep({ formData, updateFormData, onNext }: any) {
 }
 
 // Integrations Step
-function IntegrationsStep({ formData, toggleIntegration, onNext }: any) {
+interface IntegrationsStepProps {
+    formData: OnboardingFormData;
+    toggleIntegration: (id: string) => void;
+    onNext: () => void;
+}
+
+function IntegrationsStep({ formData, toggleIntegration, onNext }: IntegrationsStepProps) {
     const calendarIntegrations = integrations.filter((i) => i.category === "calendar");
     const videoIntegrations = integrations.filter((i) => i.category === "video");
 
@@ -618,7 +663,7 @@ function IntegrationsStep({ formData, toggleIntegration, onNext }: any) {
 }
 
 // Import Data Step
-function ImportDataStep({ formData, updateFormData, onNext }: any) {
+function ImportDataStep({ formData, updateFormData, onNext }: StepWithFormProps) {
     const importOptions = [
         {
             id: "csv",
@@ -720,7 +765,7 @@ function ImportDataStep({ formData, updateFormData, onNext }: any) {
 }
 
 // AI Personalization Step
-function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
+function AIPersonalizationStep({ formData, updateFormData, onNext }: StepWithFormProps) {
     return (
         <Card className="border-0 shadow-xl">
             <CardHeader>

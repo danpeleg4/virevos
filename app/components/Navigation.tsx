@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "./ui/button";
-import { Menu, X, ChevronDown } from "lucide-react";
+import {Menu, X, ChevronDown, Sparkles} from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -46,8 +46,7 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const router = useRouter();
-
-  const { isSignedIn, user, isLoaded } = useUser()
+  const { isSignedIn, isLoaded } = useUser()
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -68,6 +67,7 @@ export function Navigation() {
             className="flex items-center cursor-pointer"
             onClick={() => handleNavigation("/")}
           >
+              <Sparkles className="mr-2"/>
             <h1 className="text-2xl text-gray-900">Virevos</h1>
           </motion.div>
 
