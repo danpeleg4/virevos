@@ -36,7 +36,6 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
   const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
-  //TODO Figure out the thing
     const toggleTaskStatus = async (taskId: number) => {
         setTasks((prev) => {
             return prev.map((task) =>

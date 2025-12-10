@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
             name,
             clientName: client,
             status: "in-progress",
-            progress: 0,
             dueDate,
             tasksCompleted: 0,
             totalTasks: 0,

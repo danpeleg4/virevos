@@ -19,7 +19,7 @@ export const users = pgTable("users", {
 // CLIENTS
 export const clients = pgTable("clients", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-    name: text("name").notNull(),
+    name: text("name").notNull().unique(),
     email: text("email"),
     phone: text("phone"),
 
@@ -42,7 +42,6 @@ export const projects = pgTable("projects", {
     name: text("title").notNull(),
     description: text("description"),
     status: text("status").notNull().default("in-progress"),
-    progress: integer("progress").notNull().default(0),
     dueDate: date("due_date").notNull().default("2025-01-01"),
     totalTasks: integer("total_tasks").notNull().default(0),
     tasksCompleted: integer("tasks_completed").notNull().default(0),
