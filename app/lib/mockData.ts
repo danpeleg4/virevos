@@ -109,13 +109,11 @@ export const  mockNotes: ProjectNote[] = [
     {
         id: "1",
         content: "Client requested to change the primary color scheme from blue to green. Updated design files accordingly.",
-        author: "Sarah Johnson",
         createdAt: "Nov 8, 2025",
     },
     {
         id: "2",
         content: "Meeting with stakeholders went well. They approved the new dashboard layout. Next step: start development.",
-        author: "John Doe",
         createdAt: "Nov 6, 2025",
     },
 ];
