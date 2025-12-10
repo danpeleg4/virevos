@@ -1,3 +1,5 @@
+"use client"
+
 import {useEffect, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -66,6 +68,14 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
         }
     };
 
+    useEffect(() => {
+        const getNotes = async () => {
+            const res = await axios.get(`/api/projects/${project.id}/notes`)
+            setNotes(res.data)
+        }
+        getNotes()
+    }, [])
+
   useEffect(() => {
       const getProjectTasks = async () => {
           const res = await axios.get(`/api/projects/${project.id}/tasks`)
@@ -86,20 +96,15 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
         );
     };
 
-  const addNote = () => {
-    if (newNote.trim()) {
-      setNotes([
-        {
-          id: String(notes.length + 1),
-          content: newNote,
-          author: "John Doe",
-          createdAt: "Just now",
-        },
-        ...notes,
-      ]);
-      setNewNote("");
-    }
-  };
+    const addNote = async () => {
+        if (!newNote.trim()) return;
+
+        const res = await axios.post(`/api/projects/add_note`, { newNote, projectId: project.id });
+        const created = res.data; // backend returns actual note
+
+        setNotes((prev) => [created, ...prev]);
+        setNewNote("");
+    };
 
     const deleteProject = async (projectId: number) => {
         try {
@@ -364,8 +369,14 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
                   >
                     <p className="text-sm text-gray-700 mb-2">{note.content}</p>
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{note.author}</span>
-                      <span>{note.createdAt}</span>
+                      <span>{new Date(note.createdAt).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                      })}</span>
                     </div>
                   </div>
                 ))}

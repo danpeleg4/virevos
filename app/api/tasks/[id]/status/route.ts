@@ -26,7 +26,7 @@ export async function PATCH(
         return new NextResponse("Invalid status", { status: 400 });
     }
 
-// get existing task
+    // get existing task
     const existing = await db.query.tasks.findFirst({
         where: eq(tasks.id, taskId),
     });

@@ -95,7 +95,6 @@ export const notes = pgTable("notes", {
 
     userId: varchar("user_id").references(() => users.user_id),
     projectId: integer("project_id").references(() => projects.id),
-    meetingId: text("meeting_id").references(() => meetings.id),
 });
 
 // TASKS
@@ -204,11 +203,7 @@ export const notesRelations = relations(notes, ({ one }) => ({
     project: one(projects, {
         fields: [notes.projectId],
         references: [projects.id],
-    }),
-    meeting: one(meetings, {
-        fields: [notes.meetingId],
-        references: [meetings.id],
-    }),
+    })
 }));
 
 export const meetingsRelations = relations(meetings, ({ one, many }) => ({

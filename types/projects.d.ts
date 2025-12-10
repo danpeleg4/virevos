@@ -10,7 +10,6 @@ interface ProjectFile {
 interface ProjectNote {
     id: string;
     content: string;
-    author: string;
     createdAt: string;
 }
 
