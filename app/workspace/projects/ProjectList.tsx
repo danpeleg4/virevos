@@ -8,7 +8,6 @@ import {Badge} from "@/app/components/ui/badge";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 import {Progress} from "@/app/components/ui/progress";
 import {useState} from "react";
-import {projectsMockData} from "@/app/lib/mockData";
 
 interface ProjectListProps {
     projects: Project[];
@@ -19,15 +18,9 @@ interface ProjectListProps {
     onSelect: (project: Project) => void;
 }
 
-export function ProjectList({ projects, search, setSearch, tab, setTab, onSelect }: ProjectListProps) {
+export function ProjectList({ projects, onSelect }: ProjectListProps) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [dialogOpen, setDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
-    const [projectName, setProjectName] = useState("");
-    const [client, setClient] = useState("");
-    const [dueDate, setDueDate] = useState("");
-    const [priority, setPriority] = useState("");
-    const [selectedProject, setSelectedProject] = useState<typeof projectsMockData[0] | null>(null);
 
     const filteredProjects = projects
         .filter((project) => {

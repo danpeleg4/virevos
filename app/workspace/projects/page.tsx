@@ -3,7 +3,6 @@ import ProjectsPage from "./ProjectsPage";
 import {db} from "@/db/db";
 import {clients, projects} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
-import {NextResponse} from "next/server";
 import {eq} from "drizzle-orm";
 
 export async function createProject(project: Project) {
@@ -12,7 +11,7 @@ export async function createProject(project: Project) {
         return
     }
     const { name, clientName, dueDate, priority } = project;
-    const created = await db
+    await db
         .insert(projects)
         .values({
             name,

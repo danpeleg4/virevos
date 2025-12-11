@@ -1,12 +1,12 @@
 "use client"
 
 import {useEffect, useState} from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { Progress } from "../ui/progress";
-import { Textarea } from "../ui/textarea";
-import { Checkbox } from "../ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
+import { Progress } from "../../components/ui/progress";
+import { Textarea } from "../../components/ui/textarea";
+import { Checkbox } from "../../components/ui/checkbox";
 import {
     ArrowLeft,
     Calendar,
@@ -22,7 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "../../components/ui/dropdown-menu";
 import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
@@ -136,7 +136,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
           </Button>
           <div>
             <h1 className="text-2xl text-gray-900">{project.name}</h1>
-            <p className="text-gray-600 mt-1">{project.client}</p>
+            <p className="text-gray-600 mt-1">{project.clientName}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">

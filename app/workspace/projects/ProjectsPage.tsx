@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ProjectDetailView } from "@/app/components/projects/ProjectDetailView";
+import { ProjectDetailView } from "@/app/workspace/projects/ProjectDetailView";
 import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import {projectsMockData} from "@/app/lib/mockData";
