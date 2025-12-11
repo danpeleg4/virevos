@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
 import { ProjectDetailView } from "@/app/components/projects/ProjectDetailView";
 import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
@@ -11,9 +10,10 @@ import {clients} from "@/types/clients";
 interface ProjectsPageProps {
     initialProjects: Project[];
     initialClients: clients[];
+    save: (project: Project) => Promise<void>;
 }
 
-export default function ProjectsPage({ initialProjects, initialClients }: ProjectsPageProps) {
+export default function ProjectsPage({ initialProjects, initialClients, save }: ProjectsPageProps) {
     const [projects, setProjects] = useState(initialProjects);
     const [clients, setClients] = useState(initialClients);
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -30,11 +30,6 @@ export default function ProjectsPage({ initialProjects, initialClients }: Projec
 
         return matchesSearch && matchesTab;
     });
-
-    const handleCreateProject = async (project: Project) => {
-        const res = await axios.post("/api/projects", project);
-        setProjects(res.data);
-    };
 
     function handleTaskUpdate(
         projectId: number,
@@ -66,7 +61,6 @@ export default function ProjectsPage({ initialProjects, initialClients }: Projec
 
     return (
         <div className="p-6 space-y-6">
-
             {selectedProject ?
                 <ProjectDetailView
                     project={selectedProject}
@@ -78,7 +72,7 @@ export default function ProjectsPage({ initialProjects, initialClients }: Projec
                 <>
                     <ProjectCreateDialog
                         clients={clients}
-                        onCreate={handleCreateProject}
+                        save={save}
                     />
 
                     <ProjectList

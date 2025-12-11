@@ -28,8 +28,6 @@ export function ProjectList({ projects, search, setSearch, tab, setTab, onSelect
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState("");
     const [selectedProject, setSelectedProject] = useState<typeof projectsMockData[0] | null>(null);
-    const [clients, setClients] = useState([]);
-    const [loading, setLoading] = useState(true);
 
     const filteredProjects = projects
         .filter((project) => {

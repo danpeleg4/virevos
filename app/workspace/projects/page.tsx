@@ -1,14 +1,37 @@
+"use server"
 import ProjectsPage from "./ProjectsPage";
 import {db} from "@/db/db";
-import {clients, users} from "@/db/schema";
+import {clients, projects} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
 import {NextResponse} from "next/server";
 import {eq} from "drizzle-orm";
 
+export async function createProject(project: Project) {
+    const user = await currentUser();
+    if (!user?.id) {
+        return
+    }
+    const { name, clientName, dueDate, priority } = project;
+    const created = await db
+        .insert(projects)
+        .values({
+            name,
+            clientName,
+            status: "in-progress",
+            dueDate,
+            tasksCompleted: 0,
+            totalTasks: 0,
+            priority,
+            health: "on-track",
+            userId: user.id
+        })
+        .returning();
+}
+
 export default async function Page() {
     const user = await currentUser();
     if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
+        return
     }
 
     const projects = await db.query.projects.findMany({
@@ -21,6 +44,7 @@ export default async function Page() {
         <ProjectsPage
             initialProjects={projects}
             initialClients={cli}
+            save={createProject}
         />
     );
 }

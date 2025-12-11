@@ -24,20 +24,10 @@ import type { clients } from "@/types/clients";
 
 interface ProjectCreateDialogProps {
     clients: clients[];
-    onCreate: (project: {
-        id: number;
-        name: string;
-        clientName: string;
-        priority: string;
-        dueDate: string;
-        status: string;
-        tasksCompleted: number;
-        totalTasks: number;
-        health: string;
-    }) => void;
+    save: (project: Project) => Promise<void>;
 }
 
-export function ProjectCreateDialog({ clients, onCreate }: ProjectCreateDialogProps) {
+export function ProjectCreateDialog({ clients, save }: ProjectCreateDialogProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [projectName, setProjectName] = useState("");
     const [client, setClient] = useState("");
@@ -45,7 +35,7 @@ export function ProjectCreateDialog({ clients, onCreate }: ProjectCreateDialogPr
     const [priority, setPriority] = useState("");
 
     const submit = () => {
-        onCreate({
+        save({
             id: 1,
             name: projectName,
             clientName: client,
