@@ -17,9 +17,8 @@ interface ProjectDetailViewProps {
     project: {
         id: number;
         name: string;
-        client: string;
+        clientName: string;
         status: string;
-        progress: number;
         dueDate: string;
         priority: string;
     };
@@ -33,7 +32,6 @@ interface Project {
     name,
     clientName,
     status,
-    progress,
     dueDate,
     tasksCompleted,
     totalTasks,
