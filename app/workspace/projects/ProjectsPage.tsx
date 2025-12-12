@@ -11,9 +11,10 @@ interface ProjectsPageProps {
     initialProjects: Project[];
     initialClients: clients[];
     save: (project: Project) => Promise<void>;
+    addNotes: (newNote: string, projectId: number) => ProjectNote;
 }
 
-export default function ProjectsPage({ initialProjects, initialClients, save }: ProjectsPageProps) {
+export default function ProjectsPage({ initialProjects, initialClients, save, addNotes }: ProjectsPageProps) {
     const [projects, setProjects] = useState(initialProjects);
     const [clients, setClients] = useState(initialClients);
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -67,6 +68,7 @@ export default function ProjectsPage({ initialProjects, initialClients, save }: 
                     onBack={() => setSelectedProject(null)}
                     onDelete={handleDeleteProject}
                     onTaskUpdate={handleTaskUpdate}
+                    addNotes={addNotes}
                 />
                 :
                 <>

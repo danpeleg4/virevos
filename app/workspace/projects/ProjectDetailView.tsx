@@ -29,7 +29,7 @@ import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 
-export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, addNotes }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
@@ -53,7 +53,6 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
         // Send request to backend using the *new* status
         const updated = tasks.find(t => t.id === taskId);
         const newStatus = updated?.status === "completed" ? "todo" : "completed";
-
         try {
             await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
             const updatedTasks = await axios.get(`/api/projects/${project.id}/tasks`);
@@ -62,7 +61,6 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
                 updatedTasks.data.filter((t: { status: string; }) => t.status === "completed").length,
                 updatedTasks.data.length
             );
-
         } catch (err) {
             console.error("Failed to update status:", err);
         }
@@ -96,13 +94,14 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
         );
     };
 
-    const addNote = async () => {
+    const addNote = async (newNote: string, projectId: number) => {
         if (!newNote.trim()) return;
 
-        const res = await axios.post(`/api/projects/add_note`, { newNote, projectId: project.id });
-        const created = res.data; // backend returns actual note
+        const data = addNotes(newNote, projectId);
+        //const res = await axios.post(`/api/projects/add_note`, { newNote, projectId: project.id });
+        //const created = res.data; // backend returns actual note
 
-        setNotes((prev) => [created, ...prev]);
+        setNotes((prev) => [data, ...prev]);
         setNewNote("");
     };
 
@@ -356,7 +355,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate }: P
                   onChange={(e) => setNewNote(e.target.value)}
                   rows={3}
                 />
-                <Button size="sm" className="mt-2" onClick={addNote}>
+                <Button size="sm" className="mt-2" onClick={() => addNote(newNote, project.id)}>
                   Add Note
                 </Button>
               </div>

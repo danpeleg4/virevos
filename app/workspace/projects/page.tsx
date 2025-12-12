@@ -1,7 +1,7 @@
 "use server"
 import ProjectsPage from "./ProjectsPage";
 import {db} from "@/db/db";
-import {clients, projects} from "@/db/schema";
+import {clients, notes, projects} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
 import {eq} from "drizzle-orm";
 
@@ -27,6 +27,24 @@ export async function createProject(project: Project) {
         .returning();
 }
 
+export async function addNotes(newNote: string, projectId: number) {
+    const user = await currentUser();
+    if (!user?.id) {
+        return
+    }
+
+    const inserted = await db
+        .insert(notes)
+        .values({
+            content: newNote,
+            userId: user.id,
+            projectId,
+        })
+        .returning();
+
+    return inserted[0];
+}
+
 export default async function Page() {
     const user = await currentUser();
     if (!user?.id) {
@@ -44,6 +62,7 @@ export default async function Page() {
             initialProjects={projects}
             initialClients={cli}
             save={createProject}
+            addNotes={addNotes}
         />
     );
 }

@@ -25,6 +25,7 @@ interface ProjectDetailViewProps {
     onBack: () => void;
     onDelete: (number) => void;
     onTaskUpdate: (projectId, updatedCompleted, updatedTotal) => void;
+    addNotes: (newNote: string, projectId: number) => ProjectNote;
 }
 
 interface Project {
@@ -37,4 +38,13 @@ interface Project {
     totalTasks,
     priority,
     health,
+}
+
+interface ProjectNote {
+    id: number;
+    content: string;
+    createdAt: string | Date | null;
+    userId?: string | null;
+    updatedAt?: string | null;
+    projectId?: number | null;
 }
