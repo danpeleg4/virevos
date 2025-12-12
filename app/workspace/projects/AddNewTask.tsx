@@ -10,7 +10,7 @@ import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import axios from "axios";
 
 type Payload = {
@@ -21,30 +21,14 @@ type Payload = {
     project?: string;
 }
 
-export default function AddNewTask({ onTaskCreatedAction, projectName, projectData }: AddNewTaskProps) {
+export default function AddNewTask({ onTaskCreatedAction }: AddNewTaskPrjProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     // Hold the selected project as its id (string). If opened from a project context, we'll resolve by name to id after loading projects.
     const [project, setProject] = useState<string>("");
-    const [projects, setProjects] = useState<Project[]>([])
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");
-
-    useEffect(() => {
-        // On mount, load projects from props
-        setProjects(projectData);
-    }, [projectData]);
-
-// Separate effect for selecting the project AFTER projects are set
-    useEffect(() => {
-        if (!projectName || projects.length === 0) return;
-
-        const match = projects.find(p => p.name === projectName);
-        if (match) {
-            setProject(String(match.id));
-        }
-    }, [projectName, projects]);
 
     const submitTask = async () => {
         setDialogOpen(false);
@@ -106,23 +90,6 @@ export default function AddNewTask({ onTaskCreatedAction, projectName, projectDa
                             onChange={(e) => setDescription(e.target.value)}
                         />
                     </div>
-
-                    {!projectName &&
-                        <div>
-                            <Label>Project</Label>
-                            <Select onValueChange={setProject}>
-                                <SelectTrigger className="mt-2">
-                                    <SelectValue placeholder="Select project" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {projects.map(project => (
-                                        <SelectItem value={String(project.id)} key={project.id}>{project.name}</SelectItem>
-                                    ))
-                                    }
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    }
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>

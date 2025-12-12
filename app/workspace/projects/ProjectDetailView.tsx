@@ -23,12 +23,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import AddNewTask from "@/app/components/AddNewTask";
 import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 import {taskPercentage} from "@/app/lib/taskPercentage";
-import {AddNewTaskParent} from "@/app/components/AddNewTaskParent";
+import AddNewTask from "@/app/workspace/projects/AddNewTask";
 
 export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, addNotes }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -229,7 +228,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                  <AddNewTaskParent onTaskCreatedAction={addTaskToList} projectName={project.name}/>
+                  <AddNewTask onTaskCreatedAction={addTaskToList} />
               </div>
             </CardHeader>
             <CardContent>

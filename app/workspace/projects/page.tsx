@@ -58,7 +58,6 @@ export default async function Page() {
     });
 
     const cli = await db.select().from(clients).orderBy(clients.id).where(eq(clients.userId, user.id,));
-
     return (
         <ProjectsPage
             initialProjects={projects}

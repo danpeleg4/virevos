@@ -20,11 +20,9 @@ interface TaskDetailModalProps {
 type AddNewTaskProps = {
     onTaskCreatedAction: (task: Task) => void;
     projectName?: string;
-    projectData: () => Promise<Project[]>;
+    projectData: Project[];
 };
 
-type AddNewTaskPropsParent = {
+type AddNewTaskPrjProps = {
     onTaskCreatedAction: (task: Task) => void;
-    projectName?: string;
-    projectData?: () => Promise<Project[]>;
 };
