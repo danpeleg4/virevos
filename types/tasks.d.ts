@@ -16,3 +16,15 @@ interface TaskDetailModalProps {
     onOpenChange: (open: boolean) => void;
     onUpdate: (task: Task) => void;
 }
+
+type AddNewTaskProps = {
+    onTaskCreatedAction: (task: Task) => void;
+    projectName?: string;
+    projectData: () => Promise<Project[]>;
+};
+
+type AddNewTaskPropsParent = {
+    onTaskCreatedAction: (task: Task) => void;
+    projectName?: string;
+    projectData?: () => Promise<Project[]>;
+};

@@ -13,13 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {useEffect, useState} from "react";
 import axios from "axios";
 
-type AddNewTaskProps = {
-    onTaskCreatedAction: (task: Task) => void;
-    isProject?: boolean;
-    projectName?: string;
-};
-
-export default function AddNewTask({ onTaskCreatedAction, isProject = false, projectName }: AddNewTaskProps) {
+export default function AddNewTask({ onTaskCreatedAction, projectName, projectData }: AddNewTaskProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -31,11 +25,11 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
 
     useEffect(() => {
         const getProjects = async () => {
-            const res = await axios.get("/api/projects");
-            setProjects(res.data);
+            const res = await projectData()
+            setProjects(res);
             // If invoked from a project context and we have a project name, preselect its id
             if (projectName) {
-                const match = (res.data as Project[]).find(p => p.name === projectName);
+                const match = (res as Project[]).find(p => p.name === projectName);
                 if (match) setProject(String(match.id));
             }
         }
@@ -103,7 +97,7 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
                         />
                     </div>
 
-                    {!isProject &&
+                    {!projectName &&
                         <div>
                             <Label>Project</Label>
                             <Select onValueChange={setProject}>

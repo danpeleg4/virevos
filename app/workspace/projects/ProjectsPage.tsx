@@ -11,7 +11,7 @@ interface ProjectsPageProps {
     initialProjects: Project[];
     initialClients: clients[];
     save: (project: Project) => Promise<void>;
-    addNotes: (newNote: string, projectId: number) => ProjectNote;
+    addNotes: (newNote: string, projectId: number) => Promise<ProjectNote>;
 }
 
 export default function ProjectsPage({ initialProjects, initialClients, save, addNotes }: ProjectsPageProps) {

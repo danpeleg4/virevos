@@ -28,6 +28,7 @@ import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 import {taskPercentage} from "@/app/lib/taskPercentage";
+import {AddNewTaskParent} from "@/app/components/AddNewTaskParent";
 
 export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, addNotes }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -97,7 +98,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
     const addNote = async (newNote: string, projectId: number) => {
         if (!newNote.trim()) return;
 
-        const data = addNotes(newNote, projectId);
+        const data = await addNotes(newNote, projectId);
         //const res = await axios.post(`/api/projects/add_note`, { newNote, projectId: project.id });
         //const created = res.data; // backend returns actual note
 
@@ -228,7 +229,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                  <AddNewTask onTaskCreatedAction={addTaskToList} isProject={true} projectName={project.name}/>
+                  <AddNewTaskParent onTaskCreatedAction={addTaskToList} projectName={project.name}/>
               </div>
             </CardHeader>
             <CardContent>
@@ -368,7 +369,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
                   >
                     <p className="text-sm text-gray-700 mb-2">{note.content}</p>
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{new Date(note.createdAt).toLocaleString("en-US", {
+                      <span>{new Date(note.createdAt!).toLocaleString("en-US", {
                           year: "numeric",
                           month: "2-digit",
                           day: "2-digit",

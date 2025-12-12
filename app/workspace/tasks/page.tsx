@@ -11,6 +11,7 @@ import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 import AddNewTask from "@/app/components/AddNewTask";
 import axios from "axios";
 import { initialTasks } from "@/app/lib/mockData";
+import {AddNewTaskParent} from "@/app/components/AddNewTaskParent";
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -108,7 +109,7 @@ export default function Tasks() {
                     <h1 className="text-3xl text-gray-900">Tasks</h1>
                     <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
                 </div>
-                <AddNewTask onTaskCreatedAction={addTaskToList}/>
+                <AddNewTaskParent onTaskCreatedAction={addTaskToList}/>
             </div>
 
             {

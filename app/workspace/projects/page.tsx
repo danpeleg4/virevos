@@ -27,11 +27,12 @@ export async function createProject(project: Project) {
         .returning();
 }
 
-export async function addNotes(newNote: string, projectId: number) {
+export async function addNotes(
+    newNote: string,
+    projectId: number
+): Promise<ProjectNote> {
     const user = await currentUser();
-    if (!user?.id) {
-        return
-    }
+    if (!user?.id) throw new Error("No user");
 
     const inserted = await db
         .insert(notes)
@@ -44,6 +45,7 @@ export async function addNotes(newNote: string, projectId: number) {
 
     return inserted[0];
 }
+
 
 export default async function Page() {
     const user = await currentUser();
