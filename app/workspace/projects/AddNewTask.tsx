@@ -21,11 +21,10 @@ type Payload = {
     project?: string;
 }
 
-export default function AddNewTask({ onTaskCreatedAction }: AddNewTaskPrjProps) {
+export default function AddNewTask({ onTaskCreatedAction, projectId }: AddNewTaskPrjProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    // Hold the selected project as its id (string). If opened from a project context, we'll resolve by name to id after loading projects.
     const [project, setProject] = useState<string>("");
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");

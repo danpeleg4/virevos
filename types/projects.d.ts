@@ -8,14 +8,7 @@ interface ProjectFile {
 }
 
 interface ProjectDetailViewProps {
-    project: {
-        id: number;
-        name: string;
-        clientName: string;
-        status: string;
-        dueDate: string;
-        priority: string;
-    };
+    project: Project
     onBack: () => void;
     onDelete: (number) => void;
     onTaskUpdate: (projectId, updatedCompleted, updatedTotal) => void;
@@ -23,7 +16,6 @@ interface ProjectDetailViewProps {
 }
 
 interface Project {
-    id,
     name,
     clientName,
     status,

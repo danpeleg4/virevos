@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -24,19 +24,19 @@ import type { clients } from "@/types/clients";
 
 interface ProjectCreateDialogProps {
     clients: clients[];
-    save: (project: Project) => Promise<void>;
+    save: (project: Project) => Promise<Project>;
+    setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
 }
 
-export function ProjectCreateDialog({ clients, save }: ProjectCreateDialogProps) {
+export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreateDialogProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [projectName, setProjectName] = useState("");
     const [client, setClient] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState("");
 
-    const submit = () => {
-        save({
-            id: 1,
+    const submit = async () => {
+        const newProject = await save({
             name: projectName,
             clientName: client,
             priority,
@@ -46,6 +46,8 @@ export function ProjectCreateDialog({ clients, save }: ProjectCreateDialogProps)
             totalTasks: 0,
             health: "on-track"
         });
+
+        //setProjects(prev => [...prev, newProject]);
 
         setDialogOpen(false);
     };

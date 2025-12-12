@@ -10,7 +10,7 @@ import {clients} from "@/types/clients";
 interface ProjectsPageProps {
     initialProjects: Project[];
     initialClients: clients[];
-    save: (project: Project) => Promise<void>;
+    save: (project: Project) => Promise<Project>;
     addNotes: (newNote: string, projectId: number) => Promise<ProjectNote>;
 }
 
@@ -75,6 +75,7 @@ export default function ProjectsPage({ initialProjects, initialClients, save, ad
                     <ProjectCreateDialog
                         clients={clients}
                         save={save}
+                        setProjects={setProjects}
                     />
 
                     <ProjectList

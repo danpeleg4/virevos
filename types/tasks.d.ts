@@ -25,4 +25,5 @@ type AddNewTaskProps = {
 
 type AddNewTaskPrjProps = {
     onTaskCreatedAction: (task: Task) => void;
+    projectId: Project.id;
 };

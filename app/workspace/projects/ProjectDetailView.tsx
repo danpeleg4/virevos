@@ -228,7 +228,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                  <AddNewTask onTaskCreatedAction={addTaskToList} />
+                  <AddNewTask onTaskCreatedAction={addTaskToList} projectId={project.id} />
               </div>
             </CardHeader>
             <CardContent>

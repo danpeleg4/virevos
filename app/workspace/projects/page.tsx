@@ -5,26 +5,21 @@ import {clients, notes, projects} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
 import {eq} from "drizzle-orm";
 
-export async function createProject(project: Project) {
+export async function createProject(project: Project): Promise<Project> {
     const user = await currentUser();
     if (!user?.id) {
-        return
+        throw new Error("Unauthorized");
     }
-    const { name, clientName, dueDate, priority } = project;
-    await db
+
+    const inserted = await db
         .insert(projects)
         .values({
-            name,
-            clientName,
-            status: "in-progress",
-            dueDate,
-            tasksCompleted: 0,
-            totalTasks: 0,
-            priority,
-            health: "on-track",
+            ...project,
             userId: user.id
         })
         .returning();
+
+    return inserted[0];
 }
 
 export async function addNotes(
