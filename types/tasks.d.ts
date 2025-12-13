@@ -1,13 +1,15 @@
 interface Task {
     id: number;
+    userId: string;
     title: string;
-    description?: string;
-    projectId?: string;
-    projectName?: string;
-    priority: "high" | "medium" | "low";
-    status: "todo" | "in-progress" | "completed";
+    description: string | null;
+    projectId: number | null;
+    priority: string;
+    status: string;
     dueDate: string;
-    completed: boolean;
+    completed: boolean | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
 }
 
 interface TaskDetailModalProps {

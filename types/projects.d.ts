@@ -1,3 +1,5 @@
+import {deleteProject} from "@/app/workspace/projects/page";
+
 interface ProjectFile {
     id: string;
     name: string;
@@ -14,6 +16,8 @@ interface ProjectDetailViewProps {
     onTaskUpdate: (projectId, updatedCompleted, updatedTotal) => void;
     addNotes: (newNote: string, projectId: number) => Promise<ProjectNote>;
     getNotes: (projectId: number) => Promise<ProjectNote[]>;
+    getProjectTasks: (projectId: number) => Promise<Task[]>;
+    deleteProject: (projectId: number) => void;
 }
 
 interface Project {

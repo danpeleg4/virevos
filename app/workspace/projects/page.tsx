@@ -1,18 +1,32 @@
 "use server"
 import ProjectsPage from "./ProjectsPage";
 import {db} from "@/db/db";
-import {clients, notes, projects} from "@/db/schema";
+import {clients, notes, projects, tasks} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
 import {and, desc, eq} from "drizzle-orm";
-import {NextResponse} from "next/server";
+import {Project, ProjectNote} from "@/types/projects";
 
-export async function getNotes(projectId: number) {
+export async function deleteProject(projectId: number) {
+    await db.delete(notes).where(eq(notes.projectId, projectId));
+    await db.delete(projects).where(eq(projects.id, projectId));
+}
+
+export async function getProjectTasks(id: number): Promise<Task[]> {
     const user = await currentUser();
-    if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
-    }
+    if (!user?.id) throw new Error("No user");
+    return db
+        .select()
+        .from(tasks)
+        .where(
+            and(eq(tasks.userId, user.id), eq(tasks.projectId, id))
+        );
+}
 
-    const data = await db
+export async function getNotes(projectId: number): Promise<ProjectNote[]> {
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+
+    return db
         .select()
         .from(notes)
         .where(
@@ -23,7 +37,6 @@ export async function getNotes(projectId: number) {
         )
         .orderBy(desc(notes.id));
 
-    return data;
 }
 
 export async function createProject(project: Project): Promise<Project> {
@@ -62,12 +75,9 @@ export async function addNotes(
     return inserted[0];
 }
 
-
 export default async function Page() {
     const user = await currentUser();
-    if (!user?.id) {
-        return
-    }
+    if (!user?.id) throw new Error("No user");
 
     const projects = await db.query.projects.findMany({
         where: (fields, { eq }) => eq(fields.userId, user.id),
@@ -81,6 +91,8 @@ export default async function Page() {
             save={createProject}
             addNotes={addNotes}
             getNotes={getNotes}
+            getProjectTasks={getProjectTasks}
+            deleteProject={deleteProject}
         />
     );
 }

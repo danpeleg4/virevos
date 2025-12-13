@@ -8,6 +8,7 @@ import {Badge} from "@/app/components/ui/badge";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 import {Progress} from "@/app/components/ui/progress";
 import {useState} from "react";
+import {Project} from "@/types/projects";
 
 interface ProjectListProps {
     projects: Project[];

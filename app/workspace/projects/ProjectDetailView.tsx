@@ -28,8 +28,17 @@ import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 import AddNewTask from "@/app/workspace/projects/AddNewTask";
+import {ProjectDetailViewProps, ProjectFile, ProjectNote} from "@/types/projects";
 
-export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, addNotes, getNotes }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project,
+                                      onBack,
+                                      onDelete,
+                                      onTaskUpdate,
+                                      addNotes,
+                                      getNotes,
+                                      getProjectTasks,
+                                      deleteProject
+}: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
@@ -75,12 +84,12 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
     }, [])
 
   useEffect(() => {
-      const getProjectTasks = async () => {
-          const res = await axios.get(`/api/projects/${project.id}/tasks`)
-          setTasks(res.data)
+      const getPrjTasks = async () => {
+          const res = await getProjectTasks(project.id)
+          setTasks(res)
           setLoading(false)
       }
-      getProjectTasks()
+      getPrjTasks()
   }, [])
 
     const handleTaskClick = (task: Task) => {
@@ -101,10 +110,10 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
         setNewNote("");
     };
 
-    const deleteProject = async (projectId: number) => {
+    const deletePrj = async (projectId: number) => {
         try {
-            await axios.delete(`/api/projects/${projectId}/project`);
-            onDelete(projectId);      // <--- update parent state
+            deleteProject(projectId)
+            onDelete(projectId);
         } catch (err) {
             console.error(err);
         }
@@ -151,7 +160,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
                 className="cursor-pointer"
                 variant="outline"
                 size="sm"
-                onClick={() => deleteProject(project.id)}
+                onClick={() => deletePrj(project.id)}
             >
                 <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
