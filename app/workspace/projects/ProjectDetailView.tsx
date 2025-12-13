@@ -36,6 +36,7 @@ export function ProjectDetailView({ project,
                                       addNotes,
                                       getNotes,
                                       getProjectTasks,
+                                      addProjectTasks
 }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
@@ -68,14 +69,16 @@ export function ProjectDetailView({ project,
         }
     };
 
+    // GET NOTES
     useEffect(() => {
         const getNt = async () => {
             const res = await getNotes(project.id)
             setNotes(res)
         }
         getNt()
-    }, [])
+    }, [getNotes, project.id])
 
+  // GET TASKS
   useEffect(() => {
       const getPrjTasks = async () => {
           const res = await getProjectTasks(project.id)
@@ -217,7 +220,7 @@ export function ProjectDetailView({ project,
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                  <AddNewTask onTaskCreatedAction={addTaskToList} projectId={project.id} />
+                  <AddNewTask onTaskCreatedAction={addTaskToList} projectId={project.id} addProjectTasks={addProjectTasks} />
               </div>
             </CardHeader>
             <CardContent>

@@ -7,6 +7,7 @@ import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import {projectsMockData} from "@/app/lib/mockData";
 import {clients} from "@/types/clients";
 import {Project, ProjectNote} from "@/types/projects";
+import {addProjectTasks} from "@/app/workspace/projects/page";
 
 interface ProjectsPageProps {
     initialProjects: Project[];
@@ -16,6 +17,7 @@ interface ProjectsPageProps {
     getNotes: (projectId: number) => Promise<ProjectNote[]>;
     getProjectTasks: (id: number) => Promise<Task[]>;
     deleteProject: (projectId: number) => void;
+    addProjectTasks: (task: Task) => Promise<Task>;
 }
 
 export default function ProjectsPage({ initialProjects,
@@ -24,7 +26,8 @@ export default function ProjectsPage({ initialProjects,
                                          addNotes,
                                          getNotes,
                                          getProjectTasks,
-                                         deleteProject
+                                         deleteProject,
+                                         addProjectTasks
 }: ProjectsPageProps) {
     const [projects, setProjects] = useState(initialProjects);
     const [clients, setClients] = useState(initialClients);
@@ -67,6 +70,7 @@ export default function ProjectsPage({ initialProjects,
                     addNotes={addNotes}
                     getNotes={getNotes}
                     getProjectTasks={getProjectTasks}
+                    addProjectTasks={addProjectTasks}
                 />
                 :
                 <>

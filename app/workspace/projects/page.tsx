@@ -3,7 +3,7 @@ import ProjectsPage from "./ProjectsPage";
 import {db} from "@/db/db";
 import {clients, notes, projects, tasks} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
-import {and, desc, eq} from "drizzle-orm";
+import {and, desc, eq, sql} from "drizzle-orm";
 import {Project, ProjectNote} from "@/types/projects";
 
 export async function deleteProject(projectId: number) {
@@ -23,6 +23,35 @@ export async function getProjectTasks(id: number): Promise<Task[]> {
         );
 }
 
+export async function addProjectTasks(task: Task): Promise<Task> {
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+    const { title, description, priority, dueDate, projectId } = task;
+    const values: any = {
+        title: title.trim(),
+        description,
+        priority,
+        projectId,
+        userId: user.id,
+        status: "in-progress",
+        completed: false,
+    };
+    if (dueDate && String(dueDate).trim() !== "") {
+        values.dueDate = dueDate;
+    }
+
+    const newTask = await db.insert(tasks).values(values).returning();
+    if (newTask.length > 0) {
+        await db
+            .update(projects)
+            .set({
+                totalTasks: sql`${projects.totalTasks} + 1`
+            })
+            .where(eq(projects.id, Number(projectId)));
+    }
+    return newTask[0];
+}
+
 export async function getNotes(projectId: number): Promise<ProjectNote[]> {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
@@ -37,7 +66,6 @@ export async function getNotes(projectId: number): Promise<ProjectNote[]> {
             )
         )
         .orderBy(desc(notes.id));
-
 }
 
 export async function createProject(project: Project): Promise<Project> {
@@ -94,6 +122,7 @@ export default async function Page() {
             getNotes={getNotes}
             getProjectTasks={getProjectTasks}
             deleteProject={deleteProject}
+            addProjectTasks={addProjectTasks}
         />
     );
 }

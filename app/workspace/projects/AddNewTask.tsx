@@ -11,17 +11,16 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import {useState} from "react";
-import axios from "axios";
 
 type Payload = {
     title: string;
     description: string;
     priority: string;
     dueDate?: string;
-    project?: string;
+    projectId: number;
 }
 
-export default function AddNewTask({ onTaskCreatedAction, projectId }: AddNewTaskPrjProps) {
+export default function AddNewTask({ onTaskCreatedAction, projectId, addProjectTasks }: AddNewTaskPrjProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -36,14 +35,14 @@ export default function AddNewTask({ onTaskCreatedAction, projectId }: AddNewTas
             title,
             description,
             priority,
+            dueDate,
+            projectId: projectId as number
         };
-        if (dueDate) payload.dueDate = dueDate; // only include when set
-        if (project) payload.project = project; // send project id
 
-        const res = await axios.post("/api/tasks", payload);
-        console.log("RES DATA:", res.data);
+        const res = await addProjectTasks(payload as unknown as Task)
+        console.log("RES DATA:", res);
 
-        onTaskCreatedAction(res.data.task);
+        onTaskCreatedAction(res!);
 
         setTitle("");
         setDescription("");
