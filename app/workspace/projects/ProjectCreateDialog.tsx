@@ -21,6 +21,7 @@ import {
 import { Plus } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
+import {Project} from "@/types/projects";
 
 interface ProjectCreateDialogProps {
     clients: clients[];
@@ -37,7 +38,6 @@ export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreat
 
     const submit = async () => {
         const newProject = await save({
-            id: 1,
             name: projectName,
             clientName: client,
             priority,
@@ -48,7 +48,6 @@ export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreat
             health: "on-track"
         });
         setProjects({
-            id: 1,
             name: projectName,
             clientName: client,
             priority,

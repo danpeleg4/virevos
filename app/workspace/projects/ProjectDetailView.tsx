@@ -33,11 +33,9 @@ import {ProjectDetailViewProps, ProjectFile, ProjectNote} from "@/types/projects
 export function ProjectDetailView({ project,
                                       onBack,
                                       onDelete,
-                                      onTaskUpdate,
                                       addNotes,
                                       getNotes,
                                       getProjectTasks,
-                                      deleteProject
 }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
@@ -65,11 +63,6 @@ export function ProjectDetailView({ project,
         try {
             await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
             const updatedTasks = await axios.get(`/api/projects/${project.id}/tasks`);
-            onTaskUpdate(
-                project.id,
-                updatedTasks.data.filter((t: { status: string; }) => t.status === "completed").length,
-                updatedTasks.data.length
-            );
         } catch (err) {
             console.error("Failed to update status:", err);
         }
@@ -109,15 +102,6 @@ export function ProjectDetailView({ project,
         setNotes((prev) => [data, ...prev]);
         setNewNote("");
     };
-
-    const deletePrj = async (projectId: number) => {
-        try {
-            deleteProject(projectId)
-            onDelete(projectId);
-        } catch (err) {
-            console.error(err);
-        }
-    }
 
   const deleteTask = async (taskId: number) => {
       const res = await axios.delete(`/api/tasks/${taskId}/status`)
@@ -160,7 +144,7 @@ export function ProjectDetailView({ project,
                 className="cursor-pointer"
                 variant="outline"
                 size="sm"
-                onClick={() => deletePrj(project.id)}
+                onClick={() => onDelete(project.id)}
             >
                 <Trash2 className="h-4 w-4 text-red-500" />
             </Button>

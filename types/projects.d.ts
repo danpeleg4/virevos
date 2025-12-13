@@ -13,15 +13,13 @@ interface ProjectDetailViewProps {
     project: Project
     onBack: () => void;
     onDelete: (number) => void;
-    onTaskUpdate: (projectId, updatedCompleted, updatedTotal) => void;
     addNotes: (newNote: string, projectId: number) => Promise<ProjectNote>;
     getNotes: (projectId: number) => Promise<ProjectNote[]>;
     getProjectTasks: (projectId: number) => Promise<Task[]>;
-    deleteProject: (projectId: number) => void;
 }
 
 interface Project {
-    id: number;
+    id?,
     name,
     clientName,
     status,

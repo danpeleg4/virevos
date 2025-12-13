@@ -7,6 +7,7 @@ import {and, desc, eq} from "drizzle-orm";
 import {Project, ProjectNote} from "@/types/projects";
 
 export async function deleteProject(projectId: number) {
+    await db.delete(tasks).where(eq(tasks.projectId, projectId));
     await db.delete(notes).where(eq(notes.projectId, projectId));
     await db.delete(projects).where(eq(projects.id, projectId));
 }
