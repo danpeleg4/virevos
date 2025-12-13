@@ -29,7 +29,7 @@ import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 import AddNewTask from "@/app/workspace/projects/AddNewTask";
 
-export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, addNotes }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, addNotes, getNotes }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);
   const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
@@ -67,11 +67,11 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
     };
 
     useEffect(() => {
-        const getNotes = async () => {
-            const res = await axios.get(`/api/projects/${project.id}/notes`)
-            setNotes(res.data)
+        const getNt = async () => {
+            const res = await getNotes(project.id)
+            setNotes(res)
         }
-        getNotes()
+        getNt()
     }, [])
 
   useEffect(() => {
@@ -96,11 +96,7 @@ export function ProjectDetailView({ project, onBack, onDelete, onTaskUpdate, add
 
     const addNote = async (newNote: string, projectId: number) => {
         if (!newNote.trim()) return;
-
         const data = await addNotes(newNote, projectId);
-        //const res = await axios.post(`/api/projects/add_note`, { newNote, projectId: project.id });
-        //const created = res.data; // backend returns actual note
-
         setNotes((prev) => [data, ...prev]);
         setNewNote("");
     };

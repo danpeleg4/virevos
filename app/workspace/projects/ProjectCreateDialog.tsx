@@ -37,6 +37,7 @@ export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreat
 
     const submit = async () => {
         const newProject = await save({
+            id: 1,
             name: projectName,
             clientName: client,
             priority,
@@ -47,6 +48,7 @@ export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreat
             health: "on-track"
         });
         setProjects({
+            id: 1,
             name: projectName,
             clientName: client,
             priority,

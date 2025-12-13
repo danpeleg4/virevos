@@ -3,7 +3,28 @@ import ProjectsPage from "./ProjectsPage";
 import {db} from "@/db/db";
 import {clients, notes, projects} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
-import {eq} from "drizzle-orm";
+import {and, desc, eq} from "drizzle-orm";
+import {NextResponse} from "next/server";
+
+export async function getNotes(projectId: number) {
+    const user = await currentUser();
+    if (!user?.id) {
+        return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const data = await db
+        .select()
+        .from(notes)
+        .where(
+            and(
+                eq(notes.userId, user.id),
+                eq(notes.projectId, projectId)
+            )
+        )
+        .orderBy(desc(notes.id));
+
+    return data;
+}
 
 export async function createProject(project: Project): Promise<Project> {
     const user = await currentUser();
@@ -59,6 +80,7 @@ export default async function Page() {
             initialClients={cli}
             save={createProject}
             addNotes={addNotes}
+            getNotes={getNotes}
         />
     );
 }
