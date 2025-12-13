@@ -25,7 +25,7 @@ import type { clients } from "@/types/clients";
 interface ProjectCreateDialogProps {
     clients: clients[];
     save: (project: Project) => Promise<Project>;
-    setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+    setProjects: (project: Project) => void;
 }
 
 export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreateDialogProps) {
@@ -46,8 +46,16 @@ export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreat
             totalTasks: 0,
             health: "on-track"
         });
-
-        //setProjects(prev => [...prev, newProject]);
+        setProjects({
+            name: projectName,
+            clientName: client,
+            priority,
+            dueDate,
+            status: "in-progress",
+            tasksCompleted: 0,
+            totalTasks: 0,
+            health: "on-track"
+        })
 
         setDialogOpen(false);
     };

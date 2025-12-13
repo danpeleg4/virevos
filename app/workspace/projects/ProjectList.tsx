@@ -70,7 +70,7 @@ export function ProjectList({ projects, onSelect }: ProjectListProps) {
                                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                         {filteredProjects.map((project) => (
                                             <Card
-                                                key={project.id}
+                                                key={project.name}
                                                 className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
                                                 onClick={() => onSelect(project)}
                                             >

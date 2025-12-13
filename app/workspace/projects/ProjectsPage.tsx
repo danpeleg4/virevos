@@ -32,6 +32,10 @@ export default function ProjectsPage({ initialProjects, initialClients, save, ad
         return matchesSearch && matchesTab;
     });
 
+    const setPrj = async (newProject: Project) => {
+        setProjects(prev => [...prev, newProject]);
+    }
+
     function handleTaskUpdate(
         projectId: number,
         updatedCompleted: number,
@@ -75,7 +79,7 @@ export default function ProjectsPage({ initialProjects, initialClients, save, ad
                     <ProjectCreateDialog
                         clients={clients}
                         save={save}
-                        setProjects={setProjects}
+                        setProjects={setPrj}
                     />
 
                     <ProjectList
