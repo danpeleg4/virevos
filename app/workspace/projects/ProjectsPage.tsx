@@ -5,7 +5,6 @@ import { ProjectDetailView } from "@/app/workspace/projects/ProjectDetailView";
 import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import {clients} from "@/types/clients";
-import {Project, ProjectNote} from "@/types/projects";
 
 interface ProjectsPageProps {
     initialProjects: Project[];
@@ -32,6 +31,7 @@ export default function ProjectsPage({ initialProjects,
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("all");
+    const [tasks, setTasks] = useState<Task[]>([]);
 
     const filtered = projects.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -57,6 +57,13 @@ export default function ProjectsPage({ initialProjects,
         }
     };
 
+    const setTsks = async (tasks: Task[]) => {
+        setTasks(tasks);
+    }
+
+    const getTasks = () => {
+        return tasks
+    }
 
     return (
         <div className="p-6 space-y-6">
@@ -69,6 +76,7 @@ export default function ProjectsPage({ initialProjects,
                     getNotes={getNotes}
                     getProjectTasks={getProjectTasks}
                     addProjectTasks={addProjectTasks}
+                    allTasks={setTsks}
                 />
                 :
                 <>
@@ -85,6 +93,7 @@ export default function ProjectsPage({ initialProjects,
                         search={search}
                         setSearch={setSearch}
                         onSelect={setSelectedProject}
+                        getTasks={getTasks}
                     />
                 </>
             }

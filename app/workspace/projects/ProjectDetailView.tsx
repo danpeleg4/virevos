@@ -28,7 +28,6 @@ import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 import AddNewTask from "@/app/workspace/projects/AddNewTask";
-import {ProjectDetailViewProps, ProjectFile, ProjectNote} from "@/types/projects";
 
 export function ProjectDetailView({ project,
                                       onBack,
@@ -36,7 +35,7 @@ export function ProjectDetailView({ project,
                                       addNotes,
                                       getNotes,
                                       getProjectTasks,
-                                      addProjectTasks
+                                      addProjectTasks,
 }: ProjectDetailViewProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [files] = useState<ProjectFile[]>(mockFiles);

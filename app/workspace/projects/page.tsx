@@ -4,7 +4,6 @@ import {db} from "@/db/db";
 import {clients, notes, projects, tasks} from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
 import {and, desc, eq, sql} from "drizzle-orm";
-import {Project, ProjectNote} from "@/types/projects";
 
 export async function deleteProject(projectId: number) {
     await db.delete(tasks).where(eq(tasks.projectId, projectId));

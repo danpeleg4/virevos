@@ -8,7 +8,6 @@ import {Badge} from "@/app/components/ui/badge";
 import {taskPercentage} from "@/app/lib/taskPercentage";
 import {Progress} from "@/app/components/ui/progress";
 import {useState} from "react";
-import {Project} from "@/types/projects";
 
 interface ProjectListProps {
     projects: Project[];
@@ -17,9 +16,10 @@ interface ProjectListProps {
     tab: string;
     setTab: (tab: string) => void;
     onSelect: (project: Project) => void;
+    getTasks: (projectId: number) => void;
 }
 
-export function ProjectList({ projects, onSelect }: ProjectListProps) {
+export function ProjectList({ projects, onSelect, getTasks }: ProjectListProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
 
