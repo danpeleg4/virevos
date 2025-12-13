@@ -23,22 +23,20 @@ export async function getProjectTasks(id: number): Promise<Task[]> {
         );
 }
 
-export async function addProjectTasks(task: Task): Promise<Task> {
+export async function addProjectTasksAction(task: Task): Promise<Task> {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
-    const { title, description, priority, dueDate, projectId } = task;
-    const values: any = {
+    const {title, description, priority, dueDate, projectId} = task;
+    const values = {
         title: title.trim(),
         description,
         priority,
         projectId,
         userId: user.id,
-        status: "in-progress",
+        status: "in-progress" as const,
         completed: false,
+        dueDate: dueDate || "2025-01-01",
     };
-    if (dueDate && String(dueDate).trim() !== "") {
-        values.dueDate = dueDate;
-    }
 
     const newTask = await db.insert(tasks).values(values).returning();
     if (newTask.length > 0) {
@@ -122,7 +120,7 @@ export default async function Page() {
             getNotes={getNotes}
             getProjectTasks={getProjectTasks}
             deleteProject={deleteProject}
-            addProjectTasks={addProjectTasks}
+            addProjectTasks={addProjectTasksAction}
         />
     );
 }

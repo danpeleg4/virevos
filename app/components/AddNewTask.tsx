@@ -12,6 +12,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import {useEffect, useState} from "react";
 import axios from "axios";
+import {Project} from "@/types/projects";
 
 type Payload = {
     title: string;

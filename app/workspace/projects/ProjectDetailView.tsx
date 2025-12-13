@@ -63,7 +63,6 @@ export function ProjectDetailView({ project,
         const newStatus = updated?.status === "completed" ? "todo" : "completed";
         try {
             await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
-            const updatedTasks = await axios.get(`/api/projects/${project.id}/tasks`);
         } catch (err) {
             console.error("Failed to update status:", err);
         }

@@ -4,10 +4,8 @@ import { useState } from "react";
 import { ProjectDetailView } from "@/app/workspace/projects/ProjectDetailView";
 import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
-import {projectsMockData} from "@/app/lib/mockData";
 import {clients} from "@/types/clients";
 import {Project, ProjectNote} from "@/types/projects";
-import {addProjectTasks} from "@/app/workspace/projects/page";
 
 interface ProjectsPageProps {
     initialProjects: Project[];
