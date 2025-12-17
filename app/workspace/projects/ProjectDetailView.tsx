@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect, useState} from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -23,31 +23,89 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import {initialTasks, mockFiles, mockNotes} from "@/app/lib/mockData"
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
-import {taskPercentage} from "@/app/lib/taskPercentage";
+import {taskPercentage} from "@/lib/taskPercentage";
 import AddNewTask from "@/app/workspace/projects/AddNewTask";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/mutations'
 
-export function ProjectDetailView({ project,
-                                      onBack,
-                                      onDelete,
-                                      addNotes,
-                                      getNotes,
-                                      getProjectTasks,
-                                      addProjectTasks,
-}: ProjectDetailViewProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [files] = useState<ProjectFile[]>(mockFiles);
-  const [notes, setNotes] = useState<ProjectNote[]>(mockNotes);
-  const [newNote, setNewNote] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
-  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
+    const [tasks, setTasks] = useState<Task[]>();
+    const [files] = useState<ProjectFile[]>();
+    const [notes, setNotes] = useState<ProjectNote[]>();
+    const [newNote, setNewNote] = useState("");
+    const [selectedTask, setSelectedTask] = useState<Task>();
+    const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+
+    const queryClient = useQueryClient();
+
+    const getNotes = async (projectId: number) => {
+        const res = await axios.get(`/api/projects/${projectId}/notes`);
+        return res.data;
+    }
+
+    const getProjectTasks = async (projectId: number) => {
+        const res = await axios.get(`/api/projects/${projectId}/tasks`);
+        return res.data;
+    }
+
+    const projectsTasksQuery = useQuery({
+        queryKey: ["projectsTasks"],
+        queryFn: () => getProjectTasks(project.id),
+    })
+
+    const notesQuery = useQuery({
+        queryKey: ["notes", project],
+        queryFn: () => getNotes(project.id),
+        enabled: !!project,
+    })
+
+    const addSomeNote = useMutation({
+        mutationFn: async ({ newNote, projectId }: { newNote: string; projectId: number }) => {
+            await addNotes(newNote, projectId)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["notes", project] })
+        }
+    });
+
+    const deleteSomeTask = useMutation({
+        mutationFn: async (taskId: number) => {
+            await deleteTask(taskId)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
+        }
+    })
+
+    const deleteSomeProject = useMutation({
+        mutationFn: async (projectId: number) => {
+            deleteProject(projectId)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects"] })
+            onBackAction();
+        }
+    })
+
+    const changeTaskStatus = useMutation({
+        mutationFn: async ({ status, taskId }: { status: string, taskId: number }) => {
+            await updateTaskStatus(status, taskId)
+        }
+    })
+
+    if (notesQuery.isLoading || projectsTasksQuery.isLoading) {
+        return <p>Loading...</p>
+    }
+
+    if (notesQuery.isError || projectsTasksQuery.isError) {
+        return <p>Error loading data</p>
+    }
 
     const toggleTaskStatus = async (taskId: number) => {
         setTasks((prev) => {
-            return prev.map((task) =>
+            return prev?.map((task) =>
                 task.id === taskId
                     ? {
                         ...task,
@@ -58,33 +116,14 @@ export function ProjectDetailView({ project,
         });
 
         // Send request to backend using the *new* status
-        const updated = tasks.find(t => t.id === taskId);
+        const updated = tasks?.find(t => t.id === taskId);
         const newStatus = updated?.status === "completed" ? "todo" : "completed";
         try {
-            await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+            changeTaskStatus.mutate({status: newStatus, taskId})
         } catch (err) {
             console.error("Failed to update status:", err);
         }
     };
-
-    // GET NOTES
-    useEffect(() => {
-        const getNt = async () => {
-            const res = await getNotes(project.id)
-            setNotes(res)
-        }
-        getNt()
-    }, [getNotes, project.id])
-
-  // GET TASKS
-  useEffect(() => {
-      const getPrjTasks = async () => {
-          const res = await getProjectTasks(project.id)
-          setTasks(res)
-          setLoading(false)
-      }
-      getPrjTasks()
-  }, [])
 
     const handleTaskClick = (task: Task) => {
         setSelectedTask(task);
@@ -93,34 +132,16 @@ export function ProjectDetailView({ project,
 
     const handleTaskUpdate = (updatedTask: Task) => {
         setTasks((prev) =>
-            prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+            prev?.map((task) => (task.id === updatedTask.id ? updatedTask : task))
         );
     };
-
-    const addNote = async (newNote: string, projectId: number) => {
-        if (!newNote.trim()) return;
-        const data = await addNotes(newNote, projectId);
-        setNotes((prev) => [data, ...prev]);
-        setNewNote("");
-    };
-
-  const deleteTask = async (taskId: number) => {
-      const res = await axios.delete(`/api/tasks/${taskId}/status`)
-      if (res.status == 200) setTasks(tasks.filter(t => t.id !== taskId))
-  }
-
-    const addTaskToList = (newTask: Task) => {
-        setTasks(prev => [newTask, ...prev]);
-    };
-
-    if (loading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-4">
-          <Button className="cursor-pointer" variant="ghost" size="icon" onClick={onBack}>
+          <Button className="cursor-pointer" variant="ghost" size="icon" onClick={onBackAction}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -145,7 +166,7 @@ export function ProjectDetailView({ project,
                 className="cursor-pointer"
                 variant="outline"
                 size="sm"
-                onClick={() => onDelete(project.id)}
+                onClick={() => deleteSomeProject.mutate(project.id)}
             >
                 <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
@@ -159,9 +180,9 @@ export function ProjectDetailView({ project,
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(tasks)}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(tasks!)}%</p>
               </div>
-                <Progress value={taskPercentage(tasks)} className="w-16 h-16" />
+                <Progress value={taskPercentage(tasks!)} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>
@@ -184,7 +205,7 @@ export function ProjectDetailView({ project,
               <div>
                 <p className="text-sm text-gray-600">Total Tasks</p>
                 <p className="text-2xl text-gray-900 mt-1">
-                    {tasks.filter((t) => t.status === "completed").length}/{tasks.length}
+                    {tasks?.filter((t) => t.status === "completed").length}/{tasks?.length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -197,7 +218,7 @@ export function ProjectDetailView({ project,
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Files</p>
-                <p className="text-2xl text-gray-900 mt-1">{files.length}</p>
+                <p className="text-2xl text-gray-900 mt-1">{files?.length}</p>
               </div>
               <FileText className="h-8 w-8 text-purple-500" />
             </div>
@@ -218,12 +239,12 @@ export function ProjectDetailView({ project,
                   <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
                   Tasks & To-Dos
                 </CardTitle>
-                  <AddNewTask onTaskCreatedAction={addTaskToList} projectId={project.id} addProjectTasks={addProjectTasks} />
+                  <AddNewTask projectId={project.id} />
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {tasks.map((task) => (
+                {tasks?.map((task) => (
                   <div
                     key={task.id}
                     className={`flex items-center space-x-3 p-3 rounded-lg border ${
@@ -274,7 +295,7 @@ export function ProjectDetailView({ project,
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => deleteTask(task.id)}>
+                        <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => deleteSomeTask.mutate(task.id)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -304,7 +325,7 @@ export function ProjectDetailView({ project,
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {files.map((file) => (
+                {files?.map((file) => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -345,13 +366,13 @@ export function ProjectDetailView({ project,
                   onChange={(e) => setNewNote(e.target.value)}
                   rows={3}
                 />
-                <Button size="sm" className="mt-2" onClick={() => addNote(newNote, project.id)}>
+                <Button size="sm" className="mt-2" onClick={() => addSomeNote.mutate({newNote, projectId: project.id})}>
                   Add Note
                 </Button>
               </div>
 
               <div className="space-y-3">
-                {notes.map((note) => (
+                {notes?.map((note) => (
                   <div
                     key={note.id}
                     className="p-3 bg-gray-50 rounded-lg border border-gray-200"
@@ -376,7 +397,7 @@ export function ProjectDetailView({ project,
       </div>
         {/* Task Detail Modal */}
         <TaskDetailModal
-            task={selectedTask}
+            task={selectedTask!}
             open={taskDetailOpen}
             onOpenChange={setTaskDetailOpen}
             onUpdate={handleTaskUpdate}

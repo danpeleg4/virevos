@@ -37,8 +37,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
     // Sync when clicking a new task
     useEffect(() => {
         if (task) {
-            setEditedTitle(task.title || "");
-            setDescription(task.description || "");
+            //setEditedTitle(task.title || "");
+            //setDescription(task.description || "");
         }
     }, [task]);
 
@@ -66,24 +66,24 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   className="text-xl mb-2 max-w-sm w-full"
                 />
               ) : (
-                <DialogTitle className="text-2xl mb-2">{task.title}</DialogTitle>
+                <DialogTitle className="text-2xl mb-2">{task?.title}</DialogTitle>
               )}
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="text-xs">
-                  {task.projectName || "No Project"}
+                  {task?.projectId || "No Project"}
                 </Badge>
                 <Badge
                   className={
-                    task.status === "completed"
+                    task?.status === "completed"
                       ? "bg-green-100 text-green-700"
-                      : task.status === "in-progress"
+                      : task?.status === "in-progress"
                       ? "bg-blue-100 text-blue-700"
                       : "bg-gray-100 text-gray-700"
                   }
                 >
-                  {task.status === "in-progress"
+                  {task?.status === "in-progress"
                     ? "In Progress"
-                    : task.status === "completed"
+                    : task?.status === "completed"
                     ? "Completed"
                     : "To Do"}
                 </Badge>
@@ -142,7 +142,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             {/* Status */}
             <div>
               <Label className="mb-2 block">Status</Label>
-              <Select defaultValue={task.status}>
+              <Select defaultValue={task?.status}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -160,7 +160,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Flag className="h-4 w-4 mr-2" />
                 Priority
               </Label>
-              <Select defaultValue={task.priority}>
+              <Select defaultValue={task?.priority}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

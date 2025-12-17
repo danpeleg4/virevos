@@ -21,23 +21,30 @@ import {
 import { Plus } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
-import {Project} from "@/types/projects";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {createProject} from "@/lib/mutations";
 
-interface ProjectCreateDialogProps {
-    clients: clients[];
-    save: (project: Project) => Promise<Project>;
-    setProjects: (project: Project) => void;
-}
-
-export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreateDialogProps) {
+export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [projectName, setProjectName] = useState("");
     const [client, setClient] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState("");
 
+    const queryClient = useQueryClient();
+
+    const createNewProject = useMutation({
+        mutationFn: async (project: Project) => {
+            await createProject(project)
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["projects"] })
+        }
+    })
+
     const submit = async () => {
-        const newProject = await save({
+        createNewProject.mutate({
+            id: 1,
             name: projectName,
             clientName: client,
             priority,
@@ -47,16 +54,6 @@ export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreat
             totalTasks: 0,
             health: "on-track"
         });
-        setProjects({
-            name: projectName,
-            clientName: client,
-            priority,
-            dueDate,
-            status: "in-progress",
-            tasksCompleted: 0,
-            totalTasks: 0,
-            health: "on-track"
-        })
 
         setDialogOpen(false);
     };
@@ -102,7 +99,7 @@ export function ProjectCreateDialog({ clients, save, setProjects }: ProjectCreat
                                     <SelectValue placeholder="Select client" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {clients.map((c) => (
+                                    {(clients ?? []).map((c) => (
                                         <SelectItem key={c.id} value={c.name}>
                                             {c.name}
                                         </SelectItem>

@@ -17,10 +17,11 @@ interface ProjectDetailViewProps {
     getProjectTasks: (projectId: number) => Promise<Task[]>;
     addProjectTasks: (task: Task) => Promise<Task>;
     allTasks: (tasks: Task[]) => void;
+    deleteTask: (taskId: number) => void;
 }
 
 interface Project {
-    id?,
+    id: number,
     name,
     clientName,
     status,

@@ -11,6 +11,8 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import {useState} from "react";
+import {addProjectTasksAction} from "@/lib/mutations";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
 
 type Payload = {
     title: string;
@@ -20,13 +22,28 @@ type Payload = {
     projectId: number;
 }
 
-export default function AddNewTask({ onTaskCreatedAction, projectId, addProjectTasks }: AddNewTaskPrjProps) {
+export default function AddNewTask({
+                                       projectId,
+                                   }: {
+    projectId: number
+}) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [project, setProject] = useState<string>("");
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");
+
+    const queryClient = useQueryClient();
+
+    const addTask = useMutation({
+        mutationFn: async (task: Task) => {
+            await addProjectTasksAction(task)
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["projectTasks"] })
+        }
+    })
 
     const submitTask = async () => {
         setDialogOpen(false);
@@ -39,10 +56,8 @@ export default function AddNewTask({ onTaskCreatedAction, projectId, addProjectT
             projectId: projectId as number
         };
 
-        const res = await addProjectTasks(payload as unknown as Task)
+        const res = await addProjectTasksAction(payload as unknown as Task)
         console.log("RES DATA:", res);
-
-        onTaskCreatedAction(res!);
 
         setTitle("");
         setDescription("");

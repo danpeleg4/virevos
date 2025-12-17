@@ -9,15 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import { Search, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
 import axios from "axios";
-import { initialTasks } from "@/app/lib/mockData";
-import AddNewTask from "@/app/components/AddNewTask";
+import { initialTasks } from "@/lib/mockData";
+import AddNewTask from "@/app/workspace/projects/AddNewTask";
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
-    const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
+    const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
     useEffect(() => {
@@ -189,7 +189,7 @@ export default function Tasks() {
                                                     {task.title}
                                                 </h3>
                                                 <p className="text-sm text-gray-600 mt-1">
-                                                    {task.projectName}
+                                                    {task.projectId}
                                                 </p>
                                             </div>
                                             <div className="flex items-center space-x-2 ml-4">

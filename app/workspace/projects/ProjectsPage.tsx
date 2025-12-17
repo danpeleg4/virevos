@@ -4,35 +4,26 @@ import { useState } from "react";
 import { ProjectDetailView } from "@/app/workspace/projects/ProjectDetailView";
 import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
-import {clients} from "@/types/clients";
+import {useQuery} from "@tanstack/react-query";
+import axios from "axios";
 
-interface ProjectsPageProps {
-    initialProjects: Project[];
-    initialClients: clients[];
-    save: (project: Project) => Promise<Project>;
-    addNotes: (newNote: string, projectId: number) => Promise<ProjectNote>;
-    getNotes: (projectId: number) => Promise<ProjectNote[]>;
-    getProjectTasks: (id: number) => Promise<Task[]>;
-    deleteProject: (projectId: number) => void;
-    addProjectTasks: (task: Task) => Promise<Task>;
-}
-
-export default function ProjectsPage({ initialProjects,
-                                         initialClients,
-                                         save,
-                                         addNotes,
-                                         getNotes,
-                                         getProjectTasks,
-                                         deleteProject,
-                                         addProjectTasks
-}: ProjectsPageProps) {
-    const [projects, setProjects] = useState(initialProjects);
-    const [clients, setClients] = useState(initialClients);
+export default function ProjectsPage() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("all");
     const [tasks, setTasks] = useState<Task[]>([]);
 
+    const getProjects = async () => {
+        const res = await axios.get(`/api/projects/get-projects`);
+        return res.data;
+    }
+
+    const projectsQuery = useQuery({
+        queryKey: ["projects"],
+        queryFn: () => getProjects(),
+    })
+
+    const projects: Project[] = projectsQuery.data?.projects ?? [];
     const filtered = projects.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
         const matchesTab =
@@ -43,57 +34,21 @@ export default function ProjectsPage({ initialProjects,
         return matchesSearch && matchesTab;
     });
 
-    const setPrj = async (newProject: Project) => {
-        setProjects(prev => [...prev, newProject]);
-    }
-
-    const handleDeleteProject = async (projectId: number) => {
-        try {
-            await deleteProject(projectId);
-            setProjects(prev => prev.filter(p => p.id !== projectId));
-            setSelectedProject(null);
-        } catch (err) {
-            console.error("Failed to delete project", err);
-        }
-    };
-
-    const setTsks = async (tasks: Task[]) => {
-        setTasks(tasks);
-    }
-
-    const getTasks = () => {
-        return tasks
-    }
-
     return (
         <div className="p-6 space-y-6">
             {selectedProject ?
-                <ProjectDetailView
-                    project={selectedProject}
-                    onBack={() => setSelectedProject(null)}
-                    onDelete={handleDeleteProject}
-                    addNotes={addNotes}
-                    getNotes={getNotes}
-                    getProjectTasks={getProjectTasks}
-                    addProjectTasks={addProjectTasks}
-                    allTasks={setTsks}
-                />
+                <ProjectDetailView onBackAction={() => setSelectedProject(null)} project={selectedProject} />
                 :
                 <>
-                    <ProjectCreateDialog
-                        clients={clients}
-                        save={save}
-                        setProjects={setPrj}
-                    />
+                    {projectsQuery.isLoading ? null : (
+                        <ProjectCreateDialog
+                            clients={projectsQuery.data?.allClients ?? []}
+                        />
+                    )}
 
                     <ProjectList
                         projects={filtered}
-                        tab={tab}
-                        setTab={setTab}
-                        search={search}
-                        setSearch={setSearch}
                         onSelect={setSelectedProject}
-                        getTasks={getTasks}
                     />
                 </>
             }

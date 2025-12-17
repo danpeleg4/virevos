@@ -5,21 +5,16 @@ import { Input } from "@/app/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs";
 import {AlertCircle, CheckCircle, Clock, Search, TrendingUp} from "lucide-react";
 import {Badge} from "@/app/components/ui/badge";
-import {taskPercentage} from "@/app/lib/taskPercentage";
+import {taskPercentage} from "@/lib/taskPercentage";
 import {Progress} from "@/app/components/ui/progress";
 import {useState} from "react";
 
 interface ProjectListProps {
     projects: Project[];
-    search: string;
-    setSearch: (search: string) => void;
-    tab: string;
-    setTab: (tab: string) => void;
     onSelect: (project: Project) => void;
-    getTasks: (projectId: number) => void;
 }
 
-export function ProjectList({ projects, onSelect, getTasks }: ProjectListProps) {
+export function ProjectList({ projects, onSelect }: ProjectListProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
 

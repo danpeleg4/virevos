@@ -1,4 +1,73 @@
-import {Calendar, Mail, Video} from "lucide-react";
+import {Calendar, LucideIcon, Mail, Video} from "lucide-react";
+
+export interface Task {
+    id: number;
+    title: string;
+    projectId: string;
+    priority: string;
+    status: string;
+    dueDate: string;
+    completed: boolean;
+}
+
+export interface Client {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    activeProjects: number;
+    completedProjects: number;
+    status: string;
+    joinedDate: string;
+    avatar: string;
+}
+
+export interface ProjectNote {
+    id: string;
+    content: string;
+    createdAt: string;
+}
+
+export interface ProjectFile {
+    id: string;
+    name: string;
+    size: string;
+    uploadedBy: string;
+    uploadedAt: string;
+    type: string;
+}
+
+export interface Plan {
+    id: string;
+    name: string;
+    price: number;
+    period: string;
+    description: string;
+    features: string[];
+    highlighted: boolean;
+}
+
+export interface Integration {
+    id: string;
+    name: string;
+    icon: LucideIcon;
+    description: string;
+    color: string;
+    category: string;
+}
+
+export interface Project {
+    id: number;
+    name: string;
+    client: string;
+    status: string;
+    progress: number;
+    dueDate: string;
+    tasksCompleted: number;
+    totalTasks: number;
+    priority: string;
+    health: string;
+}
 
 export const initialTasks: Task[] = [
     {
@@ -39,8 +108,7 @@ export const initialTasks: Task[] = [
     },
     {
         id: 55,
-        title: "Design mo" +
-            "ckups review",
+        title: "Design mockups review",
         projectId: "DesignCo Brand Refresh",
         priority: "medium",
         status: "completed",
@@ -58,7 +126,7 @@ export const initialTasks: Task[] = [
     },
 ];
 
-export const clientsMockData = [
+export const clientsMockData: Client[] = [
     {
         id: 1,
         name: "TechCorp Inc.",
@@ -105,7 +173,7 @@ export const clientsMockData = [
     },
 ];
 
-export const  mockNotes: ProjectNote[] = [
+export const mockNotes: ProjectNote[] = [
     {
         id: "1",
         content: "Client requested to change the primary color scheme from blue to green. Updated design files accordingly.",
@@ -145,7 +213,7 @@ export const mockFiles: ProjectFile[] = [
     },
 ];
 
-export const plans = [
+export const plans: Plan[] = [
     {
         id: "starter",
         name: "Starter",
@@ -196,7 +264,7 @@ export const plans = [
     },
 ];
 
-export const integrations = [
+export const integrations: Integration[] = [
     {
         id: "google-calendar",
         name: "Google Calendar",
@@ -231,7 +299,7 @@ export const integrations = [
     },
 ];
 
-export const projectsMockData = [
+export const projectsMockData: Project[] = [
     {
         id: 1,
         name: "TechCorp Website Redesign",

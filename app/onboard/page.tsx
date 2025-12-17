@@ -24,7 +24,7 @@ import {
     FileSpreadsheet,
     type LucideIcon,
 } from "lucide-react";
-import {integrations, plans} from "@/app/lib/mockData";
+import {integrations, plans} from "@/lib/mockData";
 
 type BillingCycle = "monthly" | "yearly" | string;
 

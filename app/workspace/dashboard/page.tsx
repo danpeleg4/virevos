@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { taskPercentage } from "@/app/lib/taskPercentage";
+import { taskPercentage } from "@/lib/taskPercentage";
 
 type Project = {
     id: number;
