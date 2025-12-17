@@ -31,7 +31,7 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/mutations'
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
-    const [tasks, setTasks] = useState<Task[]>();
+    //const [tasks, setTasks] = useState<Task[]>();
     const [files] = useState<ProjectFile[]>();
     const [notes, setNotes] = useState<ProjectNote[]>();
     const [newNote, setNewNote] = useState("");
@@ -116,7 +116,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         });
 
         // Send request to backend using the *new* status
-        const updated = tasks?.find(t => t.id === taskId);
+        const updated = projectsTasksQuery.data?.find((t: Task) => t.id === taskId);
         const newStatus = updated?.status === "completed" ? "todo" : "completed";
         try {
             changeTaskStatus.mutate({status: newStatus, taskId})
@@ -180,9 +180,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(tasks!)}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(projectsTasksQuery.data)}%</p>
               </div>
-                <Progress value={taskPercentage(tasks!)} className="w-16 h-16" />
+                <Progress value={taskPercentage(projectsTasksQuery.data)} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>
@@ -205,7 +205,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
               <div>
                 <p className="text-sm text-gray-600">Total Tasks</p>
                 <p className="text-2xl text-gray-900 mt-1">
-                    {tasks?.filter((t) => t.status === "completed").length}/{tasks?.length}
+                    {projectsTasksQuery.data?.filter((t: Task) => t.status === "completed").length}/{projectsTasksQuery.data?.length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -244,7 +244,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {tasks?.map((task) => (
+                {projectsTasksQuery.data?.map((task: Task) => (
                   <div
                     key={task.id}
                     className={`flex items-center space-x-3 p-3 rounded-lg border ${

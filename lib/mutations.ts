@@ -53,7 +53,7 @@ export async function updateTaskStatus(status: string, taskId: number) {
 export async function addProjectTasksAction(task: Task): Promise<Task> {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
-    const {title, description, priority, dueDate, projectId} = task;
+    const { title, description, priority, dueDate, projectId } = task;
     const values = {
         title: title.trim(),
         description,
@@ -83,10 +83,11 @@ export async function createProject(project: Project): Promise<Project> {
         throw new Error("Unauthorized");
     }
 
+    const { id, ...rest } = project;
     const inserted = await db
         .insert(projects)
         .values({
-            ...project,
+            ...rest,
             userId: user.id
         })
         .returning();
