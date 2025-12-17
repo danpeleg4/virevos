@@ -31,7 +31,6 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/mutations'
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
-    //const [tasks, setTasks] = useState<Task[]>();
     const [files] = useState<ProjectFile[]>();
     const [notes, setNotes] = useState<ProjectNote[]>();
     const [newNote, setNewNote] = useState("");
@@ -92,6 +91,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
     const changeTaskStatus = useMutation({
         mutationFn: async ({ status, taskId }: { status: string, taskId: number }) => {
             await updateTaskStatus(status, taskId)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
         }
     })
 
@@ -104,18 +106,6 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
     }
 
     const toggleTaskStatus = async (taskId: number) => {
-        setTasks((prev) => {
-            return prev?.map((task) =>
-                task.id === taskId
-                    ? {
-                        ...task,
-                        status: task.status === "completed" ? "todo" : "completed",
-                    }
-                    : task
-            );
-        });
-
-        // Send request to backend using the *new* status
         const updated = projectsTasksQuery.data?.find((t: Task) => t.id === taskId);
         const newStatus = updated?.status === "completed" ? "todo" : "completed";
         try {
@@ -128,12 +118,6 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
     const handleTaskClick = (task: Task) => {
         setSelectedTask(task);
         setTaskDetailOpen(true);
-    };
-
-    const handleTaskUpdate = (updatedTask: Task) => {
-        setTasks((prev) =>
-            prev?.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-        );
     };
 
   return (
@@ -400,7 +384,6 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             task={selectedTask!}
             open={taskDetailOpen}
             onOpenChange={setTaskDetailOpen}
-            onUpdate={handleTaskUpdate}
         />
     </div>
   );

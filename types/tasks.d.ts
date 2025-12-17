@@ -16,7 +16,6 @@ interface TaskDetailModalProps {
     task: Task;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onUpdate: (task: Task) => void;
 }
 
 type AddNewTaskProps = {
