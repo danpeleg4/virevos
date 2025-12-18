@@ -12,12 +12,13 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { useState } from "react";
 import { addProjectTasksAction } from "@/lib/mutations";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import axios from "axios";
 
 export default function AddNewTask({
                                        projectId,
                                    }: {
-    projectId: number
+    projectId?: number
 }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
@@ -27,6 +28,14 @@ export default function AddNewTask({
     const [dueDate, setDueDate] = useState("");
 
     const queryClient = useQueryClient();
+
+    const projects = useQuery<Project[]>({
+        queryKey: ["project"],
+        queryFn: async () => {
+            const res = await axios.get('/api/projects/get-projects')
+            return res.data.projects;
+        }
+    })
 
     const addTask = useMutation({
         mutationFn: async (task: Task) => {
@@ -63,6 +72,7 @@ export default function AddNewTask({
             title,
             description,
             priority,
+            projectName: "name",
             dueDate,
             status: "success",
             completed: false,
@@ -117,6 +127,23 @@ export default function AddNewTask({
                             onChange={(e) => setDescription(e.target.value)}
                         />
                     </div>
+
+                    {!projectId &&
+                        <div>
+                            <Label>Project</Label>
+                            <Select onValueChange={setProject}>
+                                <SelectTrigger className="mt-2">
+                                    <SelectValue placeholder="Select project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {projects?.data?.map((project: Project) => (
+                                        <SelectItem value={String(project.id)} key={project.id}>{project.name}</SelectItem>
+                                    ))
+                                    }
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    }
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>

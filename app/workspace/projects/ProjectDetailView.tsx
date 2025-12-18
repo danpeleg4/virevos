@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import axios from "axios";
-import {TaskDetailModal} from "@/app/components/tasks/TaskDetailModal";
+import {TaskDetailModal} from "@/app/components/TaskDetailModal";
 import {taskPercentage} from "@/lib/taskPercentage";
 import AddNewTask from "@/app/workspace/projects/AddNewTask";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
@@ -403,7 +403,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                     key={note.id}
                     className="p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    <p className="text-sm text-gray-700 mb-2">{note.content}</p>
+                    <p className="text-sm  mb-2">{note.content}</p>
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <span>{new Date(note.createdAt!).toLocaleString("en-US", {
                           year: "numeric",
