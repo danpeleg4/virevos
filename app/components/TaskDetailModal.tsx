@@ -38,15 +38,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
     const queryClient = useQueryClient();
 
-    useEffect(() => {
-        if (task) {
-            //setEditedTitle(task.title || "");
-            //setDescription(task.description || "");
-            //setDueDate(task.dueDate ? task.dueDate.slice(0, 10) : "");
-        }
-    }, [task]);
-
-
     async function saveTask() {
         await axios.put(`/api/tasks/${task.id}/status`, {
             title: editedTitle,
@@ -66,16 +57,16 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         }
     })
 
-    function timeAgo(dateString?: string) {
-        if (!dateString) return "";
+    function timeAgo(date?: Date | string | null) {
+        if (!date) return "";
 
-        // Convert "YYYY-MM-DD HH:mm:ss.SSSSS" → local ISO
-        const localISO = dateString.replace(" ", "T");
+        const parsedDate =
+            typeof date === "string"
+                ? new Date(date.replace(" ", "T"))
+                : date;
 
-        const date = new Date(localISO);
         const now = new Date();
-
-        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        const seconds = Math.floor((now.getTime() - parsedDate.getTime()) / 1000);
 
         if (seconds < 5) return "just now";
 
