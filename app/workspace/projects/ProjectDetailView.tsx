@@ -96,6 +96,11 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         }
     })
 
+    const onBackFunction = async () => {
+        queryClient.invalidateQueries({ queryKey: ["projects"] })
+        onBackAction();
+    }
+
     if (notesQuery.isLoading || projectsTasksQuery.isLoading) {
         return <p>Loading...</p>
     }
@@ -124,7 +129,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-4">
-          <Button className="cursor-pointer" variant="ghost" size="icon" onClick={onBackAction}>
+          <Button className="cursor-pointer" variant="ghost" size="icon" onClick={onBackFunction}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
