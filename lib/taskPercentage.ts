@@ -1,6 +1,9 @@
 export function taskPercentage(
     input: Task[] | { completed: number; total: number }
 ): number {
+    if (!input) {
+        return 0;
+    }
     let completed: number;
     let total: number;
 

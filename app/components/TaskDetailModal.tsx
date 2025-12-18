@@ -6,20 +6,20 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Badge } from "../ui/badge";
-import { Label } from "../ui/label";
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Badge } from "./ui/badge";
+import { Label } from "./ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
-import { Separator } from "../ui/separator";
+} from "./ui/select";
+import { Separator } from "./ui/separator";
 import {
   Calendar,
   Flag,
@@ -28,29 +28,76 @@ import {
   FileText,
 } from "lucide-react";
 import axios from "axios";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [dueDate, setDueDate] = useState("");
 
-    // Sync when clicking a new task
+    const queryClient = useQueryClient();
+
     useEffect(() => {
         if (task) {
-            setEditedTitle(task.title || "");
-            setDescription(task.description || "");
+            //setEditedTitle(task.title || "");
+            //setDescription(task.description || "");
+            //setDueDate(task.dueDate ? task.dueDate.slice(0, 10) : "");
         }
     }, [task]);
 
-    async function deleteTask (taskId: number){
-        await axios.delete(`/api/tasks/${taskId}/status`)
-    }
 
     async function saveTask() {
         await axios.put(`/api/tasks/${task.id}/status`, {
             title: editedTitle,
             description,
+            dueDate,
         });
+    }
+
+    const deleteSomeTask = useMutation({
+        mutationFn: async () => {
+            const res = await axios.delete(`/api/tasks/${task.id}/status`);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
+            //  TODO CLOSE THE WINDOW AFTER DELETED
+        }
+    })
+
+    function timeAgo(dateString?: string) {
+        if (!dateString) return "";
+
+        // Convert "YYYY-MM-DD HH:mm:ss.SSSSS" → local ISO
+        const localISO = dateString.replace(" ", "T");
+
+        const date = new Date(localISO);
+        const now = new Date();
+
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (seconds < 5) return "just now";
+
+        const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+        const intervals = [
+            { label: "year", seconds: 31536000 },
+            { label: "month", seconds: 2592000 },
+            { label: "day", seconds: 86400 },
+            { label: "hour", seconds: 3600 },
+            { label: "minute", seconds: 60 },
+            { label: "second", seconds: 1 },
+        ] as const;
+
+        for (const interval of intervals) {
+            const count = Math.floor(seconds / interval.seconds);
+            if (count >= 1) {
+                return rtf.format(-count, interval.label);
+            }
+        }
+
+        return "just now";
     }
 
     return (
@@ -66,24 +113,21 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   className="text-xl mb-2 max-w-sm w-full"
                 />
               ) : (
-                <DialogTitle className="text-2xl mb-2">{task.title}</DialogTitle>
+                <DialogTitle className="text-2xl mb-2">{task?.title}</DialogTitle>
               )}
               <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs">
-                  {task.projectName || "No Project"}
-                </Badge>
                 <Badge
                   className={
-                    task.status === "completed"
+                    task?.status === "completed"
                       ? "bg-green-100 text-green-700"
-                      : task.status === "in-progress"
+                      : task?.status === "in-progress"
                       ? "bg-blue-100 text-blue-700"
                       : "bg-gray-100 text-gray-700"
                   }
                 >
-                  {task.status === "in-progress"
+                  {task?.status === "in-progress"
                     ? "In Progress"
-                    : task.status === "completed"
+                    : task?.status === "completed"
                     ? "Completed"
                     : "To Do"}
                 </Badge>
@@ -106,7 +150,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                     className="cursor-pointer"
                     variant="outline"
                     size="sm"
-                    onClick={() => deleteTask(task.id)}
+                    onClick={() => deleteSomeTask.mutate()}
                 >
                     <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
@@ -130,7 +174,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   rows={4}
                 />
               ) : (
-                <p className="text-sm text-gray-700">{description}</p>
+                <p className="text-sm text-gray-700">{task?.description}</p>
               )}
             </div>
 
@@ -142,7 +186,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             {/* Status */}
             <div>
               <Label className="mb-2 block">Status</Label>
-              <Select defaultValue={task.status}>
+              <Select defaultValue={task?.status}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -160,7 +204,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Flag className="h-4 w-4 mr-2" />
                 Priority
               </Label>
-              <Select defaultValue={task.priority}>
+              <Select defaultValue={task?.priority}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -193,19 +237,24 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Calendar className="h-4 w-4 mr-2" />
                 Due Date
               </Label>
-              <Input type="date" defaultValue="2025-11-15" />
+                <Input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                />
+
             </div>
 
             <Separator />
 
             {/* Activity */}
-            <div>
-              <Label className="mb-2 block text-xs text-gray-600">Activity</Label>
-              <div className="space-y-2 text-xs text-gray-600">
-                <p>Created 3 days ago</p>
-                <p>Last updated 2 hours ago</p>
+              <div>
+                  <Label className="mb-2 block text-xs text-gray-600">Activity</Label>
+                  <div className="space-y-2 text-xs text-gray-600">
+                      <p>Created {timeAgo(task?.createdAt)}</p>
+                      <p>Last updated {timeAgo(task?.updatedAt)}</p>
+                  </div>
               </div>
-            </div>
           </div>
         </div>
       </DialogContent>

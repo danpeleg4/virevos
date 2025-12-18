@@ -10,53 +10,78 @@ import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
-import {useEffect, useState} from "react";
+import { useState } from "react";
+import { addProjectTasksAction } from "@/lib/mutations";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axios from "axios";
 
-type AddNewTaskProps = {
-    onTaskCreatedAction: (task: Task) => void;
-    isProject?: boolean;
-    projectName?: string;
-};
-
-export default function AddNewTask({ onTaskCreatedAction, isProject = false, projectName }: AddNewTaskProps) {
+export default function AddNewTask({
+                                       projectId,
+                                   }: {
+    projectId?: number
+}) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    // Hold the selected project as its id (string). If opened from a project context, we'll resolve by name to id after loading projects.
     const [project, setProject] = useState<string>("");
-    const [projects, setProjects] = useState<Project[]>([])
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");
 
-    useEffect(() => {
-        const getProjects = async () => {
-            const res = await axios.get("/api/projects");
-            setProjects(res.data);
-            // If invoked from a project context and we have a project name, preselect its id
-            if (projectName) {
-                const match = (res.data as Project[]).find(p => p.name === projectName);
-                if (match) setProject(String(match.id));
-            }
+    const queryClient = useQueryClient();
+
+    const projects = useQuery<Project[]>({
+        queryKey: ["project"],
+        queryFn: async () => {
+            const res = await axios.get('/api/projects/get-projects')
+            return res.data.projects;
         }
-        getProjects();
-    }, [])
+    })
+
+    const addTask = useMutation({
+        mutationFn: async (task: Task) => {
+            await addProjectTasksAction(task)
+        },
+        onMutate: async (newTask: Task) => {
+            await queryClient.cancelQueries({
+                queryKey: ["projectTasks", projectId]
+            })
+            const { id, ...rest } = newTask;
+        const prevTasks = queryClient.getQueryData(["projectTasks", projectId])
+            queryClient.setQueryData(["projectsTasks", projectId], (old: Task[] = []) => [
+                ...old,
+                { id: crypto.randomUUID(), ...rest },
+            ])
+            return { prevTasks }
+        },
+        onError: (_err, _newTask, context) => {
+            // rollback if mutation fails
+            queryClient.setQueryData(["projectsTasks", projectId], context?.prevTasks)
+        },
+        onSettled: () => {
+            // refetch to sync with server
+            queryClient.invalidateQueries({queryKey: ["projectsTasks", projectId]})
+        },
+    })
 
     const submitTask = async () => {
         setDialogOpen(false);
 
-        const payload: any = {
+        const payload: Task = {
+            id: 1,
+            userId: "no",
             title,
             description,
             priority,
+            projectName: "name",
+            dueDate,
+            status: "success",
+            completed: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            projectId: projectId as number
         };
-        if (dueDate) payload.dueDate = dueDate; // only include when set
-        if (project) payload.project = project; // send project id
 
-        const res = await axios.post("/api/tasks", payload);
-        console.log("RES DATA:", res.data);
-
-        onTaskCreatedAction(res.data.task);
+        addTask.mutate(payload)
 
         setTitle("");
         setDescription("");
@@ -103,7 +128,7 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
                         />
                     </div>
 
-                    {!isProject &&
+                    {!projectId &&
                         <div>
                             <Label>Project</Label>
                             <Select onValueChange={setProject}>
@@ -111,7 +136,7 @@ export default function AddNewTask({ onTaskCreatedAction, isProject = false, pro
                                     <SelectValue placeholder="Select project" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {projects.map(project => (
+                                    {projects?.data?.map((project: Project) => (
                                         <SelectItem value={String(project.id)} key={project.id}>{project.name}</SelectItem>
                                     ))
                                     }

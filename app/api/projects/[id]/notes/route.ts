@@ -1,20 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
 import { notes } from "@/db/schema";
-import { desc, eq, and } from "drizzle-orm";
-import {Params} from "next/dist/server/request/params";
+import { and, desc, eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-    req: Request,
-    { params }: { params: Promise<Params> }
-){
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
-    const projectId = Number(id);
+    _req: NextRequest,
+    ctx: { params: Promise<{ id: string }> }
+) {
     const user = await currentUser();
     if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await ctx.params;
+    const projectId = Number(id);
+    if (Number.isNaN(projectId)) {
+        return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
     }
 
     const data = await db

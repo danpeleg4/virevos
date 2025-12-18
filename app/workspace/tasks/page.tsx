@@ -7,17 +7,17 @@ import { Input } from "../../components/ui/input";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Search, Flag } from "lucide-react";
-import { TaskDetailModal } from "../../components/tasks/TaskDetailModal";
-import AddNewTask from "@/app/components/AddNewTask";
+import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
-import { initialTasks } from "@/app/lib/mockData";
+import { initialTasks } from "@/lib/mockData";
+import AddNewTask from "@/app/workspace/projects/AddNewTask";
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
-    const [selectedTask, setSelectedTask] = useState<Task>(initialTasks[0]);
+    const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
     useEffect(() => {
@@ -108,7 +108,7 @@ export default function Tasks() {
                     <h1 className="text-3xl text-gray-900">Tasks</h1>
                     <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
                 </div>
-                <AddNewTask onTaskCreatedAction={addTaskToList}/>
+                <AddNewTask />
             </div>
 
             {
@@ -239,10 +239,9 @@ export default function Tasks() {
 
             {/* Task Detail Modal */}
             <TaskDetailModal
-                task={selectedTask}
+                task={selectedTask!}
                 open={taskDetailOpen}
                 onOpenChange={setTaskDetailOpen}
-                onUpdate={handleTaskUpdate}
             />
             </>
             )}

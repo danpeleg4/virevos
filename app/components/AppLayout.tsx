@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { useRouter, usePathname } from "next/navigation";
 
 import { Button } from "./ui/button";
-import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 
 import {

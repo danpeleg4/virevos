@@ -1,28 +1,33 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 import { db } from "@/db/db";
-import { and, eq } from "drizzle-orm";
 import { tasks } from "@/db/schema";
-import {Params} from "next/dist/server/request/params";
+import { and, eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-    req: Request,
-    { params }: { params: Promise<Params> } // <-- params is a Promise
-){
+    _req: NextRequest,
+    ctx: { params: Promise<{ id: string }> }
+) {
     const user = await currentUser();
     if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const resolve = await params
-    const id = Number(resolve.id);
+    const { id } = await ctx.params;
+    const projectId = Number(id);
+    if (Number.isNaN(projectId)) {
+        return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
+    }
 
-    const rows = await db
+    const data = await db
         .select()
         .from(tasks)
         .where(
-            and(eq(tasks.userId, user.id), eq(tasks.projectId, id))
+            and(
+                eq(tasks.userId, user.id),
+                eq(tasks.projectId, projectId)
+            )
         );
 
-    return NextResponse.json(rows);
+    return NextResponse.json(data);
 }

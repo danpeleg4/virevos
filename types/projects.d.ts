@@ -1,3 +1,4 @@
+
 interface ProjectFile {
     id: string;
     name: string;
@@ -7,36 +8,44 @@ interface ProjectFile {
     type: string;
 }
 
-interface ProjectNote {
-    id: string;
-    content: string;
-    createdAt: string;
-}
-
 interface ProjectDetailViewProps {
-    project: {
-        id: number;
-        name: string;
-        client: string;
-        status: string;
-        progress: number;
-        dueDate: string;
-        priority: string;
-    };
+    project: Project
     onBack: () => void;
     onDelete: (number) => void;
-    onTaskUpdate: (projectId, updatedCompleted, updatedTotal) => void;
+    addNotes: (newNote: string, projectId: number) => Promise<ProjectNote>;
+    getNotes: (projectId: number) => Promise<ProjectNote[]>;
+    getProjectTasks: (projectId: number) => Promise<Task[]>;
+    addProjectTasks: (task: Task) => Promise<Task>;
+    allTasks: (tasks: Task[]) => void;
+    deleteTask: (taskId: number) => void;
 }
 
 interface Project {
-    id,
+    id: number,
     name,
     clientName,
     status,
-    progress,
     dueDate,
     tasksCompleted,
     totalTasks,
     priority,
     health,
+}
+
+interface ProjectNote {
+    id: number;
+    content: string;
+    createdAt: Date | string | null;
+    userId: string | null;
+    updatedAt: Date | string | null;
+    projectId: number | null;
+}
+
+interface Note {
+    id: number
+    content: string
+    createdAt: Date | null
+    updatedAt: Date | null
+    userId: string | null
+    projectId: number | null
 }
