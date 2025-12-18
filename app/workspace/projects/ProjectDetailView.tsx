@@ -64,6 +64,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             await addNotes(newNote, projectId)
         },
         onSuccess: () => {
+            setNewNote("");
             queryClient.invalidateQueries({ queryKey: ["notes", project] })
         }
     });
@@ -383,9 +384,17 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                   onChange={(e) => setNewNote(e.target.value)}
                   rows={3}
                 />
-                <Button size="sm" className="mt-2" onClick={() => addSomeNote.mutate({newNote, projectId: project.id})}>
-                  Add Note
-                </Button>
+                  <Button
+                      size="sm"
+                      className="cursor-pointer mt-2"
+                      disabled={addSomeNote.isPending || !newNote.trim()}
+                      onClick={() =>
+                          addSomeNote.mutate({ newNote, projectId: project.id })
+                      }
+                  >
+                      {addSomeNote.isPending ? "Adding..." : "Add Note"}
+                  </Button>
+
               </div>
 
               <div className="space-y-3">
