@@ -4,6 +4,7 @@ interface Task {
     title: string;
     description: string | null;
     projectId: number | null;
+    projectName: string | null;
     priority: string;
     status: string;
     dueDate: string;

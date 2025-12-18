@@ -79,9 +79,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <DialogTitle className="text-2xl mb-2">{task?.title}</DialogTitle>
               )}
               <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs">
-                  {task?.projectId || "No Project"}
-                </Badge>
                 <Badge
                   className={
                     task?.status === "completed"
@@ -140,7 +137,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   rows={4}
                 />
               ) : (
-                <p className="text-sm text-gray-700">{task.description}</p>
+                <p className="text-sm text-gray-700">{task?.description}</p>
               )}
             </div>
 

@@ -189,7 +189,7 @@ export default function Tasks() {
                                                     {task.title}
                                                 </h3>
                                                 <p className="text-sm text-gray-600 mt-1">
-                                                    {task.projectId}
+                                                    {task.projectName}
                                                 </p>
                                             </div>
                                             <div className="flex items-center space-x-2 ml-4">
