@@ -32,7 +32,6 @@ import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/mutat
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
     const [files] = useState<ProjectFile[]>();
-    const [notes, setNotes] = useState<ProjectNote[]>();
     const [newNote, setNewNote] = useState("");
     const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
@@ -50,7 +49,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
     }
 
     const projectsTasksQuery = useQuery({
-        queryKey: ["projectsTasks"],
+        queryKey: ["projectsTasks", project.id],
         queryFn: () => getProjectTasks(project.id),
     })
 
@@ -74,7 +73,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             await deleteTask(taskId)
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks", project.id] })
         }
     })
 
@@ -93,7 +92,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             await updateTaskStatus(status, taskId)
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks", project.id] })
         }
     })
 
@@ -356,7 +355,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
               </div>
 
               <div className="space-y-3">
-                {notes?.map((note) => (
+                {notesQuery.data?.map((note: Note) => (
                   <div
                     key={note.id}
                     className="p-3 bg-gray-50 rounded-lg border border-gray-200"
@@ -370,7 +369,8 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                           hour: "2-digit",
                           minute: "2-digit",
                           hour12: true,
-                      })}</span>
+                      })}
+                      </span>
                     </div>
                   </div>
                 ))}

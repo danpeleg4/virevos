@@ -32,9 +32,26 @@ export default function AddNewTask({
         mutationFn: async (task: Task) => {
             await addProjectTasksAction(task)
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectTasks"] })
-        }
+        onMutate: async (newTask: Task) => {
+            await queryClient.cancelQueries({
+                queryKey: ["projectTasks", projectId]
+            })
+            const { id, ...rest } = newTask;
+        const prevTasks = queryClient.getQueryData(["projectTasks", projectId])
+            queryClient.setQueryData(["projectsTasks", projectId], (old: Task[] = []) => [
+                ...old,
+                { id: crypto.randomUUID(), ...rest },
+            ])
+            return { prevTasks }
+        },
+        onError: (_err, _newTask, context) => {
+            // rollback if mutation fails
+            queryClient.setQueryData(["projectsTasks", projectId], context?.prevTasks)
+        },
+        onSettled: () => {
+            // refetch to sync with server
+            queryClient.invalidateQueries({queryKey: ["projectsTasks", projectId]})
+        },
     })
 
     const submitTask = async () => {

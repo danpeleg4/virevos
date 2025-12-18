@@ -40,3 +40,12 @@ interface ProjectNote {
     updatedAt: Date | string | null;
     projectId: number | null;
 }
+
+interface Note {
+    id: number
+    content: string
+    createdAt: Date | null
+    updatedAt: Date | null
+    userId: string | null
+    projectId: number | null
+}
