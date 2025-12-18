@@ -88,13 +88,42 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
     })
 
     const changeTaskStatus = useMutation({
-        mutationFn: async ({ status, taskId }: { status: string, taskId: number }) => {
-            await updateTaskStatus(status, taskId)
+        mutationFn: async ({ status, taskId }: { status: string; taskId: number }) => {
+            await updateTaskStatus(status, taskId);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectsTasks", project.id] })
-        }
-    })
+
+        onMutate: async ({ status, taskId }) => {
+            await queryClient.cancelQueries({
+                queryKey: ["projectsTasks", project.id],
+            });
+
+            const previousTasks = queryClient.getQueryData<Task[]>([
+                "projectsTasks",
+                project.id,
+            ]);
+
+            // Update ONLY the task, keep order
+            queryClient.setQueryData<Task[]>(
+                ["projectsTasks", project.id],
+                (old) =>
+                    old?.map((task) =>
+                        task.id === taskId
+                            ? { ...task, status }
+                            : task
+                    )
+            );
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            // rollback if API fails
+            queryClient.setQueryData(
+                ["projectsTasks", project.id],
+                context?.previousTasks
+            );
+        },
+    });
 
     const onBackFunction = async () => {
         queryClient.invalidateQueries({ queryKey: ["projects"] })
