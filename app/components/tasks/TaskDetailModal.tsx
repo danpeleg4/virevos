@@ -28,11 +28,14 @@ import {
   FileText,
 } from "lucide-react";
 import axios from "axios";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState("");
     const [description, setDescription] = useState("");
+
+    const queryClient = useQueryClient();
 
     // Sync when clicking a new task
     useEffect(() => {
@@ -42,16 +45,23 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         }
     }, [task]);
 
-    async function deleteTask (taskId: number){
-        await axios.delete(`/api/tasks/${taskId}/status`)
-    }
-
     async function saveTask() {
         await axios.put(`/api/tasks/${task.id}/status`, {
             title: editedTitle,
             description,
         });
     }
+
+    const deleteSomeTask = useMutation({
+        mutationFn: async () => {
+            const res = await axios.delete(`/api/tasks/${task.id}/status`);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
+            //  TODO CLOSE THE WINDOW AFTER DELETED
+        }
+    })
 
     return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -106,7 +116,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                     className="cursor-pointer"
                     variant="outline"
                     size="sm"
-                    onClick={() => deleteTask(task.id)}
+                    onClick={() => deleteSomeTask.mutate()}
                 >
                     <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
@@ -130,7 +140,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   rows={4}
                 />
               ) : (
-                <p className="text-sm text-gray-700">{description}</p>
+                <p className="text-sm text-gray-700">{task.description}</p>
               )}
             </div>
 
