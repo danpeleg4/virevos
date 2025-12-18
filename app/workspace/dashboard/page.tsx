@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { taskPercentage } from "@/lib/taskPercentage";
+import {useQuery} from "@tanstack/react-query";
 
 type Project = {
     id: number;
@@ -170,21 +171,13 @@ const fadeInUp = {
 };
 
 export default function Dashboard() {
-    const [projects, setProjects] = useState<Project[]>(recentProjects);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const getProjects = async () => {
-            try {
-                const res = await axios.get("/api/projects");
-                setProjects(res.data);
-                setLoading(false);
-            } catch {
-                console.log("Failed to fetch projects — using fallback");
-            }
-        };
-        getProjects();
-    }, []);
+    const allProjects = useQuery({
+        queryKey: ["projects"],
+        queryFn: async () => {
+            const res = await axios.get("/api/projects/get-projects");
+            return res.data;
+        }
+    })
 
     return (
         <div className="p-6 space-y-6">
@@ -252,10 +245,8 @@ export default function Dashboard() {
                         </Button>
                     </div>
 
-                    {
-                        loading ? <p className="text-gray-600">Loading projects...</p> :
                             <div className="space-y-4">
-                                {projects.map((project) => (
+                                {allProjects.data?.projects?.map((project: Project) => (
                                     <div
                                         key={project.id}
                                         className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -297,7 +288,6 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
-                    }
                 </Card>
 
                 {/* Upcoming Tasks */}
