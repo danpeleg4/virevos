@@ -9,7 +9,6 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
 import {
@@ -24,17 +23,22 @@ import {
   Calendar,
   Flag,
   Trash2,
-  Edit,
   FileText,
 } from "lucide-react";
 import axios from "axios";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {updateTaskStatus} from "@/lib/mutations";
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState("");
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
+    const [status, setStatus] = useState(task?.status);
+
+    useEffect(() => {
+        setStatus(task?.status);
+    }, [task?.id, task?.status]);
 
     const queryClient = useQueryClient();
 
@@ -56,6 +60,33 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             //  TODO CLOSE THE WINDOW AFTER DELETED
         }
     })
+
+    const changeTaskStatus = useMutation({
+        mutationFn: ({ status, taskId }: { status: string, taskId: number }) =>
+            updateTaskStatus(status, taskId),
+
+        onMutate: async ({ status, taskId }: { status: string, taskId: number }) => {
+            await queryClient.cancelQueries({ queryKey: ["projectsTasks"] });
+
+            const previousTasks = queryClient.getQueryData(["projectsTasks"]);
+
+            queryClient.setQueryData<Task[]>(["projectsTasks"], (old = []) =>
+                old.map(t =>
+                    t.id === taskId ? { ...t, status } : t
+                )
+            );
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            queryClient.setQueryData(["projectsTasks"], context?.previousTasks);
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] });
+        },
+    });
 
     function timeAgo(date?: Date | string | null) {
         if (!date) return "";
@@ -97,46 +128,26 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              {isEditing ? (
-                <Input
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-xl mb-2 max-w-sm w-full"
-                />
-              ) : (
                 <DialogTitle className="text-2xl mb-2">{task?.title}</DialogTitle>
-              )}
               <div className="flex items-center space-x-2">
                 <Badge
                   className={
-                    task?.status === "completed"
+                    status === "completed"
                       ? "bg-green-100 text-green-700"
-                      : task?.status === "in-progress"
+                      : status === "in-progress"
                       ? "bg-blue-100 text-blue-700"
                       : "bg-gray-100 text-gray-700"
                   }
                 >
-                  {task?.status === "in-progress"
+                  {status === "in-progress"
                     ? "In Progress"
-                    : task?.status === "completed"
+                    : status === "completed"
                     ? "Completed"
                     : "To Do"}
                 </Badge>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-                <Button
-                    className="cursor-pointer"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        if (isEditing) saveTask();
-                        setIsEditing(!isEditing);
-                    }}
-                >
-                    <Edit className="h-4 w-4 mr-2" />
-                    {isEditing ? "Save" : "Edit"}
-                </Button>
                 <Button
                     className="cursor-pointer"
                     variant="outline"
@@ -158,15 +169,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <FileText className="h-4 w-4 mr-2" />
                 Description
               </Label>
-              {isEditing ? (
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                />
-              ) : (
                 <p className="text-sm text-gray-700">{task?.description}</p>
-              )}
             </div>
 
             <Separator />
@@ -177,16 +180,25 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             {/* Status */}
             <div>
               <Label className="mb-2 block">Status</Label>
-              <Select defaultValue={task?.status}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select
+                    value={status}
+                    onValueChange={(newStatus) => {
+                        setStatus(newStatus);
+                        changeTaskStatus.mutate({
+                            status: newStatus,
+                            taskId: task.id,
+                        });
+                    }}
+                >
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="todo">To Do</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             {/* Priority */}

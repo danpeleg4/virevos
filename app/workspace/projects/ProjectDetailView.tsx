@@ -312,7 +312,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">View</DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => deleteSomeTask.mutate(task.id)}>
                           Delete
                         </DropdownMenuItem>
