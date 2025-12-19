@@ -27,28 +27,22 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {updateTaskStatus} from "@/lib/mutations";
+import {changePriorityStatus, updateTaskStatus} from "@/lib/mutations";
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedTitle, setEditedTitle] = useState("");
-    const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [status, setStatus] = useState(task?.status);
+    const [priority, setPriority] = useState(task?.priority);
 
     useEffect(() => {
         setStatus(task?.status);
     }, [task?.id, task?.status]);
 
-    const queryClient = useQueryClient();
+    useEffect(() => {
+        setPriority(task?.priority);
+    }, [task?.id, task?.priority]);
 
-    async function saveTask() {
-        await axios.put(`/api/tasks/${task.id}/status`, {
-            title: editedTitle,
-            description,
-            dueDate,
-        });
-    }
+    const queryClient = useQueryClient();
 
     const deleteSomeTask = useMutation({
         mutationFn: async () => {
@@ -87,6 +81,33 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             queryClient.invalidateQueries({ queryKey: ["projectsTasks"] });
         },
     });
+
+    const changeThePriorityStatus = useMutation({
+        mutationFn: async ({ priority, taskId }: { priority: string, taskId: number }) => {
+            await changePriorityStatus(taskId, priority);
+        },
+        onMutate: async ({ priority, taskId }: { priority: string, taskId: number }) => {
+            await queryClient.cancelQueries({ queryKey: ["projectsTasks"] });
+
+            const previousTasks = queryClient.getQueryData(["projectsTasks"]);
+
+            queryClient.setQueryData<Task[]>(["projectsTasks"], (old = []) =>
+                old.map(t =>
+                    t.id === taskId ? { ...t, priority } : t
+                )
+            );
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            queryClient.setQueryData(["projectsTasks"], context?.previousTasks);
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] });
+        },
+    })
 
     function timeAgo(date?: Date | string | null) {
         if (!date) return "";
@@ -207,7 +228,17 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Flag className="h-4 w-4 mr-2" />
                 Priority
               </Label>
-              <Select defaultValue={task?.priority}>
+                  <Select
+                      value={priority}
+                      defaultValue={task?.priority}
+                      onValueChange={(newStatus) => {
+                          setPriority(newStatus);
+                          changeThePriorityStatus.mutate({
+                              priority: newStatus,
+                              taskId: task.id,
+                          });
+                      }}
+                  >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
