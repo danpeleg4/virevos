@@ -27,18 +27,32 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {changePriorityStatus, updateTaskStatus} from "@/lib/mutations";
+import {changePriorityStatus, updateTaskDueDate, updateTaskStatus} from "@/lib/mutations";
 
-export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
-    const [dueDate, setDueDate] = useState("");
+export function TaskDetailModal({ projectId, task, open, onOpenChange }: TaskDetailModalProps) {
     const [status, setStatus] = useState(task?.status);
     const [priority, setPriority] = useState(task?.priority);
+    const [dueDate, setDueDate] = useState<string>("");
+
+    const queryKey = ["projectsTasks", projectId];
 
     useEffect(() => {
+        if (task?.dueDate) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setDueDate(task.dueDate.slice(0, 10)); // ISO → yyyy-mm-dd
+        } else {
+            setDueDate("");
+        }
+    }, [task?.id, task?.dueDate]);
+
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStatus(task?.status);
     }, [task?.id, task?.status]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPriority(task?.priority);
     }, [task?.id, task?.priority]);
 
@@ -50,8 +64,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             return res.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
-            //  TODO CLOSE THE WINDOW AFTER DELETED
+            queryClient.invalidateQueries({ queryKey: queryKey })
+            onOpenChange(false)
         }
     })
 
@@ -60,11 +74,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             updateTaskStatus(status, taskId),
 
         onMutate: async ({ status, taskId }: { status: string, taskId: number }) => {
-            await queryClient.cancelQueries({ queryKey: ["projectsTasks"] });
+            await queryClient.cancelQueries({ queryKey: queryKey });
 
-            const previousTasks = queryClient.getQueryData(["projectsTasks"]);
+            const previousTasks = queryClient.getQueryData(queryKey);
 
-            queryClient.setQueryData<Task[]>(["projectsTasks"], (old = []) =>
+            queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
                 old.map(t =>
                     t.id === taskId ? { ...t, status } : t
                 )
@@ -74,11 +88,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         },
 
         onError: (_err, _vars, context) => {
-            queryClient.setQueryData(["projectsTasks"], context?.previousTasks);
+            queryClient.setQueryData(queryKey, context?.previousTasks);
         },
 
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] });
+            queryClient.invalidateQueries({ queryKey: queryKey });
         },
     });
 
@@ -87,11 +101,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             await changePriorityStatus(taskId, priority);
         },
         onMutate: async ({ priority, taskId }: { priority: string, taskId: number }) => {
-            await queryClient.cancelQueries({ queryKey: ["projectsTasks"] });
+            await queryClient.cancelQueries({ queryKey: queryKey });
 
-            const previousTasks = queryClient.getQueryData(["projectsTasks"]);
+            const previousTasks = queryClient.getQueryData(queryKey);
 
-            queryClient.setQueryData<Task[]>(["projectsTasks"], (old = []) =>
+            queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
                 old.map(t =>
                     t.id === taskId ? { ...t, priority } : t
                 )
@@ -101,13 +115,41 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         },
 
         onError: (_err, _vars, context) => {
-            queryClient.setQueryData(["projectsTasks"], context?.previousTasks);
+            queryClient.setQueryData(queryKey, context?.previousTasks);
         },
 
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] });
+            queryClient.invalidateQueries({ queryKey: queryKey });
         },
     })
+
+    const changeDueDate = useMutation({
+        mutationFn: ({ taskId, dueDate }: { taskId: number; dueDate: string }) =>
+            updateTaskDueDate(taskId, dueDate),
+
+        onMutate: async ({ taskId, dueDate }) => {
+            await queryClient.cancelQueries({ queryKey: queryKey });
+
+            const previousTasks = queryClient.getQueryData<Task[]>(queryKey);
+
+            queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
+                old.map(t =>
+                    t.id === taskId ? { ...t, dueDate } : t
+                )
+            );
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            queryClient.setQueryData(queryKey, context?.previousTasks);
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: queryKey });
+        },
+    });
+
 
     function timeAgo(date?: Date | string | null) {
         if (!date) return "";
@@ -275,8 +317,13 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
+                    onBlur={() =>
+                        changeDueDate.mutate({
+                            taskId: task.id,
+                            dueDate: dueDate,
+                        })
+                    }
                 />
-
             </div>
 
             <Separator />

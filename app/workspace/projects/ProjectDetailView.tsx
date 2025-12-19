@@ -427,6 +427,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             task={selectedTask!}
             open={taskDetailOpen}
             onOpenChange={setTaskDetailOpen}
+            projectId={project.id}
         />
     </div>
   );

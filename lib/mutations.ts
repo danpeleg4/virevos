@@ -54,6 +54,10 @@ export const changePriorityStatus = async (taskId: number, priority: string) => 
     await db.update(tasks).set({priority: priority}).where(eq(tasks.id, taskId));
 }
 
+export const updateTaskDueDate = async (taskId: number, dueDate: string) => {
+    await db.update(tasks).set({dueDate: dueDate}).where(eq(tasks.id, taskId));
+}
+
 export async function addProjectTasksAction(task: Task): Promise<Task> {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
