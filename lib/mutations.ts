@@ -11,8 +11,17 @@ export async function deleteProject(projectId: number) {
     await db.delete(projects).where(eq(projects.id, projectId));
 }
 
-export async function deleteTask(taskId: number) {
+export async function deleteTask(taskId: number, projectId: number) {
+    //const totalTasks = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+    //const completedTasks = totalTasks.map(task => task.completed);
+    //return (totalTasks.length / completedTasks.length) * 100;
     await db.delete(tasks).where(eq(tasks.id, taskId));
+    await db
+        .update(projects)
+        .set({
+            totalTasks: sql`${projects.totalTasks} - 1`
+        })
+        .where(eq(projects.id, Number(projectId)));
 }
 
 export async function updateTaskStatus(status: string, taskId: number) {
@@ -50,11 +59,11 @@ export async function updateTaskStatus(status: string, taskId: number) {
     return { success: true, id: taskId, status }
 }
 
-export const changePriorityStatus = async (taskId: number, priority: string) => {
+export async function changePriorityStatus(taskId: number, priority: string){
     await db.update(tasks).set({priority: priority}).where(eq(tasks.id, taskId));
 }
 
-export const updateTaskDueDate = async (taskId: number, dueDate: string) => {
+export async function updateTaskDueDate(taskId: number, dueDate: string){
     await db.update(tasks).set({dueDate: dueDate}).where(eq(tasks.id, taskId));
 }
 

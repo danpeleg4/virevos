@@ -12,6 +12,9 @@ export async function GET(_req: NextRequest) {
 
     const projects = await db.query.projects.findMany({
         where: (fields, { eq }) => eq(fields.userId, user.id),
+        with: {
+            tasks: true
+        }
     });
     const allClients = await db
         .select()

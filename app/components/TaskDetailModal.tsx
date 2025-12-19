@@ -25,9 +25,8 @@ import {
   Trash2,
   FileText,
 } from "lucide-react";
-import axios from "axios";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {changePriorityStatus, updateTaskDueDate, updateTaskStatus} from "@/lib/mutations";
+import {changePriorityStatus, deleteTask, updateTaskDueDate, updateTaskStatus} from "@/lib/mutations";
 
 export function TaskDetailModal({ projectId, task, open, onOpenChange }: TaskDetailModalProps) {
     const [status, setStatus] = useState(task?.status);
@@ -60,8 +59,7 @@ export function TaskDetailModal({ projectId, task, open, onOpenChange }: TaskDet
 
     const deleteSomeTask = useMutation({
         mutationFn: async () => {
-            const res = await axios.delete(`/api/tasks/${task.id}/status`);
-            return res.data;
+            await deleteTask(task.id, projectId);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKey })
