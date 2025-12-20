@@ -64,22 +64,28 @@ export async function addProjectTasksAction(task: Task): Promise<Task> {
     return newTask[0];
 }
 
-export async function createProject(project: Project): Promise<Project> {
+export async function createProject(project: Omit<Project, "id" | "stats">): Promise<Project> {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
     }
 
-    const { id, ...rest } = project;
+    // Insert project into DB
     const inserted = await db
         .insert(projects)
         .values({
-            ...rest,
+            ...project,
             userId: user.id
         })
         .returning();
 
-    return inserted[0];
+    // Add default stats before returning
+    const newProject: Project = {
+        ...inserted[0],
+        stats: { totalTasks: 0, completedTasks: 0, percentage: 0 }
+    };
+
+    return newProject;
 }
 
 export async function addNotes(

@@ -20,6 +20,12 @@ interface ProjectDetailViewProps {
     deleteTask: (taskId: number) => void;
 }
 
+interface ProjectStats {
+    totalTasks: number;
+    completedTasks: number;
+    percentage: number;
+}
+
 interface Project {
     id: number,
     name,
@@ -27,7 +33,7 @@ interface Project {
     status,
     dueDate,
     priority,
-    stats: any
+    stats: ProjectStats
     health,
 }
 
