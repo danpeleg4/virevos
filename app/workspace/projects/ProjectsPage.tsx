@@ -27,7 +27,7 @@ export default function ProjectsPage() {
         return {
             ...p,
             status: isCompleted ? "completed" : p.status, // override status if all tasks done
-            health: isCompleted ? "completed" : p.health // optional: update health too
+            health: isCompleted ? "completed" : p.health // update health too
         };
     }) ?? [];
 
