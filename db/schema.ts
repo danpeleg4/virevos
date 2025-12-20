@@ -43,8 +43,6 @@ export const projects = pgTable("projects", {
     description: text("description"),
     status: text("status").notNull().default("in-progress"),
     dueDate: date("due_date").notNull().default("2025-01-01"),
-    totalTasks: integer("total_tasks").notNull().default(0),
-    tasksCompleted: integer("tasks_completed").notNull().default(0),
     priority: text("priority").notNull().default("low"),
     health: text("health").notNull().default("On Track"),
 

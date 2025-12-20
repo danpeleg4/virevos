@@ -29,25 +29,20 @@ export async function updateTaskStatus(status: string, taskId: number) {
         throw new Error("Task not found");
     }
 
-    const prevStatus = existing.status;
-
     await db
         .update(tasks)
         .set({ status, completed: status === "completed" })
         .where(eq(tasks.id, taskId));
 
-    // only update if status changed
-    if (prevStatus !== status) {
-        const diff = status === "completed" ? 1 : -1;
-
-        await db
-            .update(projects)
-            .set({
-                tasksCompleted: sql`${projects.tasksCompleted} + ${diff}`
-            })
-            .where(eq(projects.id, Number(existing.projectId)));
-    }
     return { success: true, id: taskId, status }
+}
+
+export async function changePriorityStatus(taskId: number, priority: string){
+    await db.update(tasks).set({priority: priority}).where(eq(tasks.id, taskId));
+}
+
+export async function updateTaskDueDate(taskId: number, dueDate: string){
+    await db.update(tasks).set({dueDate: dueDate}).where(eq(tasks.id, taskId));
 }
 
 export async function addProjectTasksAction(task: Task): Promise<Task> {
@@ -66,33 +61,31 @@ export async function addProjectTasksAction(task: Task): Promise<Task> {
     };
 
     const newTask = await db.insert(tasks).values(values).returning();
-    if (newTask.length > 0) {
-        await db
-            .update(projects)
-            .set({
-                totalTasks: sql`${projects.totalTasks} + 1`
-            })
-            .where(eq(projects.id, Number(projectId)));
-    }
     return newTask[0];
 }
 
-export async function createProject(project: Project): Promise<Project> {
+export async function createProject(project: Omit<Project, "id" | "stats">): Promise<Project> {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
     }
 
-    const { id, ...rest } = project;
+    // Insert project into DB
     const inserted = await db
         .insert(projects)
         .values({
-            ...rest,
+            ...project,
             userId: user.id
         })
         .returning();
 
-    return inserted[0];
+    // Add default stats before returning
+    const newProject: Project = {
+        ...inserted[0],
+        stats: { totalTasks: 0, completedTasks: 0, percentage: 0 }
+    };
+
+    return newProject;
 }
 
 export async function addNotes(

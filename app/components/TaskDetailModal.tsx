@@ -9,7 +9,6 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
 import {
@@ -24,58 +23,142 @@ import {
   Calendar,
   Flag,
   Trash2,
-  Edit,
   FileText,
 } from "lucide-react";
-import axios from "axios";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {changePriorityStatus, deleteTask, updateTaskDueDate, updateTaskStatus} from "@/lib/mutations";
 
-export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedTitle, setEditedTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [dueDate, setDueDate] = useState("");
+export function TaskDetailModal({ projectId, task, open, onOpenChange }: TaskDetailModalProps) {
+    const [status, setStatus] = useState(task?.status);
+    const [priority, setPriority] = useState(task?.priority);
+    const [dueDate, setDueDate] = useState<string>("");
+
+    const queryKey = ["projectsTasks", projectId];
+
+    useEffect(() => {
+        if (task?.dueDate) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setDueDate(task.dueDate.slice(0, 10)); // ISO → yyyy-mm-dd
+        } else {
+            setDueDate("");
+        }
+    }, [task?.id, task?.dueDate]);
+
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setStatus(task?.status);
+    }, [task?.id, task?.status]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setPriority(task?.priority);
+    }, [task?.id, task?.priority]);
 
     const queryClient = useQueryClient();
 
-    useEffect(() => {
-        if (task) {
-            //setEditedTitle(task.title || "");
-            //setDescription(task.description || "");
-            //setDueDate(task.dueDate ? task.dueDate.slice(0, 10) : "");
-        }
-    }, [task]);
-
-
-    async function saveTask() {
-        await axios.put(`/api/tasks/${task.id}/status`, {
-            title: editedTitle,
-            description,
-            dueDate,
-        });
-    }
-
     const deleteSomeTask = useMutation({
         mutationFn: async () => {
-            const res = await axios.delete(`/api/tasks/${task.id}/status`);
-            return res.data;
+            await deleteTask(task.id);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["projectsTasks"] })
-            //  TODO CLOSE THE WINDOW AFTER DELETED
+            queryClient.invalidateQueries({ queryKey: queryKey })
+            onOpenChange(false)
         }
     })
 
-    function timeAgo(dateString?: string) {
-        if (!dateString) return "";
+    const changeTaskStatus = useMutation({
+        mutationFn: ({ status, taskId }: { status: string, taskId: number }) =>
+            updateTaskStatus(status, taskId),
 
-        // Convert "YYYY-MM-DD HH:mm:ss.SSSSS" → local ISO
-        const localISO = dateString.replace(" ", "T");
+        onMutate: async ({ status, taskId }: { status: string, taskId: number }) => {
+            await queryClient.cancelQueries({ queryKey: queryKey });
 
-        const date = new Date(localISO);
+            const previousTasks = queryClient.getQueryData(queryKey);
+
+            queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
+                old.map(t =>
+                    t.id === taskId ? { ...t, status } : t
+                )
+            );
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            queryClient.setQueryData(queryKey, context?.previousTasks);
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: queryKey });
+        },
+    });
+
+    const changeThePriorityStatus = useMutation({
+        mutationFn: async ({ priority, taskId }: { priority: string, taskId: number }) => {
+            await changePriorityStatus(taskId, priority);
+        },
+        onMutate: async ({ priority, taskId }: { priority: string, taskId: number }) => {
+            await queryClient.cancelQueries({ queryKey: queryKey });
+
+            const previousTasks = queryClient.getQueryData(queryKey);
+
+            queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
+                old.map(t =>
+                    t.id === taskId ? { ...t, priority } : t
+                )
+            );
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            queryClient.setQueryData(queryKey, context?.previousTasks);
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: queryKey });
+        },
+    })
+
+    const changeDueDate = useMutation({
+        mutationFn: ({ taskId, dueDate }: { taskId: number; dueDate: string }) =>
+            updateTaskDueDate(taskId, dueDate),
+
+        onMutate: async ({ taskId, dueDate }) => {
+            await queryClient.cancelQueries({ queryKey: queryKey });
+
+            const previousTasks = queryClient.getQueryData<Task[]>(queryKey);
+
+            queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
+                old.map(t =>
+                    t.id === taskId ? { ...t, dueDate } : t
+                )
+            );
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            queryClient.setQueryData(queryKey, context?.previousTasks);
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: queryKey });
+        },
+    });
+
+
+    function timeAgo(date?: Date | string | null) {
+        if (!date) return "";
+
+        const parsedDate =
+            typeof date === "string"
+                ? new Date(date.replace(" ", "T"))
+                : date;
+
         const now = new Date();
-
-        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        const seconds = Math.floor((now.getTime() - parsedDate.getTime()) / 1000);
 
         if (seconds < 5) return "just now";
 
@@ -106,46 +189,26 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              {isEditing ? (
-                <Input
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-xl mb-2 max-w-sm w-full"
-                />
-              ) : (
                 <DialogTitle className="text-2xl mb-2">{task?.title}</DialogTitle>
-              )}
               <div className="flex items-center space-x-2">
                 <Badge
                   className={
-                    task?.status === "completed"
+                    status === "completed"
                       ? "bg-green-100 text-green-700"
-                      : task?.status === "in-progress"
+                      : status === "in-progress"
                       ? "bg-blue-100 text-blue-700"
                       : "bg-gray-100 text-gray-700"
                   }
                 >
-                  {task?.status === "in-progress"
+                  {status === "in-progress"
                     ? "In Progress"
-                    : task?.status === "completed"
+                    : status === "completed"
                     ? "Completed"
                     : "To Do"}
                 </Badge>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-                <Button
-                    className="cursor-pointer"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        if (isEditing) saveTask();
-                        setIsEditing(!isEditing);
-                    }}
-                >
-                    <Edit className="h-4 w-4 mr-2" />
-                    {isEditing ? "Save" : "Edit"}
-                </Button>
                 <Button
                     className="cursor-pointer"
                     variant="outline"
@@ -167,15 +230,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <FileText className="h-4 w-4 mr-2" />
                 Description
               </Label>
-              {isEditing ? (
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                />
-              ) : (
                 <p className="text-sm text-gray-700">{task?.description}</p>
-              )}
             </div>
 
             <Separator />
@@ -186,16 +241,25 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             {/* Status */}
             <div>
               <Label className="mb-2 block">Status</Label>
-              <Select defaultValue={task?.status}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select
+                    value={status}
+                    onValueChange={(newStatus) => {
+                        setStatus(newStatus);
+                        changeTaskStatus.mutate({
+                            status: newStatus,
+                            taskId: task.id,
+                        });
+                    }}
+                >
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="todo">To Do</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             {/* Priority */}
@@ -204,7 +268,17 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Flag className="h-4 w-4 mr-2" />
                 Priority
               </Label>
-              <Select defaultValue={task?.priority}>
+                  <Select
+                      value={priority}
+                      defaultValue={task?.priority}
+                      onValueChange={(newStatus) => {
+                          setPriority(newStatus);
+                          changeThePriorityStatus.mutate({
+                              priority: newStatus,
+                              taskId: task.id,
+                          });
+                      }}
+                  >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -241,8 +315,13 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
+                    onBlur={() =>
+                        changeDueDate.mutate({
+                            taskId: task.id,
+                            dueDate: dueDate,
+                        })
+                    }
                 />
-
             </div>
 
             <Separator />

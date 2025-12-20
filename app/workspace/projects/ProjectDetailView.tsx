@@ -22,7 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from "@/app/components/ui/dropdown-menu";
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/TaskDetailModal";
 import {taskPercentage} from "@/lib/taskPercentage";
@@ -312,7 +312,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTaskClick(task)} className="cursor-pointer">View</DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => deleteSomeTask.mutate(task.id)}>
                           Delete
                         </DropdownMenuItem>
@@ -427,6 +427,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             task={selectedTask!}
             open={taskDetailOpen}
             onOpenChange={setTaskDetailOpen}
+            projectId={project.id}
         />
     </div>
   );

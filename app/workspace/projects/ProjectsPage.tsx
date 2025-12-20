@@ -11,19 +11,26 @@ export default function ProjectsPage() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("all");
-    const [tasks, setTasks] = useState<Task[]>([]);
-
-    const getProjects = async () => {
-        const res = await axios.get(`/api/projects/get-projects`);
-        return res.data;
-    }
 
     const projectsQuery = useQuery({
         queryKey: ["projects"],
-        queryFn: () => getProjects(),
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/get-projects`);
+            return res.data;
+        }
     })
 
-    const projects: Project[] = projectsQuery.data?.projects ?? [];
+    const projects: Project[] = projectsQuery.data?.projects.map((p: Project) => {
+        // Update status based on tasks
+        const isCompleted = p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
+
+        return {
+            ...p,
+            status: isCompleted ? "completed" : p.status, // override status if all tasks done
+            health: isCompleted ? "completed" : p.health // optional: update health too
+        };
+    }) ?? [];
+
     const filtered = projects.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
         const matchesTab =
@@ -46,10 +53,12 @@ export default function ProjectsPage() {
                         />
                     )}
 
-                    <ProjectList
-                        projects={filtered}
-                        onSelect={setSelectedProject}
-                    />
+                    {projectsQuery.data && (
+                        <ProjectList
+                            projects={filtered}
+                            onSelect={setSelectedProject}
+                        />
+                    )}
                 </>
             }
         </div>
