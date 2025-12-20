@@ -16,11 +16,17 @@ export async function GET(_req: NextRequest) {
             tasks: true
         }
     });
+
+    const allTasks = projects.flatMap(p => p.tasks);
+    const totalTasks = allTasks.length;
+    const completedTasks = allTasks.filter(t => t.completed).length;
+    const percentage = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
+
     const allClients = await db
         .select()
         .from(clients)
         .orderBy(clients.id)
         .where(eq(clients.userId, user.id));
 
-    return NextResponse.json({ projects, allClients });
+    return NextResponse.json({ projects, allClients, percentage, totalTasks, completedTasks });
 }

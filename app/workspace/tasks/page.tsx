@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect, useState} from "react";
+import { useState } from "react";
 import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
@@ -9,33 +9,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import { Search, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
-import { initialTasks } from "@/lib/mockData";
 import AddNewTask from "@/app/workspace/projects/AddNewTask";
+import {useQuery} from "@tanstack/react-query";
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
     const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
-    useEffect(() => {
-        const getTasks = async () => {
+    const getTasks = useQuery({
+        queryKey: ["allTasks"],
+        queryFn: async () => {
             const res = await axios.get(`/api/tasks`);
-            const tasksWithProjectName = res.data.map((t: any) => ({
-                ...t.tasks,              // all task fields
-                projectName: t.projectName || "No Project", // replace projectId
+            return res.data.map((t: { tasks: Task[]; projectName: string; }) => ({
+                ...t.tasks,
+                projectName: t.projectName || "No Project",
             }));
-            if (tasksWithProjectName.length === 0) {
-                setTasks(initialTasks);
-            } else {
-                setTasks(tasksWithProjectName);
-            }
-            setLoading(false);
-        };
-        getTasks();
-    }, []);
+        }
+    })
 
     const toggleTaskStatus = async (taskId: number) => {
         setTasks((prev) =>
@@ -71,17 +64,7 @@ export default function Tasks() {
         setTaskDetailOpen(true);
     };
 
-    const handleTaskUpdate = (updatedTask: Task) => {
-        setTasks((prev) =>
-            prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-        );
-    };
-
-    const addTaskToList = (newTask: Task) => {
-        setTasks(prev => [newTask, ...prev]);
-    };
-
-    const filteredTasks = tasks.filter((task) => {
+    const filteredTasks = getTasks.data.filter((task: Task) => {
         const matchesSearch = task.title
             .toLowerCase()
             .includes(searchQuery.toLowerCase());
@@ -110,14 +93,6 @@ export default function Tasks() {
                 </div>
                 <AddNewTask />
             </div>
-
-            {
-                loading ? (
-                        <div className="p-6">
-                            <p className="text-gray-500">Loading tasks...</p>
-                        </div>
-                ) :
-                        (<>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -163,7 +138,7 @@ export default function Tasks() {
 
                 <TabsContent value={activeTab} className="mt-6">
                     <Card className="divide-y">
-                        {filteredTasks.map((task) => (
+                        {filteredTasks.map((task: Task) => (
                             <div
                                 key={task.id}
                                 className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -243,8 +218,6 @@ export default function Tasks() {
                 open={taskDetailOpen}
                 onOpenChange={setTaskDetailOpen}
             />
-            </>
-            )}
         </div>
     )
 }

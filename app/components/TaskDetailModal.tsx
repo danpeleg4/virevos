@@ -59,7 +59,7 @@ export function TaskDetailModal({ projectId, task, open, onOpenChange }: TaskDet
 
     const deleteSomeTask = useMutation({
         mutationFn: async () => {
-            await deleteTask(task.id, projectId);
+            await deleteTask(task.id);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKey })

@@ -12,9 +12,11 @@ import {useState} from "react";
 interface ProjectListProps {
     projects: Project[];
     onSelect: (project: Project) => void;
+    totalTasks: number;
+    completedTasks: number;
 }
 
-export function ProjectList({ projects, onSelect }: ProjectListProps) {
+export function ProjectList({ projects, onSelect, totalTasks, completedTasks }: ProjectListProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
 
@@ -108,24 +110,23 @@ export function ProjectList({ projects, onSelect }: ProjectListProps) {
                                                     <span className="text-sm text-gray-600">Progress</span>
                                                     <span className="text-sm text-gray-900">
                                                 {taskPercentage({
-                                                    completed: project.tasksCompleted,
-                                                    total: project.totalTasks
+                                                    completed: completedTasks,
+                                                    total: totalTasks
                                                 })}%
                                             </span>
                                                 </div>
                                                 <Progress value={taskPercentage({
-                                                    completed: project.tasksCompleted,
-                                                    total: project.totalTasks
+                                                    completed: completedTasks,
+                                                    total: totalTasks
                                                 })}/>
                                             </div>
 
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-600">Tasks</span>
                                                 <span className="text-gray-900">
-                      {project.tasksCompleted}/{project.totalTasks}
+                      {completedTasks}/{totalTasks}
                     </span>
                                             </div>
-
                                             <div className="flex items-center justify-between text-sm pt-4 border-t">
                                                 <div className="flex items-center text-gray-600">
                                                     <Clock className="h-4 w-4 mr-1" />

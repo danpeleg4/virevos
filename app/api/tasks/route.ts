@@ -93,14 +93,6 @@ export async function POST(req: NextRequest) {
         }
 
         const newTask = await db.insert(tasks).values(values).returning();
-        if (newTask.length > 0) {
-            await db
-                .update(projects)
-                .set({
-                    totalTasks: sql`${projects.totalTasks} + 1`
-                })
-                .where(eq(projects.id, Number(projectId)));
-        }
         return NextResponse.json({ success: true, task: newTask[0] }, { status: 201 });
 
     } catch (err: unknown) {

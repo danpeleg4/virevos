@@ -11,17 +11,8 @@ export async function deleteProject(projectId: number) {
     await db.delete(projects).where(eq(projects.id, projectId));
 }
 
-export async function deleteTask(taskId: number, projectId: number) {
-    //const totalTasks = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
-    //const completedTasks = totalTasks.map(task => task.completed);
-    //return (totalTasks.length / completedTasks.length) * 100;
+export async function deleteTask(taskId: number) {
     await db.delete(tasks).where(eq(tasks.id, taskId));
-    await db
-        .update(projects)
-        .set({
-            totalTasks: sql`${projects.totalTasks} - 1`
-        })
-        .where(eq(projects.id, Number(projectId)));
 }
 
 export async function updateTaskStatus(status: string, taskId: number) {
@@ -38,24 +29,11 @@ export async function updateTaskStatus(status: string, taskId: number) {
         throw new Error("Task not found");
     }
 
-    const prevStatus = existing.status;
-
     await db
         .update(tasks)
         .set({ status, completed: status === "completed" })
         .where(eq(tasks.id, taskId));
 
-    // only update if status changed
-    if (prevStatus !== status) {
-        const diff = status === "completed" ? 1 : -1;
-
-        await db
-            .update(projects)
-            .set({
-                tasksCompleted: sql`${projects.tasksCompleted} + ${diff}`
-            })
-            .where(eq(projects.id, Number(existing.projectId)));
-    }
     return { success: true, id: taskId, status }
 }
 
@@ -83,14 +61,6 @@ export async function addProjectTasksAction(task: Task): Promise<Task> {
     };
 
     const newTask = await db.insert(tasks).values(values).returning();
-    if (newTask.length > 0) {
-        await db
-            .update(projects)
-            .set({
-                totalTasks: sql`${projects.totalTasks} + 1`
-            })
-            .where(eq(projects.id, Number(projectId)));
-    }
     return newTask[0];
 }
 

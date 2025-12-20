@@ -22,7 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from "@/app/components/ui/dropdown-menu";
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/TaskDetailModal";
 import {taskPercentage} from "@/lib/taskPercentage";

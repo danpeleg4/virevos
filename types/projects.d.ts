@@ -26,8 +26,6 @@ interface Project {
     clientName,
     status,
     dueDate,
-    tasksCompleted,
-    totalTasks,
     priority,
     health,
 }

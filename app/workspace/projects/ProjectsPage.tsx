@@ -11,16 +11,13 @@ export default function ProjectsPage() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("all");
-    const [tasks, setTasks] = useState<Task[]>([]);
-
-    const getProjects = async () => {
-        const res = await axios.get(`/api/projects/get-projects`);
-        return res.data;
-    }
 
     const projectsQuery = useQuery({
         queryKey: ["projects"],
-        queryFn: () => getProjects(),
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/get-projects`);
+            return res.data;
+        }
     })
 
     const projects: Project[] = projectsQuery.data?.projects ?? [];
@@ -49,6 +46,8 @@ export default function ProjectsPage() {
                     <ProjectList
                         projects={filtered}
                         onSelect={setSelectedProject}
+                        totalTasks={projectsQuery.data.totalTasks ?? 0}
+                        completedTasks={projectsQuery.data.completedTasks ?? 0}
                     />
                 </>
             }

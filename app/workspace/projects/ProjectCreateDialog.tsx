@@ -50,8 +50,6 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
             priority,
             dueDate,
             status: "in-progress",
-            tasksCompleted: 0,
-            totalTasks: 0,
             health: "on-track"
         });
 
