@@ -12,11 +12,9 @@ import {useState} from "react";
 interface ProjectListProps {
     projects: Project[];
     onSelect: (project: Project) => void;
-    totalTasks: number;
-    completedTasks: number;
 }
 
-export function ProjectList({ projects, onSelect, totalTasks, completedTasks }: ProjectListProps) {
+export function ProjectList({ projects, onSelect }: ProjectListProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
 

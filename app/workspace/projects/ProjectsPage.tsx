@@ -20,7 +20,17 @@ export default function ProjectsPage() {
         }
     })
 
-    const projects: Project[] = projectsQuery.data?.projects ?? [];
+    const projects: Project[] = projectsQuery.data?.projects.map((p: Project) => {
+        // Update status based on tasks
+        const isCompleted = p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
+
+        return {
+            ...p,
+            status: isCompleted ? "completed" : p.status, // override status if all tasks done
+            health: isCompleted ? "completed" : p.health // optional: update health too
+        };
+    }) ?? [];
+
     const filtered = projects.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
         const matchesTab =
@@ -47,8 +57,6 @@ export default function ProjectsPage() {
                         <ProjectList
                             projects={filtered}
                             onSelect={setSelectedProject}
-                            totalTasks={projectsQuery.data.projects?.stats?.totalTasks}
-                            completedTasks={projectsQuery.data.projects?.stats?.completedTasks}
                         />
                     )}
                 </>
