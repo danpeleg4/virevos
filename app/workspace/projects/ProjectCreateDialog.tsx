@@ -50,7 +50,8 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
             priority,
             dueDate,
             status: "in-progress",
-            health: "on-track"
+            health: "on-track",
+            stats: undefined
         });
 
         setDialogOpen(false);
