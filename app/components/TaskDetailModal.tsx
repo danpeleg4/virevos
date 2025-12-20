@@ -26,7 +26,7 @@ import {
   FileText,
 } from "lucide-react";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {changePriorityStatus, deleteTask, updateTaskDueDate, updateTaskStatus} from "@/lib/mutations";
+import {changePriorityStatus, deleteTask, updateTaskDueDate, updateTaskStatus} from "@/lib/server_actions";
 
 export function TaskDetailModal({ projectId, task, open, onOpenChange }: TaskDetailModalProps) {
     const [status, setStatus] = useState(task?.status);
