@@ -4,7 +4,7 @@ import { clients } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
     const user = await currentUser();
     if (!user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,10 +17,17 @@ export async function GET(_req: NextRequest) {
         }
     });
 
-    const allTasks = projects.flatMap(p => p.tasks);
-    const totalTasks = allTasks.length;
-    const completedTasks = allTasks.filter(t => t.completed).length;
-    const percentage = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
+    // Add per-project stats
+    const projectsWithStats = projects.map(p => {
+        const totalTasks = p.tasks.length;
+        const completedTasks = p.tasks.filter(t => t.completed).length;
+        const percentage = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
+
+        return {
+            ...p,
+            stats: { totalTasks, completedTasks, percentage }
+        };
+    });
 
     const allClients = await db
         .select()
@@ -28,5 +35,5 @@ export async function GET(_req: NextRequest) {
         .orderBy(clients.id)
         .where(eq(clients.userId, user.id));
 
-    return NextResponse.json({ projects, allClients, percentage, totalTasks, completedTasks });
+    return NextResponse.json({ projects: projectsWithStats, allClients });
 }

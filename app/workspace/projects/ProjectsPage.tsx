@@ -43,12 +43,14 @@ export default function ProjectsPage() {
                         />
                     )}
 
-                    <ProjectList
-                        projects={filtered}
-                        onSelect={setSelectedProject}
-                        totalTasks={projectsQuery.data.totalTasks ?? 0}
-                        completedTasks={projectsQuery.data.completedTasks ?? 0}
-                    />
+                    {projectsQuery.data && (
+                        <ProjectList
+                            projects={filtered}
+                            onSelect={setSelectedProject}
+                            totalTasks={projectsQuery.data.projects?.stats?.totalTasks}
+                            completedTasks={projectsQuery.data.projects?.stats?.completedTasks}
+                        />
+                    )}
                 </>
             }
         </div>

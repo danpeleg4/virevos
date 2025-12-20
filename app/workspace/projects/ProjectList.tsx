@@ -109,22 +109,22 @@ export function ProjectList({ projects, onSelect, totalTasks, completedTasks }: 
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-sm text-gray-600">Progress</span>
                                                     <span className="text-sm text-gray-900">
-                                                {taskPercentage({
-                                                    completed: completedTasks,
-                                                    total: totalTasks
-                                                })}%
+                        {taskPercentage({
+                            completed: project.stats.completedTasks,
+                            total: project.stats.totalTasks
+                        })}%
                                             </span>
                                                 </div>
                                                 <Progress value={taskPercentage({
-                                                    completed: completedTasks,
-                                                    total: totalTasks
+                                                    completed: project.stats.completedTasks,
+                                                    total: project.stats.totalTasks
                                                 })}/>
                                             </div>
 
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-600">Tasks</span>
                                                 <span className="text-gray-900">
-                      {completedTasks}/{totalTasks}
+                      {project.stats.completedTasks}/{project.stats.totalTasks}
                     </span>
                                             </div>
                                             <div className="flex items-center justify-between text-sm pt-4 border-t">

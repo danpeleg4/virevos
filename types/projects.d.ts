@@ -27,6 +27,7 @@ interface Project {
     status,
     dueDate,
     priority,
+    stats: any
     health,
 }
 
