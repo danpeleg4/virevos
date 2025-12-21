@@ -3,7 +3,7 @@ interface Task {
     userId: string;
     title: string;
     description: string | null;
-    projectId: number | null;
+    projectId?: number | null;
     projectName?: string | null;
     priority: string;
     status: string;
@@ -19,13 +19,3 @@ interface TaskDetailModalProps {
     onOpenChange: (open: boolean) => void;
     projectId?: number
 }
-
-type AddNewTaskProps = {
-    onTaskCreatedAction: (task: Task) => void;
-    projectName?: string;
-};
-
-type AddNewTaskPrjProps = {
-    onTaskCreatedAction: (task: Task) => void;
-    projectId: Project.id;
-};

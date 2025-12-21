@@ -45,15 +45,15 @@ export async function updateTaskDueDate(taskId: number, dueDate: string){
     await db.update(tasks).set({dueDate: dueDate}).where(eq(tasks.id, taskId));
 }
 
-export async function addProjectTasksAction(task: Task): Promise<Task> {
+export async function addProjectTasksAction(task: Task, projectId?: number): Promise<Task> {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
-    const { title, description, priority, dueDate, projectId } = task;
+    const { title, description, priority, dueDate } = task;
     const values = {
         title: title.trim(),
         description,
         priority,
-        projectId,
+        projectId: projectId ?? null,
         userId: user.id,
         status: "in-progress" as const,
         completed: false,

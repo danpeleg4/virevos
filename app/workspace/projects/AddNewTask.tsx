@@ -71,13 +71,13 @@ export default function AddNewTask({
             title,
             description,
             priority,
-            projectName: "name",
+            projectName: project,
             dueDate,
             status: "success",
             completed: false,
             createdAt: new Date(),
             updatedAt: new Date(),
-            projectId: projectId as number
+            projectId: projectId ?? 0
         };
 
         addTask.mutate(payload)
