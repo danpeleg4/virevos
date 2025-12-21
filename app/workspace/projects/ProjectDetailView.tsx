@@ -170,7 +170,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         const filePath = `projects/${project.id}/${Date.now()}-${file.name}`;
 
         const { data, error } = await supabase.storage
-            .from("your-bucket") // replace with your bucket name
+            .from("ProjectFiles")
             .upload(filePath, file, {
                 cacheControl: "3600",
                 upsert: false,

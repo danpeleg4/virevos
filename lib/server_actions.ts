@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/db/db";
-import { notes, projects, tasks } from "@/db/schema";
+import {notes, projectFiles, projects, tasks} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
@@ -74,19 +74,17 @@ export async function addFileMetadata(input: AddFileMetadataInput) {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
 
-    const { error } = await supabase
-        .from("project_files")
-        .insert({
-            project_id: input.projectId,
-            user_id: user.id,
+    try {
+        await db.insert(projectFiles).values({
+            projectId: input.projectId,
+            userId: user.id,
             name: input.name,
             path: input.path,
             size: input.size,
-            mime_type: input.mimeType,
+            mimeType: input.mimeType,
         });
-
-    if (error) {
-        console.error(error);
+    } catch (err) {
+        console.error("Drizzle insert failed:", err);
         throw new Error("Failed to save file metadata");
     }
 }

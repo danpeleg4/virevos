@@ -112,6 +112,7 @@ export const tasks = pgTable("tasks", {
 export const projectFiles = pgTable("project_files", {
     id: uuid("id").defaultRandom().primaryKey(),
     projectId: bigint("project_id", { mode: "number" }).notNull().references(() => projects.id),
+    userId: text("user_id").references(() => users.user_id),
     name: text("name").notNull(),
     path: text("path").notNull(),
     size: integer("size").notNull(),
