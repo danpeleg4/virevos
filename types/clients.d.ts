@@ -1,8 +1,8 @@
 export type clients = {
-    id: number,
+    id?: number,
     name: string,
     email: string | null,
     phone: string | null,
-    createdAt: Date | null,
-    updatedAt: Date | null
+    createdAt?: Date | null,
+    updatedAt?: Date | null
 }
