@@ -82,7 +82,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                                 href={item.path}
                                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                                     isActive
-                                        ? "bg-blue-50 text-blue-600"
+                                        ? "bg-gray-200 text-gray-900"
                                         : "text-gray-700 hover:bg-gray-100"
                                 }`}
                             >

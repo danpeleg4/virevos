@@ -36,11 +36,9 @@ export default function Clients() {
         fetchClients();
     }, [name]);
 
-    // ADD CLIENT
     async function handleAddClient() {
         try {
             const res = await axios.post("/api/clients", {name, email, phone});
-
             if (res.status === 200) {
                 setDialogOpen(false);
                 setName("");
