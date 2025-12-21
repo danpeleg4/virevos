@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import {useEffect, useState} from "react";
-import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Avatar, AvatarFallback } from "../../components/ui/avatar";
-import { Input } from "../../components/ui/input";
+import { useState } from "react";
+import { Card } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Badge } from "@/app/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Input } from "@/app/components/ui/input";
 import {
     Dialog,
     DialogContent,
@@ -13,48 +13,89 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
+} from "@/app/components/ui/dialog";
+import { Label } from "@/app/components/ui/label";
 import { Plus, Search, Mail, Phone, Calendar } from "lucide-react";
 import axios from "axios";
-import {clients} from "@/types/clients";
+import { clients } from "@/types/clients";
+import {
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from "@tanstack/react-query";
 
 export default function Clients() {
     const [searchQuery, setSearchQuery] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [clients, setClients] = useState<clients[]>([]);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
 
-    useEffect(() => {
-        async function fetchClients() {
+    const queryClient = useQueryClient();
+
+    const getClients = useQuery({
+        queryKey: ["clients"],
+        queryFn: async () => {
             const res = await axios.get("/api/clients");
-            const data = await res.data;
-            setClients(data);
-        }
-        fetchClients();
-    }, [name]);
+            return res.data as clients[];
+        },
+    });
 
-    // ADD CLIENT
-    async function handleAddClient() {
-        try {
-            const res = await axios.post("/api/clients", {name, email, phone});
+    const addClient = useMutation({
+        mutationFn: async (newClient: {
+            name: string;
+            email: string;
+            phone: string;
+        }) => {
+            const res = await axios.post("/api/clients", newClient);
+            return res.data;
+        },
 
-            if (res.status === 200) {
-                setDialogOpen(false);
-                setName("");
-                setEmail("");
-                setPhone("");
+        onMutate: async (newClient) => {
+            await queryClient.cancelQueries({ queryKey: ["clients"] });
+
+            const previousClients =
+                queryClient.getQueryData<clients[]>(["clients"]) ?? [];
+
+            const optimisticClient: clients = {
+                id: Number(crypto.randomUUID()),
+                name: newClient.name,
+                email: newClient.email,
+                phone: newClient.phone,
+            };
+
+            queryClient.setQueryData<clients[]>(["clients"], [
+                ...previousClients,
+                optimisticClient,
+            ]);
+
+            setDialogOpen(false);
+            setName("");
+            setEmail("");
+            setPhone("");
+
+            return { previousClients };
+        },
+
+        onError: (_err, _newClient, context) => {
+            if (context?.previousClients) {
+                queryClient.setQueryData(
+                    ["clients"],
+                    context.previousClients
+                );
             }
-        } catch (error) {
             alert("Failed to add client");
-        }
-    }
+        },
 
-    const filteredClients = clients.filter((client: clients) =>
-        client.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+        },
+    });
+
+    const filteredClients =
+        getClients.data?.filter((client) =>
+            client.name.toLowerCase().includes(searchQuery.toLowerCase())
+        ) ?? [];
 
     return (
         <div className="p-6 space-y-6">
@@ -69,25 +110,27 @@ export default function Clients() {
 
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="cursor-pointer">
                             <Plus className="h-4 w-4 mr-2" />
                             Add Client
                         </Button>
                     </DialogTrigger>
 
-                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-md">
                         <DialogHeader>
                             <DialogTitle>Add New Client</DialogTitle>
-                            <DialogDescription>Create a new client profile</DialogDescription>
+                            <DialogDescription>
+                                Create a new client profile
+                            </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 mt-4">
                             <div>
                                 <Label>Client Name</Label>
                                 <Input
+                                    placeholder="Acme Corporation"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="Acme Corporation"
                                     className="mt-2"
                                 />
                             </div>
@@ -95,10 +138,10 @@ export default function Clients() {
                             <div>
                                 <Label>Email</Label>
                                 <Input
+                                    placeholder="contact@acme.com"
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="contact@acme.com"
                                     className="mt-2"
                                 />
                             </div>
@@ -106,18 +149,30 @@ export default function Clients() {
                             <div>
                                 <Label>Phone</Label>
                                 <Input
+                                    placeholder="+1 (555) 000-0000"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
-                                    placeholder="+1 (555) 000-0000"
                                     className="mt-2"
                                 />
                             </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setDialogOpen(false)}
+                                    className="cursor-pointer"
+                                >
                                     Cancel
                                 </Button>
-                                <Button onClick={handleAddClient}>Add Client</Button>
+                                <Button
+                                    onClick={() =>
+                                        addClient.mutate({ name, email, phone })
+                                    }
+                                    disabled={addClient.isPending}
+                                    className="cursor-pointer"
+                                >
+                                    Add Client
+                                </Button>
                             </div>
                         </div>
                     </DialogContent>
@@ -126,7 +181,7 @@ export default function Clients() {
 
             {/* Search */}
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                     placeholder="Search clients..."
                     value={searchQuery}
@@ -137,29 +192,29 @@ export default function Clients() {
 
             {/* Clients Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredClients.map((client: clients) => (
-                    <Card key={client.id} className="cursor-pointer p-6 hover:shadow-lg transition-shadow">
+                {filteredClients.map((client) => (
+                    <Card key={client.id} className="p-6">
                         <div className="flex items-start justify-between mb-4">
-                            <Avatar className="h-12 w-12">
-                                <AvatarFallback className="bg-blue-100 text-blue-600">
+                            <Avatar>
+                                <AvatarFallback>
                                     {client.name[0]}
                                 </AvatarFallback>
                             </Avatar>
-                            <Badge className="bg-green-100 text-green-700">active</Badge>
+                            <Badge>active</Badge>
                         </div>
 
-                        <h3 className="text-lg text-gray-900 mb-4">{client.name}</h3>
+                        <h3 className="text-lg mb-4">{client.name}</h3>
 
-                        <div className="space-y-2 mb-4">
-                            <div className="flex items-center text-sm text-gray-600">
+                        <div className="space-y-2 text-sm text-gray-600">
+                            <div className="flex items-center">
                                 <Mail className="h-4 w-4 mr-2" />
                                 {client.email}
                             </div>
-                            <div className="flex items-center text-sm text-gray-600">
+                            <div className="flex items-center">
                                 <Phone className="h-4 w-4 mr-2" />
                                 {client.phone || "N/A"}
                             </div>
-                            <div className="flex items-center text-sm text-gray-600">
+                            <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-2" />
                                 Joined{" "}
                                 {client.createdAt

@@ -11,7 +11,7 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { useState } from "react";
-import { addProjectTasksAction } from "@/lib/mutations";
+import { addProjectTasksAction } from "@/lib/server_actions";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axios from "axios";
 
@@ -65,20 +65,19 @@ export default function AddNewTask({
 
     const submitTask = async () => {
         setDialogOpen(false);
-
         const payload: Task = {
             id: 1,
             userId: "no",
             title,
             description,
             priority,
-            projectName: "name",
+            projectName: project,
             dueDate,
             status: "success",
             completed: false,
             createdAt: new Date(),
             updatedAt: new Date(),
-            projectId: projectId as number
+            projectId: projectId ?? 0
         };
 
         addTask.mutate(payload)

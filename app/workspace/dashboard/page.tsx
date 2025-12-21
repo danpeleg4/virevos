@@ -12,28 +12,14 @@ import {
     Zap,
     TrendingUp,
     Clock,
-    AlertCircle,
+    AlertCircle, CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import axios from "axios";
 import { taskPercentage } from "@/lib/taskPercentage";
 import {useQuery} from "@tanstack/react-query";
 
-type Project = {
-    id: number;
-    name: string;
-    clientName: string;
-    progress: number;
-    status: "on-track" | "at-risk";
-    dueDate: string;
-    priority: string;
-    tasksCompleted: number;
-    totalTasks: number;
-    health: string;
-};
-
-const stats = [
+const theStats = [
     {
         label: "Active Clients",
         value: "24",
@@ -61,45 +47,6 @@ const stats = [
         trend: "down",
         icon: Zap,
         color: "orange",
-    },
-];
-
-const recentProjects: Project[] = [
-    {
-        id: 1,
-        name: "TechCorp Website Redesign",
-        clientName: "TechCorp Inc.",
-        progress: 75,
-        status: "on-track",
-        dueDate: "Nov 15, 2025",
-        priority: "high",
-        tasksCompleted: 15,
-        totalTasks: 20,
-        health: "on-track",
-    },
-    {
-        id: 2,
-        name: "DesignCo Brand Refresh",
-        clientName: "DesignCo Agency",
-        progress: 45,
-        status: "at-risk",
-        dueDate: "Nov 12, 2025",
-        priority: "high",
-        tasksCompleted: 9,
-        totalTasks: 20,
-        health: "on-track",
-    },
-    {
-        id: 3,
-        name: "StartupXYZ MVP Development",
-        clientName: "StartupXYZ",
-        progress: 90,
-        status: "on-track",
-        dueDate: "Nov 18, 2025",
-        priority: "high",
-        tasksCompleted: 27,
-        totalTasks: 30,
-        health: "on-track",
     },
 ];
 
@@ -179,6 +126,31 @@ export default function Dashboard() {
         }
     })
 
+    const getTasks = useQuery({
+        queryKey: ["allTasks"],
+        queryFn: async () => {
+            const res = await axios.get(`/api/tasks`);
+            return res.data.map((t: { tasks: Task[]; projectName: string; }) => ({
+                ...t.tasks,
+                projectName: t.projectName || "No Project",
+            }));
+        }
+    })
+
+    const projects: Project[] =
+        allProjects.data?.projects?.map((p: Project) => {
+            const isCompleted =
+                p.stats.totalTasks > 0 &&
+                p.stats.completedTasks === p.stats.totalTasks;
+
+            return {
+                ...p,
+                status: isCompleted ? "completed" : "active",
+                health: isCompleted ? "completed" : p.health,
+            };
+        }) ?? [];
+
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -200,7 +172,7 @@ export default function Dashboard() {
                 }}
                 className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
-                {stats.map((stat, index) => (
+                {theStats.map((stat, index) => (
                     <motion.div key={index} variants={fadeInUp}>
                         <Card className="p-6">
                             <div className="flex items-center justify-between mb-4">
@@ -246,7 +218,7 @@ export default function Dashboard() {
                     </div>
 
                             <div className="space-y-4">
-                                {allProjects.data?.projects?.map((project: Project) => (
+                                {projects.map((project: Project) => (
                                     <div
                                         key={project.id}
                                         className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -258,29 +230,39 @@ export default function Dashboard() {
                                                     <Badge
                                                         variant="outline"
                                                         className={
-                                                            project.status === "on-track"
+                                                            project.health === "on-track"
                                                                 ? "border-green-200 text-green-700"
-                                                                : "border-orange-200 text-orange-700"
+                                                                : project.health === "at-risk"
+                                                                    ? "border-orange-200 text-orange-700"
+                                                                    : "border-blue-200 text-blue-700"
                                                         }
                                                     >
-                                                        {project.status === "on-track" ? (
+                                                        {project.health === "on-track" && (
                                                             <TrendingUp className="h-3 w-3 mr-1" />
-                                                        ) : (
+                                                        )}
+                                                        {project.health === "at-risk" && (
                                                             <AlertCircle className="h-3 w-3 mr-1" />
                                                         )}
-                                                        {project.status === "on-track" ? "On Track" : "At Risk"}
+                                                        {project.health === "completed" && (
+                                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                                        )}
+                                                        {project.health === "on-track"
+                                                            ? "On Track"
+                                                            : project.health === "at-risk"
+                                                                ? "At Risk"
+                                                                : "Completed"}
                                                     </Badge>
                                                 </div>
                                                 <p className="text-sm text-gray-600">{project.clientName}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm text-gray-900">{taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})}%</p>
+                                                <p className="text-sm text-gray-900">{taskPercentage({completed: project.stats.completedTasks, total: project.stats.totalTasks})}%</p>
                                                 <p className="text-xs text-gray-500">
-                                                    {project.tasksCompleted}/{project.totalTasks} tasks
+                                                    {project.stats.completedTasks}/{project.stats.totalTasks} tasks
                                                 </p>
                                             </div>
                                         </div>
-                                        <Progress value={taskPercentage({completed: project.tasksCompleted,total: project.totalTasks})} />
+                                        <Progress value={taskPercentage({completed: project.stats.completedTasks,total: project.stats.totalTasks})} />
                                         <div className="flex items-center text-xs text-gray-500">
                                             <Clock className="h-3 w-3 mr-1" />
                                             Due: {project.dueDate}
@@ -300,7 +282,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="space-y-3">
-                        {upcomingTasks.map((task) => (
+                        {getTasks?.data?.map((task: Task) => (
                             <div
                                 key={task.id}
                                 className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -324,7 +306,7 @@ export default function Dashboard() {
                                             {task.priority}
                                         </Badge>
                                     </div>
-                                    <p className="text-sm text-gray-600">{task.project}</p>
+                                    <p className="text-sm text-gray-600">{task.projectName}</p>
                                     <p className="text-xs text-gray-500 mt-1">{task.dueDate}</p>
                                 </div>
                             </div>

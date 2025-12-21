@@ -9,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import { Search, Flag } from "lucide-react";
 import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
-import AddNewTask from "@/app/workspace/projects/AddNewTask";
-import {useQuery} from "@tanstack/react-query";
+import AddNewTask from "@/app/components/AddNewTask";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {updateTaskStatus} from "@/lib/server_actions";
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -18,6 +19,8 @@ export default function Tasks() {
     const [activeTab, setActiveTab] = useState("all");
     const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+
+    const queryClient = useQueryClient();
 
     const getTasks = useQuery({
         queryKey: ["allTasks"],
@@ -30,41 +33,47 @@ export default function Tasks() {
         }
     })
 
-    const toggleTaskStatus = async (taskId: number) => {
-        setTasks((prev) =>
-            prev.map((task) =>
-                task.id === taskId
-                    ? {
-                        ...task,
-                        status: task.status === "completed" ? "todo" : "completed",
-                    }
-                    : task
-            )
-        );
+    const changeTaskStatus = useMutation({
+        mutationFn: async ({ status, taskId }: { status: string; taskId: number }) => {
+            await updateTaskStatus(status, taskId);
+        },
 
-        // Send request to backend
-        const task = tasks.find(t => t.id === taskId);
-        const newStatus = task?.status === "completed" ? "todo" : "completed";
+        onMutate: async ({ status, taskId }) => {
+            await queryClient.cancelQueries({
+                queryKey: ["allTasks"],
+            });
 
-        try {
-            await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
-        } catch (err) {
-            console.error("Failed to update status:", err);
-            // Optionally revert optimistic update
-            setTasks((prev) =>
-                prev.map((task) =>
-                    task.id === taskId ? { ...task, status: task?.status } : task
-                )
+            const previousTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
+
+            // Update ONLY the task, keep order
+            queryClient.setQueryData<Task[]>(
+                ["allTasks"],
+                (old) =>
+                    old?.map((task) =>
+                        task.id === taskId
+                            ? { ...task, status }
+                            : task
+                    )
             );
-        }
-    };
+
+            return { previousTasks };
+        },
+
+        onError: (_err, _vars, context) => {
+            // rollback if API fails
+            queryClient.setQueryData(
+                ["allTasks"],
+                context?.previousTasks
+            );
+        },
+    });
 
     const handleTaskClick = (task: Task) => {
         setSelectedTask(task);
         setTaskDetailOpen(true);
     };
 
-    const filteredTasks = getTasks.data.filter((task: Task) => {
+    const filteredTasks = getTasks?.data?.filter((task: Task) => {
         const matchesSearch = task.title
             .toLowerCase()
             .includes(searchQuery.toLowerCase());
@@ -138,7 +147,7 @@ export default function Tasks() {
 
                 <TabsContent value={activeTab} className="mt-6">
                     <Card className="divide-y">
-                        {filteredTasks.map((task: Task) => (
+                        {filteredTasks?.map((task: Task) => (
                             <div
                                 key={task.id}
                                 className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -147,7 +156,10 @@ export default function Tasks() {
                                 <div className="flex items-start space-x-4">
                                     <Checkbox
                                         checked={task.status === "completed"}
-                                        onCheckedChange={() => toggleTaskStatus(task.id)}
+                                        onCheckedChange={() => changeTaskStatus.mutate({
+                                            status: task.status,
+                                            taskId: task.id,
+                                        })}
                                         className="mt-1"
                                         onClick={(e) => e.stopPropagation()}
                                     />
@@ -203,7 +215,7 @@ export default function Tasks() {
                             </div>
                         ))}
 
-                        {filteredTasks.length === 0 && (
+                        {filteredTasks?.length === 0 && (
                             <div className="p-12 text-center">
                                 <p className="text-gray-500">No tasks found</p>
                             </div>

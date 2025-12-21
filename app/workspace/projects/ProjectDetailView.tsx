@@ -1,12 +1,12 @@
 "use client"
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Progress } from "../../components/ui/progress";
-import { Textarea } from "../../components/ui/textarea";
-import { Checkbox } from "../../components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Badge } from "@/app/components/ui/badge";
+import { Progress } from "@/app/components/ui/progress";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Checkbox } from "@/app/components/ui/checkbox";
 import {
     ArrowLeft,
     Calendar,
@@ -26,9 +26,9 @@ import {
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/TaskDetailModal";
 import {taskPercentage} from "@/lib/taskPercentage";
-import AddNewTask from "@/app/workspace/projects/AddNewTask";
+import AddNewTask from "@/app/components/AddNewTask";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/mutations'
+import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/server_actions'
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
     const [files] = useState<ProjectFile[]>();
