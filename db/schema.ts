@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import {
     pgTable, text, integer, boolean, timestamp,
-    varchar, date
+    varchar, date, uuid, bigint
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -108,6 +108,17 @@ export const tasks = pgTable("tasks", {
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+// FILES
+export const projectFiles = pgTable("project_files", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: bigint("project_id", { mode: "number" }).notNull().references(() => projects.id),
+    name: text("name").notNull(),
+    path: text("path").notNull(),
+    size: integer("size").notNull(),
+    mimeType: text("mime_type"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
 // MEETING ATTENDEES
 export const meetingAttendees = pgTable("meeting_attendees", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
@@ -162,6 +173,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     }),
     tasks: many(tasks),
     notes: many(notes),
+    files: many(projectFiles),
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({

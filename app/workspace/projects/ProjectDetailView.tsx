@@ -28,13 +28,22 @@ import {TaskDetailModal} from "@/app/components/TaskDetailModal";
 import {taskPercentage} from "@/lib/taskPercentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/server_actions'
+import {addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/server_actions'
+// lib/supabaseClient.ts
+import { createClient } from "@supabase/supabase-js";
+
+export const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
-    const [files] = useState<ProjectFile[]>();
+    const [files, setFiles] = useState<ProjectFile[]>();
     const [newNote, setNewNote] = useState("");
     const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const queryClient = useQueryClient();
 
@@ -154,7 +163,48 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         setTaskDetailOpen(true);
     };
 
-  return (
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files?.length) return;
+
+        const file = event.target.files[0];
+        const filePath = `projects/${project.id}/${Date.now()}-${file.name}`;
+
+        const { data, error } = await supabase.storage
+            .from("your-bucket") // replace with your bucket name
+            .upload(filePath, file, {
+                cacheControl: "3600",
+                upsert: false,
+            });
+
+        await addFileMetadata({
+            projectId: project.id,
+            name: file.name,
+            path: filePath,
+            size: file.size,
+            mimeType: file.type,
+        });
+
+
+        if (error) {
+            console.error("Upload error:", error);
+            return;
+        }
+
+        // Add uploaded file to local state so UI updates immediately
+        const newFile: ProjectFile = {
+            id: Date.now(), // temp id, replace with real id if you store in DB
+            name: file.name,
+            size: `${Math.round(file.size / 1024)} KB`,
+            uploadedAt: new Date().toLocaleString(),
+            path: filePath,
+        };
+
+        setFiles((prev) => [...(prev || []), newFile]);
+        setUploadProgress(0);
+    };
+
+
+    return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -335,10 +385,21 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                   <Paperclip className="h-4 w-4 mr-2 text-blue-600" />
                   Files
                 </CardTitle>
-                <Button size="sm" variant="outline">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
+                  <input
+                      type="file"
+                      id="fileInput"
+                      className="hidden"
+                      onChange={handleFileChange}
+                  />
+
+                  <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => document.getElementById("fileInput")?.click()}
+                  >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                  </Button>
               </div>
             </CardHeader>
             <CardContent>
