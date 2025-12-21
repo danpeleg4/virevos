@@ -14,7 +14,6 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {updateTaskStatus} from "@/lib/server_actions";
 
 export default function Tasks() {
-    const [tasks, setTasks] = useState<Task[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
     const [selectedTask, setSelectedTask] = useState<Task>();
@@ -86,10 +85,10 @@ export default function Tasks() {
     });
 
     const taskCounts = {
-        all: tasks.length,
-        todo: tasks.filter((t) => t.status === "todo").length,
-        inProgress: tasks.filter((t) => t.status === "in-progress").length,
-        completed: tasks.filter((t) => t.status === "completed").length,
+        all: getTasks?.data?.length,
+        todo: getTasks?.data?.filter((t: Task) => t.status === "todo").length,
+        inProgress: getTasks?.data?.filter((t: Task) => t.status === "in-progress").length,
+        completed: getTasks?.data?.filter((t: Task) => t.status === "completed").length,
     };
 
     return (

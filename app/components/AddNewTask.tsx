@@ -23,7 +23,7 @@ export default function AddNewTask({
     const [dialogOpen, setDialogOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [project, setProject] = useState<string>("");
+    const [selectedProjectId, setSelectedProjectId] = useState<number | null>(projectId ?? null);
     const [priority, setPriority] = useState("");
     const [dueDate, setDueDate] = useState("");
 
@@ -39,29 +39,41 @@ export default function AddNewTask({
 
     const addTask = useMutation({
         mutationFn: async (task: Task) => {
-            await addProjectTasksAction(task)
+            await addProjectTasksAction(task);
         },
         onMutate: async (newTask: Task) => {
-            await queryClient.cancelQueries({
-                queryKey: ["projectTasks", projectId]
-            })
-            const { id, ...rest } = newTask;
-        const prevTasks = queryClient.getQueryData(["projectTasks", projectId])
+            await queryClient.cancelQueries({ queryKey: ["projectsTasks", projectId] });
+            await queryClient.cancelQueries({ queryKey: ["allTasks"] });
+
+            const prevProjectTasks = queryClient.getQueryData<Task[]>(["projectsTasks", projectId]);
+            const prevAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
+
+            // optimistic update
+            const optimisticTask = { ...newTask };
+
             queryClient.setQueryData(["projectsTasks", projectId], (old: Task[] = []) => [
                 ...old,
-                { id: crypto.randomUUID(), ...rest },
-            ])
-            return { prevTasks }
+                optimisticTask,
+            ]);
+
+            queryClient.setQueryData(["allTasks"], (old: Task[] = []) => [
+                ...old,
+                optimisticTask,
+            ]);
+
+            return { prevProjectTasks, prevAllTasks };
         },
         onError: (_err, _newTask, context) => {
             // rollback if mutation fails
-            queryClient.setQueryData(["projectsTasks", projectId], context?.prevTasks)
+            queryClient.setQueryData(["projectsTasks", projectId], context?.prevProjectTasks);
+            queryClient.setQueryData(["allTasks"], context?.prevAllTasks);
         },
         onSettled: () => {
             // refetch to sync with server
-            queryClient.invalidateQueries({queryKey: ["projectsTasks", projectId]})
+            queryClient.invalidateQueries({ queryKey: ["projectsTasks", projectId] });
+            queryClient.invalidateQueries({ queryKey: ["allTasks"] });
         },
-    })
+    });
 
     const submitTask = async () => {
         setDialogOpen(false);
@@ -71,20 +83,19 @@ export default function AddNewTask({
             title,
             description,
             priority,
-            projectName: project,
+            projectName: projects?.data?.find(p => p.id === selectedProjectId)?.name || "",
             dueDate,
             status: "success",
             completed: false,
             createdAt: new Date(),
             updatedAt: new Date(),
-            projectId: projectId ?? 0
+            projectId: selectedProjectId,
         };
 
         addTask.mutate(payload)
 
         setTitle("");
         setDescription("");
-        setProject("");
         setPriority("");
         setDueDate("");
     };
@@ -130,15 +141,14 @@ export default function AddNewTask({
                     {!projectId &&
                         <div>
                             <Label>Project</Label>
-                            <Select onValueChange={setProject}>
+                            <Select onValueChange={(val) => setSelectedProjectId(Number(val))}>
                                 <SelectTrigger className="mt-2">
                                     <SelectValue placeholder="Select project" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {projects?.data?.map((project: Project) => (
                                         <SelectItem value={String(project.id)} key={project.id}>{project.name}</SelectItem>
-                                    ))
-                                    }
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
