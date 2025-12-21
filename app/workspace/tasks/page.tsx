@@ -155,10 +155,12 @@ export default function Tasks() {
                                 <div className="flex items-start space-x-4">
                                     <Checkbox
                                         checked={task.status === "completed"}
-                                        onCheckedChange={() => changeTaskStatus.mutate({
-                                            status: task.status,
-                                            taskId: task.id,
-                                        })}
+                                        onCheckedChange={(checked) =>
+                                            changeTaskStatus.mutate({
+                                                status: checked ? "completed" : "todo",
+                                                taskId: task.id,
+                                            })
+                                        }
                                         className="mt-1"
                                         onClick={(e) => e.stopPropagation()}
                                     />
