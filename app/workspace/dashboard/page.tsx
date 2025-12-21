@@ -126,6 +126,17 @@ export default function Dashboard() {
         }
     })
 
+    const getTasks = useQuery({
+        queryKey: ["allTasks"],
+        queryFn: async () => {
+            const res = await axios.get(`/api/tasks`);
+            return res.data.map((t: { tasks: Task[]; projectName: string; }) => ({
+                ...t.tasks,
+                projectName: t.projectName || "No Project",
+            }));
+        }
+    })
+
     const projects: Project[] =
         allProjects.data?.projects?.map((p: Project) => {
             const isCompleted =
@@ -271,7 +282,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="space-y-3">
-                        {upcomingTasks.map((task) => (
+                        {getTasks?.data?.map((task: Task) => (
                             <div
                                 key={task.id}
                                 className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -295,7 +306,7 @@ export default function Dashboard() {
                                             {task.priority}
                                         </Badge>
                                     </div>
-                                    <p className="text-sm text-gray-600">{task.project}</p>
+                                    <p className="text-sm text-gray-600">{task.projectName}</p>
                                     <p className="text-xs text-gray-500 mt-1">{task.dueDate}</p>
                                 </div>
                             </div>

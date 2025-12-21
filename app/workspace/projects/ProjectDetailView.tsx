@@ -26,7 +26,7 @@ import {
 import axios from "axios";
 import {TaskDetailModal} from "@/app/components/TaskDetailModal";
 import {taskPercentage} from "@/lib/taskPercentage";
-import AddNewTask from "@/app/workspace/projects/AddNewTask";
+import AddNewTask from "@/app/components/AddNewTask";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/server_actions'
 
