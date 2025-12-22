@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import {
     pgTable, text, integer, boolean, timestamp,
-    varchar, date
+    varchar, date, uuid, bigint
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -74,16 +74,6 @@ export const meetings = pgTable("meetings", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// TAGS
-export const tags = pgTable("tags", {
-    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-    name: text("name").notNull(),
-
-    projectId: integer("project_id")
-        .notNull()
-        .references(() => projects.id, { onDelete: "cascade" }),
-});
-
 // NOTES
 export const notes = pgTable("notes", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
@@ -116,6 +106,18 @@ export const tasks = pgTable("tasks", {
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// FILES
+export const projectFiles = pgTable("project_files", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: bigint("project_id", { mode: "number" }).notNull().references(() => projects.id),
+    userId: text("user_id").references(() => users.user_id),
+    name: text("name").notNull(),
+    path: text("path").notNull(),
+    size: integer("size").notNull(),
+    mimeType: text("mime_type"),
+    createdAt: timestamp("created_at").defaultNow(),
 });
 
 // MEETING ATTENDEES
@@ -171,8 +173,8 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
         references: [clients.id],
     }),
     tasks: many(tasks),
-    tags: many(tags),
     notes: many(notes),
+    files: many(projectFiles),
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
@@ -182,13 +184,6 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     }),
     project: one(projects, {
         fields: [tasks.projectId],
-        references: [projects.id],
-    }),
-}));
-
-export const tagsRelations = relations(tags, ({ one }) => ({
-    project: one(projects, {
-        fields: [tags.projectId],
         references: [projects.id],
     }),
 }));

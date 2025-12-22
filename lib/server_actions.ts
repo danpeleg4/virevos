@@ -1,9 +1,11 @@
 "use server"
 
 import { db } from "@/db/db";
-import { notes, projects, tasks } from "@/db/schema";
+import {notes, projectFiles, projects, tasks} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
+import {AddFileMetadataInput, Project, ProjectNote} from "@/types/projects";
+import { supabase } from "./supabase"
 
 export async function deleteProject(projectId: number) {
     await db.delete(tasks).where(eq(tasks.projectId, projectId));
@@ -45,7 +47,7 @@ export async function updateTaskDueDate(taskId: number, dueDate: string){
     await db.update(tasks).set({dueDate: dueDate}).where(eq(tasks.id, taskId));
 }
 
-export async function addProjectTasksAction(task: Task): Promise<Task> {
+export async function addProjectTasksAction(task: { projectId?: number | null } & Task): Promise<Task> {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
     const { title, description, priority, dueDate, projectId } = task;
@@ -53,7 +55,7 @@ export async function addProjectTasksAction(task: Task): Promise<Task> {
         title: title.trim(),
         description,
         priority,
-        projectId,
+        ...(projectId != null ? { projectId } : {}),
         userId: user.id,
         status: "in-progress" as const,
         completed: false,
@@ -62,6 +64,42 @@ export async function addProjectTasksAction(task: Task): Promise<Task> {
 
     const newTask = await db.insert(tasks).values(values).returning();
     return newTask[0];
+}
+
+export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+
+    if (!file) throw new Error("No file provided");
+
+    const filePath = `projects/${user.id}/${Date.now()}-${file.name}`;
+
+    // Upload directly to Supabase Storage (service role bypasses RLS)
+    const { error: uploadError } = await supabase.storage
+        .from("ProjectFiles")
+        .upload(filePath, file, { upsert: false });
+
+    if (uploadError) {
+        console.error("Storage upload failed:", uploadError);
+        throw new Error("Failed to upload file");
+    }
+
+    // Save metadata in Drizzle
+    try {
+        await db.insert(projectFiles).values({
+            projectId: input.projectId,
+            userId: user.id,
+            name: file.name,
+            path: filePath,
+            size: file.size,
+            mimeType: input.mimeType ?? file.type,
+        });
+    } catch (err) {
+        console.error("Drizzle insert failed:", err);
+        throw new Error("Failed to save file metadata");
+    }
+
+    return { path: filePath, name: file.name, size: file.size };
 }
 
 export async function createProject(project: Omit<Project, "id" | "stats">): Promise<Project> {

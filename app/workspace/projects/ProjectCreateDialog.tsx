@@ -23,6 +23,7 @@ import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {createProject} from "@/lib/server_actions";
+import { Project } from '@/types/projects'
 
 export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
     const [dialogOpen, setDialogOpen] = useState(false);

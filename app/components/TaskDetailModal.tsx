@@ -61,90 +61,123 @@ export function TaskDetailModal({ projectId, task, open, onOpenChange }: TaskDet
         mutationFn: async () => {
             await deleteTask(task.id);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: queryKey })
-            onOpenChange(false)
-        }
-    })
+        onMutate: async () => {
+            await queryClient.cancelQueries({ queryKey });
+            await queryClient.cancelQueries({ queryKey: ["allTasks"] });
 
-    const changeTaskStatus = useMutation({
-        mutationFn: ({ status, taskId }: { status: string, taskId: number }) =>
-            updateTaskStatus(status, taskId),
-
-        onMutate: async ({ status, taskId }: { status: string, taskId: number }) => {
-            await queryClient.cancelQueries({ queryKey: queryKey });
-
-            const previousTasks = queryClient.getQueryData(queryKey);
+            const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
+            const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
 
             queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
-                old.map(t =>
-                    t.id === taskId ? { ...t, status } : t
-                )
+                old.filter(t => t.id !== task.id)
+            );
+            queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
+                old.filter(t => t.id !== task.id)
             );
 
-            return { previousTasks };
+            return { previousProjectTasks, previousAllTasks };
+        },
+        onError: (_err, _vars, context) => {
+            queryClient.setQueryData(queryKey, context?.previousProjectTasks);
+            queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+            onOpenChange(false);
+        },
+    });
+
+    const changeTaskStatus = useMutation({
+        mutationFn: ({ status, taskId }: { status: string; taskId: number }) =>
+            updateTaskStatus(status, taskId),
+
+        onMutate: async ({ status, taskId }) => {
+            await queryClient.cancelQueries({ queryKey });
+            await queryClient.cancelQueries({ queryKey: ["allTasks"] });
+
+            const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
+            const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
+
+            // Optimistic update for project-specific tasks
+            queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
+                old.map(t => (t.id === taskId ? { ...t, status } : t))
+            );
+
+            // Optimistic update for allTasks
+            queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
+                old.map(t => (t.id === taskId ? { ...t, status } : t))
+            );
+
+            return { previousProjectTasks, previousAllTasks };
         },
 
         onError: (_err, _vars, context) => {
-            queryClient.setQueryData(queryKey, context?.previousTasks);
+            queryClient.setQueryData(queryKey, context?.previousProjectTasks);
+            queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
         },
 
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: queryKey });
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ["allTasks"] });
         },
     });
 
     const changeThePriorityStatus = useMutation({
-        mutationFn: async ({ priority, taskId }: { priority: string, taskId: number }) => {
-            await changePriorityStatus(taskId, priority);
-        },
-        onMutate: async ({ priority, taskId }: { priority: string, taskId: number }) => {
-            await queryClient.cancelQueries({ queryKey: queryKey });
+        mutationFn: async ({ priority, taskId }: { priority: string; taskId: number }) =>
+            changePriorityStatus(taskId, priority),
+        onMutate: async ({ priority, taskId }) => {
+            await queryClient.cancelQueries({ queryKey });
+            await queryClient.cancelQueries({ queryKey: ["allTasks"] });
 
-            const previousTasks = queryClient.getQueryData(queryKey);
+            const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
+            const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
 
             queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
-                old.map(t =>
-                    t.id === taskId ? { ...t, priority } : t
-                )
+                old.map(t => (t.id === taskId ? { ...t, priority } : t))
+            );
+            queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
+                old.map(t => (t.id === taskId ? { ...t, priority } : t))
             );
 
-            return { previousTasks };
+            return { previousProjectTasks, previousAllTasks };
         },
-
         onError: (_err, _vars, context) => {
-            queryClient.setQueryData(queryKey, context?.previousTasks);
+            queryClient.setQueryData(queryKey, context?.previousProjectTasks);
+            queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
         },
-
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: queryKey });
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ["allTasks"] });
         },
-    })
+    });
 
     const changeDueDate = useMutation({
         mutationFn: ({ taskId, dueDate }: { taskId: number; dueDate: string }) =>
             updateTaskDueDate(taskId, dueDate),
-
         onMutate: async ({ taskId, dueDate }) => {
-            await queryClient.cancelQueries({ queryKey: queryKey });
+            await queryClient.cancelQueries({ queryKey });
+            await queryClient.cancelQueries({ queryKey: ["allTasks"] });
 
-            const previousTasks = queryClient.getQueryData<Task[]>(queryKey);
+            const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
+            const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
 
             queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
-                old.map(t =>
-                    t.id === taskId ? { ...t, dueDate } : t
-                )
+                old.map(t => (t.id === taskId ? { ...t, dueDate } : t))
+            );
+            queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
+                old.map(t => (t.id === taskId ? { ...t, dueDate } : t))
             );
 
-            return { previousTasks };
+            return { previousProjectTasks, previousAllTasks };
         },
-
         onError: (_err, _vars, context) => {
-            queryClient.setQueryData(queryKey, context?.previousTasks);
+            queryClient.setQueryData(queryKey, context?.previousProjectTasks);
+            queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
         },
-
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: queryKey });
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ["allTasks"] });
         },
     });
 

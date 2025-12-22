@@ -18,6 +18,7 @@ import Link from "next/link";
 import axios from "axios";
 import { taskPercentage } from "@/lib/taskPercentage";
 import {useQuery} from "@tanstack/react-query";
+import { Project } from '@/types/projects'
 
 const theStats = [
     {
@@ -47,37 +48,6 @@ const theStats = [
         trend: "down",
         icon: Zap,
         color: "orange",
-    },
-];
-
-const upcomingTasks = [
-    {
-        id: 1,
-        title: "Review TechCorp wireframes",
-        project: "TechCorp Website Redesign",
-        priority: "high",
-        dueDate: "Today",
-    },
-    {
-        id: 2,
-        title: "Send invoice to DesignCo",
-        project: "DesignCo Brand Refresh",
-        priority: "high",
-        dueDate: "Today",
-    },
-    {
-        id: 3,
-        title: "Client meeting with StartupXYZ",
-        project: "StartupXYZ MVP Development",
-        priority: "medium",
-        dueDate: "Tomorrow",
-    },
-    {
-        id: 4,
-        title: "Update project timeline",
-        project: "TechCorp Website Redesign",
-        priority: "low",
-        dueDate: "Nov 12",
     },
 ];
 
@@ -218,7 +188,7 @@ export default function Dashboard() {
                     </div>
 
                             <div className="space-y-4">
-                                {projects.map((project: Project) => (
+                                {projects.slice(0, 3).map((project: Project) => (
                                     <div
                                         key={project.id}
                                         className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -282,7 +252,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="space-y-3">
-                        {getTasks?.data?.map((task: Task) => (
+                        {getTasks?.data?.slice(0, 3).map((task: Task) => (
                             <div
                                 key={task.id}
                                 className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"

@@ -6,6 +6,7 @@ import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import {useQuery} from "@tanstack/react-query";
 import axios from "axios";
+import { Project } from '@/types/projects'
 
 export default function ProjectsPage() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
