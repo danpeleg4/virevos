@@ -4,12 +4,8 @@ import { db } from "@/db/db";
 import {notes, projectFiles, projects, tasks} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import {AddFileMetadataInput, Project, ProjectNote} from "@/types/projects";
+import { supabase } from "./supabase"
 
 export async function deleteProject(projectId: number) {
     await db.delete(tasks).where(eq(tasks.projectId, projectId));
@@ -70,23 +66,40 @@ export async function addProjectTasksAction(task: { projectId?: number | null } 
     return newTask[0];
 }
 
-export async function addFileMetadata(input: AddFileMetadataInput) {
+export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
 
+    if (!file) throw new Error("No file provided");
+
+    const filePath = `projects/${user.id}/${Date.now()}-${file.name}`;
+
+    // Upload directly to Supabase Storage (service role bypasses RLS)
+    const { error: uploadError } = await supabase.storage
+        .from("ProjectFiles")
+        .upload(filePath, file, { upsert: false });
+
+    if (uploadError) {
+        console.error("Storage upload failed:", uploadError);
+        throw new Error("Failed to upload file");
+    }
+
+    // Save metadata in Drizzle
     try {
         await db.insert(projectFiles).values({
             projectId: input.projectId,
             userId: user.id,
-            name: input.name,
-            path: input.path,
-            size: input.size,
-            mimeType: input.mimeType,
+            name: file.name,
+            path: filePath,
+            size: file.size,
+            mimeType: input.mimeType ?? file.type,
         });
     } catch (err) {
         console.error("Drizzle insert failed:", err);
         throw new Error("Failed to save file metadata");
     }
+
+    return { path: filePath, name: file.name, size: file.size };
 }
 
 export async function createProject(project: Omit<Project, "id" | "stats">): Promise<Project> {

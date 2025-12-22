@@ -14,6 +14,7 @@ import { useState } from "react";
 import { addProjectTasksAction } from "@/lib/server_actions";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axios from "axios";
+import { Project } from '@/types/projects'
 
 export default function AddNewTask({
                                        projectId,

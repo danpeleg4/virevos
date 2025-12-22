@@ -29,14 +29,7 @@ import {taskPercentage} from "@/lib/taskPercentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/server_actions'
-// lib/supabaseClient.ts
-import { createClient } from "@supabase/supabase-js";
-
-export const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
+import {Note, Project, ProjectFile} from "@/types/projects";
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
     const [files, setFiles] = useState<ProjectFile[]>();
@@ -163,44 +156,19 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         setTaskDetailOpen(true);
     };
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!event.target.files?.length) return;
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+        const file = e.target.files[0];
 
-        const file = event.target.files[0];
-        const filePath = `projects/${project.id}/${Date.now()}-${file.name}`;
+        try {
+            const result = await addFileMetadata({ projectId: project.id }, file);
+            console.log("Uploaded:", result);
 
-        const { data, error } = await supabase.storage
-            .from("ProjectFiles")
-            .upload(filePath, file, {
-                cacheControl: "3600",
-                upsert: false,
-            });
-
-        await addFileMetadata({
-            projectId: project.id,
-            name: file.name,
-            path: filePath,
-            size: file.size,
-            mimeType: file.type,
-        });
-
-
-        if (error) {
-            console.error("Upload error:", error);
-            return;
+            // Update your state to show new file
+            //setFiles((prev) => [...(prev || []), result]);
+        } catch (err) {
+            console.error("Upload failed:", err);
         }
-
-        // Add uploaded file to local state so UI updates immediately
-        const newFile: ProjectFile = {
-            id: Date.now(), // temp id, replace with real id if you store in DB
-            name: file.name,
-            size: `${Math.round(file.size / 1024)} KB`,
-            uploadedAt: new Date().toLocaleString(),
-            path: filePath,
-        };
-
-        setFiles((prev) => [...(prev || []), newFile]);
-        setUploadProgress(0);
     };
 
 
@@ -389,7 +357,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                       type="file"
                       id="fileInput"
                       className="hidden"
-                      onChange={handleFileChange}
+                      onChange={handleUpload}
                   />
 
                   <Button

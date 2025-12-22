@@ -18,6 +18,7 @@ import Link from "next/link";
 import axios from "axios";
 import { taskPercentage } from "@/lib/taskPercentage";
 import {useQuery} from "@tanstack/react-query";
+import { Project } from '@/types/projects'
 
 const theStats = [
     {
