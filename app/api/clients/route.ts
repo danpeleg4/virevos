@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { clients } from "@/db/schema";
 import {currentUser} from "@clerk/nextjs/server";
+import {eq} from "drizzle-orm";
 
 export async function GET() {
     try {
-        const result = await db.select().from(clients).orderBy(clients.id);
+        const user = await currentUser();
+        if (!user?.id) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+        const result = await db.select().from(clients).where(eq(clients.userId, user.id)).orderBy(clients.id);
         return NextResponse.json(result);
     } catch (error) {
         console.error(error);
