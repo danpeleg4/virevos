@@ -32,7 +32,6 @@ import {addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus} 
 import {Note, Project, ProjectFile} from "@/types/projects";
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
-    const [files, setFiles] = useState<ProjectFile[]>();
     const [newNote, setNewNote] = useState("");
     const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
@@ -40,25 +39,46 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
 
     const queryClient = useQueryClient();
 
-    const getNotes = async (projectId: number) => {
-        const res = await axios.get(`/api/projects/${projectId}/notes`);
-        return res.data;
-    }
-
-    const getProjectTasks = async (projectId: number) => {
-        const res = await axios.get(`/api/projects/${projectId}/tasks`);
-        return res.data;
-    }
+    const handleUpload = async (file: File) => {
+        try {
+            const result = await addFileMetadata({ projectId: project.id }, file);
+            console.log("Uploaded:", result);
+            queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+        } catch (err) {
+            console.error("Upload failed:", err);
+        }
+    };
 
     const projectsTasksQuery = useQuery({
         queryKey: ["projectsTasks", project.id],
-        queryFn: () => getProjectTasks(project.id),
-    })
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/${project.id}/tasks`);
+            return res.data;
+        },
+    });
 
     const notesQuery = useQuery({
-        queryKey: ["notes", project],
-        queryFn: () => getNotes(project.id),
-        enabled: !!project,
+        queryKey: ["notes", project.id],
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/${project.id}/notes`);
+            return res.data;
+        },
+        enabled: !!project.id,
+    });
+
+    const fileQuery = useQuery({
+        queryKey: ["files", project.id],
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/${project.id}/files`);
+            return res.data;
+        },
+    })
+
+    const addFile = useMutation({
+        mutationFn: handleUpload,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+        }
     })
 
     const addSomeNote = useMutation({
@@ -156,22 +176,6 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         setTaskDetailOpen(true);
     };
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files?.length) return;
-        const file = e.target.files[0];
-
-        try {
-            const result = await addFileMetadata({ projectId: project.id }, file);
-            console.log("Uploaded:", result);
-
-            // Update your state to show new file
-            //setFiles((prev) => [...(prev || []), result]);
-        } catch (err) {
-            console.error("Upload failed:", err);
-        }
-    };
-
-
     return (
     <div className="space-y-6">
       {/* Header */}
@@ -254,7 +258,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Files</p>
-                <p className="text-2xl text-gray-900 mt-1">{files?.length}</p>
+                <p className="text-2xl text-gray-900 mt-1">{fileQuery?.data?.length || 0}</p>
               </div>
               <FileText className="h-8 w-8 text-purple-500" />
             </div>
@@ -357,9 +361,11 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                       type="file"
                       id="fileInput"
                       className="hidden"
-                      onChange={handleUpload}
+                      onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) addFile.mutate(file);
+                      }}
                   />
-
                   <Button
                       size="sm"
                       variant="outline"
@@ -372,7 +378,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {files?.map((file) => (
+                {fileQuery?.data?.map((file: ProjectFile) => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"

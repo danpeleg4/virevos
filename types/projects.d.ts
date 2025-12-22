@@ -41,14 +41,6 @@ interface Note {
     projectId: number | null
 }
 
-type AddFileMetadataInput2 = {
-    projectId: number;
-    name: string;
-    path: string;
-    size: number;
-    mimeType: string;
-};
-
 export type AddFileMetadataInput = {
     projectId: number;
     mimeType?: string;
