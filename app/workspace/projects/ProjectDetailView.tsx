@@ -51,6 +51,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
 
     const projectsTasksQuery = useQuery({
         queryKey: ["projectsTasks", project.id],
+        enabled: !!project.id,
         queryFn: async () => {
             const res = await axios.get(`/api/projects/${project.id}/tasks`);
             return res.data;
@@ -68,11 +69,12 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
 
     const fileQuery = useQuery({
         queryKey: ["files", project.id],
+        enabled: !!project.id,
         queryFn: async () => {
             const res = await axios.get(`/api/projects/${project.id}/files`);
             return res.data;
         },
-    })
+    });
 
     const addFile = useMutation({
         mutationFn: handleUpload,
@@ -153,8 +155,12 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         onBackAction();
     }
 
-    if (notesQuery.isLoading || projectsTasksQuery.isLoading) {
-        return <p>Loading...</p>
+    if (
+        notesQuery.isLoading ||
+        projectsTasksQuery.isLoading ||
+        fileQuery.isLoading
+    ) {
+        return <p>Loading...</p>;
     }
 
     if (notesQuery.isError || projectsTasksQuery.isError) {
@@ -220,9 +226,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(projectsTasksQuery.data)}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(projectsTasksQuery.data ?? [])}%</p>
               </div>
-                <Progress value={taskPercentage(projectsTasksQuery.data)} className="w-16 h-16" />
+                <Progress value={taskPercentage(projectsTasksQuery.data ?? [])} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>
@@ -464,12 +470,14 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         </div>
       </div>
         {/* Task Detail Modal */}
-        <TaskDetailModal
-            task={selectedTask!}
-            open={taskDetailOpen}
-            onOpenChange={setTaskDetailOpen}
-            projectId={project.id}
-        />
+        {selectedTask && (
+            <TaskDetailModal
+                task={selectedTask}
+                open={taskDetailOpen}
+                onOpenChange={setTaskDetailOpen}
+                projectId={project.id}
+            />
+        )}
     </div>
   );
 }
