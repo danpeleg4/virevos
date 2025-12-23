@@ -225,6 +225,11 @@ export default function Clients() {
                     </Card>
                 ))}
             </div>
+            {getClients?.data?.length === 0 && (
+                <div className="p-12 text-center">
+                    <p className="text-gray-500">No clients found</p>
+                </div>
+            )}
         </div>
     );
 }

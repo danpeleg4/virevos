@@ -188,7 +188,12 @@ export default function Dashboard() {
                     </div>
 
                             <div className="space-y-4">
-                                {projects.slice(0, 3).map((project: Project) => (
+                                {projects.slice(0, 3).map((project) => (
+                                    <Link
+                                        key={project.id}
+                                        href={`/workspace/projects/${(project.id)}`}
+                                        className="block"
+                                    >
                                     <div
                                         key={project.id}
                                         className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -238,6 +243,7 @@ export default function Dashboard() {
                                             Due: {project.dueDate}
                                         </div>
                                     </div>
+                                    </Link>
                                 ))}
                             </div>
                 </Card>

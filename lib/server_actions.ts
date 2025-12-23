@@ -102,17 +102,18 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
     return { path: filePath, name: file.name, size: file.size };
 }
 
-export async function createProject(project: Omit<Project, "id" | "stats">): Promise<Project> {
+export async function createProject(project: Project): Promise<Project> {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
     }
 
+    const { id, ...rest } = project;
     // Insert project into DB
     const inserted = await db
         .insert(projects)
         .values({
-            ...project,
+            ...rest,
             userId: user.id
         })
         .returning();

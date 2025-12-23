@@ -32,7 +32,6 @@ import {addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus} 
 import {Note, Project, ProjectFile} from "@/types/projects";
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
-    const [files, setFiles] = useState<ProjectFile[]>();
     const [newNote, setNewNote] = useState("");
     const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
@@ -40,25 +39,48 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
 
     const queryClient = useQueryClient();
 
-    const getNotes = async (projectId: number) => {
-        const res = await axios.get(`/api/projects/${projectId}/notes`);
-        return res.data;
-    }
-
-    const getProjectTasks = async (projectId: number) => {
-        const res = await axios.get(`/api/projects/${projectId}/tasks`);
-        return res.data;
-    }
+    const handleUpload = async (file: File) => {
+        try {
+            const result = await addFileMetadata({ projectId: project.id }, file);
+            console.log("Uploaded:", result);
+            queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+        } catch (err) {
+            console.error("Upload failed:", err);
+        }
+    };
 
     const projectsTasksQuery = useQuery({
         queryKey: ["projectsTasks", project.id],
-        queryFn: () => getProjectTasks(project.id),
-    })
+        enabled: !!project.id,
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/${project.id}/tasks`);
+            return res.data;
+        },
+    });
 
     const notesQuery = useQuery({
-        queryKey: ["notes", project],
-        queryFn: () => getNotes(project.id),
-        enabled: !!project,
+        queryKey: ["notes", project.id],
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/${project.id}/notes`);
+            return res.data;
+        },
+        enabled: !!project.id,
+    });
+
+    const fileQuery = useQuery({
+        queryKey: ["files", project.id],
+        enabled: !!project.id,
+        queryFn: async () => {
+            const res = await axios.get(`/api/projects/${project.id}/files`);
+            return res.data;
+        },
+    });
+
+    const addFile = useMutation({
+        mutationFn: handleUpload,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+        }
     })
 
     const addSomeNote = useMutation({
@@ -67,7 +89,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         },
         onSuccess: () => {
             setNewNote("");
-            queryClient.invalidateQueries({ queryKey: ["notes", project] })
+            queryClient.invalidateQueries({ queryKey: ["notes", project.id] })
         }
     });
 
@@ -133,8 +155,12 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         onBackAction();
     }
 
-    if (notesQuery.isLoading || projectsTasksQuery.isLoading) {
-        return <p>Loading...</p>
+    if (
+        notesQuery.isLoading ||
+        projectsTasksQuery.isLoading ||
+        fileQuery.isLoading
+    ) {
+        return <p>Loading...</p>;
     }
 
     if (notesQuery.isError || projectsTasksQuery.isError) {
@@ -155,22 +181,6 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         setSelectedTask(task);
         setTaskDetailOpen(true);
     };
-
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files?.length) return;
-        const file = e.target.files[0];
-
-        try {
-            const result = await addFileMetadata({ projectId: project.id }, file);
-            console.log("Uploaded:", result);
-
-            // Update your state to show new file
-            //setFiles((prev) => [...(prev || []), result]);
-        } catch (err) {
-            console.error("Upload failed:", err);
-        }
-    };
-
 
     return (
     <div className="space-y-6">
@@ -216,9 +226,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(projectsTasksQuery.data)}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(projectsTasksQuery.data ?? [])}%</p>
               </div>
-                <Progress value={taskPercentage(projectsTasksQuery.data)} className="w-16 h-16" />
+                <Progress value={taskPercentage(projectsTasksQuery.data ?? [])} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>
@@ -254,7 +264,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Files</p>
-                <p className="text-2xl text-gray-900 mt-1">{files?.length}</p>
+                <p className="text-2xl text-gray-900 mt-1">{fileQuery?.data?.length || 0}</p>
               </div>
               <FileText className="h-8 w-8 text-purple-500" />
             </div>
@@ -284,9 +294,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                   <div
                     key={task.id}
                     className={`flex items-center space-x-3 p-3 rounded-lg border ${
-                      task.completed
-                        ? "bg-gray-50 border-gray-200"
-                        : "bg-white border-gray-200 hover:border-blue-300"
+                        task.status === "completed"
+                            ? "bg-gray-50 border-gray-200"
+                            : "bg-white border-gray-200 hover:border-blue-300"
                     }`}
                   >
                     <Checkbox
@@ -296,9 +306,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                     <div className="flex-1 min-w-0">
                       <p
                         className={`text-sm ${
-                          task.completed
-                            ? "line-through text-gray-500"
-                            : "text-gray-900"
+                            task.status === "completed"
+                                ? "line-through text-gray-500"
+                                : "text-gray-900"
                         }`}
                       >
                         {task.title}
@@ -357,9 +367,11 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                       type="file"
                       id="fileInput"
                       className="hidden"
-                      onChange={handleUpload}
+                      onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) addFile.mutate(file);
+                      }}
                   />
-
                   <Button
                       size="sm"
                       variant="outline"
@@ -372,7 +384,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {files?.map((file) => (
+                {fileQuery?.data?.map((file: ProjectFile) => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -388,9 +400,15 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                         </p>
                       </div>
                     </div>
-                    <Button size="icon" variant="ghost">
-                      <Download className="h-4 w-4" />
-                    </Button>
+                      <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                              window.location.href = `/api/files/${file.id}/download`;
+                          }}
+                      >
+                          <Download className="h-4 w-4" />
+                      </Button>
                   </div>
                 ))}
               </div>
@@ -452,12 +470,14 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         </div>
       </div>
         {/* Task Detail Modal */}
-        <TaskDetailModal
-            task={selectedTask!}
-            open={taskDetailOpen}
-            onOpenChange={setTaskDetailOpen}
-            projectId={project.id}
-        />
+        {selectedTask && (
+            <TaskDetailModal
+                task={selectedTask}
+                open={taskDetailOpen}
+                onOpenChange={setTaskDetailOpen}
+                projectId={project.id}
+            />
+        )}
     </div>
   );
 }

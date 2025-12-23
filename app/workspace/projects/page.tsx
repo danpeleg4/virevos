@@ -7,11 +7,13 @@ import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import {useQuery} from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from '@/types/projects'
+import { useRouter } from "next/navigation";
 
 export default function ProjectsPage() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("all");
+    const router = useRouter();
 
     const projectsQuery = useQuery({
         queryKey: ["projects"],
@@ -44,10 +46,6 @@ export default function ProjectsPage() {
 
     return (
         <div className="p-6 space-y-6">
-            {selectedProject ?
-                <ProjectDetailView onBackAction={() => setSelectedProject(null)} project={selectedProject} />
-                :
-                <>
                     {projectsQuery.isLoading ? null : (
                         <ProjectCreateDialog
                             clients={projectsQuery.data?.allClients ?? []}
@@ -57,11 +55,11 @@ export default function ProjectsPage() {
                     {projectsQuery.data && (
                         <ProjectList
                             projects={filtered}
-                            onSelect={setSelectedProject}
+                            onSelect={(project) =>
+                                router.push(`/workspace/projects/${project.id}`)
+                            }
                         />
                     )}
-                </>
-            }
         </div>
     );
 }

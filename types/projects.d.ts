@@ -4,6 +4,7 @@ interface ProjectFile {
     size: string;
     uploadedAt: string;
     path: string;
+    downloadUrl: string;
 }
 
 interface ProjectStats {
@@ -40,14 +41,6 @@ interface Note {
     userId: string | null
     projectId: number | null
 }
-
-type AddFileMetadataInput2 = {
-    projectId: number;
-    name: string;
-    path: string;
-    size: number;
-    mimeType: string;
-};
 
 export type AddFileMetadataInput = {
     projectId: number;

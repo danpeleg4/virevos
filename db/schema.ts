@@ -36,7 +36,6 @@ export const projects = pgTable("projects", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
 
     clientName: text("client_name")
-        .notNull()
         .references(() => clients.name, { onDelete: "cascade" }),
 
     name: text("title").notNull(),
@@ -110,8 +109,8 @@ export const tasks = pgTable("tasks", {
 
 // FILES
 export const projectFiles = pgTable("project_files", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    projectId: bigint("project_id", { mode: "number" }).notNull().references(() => projects.id),
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    projectId: integer("project_id").notNull().references(() => projects.id),
     userId: text("user_id").references(() => users.user_id),
     name: text("name").notNull(),
     path: text("path").notNull(),
