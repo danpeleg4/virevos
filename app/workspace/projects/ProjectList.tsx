@@ -148,6 +148,11 @@ export function ProjectList({ projects, onSelect }: ProjectListProps) {
                                     </Card>
                                 ))}
                             </div>
+                            {projects?.length === 0 && (
+                                <div className="p-12 text-center">
+                                    <p className="text-gray-500">No projects found</p>
+                                </div>
+                            )}
                         </TabsContent>
                     </Tabs>
                 </>

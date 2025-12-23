@@ -4,6 +4,7 @@ interface ProjectFile {
     size: string;
     uploadedAt: string;
     path: string;
+    downloadUrl: string;
 }
 
 interface ProjectStats {

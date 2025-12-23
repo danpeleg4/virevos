@@ -87,7 +87,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         },
         onSuccess: () => {
             setNewNote("");
-            queryClient.invalidateQueries({ queryKey: ["notes", project] })
+            queryClient.invalidateQueries({ queryKey: ["notes", project.id] })
         }
     });
 
@@ -288,9 +288,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                   <div
                     key={task.id}
                     className={`flex items-center space-x-3 p-3 rounded-lg border ${
-                      task.completed
-                        ? "bg-gray-50 border-gray-200"
-                        : "bg-white border-gray-200 hover:border-blue-300"
+                        task.status === "completed"
+                            ? "bg-gray-50 border-gray-200"
+                            : "bg-white border-gray-200 hover:border-blue-300"
                     }`}
                   >
                     <Checkbox
@@ -300,9 +300,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                     <div className="flex-1 min-w-0">
                       <p
                         className={`text-sm ${
-                          task.completed
-                            ? "line-through text-gray-500"
-                            : "text-gray-900"
+                            task.status === "completed"
+                                ? "line-through text-gray-500"
+                                : "text-gray-900"
                         }`}
                       >
                         {task.title}
@@ -394,9 +394,15 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                         </p>
                       </div>
                     </div>
-                    <Button size="icon" variant="ghost">
-                      <Download className="h-4 w-4" />
-                    </Button>
+                      <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                              window.location.href = `/api/files/${file.id}/download`;
+                          }}
+                      >
+                          <Download className="h-4 w-4" />
+                      </Button>
                   </div>
                 ))}
               </div>

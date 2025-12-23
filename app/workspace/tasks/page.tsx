@@ -215,7 +215,6 @@ export default function Tasks() {
                                 </div>
                             </div>
                         ))}
-
                         {filteredTasks?.length === 0 && (
                             <div className="p-12 text-center">
                                 <p className="text-gray-500">No tasks found</p>
