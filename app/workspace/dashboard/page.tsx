@@ -259,6 +259,11 @@ export default function Dashboard() {
 
                     <div className="space-y-3">
                         {getTasks?.data?.slice(0, 3).map((task: Task) => (
+                            <Link
+                                key={task.id}
+                                href={`/workspace/tasks`}
+                                className="block"
+                            >
                             <div
                                 key={task.id}
                                 className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -286,6 +291,7 @@ export default function Dashboard() {
                                     <p className="text-xs text-gray-500 mt-1">{task.dueDate}</p>
                                 </div>
                             </div>
+                                </Link>
                         ))}
                     </div>
                 </Card>
