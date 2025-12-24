@@ -44,4 +44,3 @@ next-env.d.ts
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
-/db/migrations/
