@@ -26,11 +26,12 @@ import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
 import type { Meeting, NewMeetingInput } from "@/types/meeting";
 import axios from "axios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM - 9 PM
 
 export function CalendarView() {
-    const [meetings, setMeetings] = useState<Meeting[]>([]);
+    const queryClient = useQueryClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const [showMeetingDetails, setShowMeetingDetails] = useState(false);
@@ -40,35 +41,40 @@ export function CalendarView() {
         const [year, month, day] = dateStr.split("-").map(Number);
         return new Date(year, month - 1, day); // LOCAL date, not UTC
     }
+    
+    const meetings = useQuery({
+        queryKey: ["meetings"],
+        queryFn: async () => {
+            const res = await axios.get("/api/meetings");
+            const data: Meeting[] = res.data;
 
-    const dayMeetings = meetings.filter(m => {
+            // Ensure attendees array exists to avoid runtime crashes
+            return data.map(m => ({
+                ...m,
+                attendees: m.attendees ?? [],
+            }));
+        }
+    })
+
+    const mutation = useMutation({
+        mutationFn: async (meeting: NewMeetingInput) => {
+            const res = await axios.post("/api/meetings", meeting);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["meetings"] });
+        },
+        onError: (err) => {
+            console.error("Failed to save meeting:", err);
+        }
+    });
+
+    const dayMeetings = meetings?.data?.filter(m => {
         const meetingDate = parseLocalDate(m.date).toDateString();
         const selectedDate = currentDate.toDateString();
         return meetingDate === selectedDate;
     });
-
-    useEffect(() => {
-        async function load(){
-            try {
-                const res = await axios.get("/api/meetings");
-                const data: Meeting[] = res.data;
-
-                // Ensure attendees array exists to avoid runtime crashes
-                const normalized = data.map(m => ({
-                    ...m,
-                    attendees: m.attendees ?? [],
-                }));
-                console.log("Fetched meetings:", normalized);
-
-                setMeetings(normalized);
-            } catch (err) {
-                // If fetch fails, keep mockMeetings and optionally log
-                console.error("Failed to load meetings:", err);
-            }
-        }
-        load();
-    }, []);
-
+    
     const formattedDate = currentDate.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
@@ -108,27 +114,7 @@ export function CalendarView() {
     };
 
     const addMeeting = async (meeting: NewMeetingInput) => {
-        try {
-            const res = await axios.post("/api/meetings", meeting);
-            const saved: Meeting = res.data;
-
-            // Normalize attendees presence
-            setMeetings(prev => [...prev, { ...saved, attendees: saved.attendees ?? [] }]);
-        } catch (err) {
-            console.error("Failed to save meeting:", err);
-            // Optionally: optimistic update fallback
-            // Optimistic fallback assumes link may be missing, so coerce a link placeholder
-            const optimistic: Meeting = {
-                link: "",
-                attendees: meeting.attendees ?? [],
-                hasNotes: meeting.hasNotes ?? false,
-                hasTranscript: meeting.hasTranscript ?? false,
-                autoRescheduled: meeting.autoRescheduled ?? false,
-                conflictReason: meeting.conflictReason ?? undefined,
-                ...meeting,
-            };
-            setMeetings(prev => [...prev, optimistic]);
-        }
+        mutation.mutate(meeting);
     };
 
     const getStatusColor = (status: Meeting["status"]) => {
@@ -166,7 +152,7 @@ export function CalendarView() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-gray-600">Today&#39;s Meetings</p>
-                                <p className="text-2xl text-gray-900 mt-1">{dayMeetings.length}</p>
+                                <p className="text-2xl text-gray-900 mt-1">{dayMeetings?.length}</p>
                             </div>
                             <CalendarIcon className="h-8 w-8 text-blue-500" />
                         </div>
@@ -179,7 +165,7 @@ export function CalendarView() {
                             <div>
                                 <p className="text-sm text-gray-600">Auto-Rescheduled</p>
                                 <p className="text-2xl text-gray-900 mt-1">
-                                    {dayMeetings.filter((m) => m.autoRescheduled).length}
+                                    {dayMeetings?.filter((m) => m.autoRescheduled).length}
                                 </p>
                             </div>
                             <Clock className="h-8 w-8 text-yellow-500" />
@@ -193,7 +179,7 @@ export function CalendarView() {
                             <div>
                                 <p className="text-sm text-gray-600">Conflicts Detected</p>
                                 <p className="text-2xl text-gray-900 mt-1">
-                                    {dayMeetings.filter((m) => m.status === "conflict").length}
+                                    {dayMeetings?.filter((m) => m.status === "conflict").length}
                                 </p>
                             </div>
                             <AlertCircle className="h-8 w-8 text-red-500" />
@@ -207,7 +193,7 @@ export function CalendarView() {
                             <div>
                                 <p className="text-sm text-gray-600">Meeting Hours</p>
                                 <p className="text-2xl text-gray-900 mt-1">
-                                    {(dayMeetings.reduce((a, m) => a + (m.duration || 0), 0) / 60).toFixed(1)}h
+                                {((dayMeetings?.reduce((a, m) => a + (m.duration || 0), 0) ?? 0) / 60).toFixed(1)}h
                                 </p>
                             </div>
                             <CheckCircle className="h-8 w-8 text-green-500" />
@@ -253,7 +239,7 @@ export function CalendarView() {
                                     hour >= 12 ? "PM" : "AM"
                                 }`;
 
-                                const meetingsAtTime = dayMeetings.filter(m => parseHour(m.time) === hour);
+                                const meetingsAtTime = dayMeetings?.filter(m => parseHour(m.time) === hour);
 
                                 return (
                                     <div key={hour} className="flex hover:bg-gray-50">
@@ -262,7 +248,7 @@ export function CalendarView() {
                                         </div>
 
                                         <div className="flex-1 p-2 min-h-[80px] relative">
-                                            {meetingsAtTime.map((meeting) => (
+                                            {meetingsAtTime?.map((meeting) => (
                                                 <motion.div
                                                     key={meeting.id}
                                                     initial={{ opacity: 0, y: -10 }}
