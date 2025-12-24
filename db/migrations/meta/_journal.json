@@ -15,6 +15,13 @@
       "when": 1766448512219,
       "tag": "0001_closed_shaman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766608982784,
+      "tag": "0002_outgoing_ink",
+      "breakpoints": true
     }
   ]
 }
