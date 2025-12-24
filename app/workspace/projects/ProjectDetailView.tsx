@@ -374,6 +374,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                       size="sm"
                       variant="outline"
                       onClick={() => document.getElementById("fileInput")?.click()}
+                      disabled={fileQuery?.data?.length >= 3}
                   >
                       <Upload className="h-4 w-4 mr-2" />
                       Upload
@@ -382,7 +383,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {fileQuery?.data?.map((file: ProjectFile) => (
+                {fileQuery?.data?.slice(0, 8).map((file: ProjectFile) => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
