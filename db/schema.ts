@@ -144,6 +144,14 @@ export const zoomTokens = pgTable("zoom_tokens", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
+export const googleTokens = pgTable("google_tokens", {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    access_token: text("access_token").notNull(),
+    refresh_token: text("refresh_token").notNull(),
+    expires_in: integer("expires_in").notNull(),
+    connected: boolean("connected").default(false),
+})
+
 
 // RELATIONS
 export const usersRelations = relations(users, ({ many }) => ({
