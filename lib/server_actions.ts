@@ -73,8 +73,11 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
     if (!file) throw new Error("No file provided");
 
     const filePath = `projects/${user.id}/${Date.now()}-${file.name}`;
+    const fls = await db.select().from(projectFiles).where(eq(projectFiles.userId, user.id));
+    if (fls.length >= 3) {
+        return
+    }
 
-    // Upload directly to Supabase Storage (service role bypasses RLS)
     const { error: uploadError } = await supabase.storage
         .from("ProjectFiles")
         .upload(filePath, file, { upsert: false });
@@ -86,14 +89,14 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
 
     // Save metadata in Drizzle
     try {
-        await db.insert(projectFiles).values({
-            projectId: input.projectId,
-            userId: user.id,
-            name: file.name,
-            path: filePath,
-            size: file.size,
-            mimeType: input.mimeType ?? file.type,
-        });
+            await db.insert(projectFiles).values({
+                projectId: input.projectId,
+                userId: user.id,
+                name: file.name,
+                path: filePath,
+                size: file.size,
+                mimeType: input.mimeType ?? file.type,
+            });
     } catch (err) {
         console.error("Drizzle insert failed:", err);
         throw new Error("Failed to save file metadata");
