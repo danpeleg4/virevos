@@ -21,8 +21,6 @@ import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import type { MeetingType, NewMeetingInput } from "@/types/meeting";
 
-// Types moved to shared: MeetingType, NewMeetingInput
-
 interface BookMeetingDialogProps {
     dialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
@@ -58,7 +56,7 @@ export function BookMeetingDialog({
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[16rem] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Schedule a Meeting</DialogTitle>
                     <DialogDescription>
