@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { ProjectDetailView } from "../ProjectDetailView";
 import { Project } from "@/types/projects";
-import {use} from "react";
+import { use } from "react";
+import axios from "axios";
 
 export default function ProjectPage({
                                         params,

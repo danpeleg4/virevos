@@ -74,7 +74,6 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
 
     const filePath = `projects/${user.id}/${Date.now()}-${file.name}`;
 
-    // Upload directly to Supabase Storage (service role bypasses RLS)
     const { error: uploadError } = await supabase.storage
         .from("ProjectFiles")
         .upload(filePath, file, { upsert: false });

@@ -24,21 +24,19 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import axios from "axios";
-import {TaskDetailModal} from "@/app/components/TaskDetailModal";
-import {taskPercentage} from "@/lib/taskPercentage";
+import { TaskDetailModal } from "@/app/components/TaskDetailModal";
+import { taskPercentage } from "@/lib/taskPercentage";
 import AddNewTask from "@/app/components/AddNewTask";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus} from '@/lib/server_actions'
-import {Note, Project, ProjectFile} from "@/types/projects";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus } from '@/lib/server_actions'
+import { Note, Project, ProjectFile } from "@/types/projects";
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
     const [newNote, setNewNote] = useState("");
     const [selectedTask, setSelectedTask] = useState<Task>();
     const [taskDetailOpen, setTaskDetailOpen] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-
     const queryClient = useQueryClient();
-
+    
     const handleUpload = async (file: File) => {
         try {
             const result = await addFileMetadata({ projectId: project.id }, file);
@@ -71,7 +69,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         queryKey: ["files", project.id],
         enabled: !!project.id,
         queryFn: async () => {
-            const res = await axios.get(`/api/projects/${project.id}/files`);
+            const res = await axios.get(`/api/files/${project.id}/get-files`);
             return res.data;
         },
     });
