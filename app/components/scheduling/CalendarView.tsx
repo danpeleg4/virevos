@@ -26,6 +26,7 @@ import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
 import type { Meeting, NewMeetingInput } from "@/types/meeting";
 import axios from "axios";
+import { addMeetingToCalendar } from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM - 9 PM
@@ -58,8 +59,8 @@ export function CalendarView() {
 
     const mutation = useMutation({
         mutationFn: async (meeting: NewMeetingInput) => {
-            const res = await axios.post("/api/meetings", meeting);
-            return res.data;
+            const res = await addMeetingToCalendar(meeting);
+            return res;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["meetings"] });
