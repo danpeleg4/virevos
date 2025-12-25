@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import {meetingAttendees, meetings} from "@/db/schema";
 import { db } from "@/db/db";
 import {eq} from "drizzle-orm";
-import axios from "axios";
 
 function verifyZoomSignature(req: Request, body: string) {
     const secretToken = process.env.ZOOM_SECRET_TOKEN;
@@ -68,8 +67,12 @@ export async function POST(req: Request) {
                 name: participant.user_name,
                 initials: participant.user_name.slice(0, 2).toUpperCase(),
             });
-
         }
+    }
+    if (json.event === "meeting.deleted") {
+        const meetingId = json.payload?.object?.id;
+        await db.delete(meetingAttendees).where(eq(meetingAttendees.meetingId, meetingId));
+        await db.delete(meetings).where(eq(meetings.id, meetingId));
     }
 /*
     if (json.event === "recording.transcript_completed") {
