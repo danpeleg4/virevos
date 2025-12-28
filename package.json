@@ -50,6 +50,7 @@
     "drizzle-orm": "^0.44.7",
     "embla-carousel-react": "^8.6.0",
     "esbuild": "^0.27.0",
+    "googleapis": "^169.0.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.487.0",
     "motion": "*",
@@ -70,7 +71,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20.19.25",
+    "@types/node": "^20.19.27",
     "@types/pg": "^8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -102,14 +102,18 @@ export function IntegrationSettings() {
     const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
         queryKey: ["integrations"],
         queryFn: async () => {
-            const check = await axios.post("/api/integrations/zoom", {
-                action: "connect",
-            });
-            const { zoom, googleMeetsConnected } = check.data;
+            const [zoomCheck, googleCheck] = await Promise.all([
+                axios.post("/api/integrations/zoom", { action: "connect" }),
+                axios.post("/api/integrations/google", { action: "status" })
+            ]);
+            
+            const { zoom, googleMeetsConnected } = zoomCheck.data;
+            const googleCalendarConnected = googleCheck.data.connected;
 
             return INITIAL_INTEGRATIONS.map(int => {
                 if (int.id === "zoom") return { ...int, connected: zoom };
                 if (int.id === "google-meet") return { ...int, connected: googleMeetsConnected };
+                if (int.id === "google-calendar") return { ...int, connected: googleCalendarConnected };
                 return int;
             });
         }
@@ -122,8 +126,11 @@ export function IntegrationSettings() {
                     action: "disconnect",
                 });
             }
-            // For other integrations or actions, we might have different logic
-            // but for now mirroring existing behavior.
+            if (id === "google-calendar" && action === "disconnect") {
+                await axios.post("/api/integrations/google", {
+                    action: "disconnect",
+                });
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["integrations"] });
@@ -151,8 +158,15 @@ export function IntegrationSettings() {
             return;
         }
 
-        // Default toggle behavior for other integrations (mocked as they don't have APIs yet)
-        // In a real app, this would also be a mutation
+        if (id === "google-calendar" && integration && !integration.connected) {
+            router.push("/api/google");
+            return;
+        }
+
+        if (id === "google-calendar" && integration && integration.connected) {
+            mutation.mutate({ id: "google-calendar", action: "disconnect" });
+            return;
+        }
     };
 
     return (
