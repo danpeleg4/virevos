@@ -8,6 +8,7 @@ import type { NewMeetingInput } from "@/types/meeting";
 import { getFreshZoomAccessToken } from '@/lib/zoom_access'
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
+import { parseDateTime } from "@/lib/date_utils";
 
 export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     const body: NewMeetingInput = meeting
@@ -37,7 +38,8 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         .where(eq(zoomTokens.userId, user.id))
         .limit(1);
 
-    let zoomData: any = null;
+    let zoomData = null;
+    const startDate = parseDateTime(body.date, body.time);
 
     if (tokenRow.length > 0) {
         const accessToken = await getFreshZoomAccessToken(user.id);
@@ -54,7 +56,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                         topic: body.title,
                         agenda: body.description ? body.description : "",
                         type: 2,
-                        start_time: body.date + "T" + body.time + ":00Z",
+                        start_time: startDate.toISOString(),
                         duration: body.duration,
                         settings: {
                             host_video: true,
@@ -88,10 +90,10 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                     summary: body.title,
                     description: body.description + (zoomData ? `\n\nZoom Link: ${zoomData.join_url}` : ""),
                     start: {
-                        dateTime: body.date + "T" + body.time + ":00Z",
+                        dateTime: startDate.toISOString(),
                     },
                     end: {
-                        dateTime: new Date(new Date(body.date + "T" + body.time + ":00Z").getTime() + body.duration * 60000).toISOString(),
+                        dateTime: new Date(startDate.getTime() + body.duration * 60000).toISOString(),
                     },
                     location: zoomData ? zoomData.join_url : "",
                 },

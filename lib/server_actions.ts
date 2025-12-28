@@ -6,6 +6,10 @@ import { eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import {AddFileMetadataInput, Project, ProjectNote} from "@/types/projects";
 import { supabase } from "./supabase"
+import {google} from "googleapis";
+import {getFreshGoogleAccessToken} from "@/lib/google_access";
+import {Attendee, Meeting} from "@/types/meeting";
+import {Credentials} from "gtoken";
 
 export async function deleteProject(projectId: number) {
     await db.delete(tasks).where(eq(tasks.projectId, projectId));
