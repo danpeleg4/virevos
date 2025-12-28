@@ -20,6 +20,8 @@ import { Button } from "./ui/button";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import type { MeetingType, NewMeetingInput } from "@/types/meeting";
+import {useQuery} from "@tanstack/react-query";
+import axios from "axios";
 
 interface BookMeetingDialogProps {
     dialogOpen: boolean;
@@ -46,6 +48,14 @@ export function BookMeetingDialog({
         const hour = h % 12 === 0 ? 12 : h % 12;
         return `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
     }
+
+    const getMeetingTypes = useQuery<MeetingType[]>({
+        queryKey: ["meetingTypes"],
+        queryFn: async () => {
+            const res = await axios.get('/api/meetings/meeting-types')
+            return res.data
+        }
+    })
 
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -99,9 +109,11 @@ export function BookMeetingDialog({
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="zoom">Zoom</SelectItem>
-                                <SelectItem value="google-meet">Google Meet</SelectItem>
-                                <SelectItem value="in-person">In-Person</SelectItem>
+                                {getMeetingTypes?.data?.map((type) => (
+                                    <SelectItem value={type.name} key={type.id}>
+                                        {type.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
