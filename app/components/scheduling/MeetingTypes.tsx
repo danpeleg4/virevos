@@ -28,8 +28,8 @@ interface MeetingType {
   duration: number;
   description: string;
   color: string;
-  platform: "zoom" | "google-meet" | "teams";
-  bookingLink: string;
+  platform: "zoom" | "google-meet" | "In-Person";
+  bookingLink?: string;
   active: boolean;
   maxPerDay?: number;
 }
@@ -37,7 +37,7 @@ interface MeetingType {
 const mockMeetingTypes: MeetingType[] = [
   {
     id: "1",
-    name: "Discovery Call",
+    name: "Zoom",
     duration: 30,
     description: "Initial consultation to understand client needs and explore how Virevos can help",
     color: "blue",
@@ -48,36 +48,25 @@ const mockMeetingTypes: MeetingType[] = [
   },
   {
     id: "2",
-    name: "Client Onboarding",
-    duration: 60,
+    name: "Google Meet",
+    duration: 30,
     description: "Comprehensive onboarding session for new clients",
     color: "green",
-    platform: "zoom",
+    platform: "google-meet",
     bookingLink: "Virevos.com/book/onboarding",
     active: true,
-    maxPerDay: 2,
+    maxPerDay: 3,
   },
   {
     id: "3",
-    name: "Quick Check-in",
-    duration: 15,
-    description: "Brief status update or quick question",
+    name: "In-Person",
+    duration: 30,
+    description: "Initial consultation to understand client needs and explore how Virevos can help",
     color: "purple",
-    platform: "google-meet",
-    bookingLink: "Virevos.com/book/check-in",
+    platform: "In-Person",
     active: true,
-  },
-  {
-    id: "4",
-    name: "Strategy Session",
-    duration: 90,
-    description: "Deep dive into workflow optimization and automation strategy",
-    color: "orange",
-    platform: "zoom",
-    bookingLink: "Virevos.com/book/strategy",
-    active: true,
-    maxPerDay: 1,
-  },
+    maxPerDay: 3,
+  }
 ];
 
 export function MeetingTypes() {
@@ -254,11 +243,15 @@ export function MeetingTypes() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Input
-                    readOnly
-                    value={`https://${type.bookingLink}`}
-                    className="flex-1 text-sm bg-gray-50"
-                  />
+                  {
+                    type.bookingLink ? (
+                        <Input
+                            readOnly
+                            value={`https://${type.bookingLink}`}
+                            className="flex-1 text-sm bg-gray-50"
+                        />
+                    ) : null
+                  }
                   <Button size="sm" variant="outline">
                     <Copy className="h-4 w-4 mr-2" />
                     Copy

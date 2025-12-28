@@ -73,7 +73,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         {
             id: "1",
             role: "assistant",
-            content: "Hi! I'm your FlowTask AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
+            content: "Hi! I'm your Virevos AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
             suggestions: [
                 "Create a new automation",
                 "Show overdue tasks",
@@ -354,7 +354,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                 <Sparkles className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <h3 className="text-gray-900">FlowTask AI</h3>
+                                <h3 className="text-gray-900">Virevos AI</h3>
                                 <p className="text-xs text-gray-500">Reasoning Mode</p>
                             </div>
                         </div>
