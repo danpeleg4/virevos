@@ -24,6 +24,7 @@ export interface Meeting {
     autoRescheduled?: boolean;
     hasNotes?: boolean;
     hasTranscript?: boolean;
+    googleEventId?: string | null;
 }
 
 // Input payload when creating a new meeting (prior to link generation)

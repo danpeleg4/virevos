@@ -26,7 +26,7 @@ import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
 import type { Meeting, NewMeetingInput } from "@/types/meeting";
 import axios from "axios";
-import { addMeetingToCalendar } from '@/lib/server_actions/calendar'
+import {addMeetingToCalendar, deleteEventFromCalendar} from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM - 9 PM
@@ -69,6 +69,17 @@ export function CalendarView() {
             console.error("Failed to save meeting:", err);
         }
     });
+
+    const deleteEvent = useMutation({
+        mutationFn: async (id: string) => {
+            const res = await deleteEventFromCalendar(id);
+            return res;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["meetings"] });
+        },
+    })
+
 
     const dayMeetings = meetings?.data?.filter(m => {
         const meetingDate = parseLocalDate(m.date).toDateString();
@@ -282,10 +293,8 @@ export function CalendarView() {
                                                                 <DropdownMenuContent align="end">
                                                                     <DropdownMenuItem>View Details</DropdownMenuItem>
                                                                     <DropdownMenuItem>Reschedule</DropdownMenuItem>
-                                                                    <DropdownMenuItem>Cancel</DropdownMenuItem>
-                                                                    <DropdownMenuItem>
-                                                                        Copy Meeting Link
-                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem>Copy Link</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => deleteEvent.mutate(meeting.id)}>Cancel</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         </div>

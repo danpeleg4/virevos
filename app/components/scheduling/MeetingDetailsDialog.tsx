@@ -146,7 +146,7 @@ export function MeetingDetailsDialog({
 
           {/* Meeting Link */}
           <div>
-            <h3 className="text-sm text-gray-700 mb-3">Meeting Link</h3>
+            <h3 className="text-sm text-gray-700 mb-3">Link</h3>
             <div className="flex items-center space-x-2">
               <input
                 type="text"

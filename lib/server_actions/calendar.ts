@@ -3,7 +3,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
 import { meetings, users, zoomTokens } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { NewMeetingInput } from "@/types/meeting";
 import { getFreshZoomAccessToken } from '@/lib/zoom_access'
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
@@ -39,6 +39,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         .limit(1);
 
     let zoomData = null;
+    let googleEventId = null;
     const startDate = parseDateTime(body.date, body.time);
 
     if (tokenRow.length > 0) {
@@ -84,7 +85,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
         try {
-            await calendar.events.insert({
+            const googleRes = await calendar.events.insert({
                 calendarId: "primary",
                 requestBody: {
                     summary: body.title,
@@ -98,6 +99,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                     location: zoomData ? zoomData.join_url : "",
                 },
             });
+            googleEventId = googleRes.data.id;
         } catch (error) {
             console.error("Google Calendar error:", error);
         }
@@ -120,8 +122,54 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             hasTranscript: body.hasTranscript ?? false,
             autoRescheduled: body.autoRescheduled ?? false,
             conflictReason: body.conflictReason ?? null,
+            googleEventId: googleEventId,
             userId: internalUserId
         })
         .returning();
     return inserted[0];
+}
+
+export async function deleteEventFromCalendar(id: string) {
+    const user = await currentUser();
+    if (!user?.id) {
+        throw new Error("Unauthorized");
+    }
+
+    // 1. Get meeting from DB to check for googleEventId
+    const meetingRow = await db
+        .select()
+        .from(meetings)
+        .where(and(eq(meetings.id, id), eq(meetings.userId, user.id)))
+        .limit(1);
+
+    if (meetingRow.length === 0) {
+        return { success: false, error: "Meeting not found" };
+    }
+
+    const meeting = meetingRow[0];
+
+    // 2. If it has googleEventId, try to delete from Google Calendar
+    if (meeting.googleEventId) {
+        const googleToken = await getFreshGoogleAccessToken(user.id);
+        if (googleToken) {
+            const oauth2Client = new google.auth.OAuth2();
+            oauth2Client.setCredentials({ access_token: googleToken });
+            const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+            try {
+                await calendar.events.delete({
+                    calendarId: "primary",
+                    eventId: meeting.googleEventId,
+                });
+            } catch (error) {
+                console.error("Error deleting from Google Calendar:", error);
+                // We might want to continue even if Google delete fails (e.g. event already deleted manually)
+            }
+        }
+    }
+
+    // 3. Delete from DB
+    await db.delete(meetings).where(and(eq(meetings.id, id), eq(meetings.userId, user.id)));
+
+    return { success: true };
 }
