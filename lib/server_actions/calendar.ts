@@ -2,7 +2,7 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import { meetings, users, zoomTokens } from "@/db/schema";
+import {meetings, meetingTypes, users, zoomTokens} from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { NewMeetingInput } from "@/types/meeting";
 import { getFreshZoomAccessToken } from '@/lib/zoom_access'
@@ -135,7 +135,7 @@ export async function deleteEventFromCalendar(id: string) {
         throw new Error("Unauthorized");
     }
 
-    // 1. Get meeting from DB to check for googleEventId
+    // Get meeting from DB to check for googleEventId
     const meetingRow = await db
         .select()
         .from(meetings)
@@ -148,7 +148,7 @@ export async function deleteEventFromCalendar(id: string) {
 
     const meeting = meetingRow[0];
 
-    // 2. If it has googleEventId, try to delete from Google Calendar
+    // If it has googleEventId, try to delete from Google Calendar
     if (meeting.googleEventId) {
         const googleToken = await getFreshGoogleAccessToken(user.id);
         if (googleToken) {
@@ -168,8 +168,37 @@ export async function deleteEventFromCalendar(id: string) {
         }
     }
 
-    // 3. Delete from DB
+    // Delete from DB
     await db.delete(meetings).where(and(eq(meetings.id, id), eq(meetings.userId, user.id)));
-
     return { success: true };
+}
+
+export async function createMeetsType(data: {
+    name: string;
+    duration: number;
+    description: string;
+    color: string;
+    platform: "zoom" | "google-meet" | "In-Person";
+    maxBookings?: number }) {
+    const user = await currentUser();
+    if (!user?.id) {
+        throw new Error("Unauthorized");
+    }
+    const all = {...data, userId: user.id}
+    await db.insert(meetingTypes).values(all)
+}
+
+export async function updateActiveMeetingType(id: string, active: boolean) {
+    const user = await currentUser();
+    if (!user?.id) throw new Error("Unauthorized");
+
+    const result = await db
+        .update(meetingTypes)
+        .set({ active })
+        .where(and(
+            eq(meetingTypes.id, id),
+            eq(meetingTypes.userId, user.id)
+        ));
+
+    return result;
 }

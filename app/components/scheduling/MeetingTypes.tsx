@@ -21,6 +21,9 @@ import {
 } from "../ui/dialog";
 import { Switch } from "../ui/switch";
 import { Plus, Video, Users, Clock, Copy, ExternalLink, Edit, Trash2 } from "lucide-react";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {createMeetsType, updateActiveMeetingType} from "@/lib/server_actions/calendar";
+import axios from "axios";
 
 interface MeetingType {
   id: string;
@@ -73,14 +76,93 @@ export function MeetingTypes() {
   const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>(mockMeetingTypes);
   const [isCreating, setIsCreating] = useState(false);
   const [editingType, setEditingType] = useState<MeetingType | null>(null);
+  const [name, setName] = useState("");
+  const [duration, setDuration] = useState(30);
+  const [platform, setPlatform] = useState<"zoom" | "google-meet" | "In-Person">("zoom");
+  const [description, setDescription] = useState("");
+  const [color, setColor] = useState("blue");
+  const [maxBookings, setMaxBookings] = useState<number | undefined>(undefined);
+  const queryClient = useQueryClient();
 
-  const toggleActive = (id: string) => {
-    setMeetingTypes(
-      meetingTypes.map((type) =>
-        type.id === id ? { ...type, active: !type.active } : type
-      )
-    );
-  };
+  const getMeetingTypes = useQuery({
+    queryKey: ["meetingTypes"],
+    queryFn: async () => {
+      const res = await axios.get('/api/meetings/meeting-types')
+      return res.data
+    }
+  })
+
+  const createMeetingType = useMutation({
+    mutationFn: (data: {
+      name: string;
+      duration: number;
+      description: string;
+      color: string;
+      platform: "zoom" | "google-meet" | "In-Person";
+      maxBookings?: number
+    }) => createMeetsType(data),
+    onMutate: async (newType) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      // Snapshot previous value
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      // Optimistically update
+      queryClient.setQueryData(["meetingTypes"], old => [
+        ...(old || []),
+        {
+          id: crypto.randomUUID(), // temporary ID for optimistic update
+          active: true,
+          maxPerDay: newType.maxBookings,
+          bookingLink: undefined,
+          ...newType,
+        }
+      ]);
+
+      return { previous };
+    },
+    onError: (_err, _newType, context: any) => {
+      // Revert on error
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      // Refetch to sync with server
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    }
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      // call your API to update active
+      await updateActiveMeetingType(id, active)
+    },
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
+          old?.map(type =>
+              type.id === id ? { ...type, active: !type.active } : type
+          )
+      );
+
+      return { previous };
+    },
+    onError: (_err, _vars, context: any) => {
+      // rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    }
+  });
+
 
   const getColorClass = (color: string) => {
     const colors: Record<string, string> = {
@@ -147,7 +229,6 @@ export function MeetingTypes() {
                     <SelectContent>
                       <SelectItem value="zoom">Zoom</SelectItem>
                       <SelectItem value="google-meet">Google Meet</SelectItem>
-                      <SelectItem value="teams">Microsoft Teams</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -190,7 +271,21 @@ export function MeetingTypes() {
                 <Button variant="outline" onClick={() => setIsCreating(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsCreating(false)}>Create Meeting Type</Button>
+                <Button onClick={() => {
+                  createMeetingType.mutate({
+                    name,
+                    duration,
+                    description,
+                    color,
+                    platform,
+                    maxBookings
+                  });
+                  setIsCreating(false);
+                  setName(""); setDuration(30); setPlatform("zoom");
+                  setDescription(""); setColor("blue"); setMaxBookings(undefined);
+                }}>
+                  Create Meeting Type
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -198,7 +293,7 @@ export function MeetingTypes() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {meetingTypes.map((type) => (
+        {getMeetingTypes?.data?.map((type: MeetingType) => (
           <Card key={type.id} className={`border-l-4 ${type.active ? '' : 'opacity-60'}`}>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -221,7 +316,7 @@ export function MeetingTypes() {
                 </div>
                 <Switch
                   checked={type.active}
-                  onCheckedChange={() => toggleActive(type.id)}
+                  onCheckedChange={() => toggleActiveMutation.mutate({ id: type.id, active: !type.active })}
                 />
               </div>
             </CardHeader>

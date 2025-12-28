@@ -74,6 +74,20 @@ export const meetings = pgTable("meetings", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
+export const meetingTypes = pgTable("meeting_types", {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    name: text("name").notNull(),
+    duration: integer("duration").notNull(),
+    platform: text("platform").notNull(),
+    description: text("description"),
+    color: text("color").notNull(),
+    maxBookings: integer("max_bookings"),
+
+    userId: varchar("user_id")
+        .notNull()
+        .references(() => users.user_id, { onDelete: "cascade" }),
+})
+
 // NOTES
 export const notes = pgTable("notes", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
