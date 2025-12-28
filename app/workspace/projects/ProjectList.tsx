@@ -5,7 +5,7 @@ import { Input } from "@/app/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs";
 import {AlertCircle, CheckCircle, Clock, Search, TrendingUp} from "lucide-react";
 import {Badge} from "@/app/components/ui/badge";
-import {taskPercentage} from "@/lib/taskPercentage";
+import {task_percentage} from "@/lib/task_percentage";
 import {Progress} from "@/app/components/ui/progress";
 import {useState} from "react";
 import { Project } from '@/types/projects'
@@ -108,13 +108,13 @@ export function ProjectList({ projects, onSelect }: ProjectListProps) {
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-sm text-gray-600">Progress</span>
                                                     <span className="text-sm text-gray-900">
-                        {taskPercentage({
+                        {task_percentage({
                             completed: project.stats.completedTasks,
                             total: project.stats.totalTasks
                         })}%
                                             </span>
                                                 </div>
-                                                <Progress value={taskPercentage({
+                                                <Progress value={task_percentage({
                                                     completed: project.stats.completedTasks,
                                                     total: project.stats.totalTasks
                                                 })}/>

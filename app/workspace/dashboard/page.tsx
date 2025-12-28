@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
-import { taskPercentage } from "@/lib/taskPercentage";
+import { task_percentage } from "@/lib/task_percentage";
 import {useQuery} from "@tanstack/react-query";
 import { Project } from '@/types/projects'
 
@@ -231,13 +231,13 @@ export default function Dashboard() {
                                                 <p className="text-sm text-gray-600">{project.clientName}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm text-gray-900">{taskPercentage({completed: project.stats.completedTasks, total: project.stats.totalTasks})}%</p>
+                                                <p className="text-sm text-gray-900">{task_percentage({completed: project.stats.completedTasks, total: project.stats.totalTasks})}%</p>
                                                 <p className="text-xs text-gray-500">
                                                     {project.stats.completedTasks}/{project.stats.totalTasks} tasks
                                                 </p>
                                             </div>
                                         </div>
-                                        <Progress value={taskPercentage({completed: project.stats.completedTasks,total: project.stats.totalTasks})} />
+                                        <Progress value={task_percentage({completed: project.stats.completedTasks,total: project.stats.totalTasks})} />
                                         <div className="flex items-center text-xs text-gray-500">
                                             <Clock className="h-3 w-3 mr-1" />
                                             Due: {project.dueDate}

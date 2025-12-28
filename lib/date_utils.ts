@@ -28,12 +28,6 @@ export function parseDateTime(dateStr: string, timeStr: string): Date {
         }
     }
 
-    // Create date in UTC to match the ":00Z" intention in the original code
-    // However, usually these inputs are local. The original code was appending "Z"
-    // which forced them to UTC. We'll maintain that "forced UTC" behavior for consistency 
-    // unless we find evidence it should be local. 
-    // Given the previous code used `body.date + "T" + body.time + ":00Z"`, it was treating 
-    // the local-looking time as UTC.
-    
-    return new Date(Date.UTC(year, month - 1, day, hours, minutes, 0));
+    // Create date as local time.
+    return new Date(year, month - 1, day, hours, minutes, 0);
 }

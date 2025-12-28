@@ -25,7 +25,7 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import axios from "axios";
 import { TaskDetailModal } from "@/app/components/TaskDetailModal";
-import { taskPercentage } from "@/lib/taskPercentage";
+import { task_percentage } from "@/lib/task_percentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus } from '@/lib/server_actions'
@@ -224,9 +224,9 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Overall Progress</p>
-                  <p className="text-2xl text-gray-900 mt-1">{taskPercentage(projectsTasksQuery.data ?? [])}%</p>
+                  <p className="text-2xl text-gray-900 mt-1">{task_percentage(projectsTasksQuery.data ?? [])}%</p>
               </div>
-                <Progress value={taskPercentage(projectsTasksQuery.data ?? [])} className="w-16 h-16" />
+                <Progress value={task_percentage(projectsTasksQuery.data ?? [])} className="w-16 h-16" />
             </div>
           </CardContent>
         </Card>
