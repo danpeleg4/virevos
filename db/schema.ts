@@ -82,6 +82,7 @@ export const meetingTypes = pgTable("meeting_types", {
     description: text("description"),
     color: text("color").notNull(),
     maxBookings: integer("max_bookings"),
+    active: boolean("active").notNull().default(true),
 
     userId: varchar("user_id")
         .notNull()

@@ -1,56 +1,48 @@
 import { db } from "@/db/db";
 import {meetingTypes, users} from "@/db/schema";
 import { verifyWebhook } from "@clerk/backend/webhooks";
-import {map} from "d3-array";
 
 /**
 * This webhook will be called when a new user is created in Clerk
 */
 
-interface MeetingType {
-    id: string;
+interface MeetingTypeInput {
     name: string;
     duration: number;
     description: string;
     color: string;
-    platform: "zoom" | "google-meet" | "In-Person";
-    bookingLink?: string;
+    platform: string;
     active: boolean;
-    maxPerDay?: number;
+    maxBookings?: number;
 }
 
-const mockMeetingTypes: MeetingType[] = [
+const initialMeetingTypes: MeetingTypeInput[] = [
     {
-        id: "1",
         name: "Zoom",
         duration: 30,
         description: "Initial consultation to understand client needs and explore how Virevos can help",
         color: "blue",
         platform: "zoom",
-        bookingLink: "Virevos.com/book/discovery-call",
         active: true,
-        maxPerDay: 3,
+        maxBookings: 3,
     },
     {
-        id: "2",
         name: "Google Meet",
         duration: 30,
         description: "Comprehensive onboarding session for new clients",
         color: "green",
         platform: "google-meet",
-        bookingLink: "Virevos.com/book/onboarding",
         active: true,
-        maxPerDay: 3,
+        maxBookings: 3,
     },
     {
-        id: "3",
         name: "In-Person",
         duration: 30,
         description: "Initial consultation to understand client needs and explore how Virevos can help",
         color: "purple",
         platform: "In-Person",
         active: true,
-        maxPerDay: 3,
+        maxBookings: 3,
     }
 ];
 
@@ -66,9 +58,9 @@ export async function POST(req: Request) {
             name: `${first_name || ""} ${last_name || ""}`.trim(),
         });
 
-        await db.insert(meetingTypes).values({
-            mockMeetingTypes.map(mt => ({...mt, user_id: id}))
-        })
+        await db.insert(meetingTypes).values(
+            initialMeetingTypes.map(mt => ({ ...mt, userId: id }))
+        );
     }
 
     return new Response("ok");

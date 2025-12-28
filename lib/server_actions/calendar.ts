@@ -188,17 +188,20 @@ export async function createMeetsType(data: {
     await db.insert(meetingTypes).values(all)
 }
 
-export async function updateActiveMeetingType(id: string, active: boolean) {
+export async function updateActiveMeetingType(id: number, active: boolean) {
     const user = await currentUser();
     if (!user?.id) throw new Error("Unauthorized");
 
     const result = await db
         .update(meetingTypes)
         .set({ active })
-        .where(and(
-            eq(meetingTypes.id, id),
-            eq(meetingTypes.userId, user.id)
-        ));
+        .where(
+            and(
+                eq(meetingTypes.id, id),
+                eq(meetingTypes.userId, user.id)
+            )
+        )
+        .returning();
 
     return result;
 }

@@ -26,7 +26,7 @@ import {createMeetsType, updateActiveMeetingType} from "@/lib/server_actions/cal
 import axios from "axios";
 
 interface MeetingType {
-  id: string;
+  id: number;
   name: string;
   duration: number;
   description: string;
@@ -37,43 +37,8 @@ interface MeetingType {
   maxPerDay?: number;
 }
 
-const mockMeetingTypes: MeetingType[] = [
-  {
-    id: "1",
-    name: "Zoom",
-    duration: 30,
-    description: "Initial consultation to understand client needs and explore how Virevos can help",
-    color: "blue",
-    platform: "zoom",
-    bookingLink: "Virevos.com/book/discovery-call",
-    active: true,
-    maxPerDay: 3,
-  },
-  {
-    id: "2",
-    name: "Google Meet",
-    duration: 30,
-    description: "Comprehensive onboarding session for new clients",
-    color: "green",
-    platform: "google-meet",
-    bookingLink: "Virevos.com/book/onboarding",
-    active: true,
-    maxPerDay: 3,
-  },
-  {
-    id: "3",
-    name: "In-Person",
-    duration: 30,
-    description: "Initial consultation to understand client needs and explore how Virevos can help",
-    color: "purple",
-    platform: "In-Person",
-    active: true,
-    maxPerDay: 3,
-  }
-];
 
 export function MeetingTypes() {
-  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>(mockMeetingTypes);
   const [isCreating, setIsCreating] = useState(false);
   const [editingType, setEditingType] = useState<MeetingType | null>(null);
   const [name, setName] = useState("");
@@ -109,13 +74,12 @@ export function MeetingTypes() {
       const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
 
       // Optimistically update
-      queryClient.setQueryData(["meetingTypes"], old => [
+      queryClient.setQueryData(["meetingTypes"], (old: MeetingType[] | undefined) => [
         ...(old || []),
         {
-          id: crypto.randomUUID(), // temporary ID for optimistic update
+          id: Math.floor(Math.random() * 1000000), // temporary ID for optimistic update
           active: true,
-          maxPerDay: newType.maxBookings,
-          bookingLink: undefined,
+          maxBookings: newType.maxBookings,
           ...newType,
         }
       ]);
@@ -135,11 +99,11 @@ export function MeetingTypes() {
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+    mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
       // call your API to update active
       await updateActiveMeetingType(id, active)
     },
-    onMutate: async ({ id }) => {
+    onMutate: async ({ id }: {id: number}) => {
       await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
 
       const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
@@ -175,7 +139,15 @@ export function MeetingTypes() {
   };
 
   const getPlatformIcon = (platform: string) => {
-    return <Video className="h-4 w-4" />;
+    switch (platform) {
+      case "zoom":
+      case "google-meet":
+        return <Video className="h-4 w-4" />;
+      case "In-Person":
+        return <Users className="h-4 w-4" />;
+      default:
+        return <Video className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -188,7 +160,7 @@ export function MeetingTypes() {
         </div>
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setIsCreating(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Meeting Type
             </Button>
@@ -200,13 +172,21 @@ export function MeetingTypes() {
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Meeting Name</Label>
-                <Input id="name" placeholder="e.g., Discovery Call" />
+                <Input
+                  id="name"
+                  placeholder="e.g., Discovery Call"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Select defaultValue="30">
+                  <Select
+                    value={duration.toString()}
+                    onValueChange={(val) => setDuration(parseInt(val))}
+                  >
                     <SelectTrigger id="duration">
                       <SelectValue />
                     </SelectTrigger>
@@ -222,13 +202,17 @@ export function MeetingTypes() {
 
                 <div className="space-y-2">
                   <Label htmlFor="platform">Platform</Label>
-                  <Select defaultValue="zoom">
+                  <Select
+                    value={platform}
+                    onValueChange={(val: any) => setPlatform(val)}
+                  >
                     <SelectTrigger id="platform">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="zoom">Zoom</SelectItem>
                       <SelectItem value="google-meet">Google Meet</SelectItem>
+                      <SelectItem value="In-Person">In-Person</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -240,12 +224,17 @@ export function MeetingTypes() {
                   id="description"
                   placeholder="What is this meeting for?"
                   rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="color">Color</Label>
-                <Select defaultValue="blue">
+                <Select
+                  value={color}
+                  onValueChange={(val) => setColor(val)}
+                >
                   <SelectTrigger id="color">
                     <SelectValue />
                   </SelectTrigger>
@@ -264,6 +253,8 @@ export function MeetingTypes() {
                   id="max-per-day"
                   type="number"
                   placeholder="Leave empty for unlimited"
+                  value={maxBookings || ""}
+                  onChange={(e) => setMaxBookings(e.target.value ? parseInt(e.target.value) : undefined)}
                 />
               </div>
 
