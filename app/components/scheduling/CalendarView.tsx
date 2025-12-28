@@ -144,7 +144,7 @@ export function CalendarView() {
         }
     };
 
-    const getTypeIcon = (type: Meeting["type"]) => {
+    const getTypeIcon = (type: string) => {
         switch (type) {
             case "zoom":
                 return <Video className="h-3 w-3" />;

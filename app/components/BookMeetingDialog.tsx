@@ -34,7 +34,7 @@ export function BookMeetingDialog({
                                   }: BookMeetingDialogProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [meetingType, setMeetingType] = useState<MeetingType | "">("");
+    const [meetingType, setMeetingType] = useState<string>("");
     const [date, setDate] = useState("");
     const [time, setTime] = useState("");
     const [duration, setDuration] = useState("");
@@ -93,7 +93,7 @@ export function BookMeetingDialog({
                         <Label>Meeting Type</Label>
                         <Select
                             value={meetingType}
-                            onValueChange={(v) => setMeetingType(v as MeetingType)}
+                            onValueChange={(v) => setMeetingType(v)}
                         >
                             <SelectTrigger className="mt-2">
                                 <SelectValue placeholder="Select type" />

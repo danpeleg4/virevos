@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useMemo, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -29,12 +29,12 @@ interface MeetingType {
   id: number;
   name: string;
   duration: number;
-  description: string;
+  description: string | null;
   color: string;
   platform: "zoom" | "google-meet" | "In-Person";
   bookingLink?: string;
   active: boolean;
-  maxPerDay?: number;
+  maxBookings?: number | null;
 }
 
 
@@ -49,7 +49,7 @@ export function MeetingTypes() {
   const [maxBookings, setMaxBookings] = useState<number | undefined>(undefined);
   const queryClient = useQueryClient();
 
-  const getMeetingTypes = useQuery({
+  const getMeetingTypes = useQuery<MeetingType[]>({
     queryKey: ["meetingTypes"],
     queryFn: async () => {
       const res = await axios.get('/api/meetings/meeting-types')
@@ -79,14 +79,13 @@ export function MeetingTypes() {
         {
           id: Math.floor(Math.random() * 1000000), // temporary ID for optimistic update
           active: true,
-          maxBookings: newType.maxBookings,
           ...newType,
         }
       ]);
 
       return { previous };
     },
-    onError: (_err, _newType, context: any) => {
+    onError: (_err, _newType, context) => {
       // Revert on error
       if (context?.previous) {
         queryClient.setQueryData(["meetingTypes"], context.previous);
@@ -103,20 +102,20 @@ export function MeetingTypes() {
       // call your API to update active
       await updateActiveMeetingType(id, active)
     },
-    onMutate: async ({ id }: {id: number}) => {
+    onMutate: async ({ id, active }: {id: number, active: boolean}) => {
       await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
 
       const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
 
       queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
           old?.map(type =>
-              type.id === id ? { ...type, active: !type.active } : type
+              type.id === id ? { ...type, active } : type
           )
       );
 
       return { previous };
     },
-    onError: (_err, _vars, context: any) => {
+    onError: (_err, _vars, context) => {
       // rollback on error
       if (context?.previous) {
         queryClient.setQueryData(["meetingTypes"], context.previous);
@@ -127,6 +126,14 @@ export function MeetingTypes() {
     }
   });
 
+  const sortedMeetingTypes = useMemo(() => {
+    if (!getMeetingTypes.data) return [];
+
+    return [...getMeetingTypes.data].sort((a, b) => {
+      // active first
+      return Number(b.active) - Number(a.active);
+    });
+  }, [getMeetingTypes.data]);
 
   const getColorClass = (color: string) => {
     const colors: Record<string, string> = {
@@ -138,7 +145,7 @@ export function MeetingTypes() {
     return colors[color] || colors.blue;
   };
 
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformIcon = (platform: "zoom" | "google-meet" | "In-Person" | string) => {
     switch (platform) {
       case "zoom":
       case "google-meet":
@@ -204,7 +211,7 @@ export function MeetingTypes() {
                   <Label htmlFor="platform">Platform</Label>
                   <Select
                     value={platform}
-                    onValueChange={(val: any) => setPlatform(val)}
+                    onValueChange={(val) => setPlatform(val as "zoom" | "google-meet" | "In-Person")}
                   >
                     <SelectTrigger id="platform">
                       <SelectValue />
@@ -284,7 +291,7 @@ export function MeetingTypes() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {getMeetingTypes?.data?.map((type: MeetingType) => (
+        {sortedMeetingTypes?.slice(0, 5).map((type) => (
           <Card key={type.id} className={`border-l-4 ${type.active ? '' : 'opacity-60'}`}>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -294,9 +301,9 @@ export function MeetingTypes() {
                     <Badge className={getColorClass(type.color)}>
                       {type.duration} min
                     </Badge>
-                    {type.maxPerDay && (
+                    {type.maxBookings && (
                       <Badge variant="outline">
-                        Max {type.maxPerDay}/day
+                        Max {type.maxBookings}/day
                       </Badge>
                     )}
                     {!type.active && (

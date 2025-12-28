@@ -1,5 +1,17 @@
 // Shared Meeting-related types used across client and server
-export type MeetingType = "zoom" | "google-meet" | "in-person";
+export interface MeetingType {
+    id: number;
+    name: string;
+    duration: number;
+    description: string | null;
+    color: string;
+    platform: "zoom" | "google-meet" | "In-Person";
+    bookingLink?: string;
+    active: boolean;
+    maxBookings?: number | null;
+}
+
+export type MeetingTypePlatform = "zoom" | "google-meet" | "In-Person";
 
 export type MeetingStatus = "scheduled" | "rescheduled" | "conflict" | "completed";
 
@@ -17,7 +29,7 @@ export interface Meeting {
     date: string; // YYYY-MM-DD
     time: string; // e.g., "3:30 PM"
     duration: number; // in minutes
-    type: MeetingType;
+    type: MeetingTypePlatform;
     attendees?: Attendee[];
     status: MeetingStatus;
     conflictReason?: string | null | undefined;
@@ -35,7 +47,7 @@ export interface NewMeetingInput {
     date: string;
     time: string;
     duration: number;
-    type: MeetingType;
+    type: string;
     attendees?: Attendee[];
     status: Extract<MeetingStatus, "scheduled" | "rescheduled" | "conflict" | "completed">;
     hasNotes?: boolean;
