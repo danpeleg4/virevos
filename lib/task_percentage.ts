@@ -1,4 +1,4 @@
-export function taskPercentage(
+export function task_percentage(
     input: Task[] | { completed: number; total: number }
 ): number {
     if (!input) {

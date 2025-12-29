@@ -1,66 +1,10 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import {users, meetings, zoomTokens} from "@/db/schema";
+import { users, meetings } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import type { NewMeetingInput } from "@/types/meeting";
-
-async function getFreshZoomAccessToken(userId: string) {
-    const rows = await db
-        .select()
-        .from(zoomTokens)
-        .where(eq(zoomTokens.userId, userId))
-        .limit(1);
-
-    if (!rows.length) return null;
-
-    const tokenData = rows[0];
-    const now = Math.floor(Date.now() / 1000);
-
-    // If token still valid → return it
-    if (tokenData.expires_in > now + 30) {
-        return tokenData.access_token;
-    }
-
-    // Otherwise refresh it
-    const refreshed = await refreshZoomToken(tokenData.refresh_token);
-
-    // Save new tokens in DB
-    await db
-        .update(zoomTokens)
-        .set({
-            access_token: refreshed.access_token,
-            refresh_token: refreshed.refresh_token,
-            expires_in: now + refreshed.expires_in,
-        })
-        .where(eq(zoomTokens.userId, userId));
-
-    return refreshed.access_token;
-}
-
-async function refreshZoomToken(refreshToken: string) {
-    const url = `https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${refreshToken}`;
-
-    const res = await fetch(url, {
-        method: "POST",
-        headers: {
-            Authorization:
-                "Basic " +
-                Buffer.from(
-                    `${process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`
-                ).toString("base64"),
-        },
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-        console.error("Zoom refresh error", data);
-        throw new Error("Failed to refresh Zoom token");
-    }
-
-    return data; // contains new access_token + refresh_token
-}
+import { google } from "googleapis";
+import { getFreshGoogleAccessToken } from "@/lib/google_access";
 
 export async function GET() {
     const user = await currentUser();
@@ -68,7 +12,7 @@ export async function GET() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Lookup internal DB user
+    // Fetch internal user
     const dbUser = await db
         .select()
         .from(users)
@@ -81,7 +25,80 @@ export async function GET() {
 
     const internalUserId = dbUser[0].user_id;
 
-    // Fetch meetings + attendees
+    // Get Google access token
+    const token = await getFreshGoogleAccessToken(user.id);
+
+    if (token) {
+        const oauth2Client = new google.auth.OAuth2();
+        oauth2Client.setCredentials({ access_token: token });
+        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+        // Today range
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+
+        // Fetch today's events
+        const list = await calendar.events.list({
+            calendarId: "primary",
+            timeMin: startOfToday.toISOString(),
+            timeMax: endOfToday.toISOString(),
+            singleEvents: true,
+            orderBy: "startTime",
+        });
+
+        const todayEvents = list.data.items ?? [];
+
+        // Existing meetings
+        const existing = await db
+            .select({ id: meetings.id })
+            .from(meetings)
+            .where(eq(meetings.userId, internalUserId));
+
+        const existingIds = new Set(existing.map(m => m.id));
+
+        // Map new Google events -> DB rows
+        const newMeetings = todayEvents
+            .filter(e => e.id && e.start && !existingIds.has(e.id))
+            .map(e => {
+                const start = e.start?.dateTime
+                    ? new Date(e.start.dateTime)
+                    : new Date(e.start!.date!);
+
+                const end = e.end?.dateTime
+                    ? new Date(e.end.dateTime)
+                    : new Date(e.end!.date!);
+
+                const durationMinutes = Math.max(
+                    1,
+                    Math.round((end.getTime() - start.getTime()) / 60000)
+                );
+
+                return {
+                    id: e.id!, // Google event ID
+                    title: e.summary ?? "Untitled",
+                    description: e.description ?? null,
+                    link: e.hangoutLink ?? e.htmlLink ?? null,
+
+                    date: start.toISOString().slice(0, 10), // YYYY-MM-DD
+                    time: start.toTimeString().slice(0, 5), // HH:mm
+                    duration: durationMinutes,
+
+                    type: "google",
+                    status: e.status ?? "confirmed",
+
+                    userId: internalUserId,
+                };
+            });
+
+        if (newMeetings.length > 0) {
+            await db.insert(meetings).values(newMeetings);
+        }
+    }
+
+    // Return meetings from DB
     const rows = await db.query.meetings.findMany({
         where: eq(meetings.userId, internalUserId),
         with: {
@@ -90,89 +107,4 @@ export async function GET() {
     });
 
     return NextResponse.json(rows);
-}
-
-export async function POST(req: Request) {
-    const body: NewMeetingInput = await req.json();
-    const user = await currentUser();
-    if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    // Lookup internal DB user
-    const dbUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.user_id, user.id))
-        .limit(1);
-
-    if (dbUser.length === 0) {
-        return new NextResponse("User not found", { status: 404 });
-    }
-
-    const internalUserId = dbUser[0].user_id;
-
-    const email = dbUser[0].email;
-    const tokenRow = await db
-        .select()
-        .from(zoomTokens)
-        .where(eq(zoomTokens.userId, user.id))
-        .limit(1);
-
-    if (tokenRow.length === 0) {
-        return new NextResponse("Zoom not connected", { status: 400 });
-    }
-
-    const accessToken = await getFreshZoomAccessToken(user.id);
-    const zoomRes = await fetch(
-        `https://api.zoom.us/v2/users/${email}/meetings`,
-        {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                topic: body.title,
-                agenda: body.description ? body.description : "",
-                type: 2,
-                start_time: body.date + "T" + body.time + ":00Z",
-                duration: body.duration,
-                settings: {
-                    host_video: true,
-                    auto_recording: "cloud",
-                    participant_video: false,
-                },
-            }),
-        }
-    );
-
-    const zoomData = await zoomRes.json();
-
-    if (!zoomRes.ok) {
-        console.error("Zoom error:", zoomData);
-        return new NextResponse("Zoom API error", { status: 500 });
-    }
-
-    // Insert meeting
-    const inserted = await db
-        .insert(meetings)
-        .values({
-            id: zoomData.id,
-            title: body.title,
-            description: body.description,
-            link: zoomData.join_url,
-            date: body.date,
-            time: body.time,
-            duration: body.duration,
-            type: body.type,
-            status: body.status,
-            hasNotes: body.hasNotes ?? false,
-            hasTranscript: body.hasTranscript ?? false,
-            autoRescheduled: body.autoRescheduled ?? false,
-            conflictReason: body.conflictReason ?? null,
-            userId: internalUserId
-        })
-        .returning();
-    return NextResponse.json(inserted[0]);
 }

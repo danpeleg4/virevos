@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useMemo, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -21,77 +21,142 @@ import {
 } from "../ui/dialog";
 import { Switch } from "../ui/switch";
 import { Plus, Video, Users, Clock, Copy, ExternalLink, Edit, Trash2 } from "lucide-react";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {createMeetsType, deleteMeetsType, updateActiveMeetingType} from "@/lib/server_actions/calendar";
+import axios from "axios";
 
 interface MeetingType {
-  id: string;
+  id: number;
   name: string;
   duration: number;
-  description: string;
+  description: string | null;
   color: string;
-  platform: "zoom" | "google-meet" | "teams";
-  bookingLink: string;
+  platform: "zoom" | "google-meet" | "In-Person";
+  bookingLink?: string;
   active: boolean;
-  maxPerDay?: number;
+  maxBookings?: number | null;
 }
 
-const mockMeetingTypes: MeetingType[] = [
-  {
-    id: "1",
-    name: "Discovery Call",
-    duration: 30,
-    description: "Initial consultation to understand client needs and explore how Virevos can help",
-    color: "blue",
-    platform: "zoom",
-    bookingLink: "Virevos.com/book/discovery-call",
-    active: true,
-    maxPerDay: 3,
-  },
-  {
-    id: "2",
-    name: "Client Onboarding",
-    duration: 60,
-    description: "Comprehensive onboarding session for new clients",
-    color: "green",
-    platform: "zoom",
-    bookingLink: "Virevos.com/book/onboarding",
-    active: true,
-    maxPerDay: 2,
-  },
-  {
-    id: "3",
-    name: "Quick Check-in",
-    duration: 15,
-    description: "Brief status update or quick question",
-    color: "purple",
-    platform: "google-meet",
-    bookingLink: "Virevos.com/book/check-in",
-    active: true,
-  },
-  {
-    id: "4",
-    name: "Strategy Session",
-    duration: 90,
-    description: "Deep dive into workflow optimization and automation strategy",
-    color: "orange",
-    platform: "zoom",
-    bookingLink: "Virevos.com/book/strategy",
-    active: true,
-    maxPerDay: 1,
-  },
-];
 
 export function MeetingTypes() {
-  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>(mockMeetingTypes);
   const [isCreating, setIsCreating] = useState(false);
   const [editingType, setEditingType] = useState<MeetingType | null>(null);
+  const [name, setName] = useState("");
+  const [duration, setDuration] = useState(30);
+  const [platform, setPlatform] = useState<"zoom" | "google-meet" | "In-Person">("zoom");
+  const [description, setDescription] = useState("");
+  const [color, setColor] = useState("blue");
+  const [maxBookings, setMaxBookings] = useState<number | undefined>(undefined);
+  const queryClient = useQueryClient();
 
-  const toggleActive = (id: string) => {
-    setMeetingTypes(
-      meetingTypes.map((type) =>
-        type.id === id ? { ...type, active: !type.active } : type
-      )
-    );
-  };
+  const getMeetingTypes = useQuery<MeetingType[]>({
+    queryKey: ["meetingTypes"],
+    queryFn: async () => {
+      const res = await axios.get('/api/meetings/meeting-types')
+      return res.data
+    }
+  })
+
+  const createMeetingType = useMutation({
+    mutationFn: (data: {
+      name: string;
+      duration: number;
+      description: string;
+      color: string;
+      platform: "zoom" | "google-meet" | "In-Person";
+      maxBookings?: number
+    }) => createMeetsType(data),
+    onMutate: async (newType) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      // Snapshot previous value
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      // Optimistically update
+      queryClient.setQueryData(["meetingTypes"], (old: MeetingType[] | undefined) => [
+        ...(old || []),
+        {
+          id: Math.floor(Math.random() * 1000000), // temporary ID for optimistic update
+          active: true,
+          ...newType,
+        }
+      ]);
+
+      return { previous };
+    },
+    onError: (_err, _newType, context) => {
+      // Revert on error
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      // Refetch to sync with server
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    }
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
+      // call your API to update active
+      await updateActiveMeetingType(id, active)
+    },
+    onMutate: async ({ id, active }: {id: number, active: boolean}) => {
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
+          old?.map(type =>
+              type.id === id ? { ...type, active } : type
+          )
+      );
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      // rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    }
+  });
+
+  const deleteMeetingType = useMutation({
+    mutationFn: async (id: number) => deleteMeetsType(id),
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
+          old?.filter(type => type.id !== id)
+      );
+
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    },
+  });
+
+  const sortedMeetingTypes = useMemo(() => {
+    if (!getMeetingTypes.data) return [];
+
+    return [...getMeetingTypes.data].sort((a, b) => {
+      // active first
+      return Number(b.active) - Number(a.active);
+    });
+  }, [getMeetingTypes.data]);
 
   const getColorClass = (color: string) => {
     const colors: Record<string, string> = {
@@ -103,8 +168,16 @@ export function MeetingTypes() {
     return colors[color] || colors.blue;
   };
 
-  const getPlatformIcon = (platform: string) => {
-    return <Video className="h-4 w-4" />;
+  const getPlatformIcon = (platform: "zoom" | "google-meet" | "In-Person" | string) => {
+    switch (platform) {
+      case "zoom":
+      case "google-meet":
+        return <Video className="h-4 w-4" />;
+      case "In-Person":
+        return <Users className="h-4 w-4" />;
+      default:
+        return <Video className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -117,7 +190,7 @@ export function MeetingTypes() {
         </div>
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setIsCreating(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Meeting Type
             </Button>
@@ -129,13 +202,21 @@ export function MeetingTypes() {
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Meeting Name</Label>
-                <Input id="name" placeholder="e.g., Discovery Call" />
+                <Input
+                  id="name"
+                  placeholder="e.g., Discovery Call"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Select defaultValue="30">
+                  <Select
+                    value={duration.toString()}
+                    onValueChange={(val) => setDuration(parseInt(val))}
+                  >
                     <SelectTrigger id="duration">
                       <SelectValue />
                     </SelectTrigger>
@@ -151,14 +232,17 @@ export function MeetingTypes() {
 
                 <div className="space-y-2">
                   <Label htmlFor="platform">Platform</Label>
-                  <Select defaultValue="zoom">
+                  <Select
+                    value={platform}
+                    onValueChange={(val) => setPlatform(val as "zoom" | "google-meet" | "In-Person")}
+                  >
                     <SelectTrigger id="platform">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="zoom">Zoom</SelectItem>
                       <SelectItem value="google-meet">Google Meet</SelectItem>
-                      <SelectItem value="teams">Microsoft Teams</SelectItem>
+                      <SelectItem value="In-Person">In-Person</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -170,12 +254,17 @@ export function MeetingTypes() {
                   id="description"
                   placeholder="What is this meeting for?"
                   rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="color">Color</Label>
-                <Select defaultValue="blue">
+                <Select
+                  value={color}
+                  onValueChange={(val) => setColor(val)}
+                >
                   <SelectTrigger id="color">
                     <SelectValue />
                   </SelectTrigger>
@@ -194,6 +283,8 @@ export function MeetingTypes() {
                   id="max-per-day"
                   type="number"
                   placeholder="Leave empty for unlimited"
+                  value={maxBookings || ""}
+                  onChange={(e) => setMaxBookings(e.target.value ? parseInt(e.target.value) : undefined)}
                 />
               </div>
 
@@ -201,7 +292,21 @@ export function MeetingTypes() {
                 <Button variant="outline" onClick={() => setIsCreating(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsCreating(false)}>Create Meeting Type</Button>
+                <Button onClick={() => {
+                  createMeetingType.mutate({
+                    name,
+                    duration,
+                    description,
+                    color,
+                    platform,
+                    maxBookings
+                  });
+                  setIsCreating(false);
+                  setName(""); setDuration(30); setPlatform("zoom");
+                  setDescription(""); setColor("blue"); setMaxBookings(undefined);
+                }}>
+                  Create Meeting Type
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -209,7 +314,7 @@ export function MeetingTypes() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {meetingTypes.map((type) => (
+        {sortedMeetingTypes?.slice(0, 5).map((type) => (
           <Card key={type.id} className={`border-l-4 ${type.active ? '' : 'opacity-60'}`}>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -219,9 +324,9 @@ export function MeetingTypes() {
                     <Badge className={getColorClass(type.color)}>
                       {type.duration} min
                     </Badge>
-                    {type.maxPerDay && (
+                    {type.maxBookings && (
                       <Badge variant="outline">
-                        Max {type.maxPerDay}/day
+                        Max {type.maxBookings}/day
                       </Badge>
                     )}
                     {!type.active && (
@@ -232,7 +337,7 @@ export function MeetingTypes() {
                 </div>
                 <Switch
                   checked={type.active}
-                  onCheckedChange={() => toggleActive(type.id)}
+                  onCheckedChange={() => toggleActiveMutation.mutate({ id: type.id, active: !type.active })}
                 />
               </div>
             </CardHeader>
@@ -254,11 +359,15 @@ export function MeetingTypes() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Input
-                    readOnly
-                    value={`https://${type.bookingLink}`}
-                    className="flex-1 text-sm bg-gray-50"
-                  />
+                  {
+                    type.bookingLink ? (
+                        <Input
+                            readOnly
+                            value={`https://${type.bookingLink}`}
+                            className="flex-1 text-sm bg-gray-50"
+                        />
+                    ) : null
+                  }
                   <Button size="sm" variant="outline">
                     <Copy className="h-4 w-4 mr-2" />
                     Copy
@@ -278,7 +387,12 @@ export function MeetingTypes() {
                     <Users className="h-4 w-4 mr-2" />
                     Customize Questions
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-red-600 ml-auto">
+                  <Button
+                      onClick={() => deleteMeetingType.mutate(type.id)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 ml-auto"
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </Button>

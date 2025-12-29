@@ -1,4 +1,4 @@
-import {ComponentType, SVGProps, useEffect, useState} from "react";
+import {ComponentType, SVGProps, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Integration {
     id: string;
@@ -27,140 +28,146 @@ interface Integration {
     features: string[];
 }
 
+const INITIAL_INTEGRATIONS: Integration[] = [
+    {
+        id: "zoom",
+        name: "Zoom",
+        description: "Video conferencing and meeting recordings",
+        icon: Video,
+        connected: false,
+        syncStatus: "synced",
+        lastSync: "2 minutes ago",
+        features: [
+            "Auto-create Zoom links for meetings",
+            "Record meetings automatically",
+            "Generate transcripts",
+            "Import meeting attendees",
+        ],
+    },
+    {
+        id: "google-meet",
+        name: "Google Meet",
+        description: "Google's video conferencing platform",
+        icon: Video,
+        connected: false,
+        syncStatus: "synced",
+        lastSync: "5 minutes ago",
+        features: [
+            "Auto-create Meet links",
+            "Access meeting recordings",
+            "Live transcription",
+            "Calendar integration",
+        ],
+    },
+    {
+        id: "google-calendar",
+        name: "Google Calendar",
+        description: "Sync with your Google Calendar",
+        icon: Calendar,
+        connected: false,
+        syncStatus: "synced",
+        lastSync: "1 minute ago",
+        features: [
+            "Two-way calendar sync",
+            "Conflict detection",
+            "Automatic event creation",
+            "Availability management",
+        ],
+    },
+    {
+        id: "outlook",
+        name: "Microsoft Outlook",
+        description: "Sync with Outlook Calendar",
+        icon: Calendar,
+        connected: false,
+        syncStatus: "not-connected",
+        features: [
+            "Two-way calendar sync",
+            "Teams meeting integration",
+            "Email notifications",
+            "Contact sync",
+        ],
+    },
+];
+
 export function IntegrationSettings() {
+    const queryClient = useQueryClient();
     const [autoRecording, setAutoRecording] = useState(true);
     const [autoTranscription, setAutoTranscription] = useState(true);
     const [twoWaySync, setTwoWaySync] = useState(true);
     const [syncConflicts, setSyncConflicts] = useState(true);
-    const [integrations, setIntegrations] = useState<Integration[]>([
-        {
-            id: "zoom",
-            name: "Zoom",
-            description: "Video conferencing and meeting recordings",
-            icon: Video,
-            connected: false,
-            syncStatus: "synced",
-            lastSync: "2 minutes ago",
-            features: [
-                "Auto-create Zoom links for meetings",
-                "Record meetings automatically",
-                "Generate transcripts",
-                "Import meeting attendees",
-            ],
-        },
-        {
-            id: "google-meet",
-            name: "Google Meet",
-            description: "Google's video conferencing platform",
-            icon: Video,
-            connected: false,
-            syncStatus: "synced",
-            lastSync: "5 minutes ago",
-            features: [
-                "Auto-create Meet links",
-                "Access meeting recordings",
-                "Live transcription",
-                "Calendar integration",
-            ],
-        },
-        {
-            id: "google-calendar",
-            name: "Google Calendar",
-            description: "Sync with your Google Calendar",
-            icon: Calendar,
-            connected: false,
-            syncStatus: "synced",
-            lastSync: "1 minute ago",
-            features: [
-                "Two-way calendar sync",
-                "Conflict detection",
-                "Automatic event creation",
-                "Availability management",
-            ],
-        },
-        {
-            id: "outlook",
-            name: "Microsoft Outlook",
-            description: "Sync with Outlook Calendar",
-            icon: Calendar,
-            connected: false,
-            syncStatus: "not-connected",
-            features: [
-                "Two-way calendar sync",
-                "Teams meeting integration",
-                "Email notifications",
-                "Contact sync",
-            ],
-        },
-    ]);
 
     const router = useRouter();
 
-    async function caller() {
-        await axios.post("/api/integrations/zoom", {
-            action: "disconnect",
-        });
-    }
+    const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
+        queryKey: ["integrations"],
+        queryFn: async () => {
+            const [zoomCheck, googleCheck] = await Promise.all([
+                axios.post("/api/integrations/zoom", { action: "connect" }),
+                axios.post("/api/integrations/google", { action: "status" })
+            ]);
+            
+            const { zoom, googleMeetsConnected } = zoomCheck.data;
+            const googleCalendarConnected = googleCheck.data.connected;
+
+            return INITIAL_INTEGRATIONS.map(int => {
+                if (int.id === "zoom") return { ...int, connected: zoom };
+                if (int.id === "google-meet") return { ...int, connected: googleMeetsConnected };
+                if (int.id === "google-calendar") return { ...int, connected: googleCalendarConnected };
+                return int;
+            });
+        }
+    });
+
+    const mutation = useMutation({
+        mutationFn: async ({ id, action }: { id: string, action: "disconnect" | "connect" }) => {
+            if (id === "zoom" && action === "disconnect") {
+                await axios.post("/api/integrations/zoom", {
+                    action: "disconnect",
+                });
+            }
+            if (id === "google-calendar" && action === "disconnect") {
+                await axios.post("/api/integrations/google", {
+                    action: "disconnect",
+                });
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["integrations"] });
+        },
+    });
 
     const toggleConnection = (id: string) => {
-        setIntegrations((prevIntegrations) => {
-            const integration = prevIntegrations.find((i) => i.id === id);
+        const integration = integrations.find((i) => i.id === id);
 
-            // If Zoom is toggled ON → redirect BEFORE updating state
-            if (id === "zoom" && integration && !integration.connected) {
-                const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
-                const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
-                const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-                const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
-                const redirect = process.env.NODE_ENV === "development"
-                    ? zoomAuthUrl
-                    : zoomAuthUrlProd;
+        if (id === "zoom" && integration && !integration.connected) {
+            const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
+            const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
+            const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+            const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
+            const redirect = process.env.NODE_ENV === "development"
+                ? zoomAuthUrl
+                : zoomAuthUrlProd;
 
-                router.push(redirect);
-                return prevIntegrations; // leave UI unchanged, redirect will occur
-            }
-
-            if (id === "zoom" && integration && integration.connected) {
-                caller()
-
-                return prevIntegrations.map(int =>
-                    int.id === "zoom"
-                        ? { ...int, connected: false, syncStatus: "not-connected" }
-                        : int
-                );
-            }
-
-            // Default toggle behavior for other integrations
-            return prevIntegrations.map((int) =>
-                int.id === id
-                    ? {
-                        ...int,
-                        connected: !int.connected,
-                        syncStatus: !int.connected ? "syncing" : "not-connected",
-                    }
-                    : int
-            );
-        });
-    };
-
-    useEffect(() => {
-        async function loadConnections() {
-            const check = await axios.post("/api/integrations/zoom", {
-                action: "connect",
-            });
-            const { zoom, googleMeetsConnected } = check.data;
-
-            setIntegrations(prev =>
-                prev.map(int => {
-                    if (int.id === "zoom") return { ...int, connected: zoom };
-                    if (int.id === "google-meet") return { ...int, connected: googleMeetsConnected };
-                    return int;
-                })
-            );
+            router.push(redirect);
+            return;
         }
 
-        loadConnections();
-    }, []);
+        if (id === "zoom" && integration && integration.connected) {
+            mutation.mutate({ id: "zoom", action: "disconnect" });
+            return;
+        }
+
+        if (id === "google-calendar" && integration && !integration.connected) {
+            router.push("/api/google");
+            return;
+        }
+
+        if (id === "google-calendar" && integration && integration.connected) {
+            mutation.mutate({ id: "google-calendar", action: "disconnect" });
+            return;
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -216,10 +223,6 @@ export function IntegrationSettings() {
                                         <Button size="sm" variant="outline">
                                             <Settings className="h-4 w-4 mr-2" />
                                             Configure
-                                        </Button>
-                                        <Button size="sm" variant="outline">
-                                            <RefreshCw className="h-4 w-4 mr-2" />
-                                            Sync Now
                                         </Button>
                                         <Button size="sm" variant="outline">
                                             <ExternalLink className="h-4 w-4 mr-2" />
