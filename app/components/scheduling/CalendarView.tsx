@@ -29,7 +29,7 @@ import axios from "axios";
 import {addMeetingToCalendar, deleteEventFromCalendar} from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM - 9 PM
+const hours = Array.from({ length: 24 }, (_, i) => i);
 
 export function CalendarView() {
     const queryClient = useQueryClient();
@@ -247,10 +247,7 @@ export function CalendarView() {
                     <div className="border border-gray-200 rounded-lg overflow-hidden">
                         <div className="divide-y divide-gray-100">
                             {hours.map((hour) => {
-                                const timeLabel = `${hour > 12 ? hour - 12 : hour}:00 ${
-                                    hour >= 12 ? "PM" : "AM"
-                                }`;
-
+                                const timeLabel = `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
                                 const meetingsAtTime = dayMeetings?.filter(m => parseHour(m.time) === hour);
 
                                 return (

@@ -225,10 +225,6 @@ export function IntegrationSettings() {
                                             Configure
                                         </Button>
                                         <Button size="sm" variant="outline">
-                                            <RefreshCw className="h-4 w-4 mr-2" />
-                                            Sync Now
-                                        </Button>
-                                        <Button size="sm" variant="outline">
                                             <ExternalLink className="h-4 w-4 mr-2" />
                                             View in {integration.name}
                                         </Button>
