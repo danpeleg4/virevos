@@ -22,7 +22,7 @@ import {
 import { Switch } from "../ui/switch";
 import { Plus, Video, Users, Clock, Copy, ExternalLink, Edit, Trash2 } from "lucide-react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {createMeetsType, updateActiveMeetingType} from "@/lib/server_actions/calendar";
+import {createMeetsType, deleteMeetsType, updateActiveMeetingType} from "@/lib/server_actions/calendar";
 import axios from "axios";
 
 interface MeetingType {
@@ -124,6 +124,29 @@ export function MeetingTypes() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
     }
+  });
+
+  const deleteMeetingType = useMutation({
+    mutationFn: async (id: number) => deleteMeetsType(id),
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
+          old?.filter(type => type.id !== id)
+      );
+
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    },
   });
 
   const sortedMeetingTypes = useMemo(() => {
@@ -364,7 +387,12 @@ export function MeetingTypes() {
                     <Users className="h-4 w-4 mr-2" />
                     Customize Questions
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-red-600 ml-auto">
+                  <Button
+                      onClick={() => deleteMeetingType.mutate(type.id)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 ml-auto"
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </Button>

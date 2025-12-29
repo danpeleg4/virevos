@@ -10,6 +10,16 @@ import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
 import { parseDateTime } from "@/lib/date_utils";
 
+
+type meetingData = {
+    name: string;
+    duration: number;
+    description: string;
+    color: string;
+    platform: "zoom" | "google-meet" | "In-Person";
+    maxBookings?: number
+}
+
 export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     const body: NewMeetingInput = meeting
     const user = await currentUser();
@@ -173,13 +183,7 @@ export async function deleteEventFromCalendar(id: string) {
     return { success: true };
 }
 
-export async function createMeetsType(data: {
-    name: string;
-    duration: number;
-    description: string;
-    color: string;
-    platform: "zoom" | "google-meet" | "In-Person";
-    maxBookings?: number }) {
+export async function createMeetsType(data: meetingData) {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
@@ -204,4 +208,10 @@ export async function updateActiveMeetingType(id: number, active: boolean) {
         .returning();
 
     return result;
+}
+
+export async function deleteMeetsType(id: number){
+    const user = await currentUser();
+    if (!user?.id) throw new Error("Unauthorized");
+    await db.delete(meetingTypes).where(and(eq(meetingTypes.id, id), eq(meetingTypes.userId, user.id)));
 }
