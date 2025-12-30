@@ -27,6 +27,8 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         throw new Error("Unauthorized");
     }
 
+    const googleToken = await getFreshGoogleAccessToken(user.id);
+
     // Lookup internal DB user
     const dbUser = await db
         .select()
@@ -38,83 +40,84 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         return
     }
 
+    let zoomData = null;
+    let googleEventId = null;
     const internalUserId = dbUser[0].user_id;
     const email = dbUser[0].email;
 
-    // ZOOM INTEGRATION
-    const tokenRow = await db
-        .select()
-        .from(zoomTokens)
-        .where(eq(zoomTokens.userId, user.id))
-        .limit(1);
+    if (meeting.type === "zoom") {
+        // ZOOM INTEGRATION
+        const tokenRow = await db
+            .select()
+            .from(zoomTokens)
+            .where(eq(zoomTokens.userId, user.id))
+            .limit(1);
 
-    let zoomData = null;
-    let googleEventId = null;
-    const startDate = parseDateTime(body.date, body.time);
+        const startDate = parseDateTime(body.date, body.time);
 
-    if (tokenRow.length > 0) {
-        const accessToken = await getFreshZoomAccessToken(user.id);
-        if (accessToken) {
-            const zoomRes = await fetch(
-                `https://api.zoom.us/v2/users/${email}/meetings`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        topic: body.title,
-                        agenda: body.description ? body.description : "",
-                        type: 2,
-                        start_time: startDate.toISOString(),
-                        duration: body.duration,
-                        settings: {
-                            host_video: true,
-                            auto_recording: "cloud",
-                            participant_video: false,
+        if (tokenRow.length > 0) {
+            const accessToken = await getFreshZoomAccessToken(user.id);
+            if (accessToken) {
+                const zoomRes = await fetch(
+                    `https://api.zoom.us/v2/users/${email}/meetings`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${accessToken}`,
+                            "Content-Type": "application/json",
                         },
-                    }),
+                        body: JSON.stringify({
+                            topic: body.title,
+                            agenda: body.description ? body.description : "",
+                            type: 2,
+                            start_time: startDate.toISOString(),
+                            duration: body.duration,
+                            settings: {
+                                host_video: true,
+                                auto_recording: "cloud",
+                                participant_video: false,
+                            },
+                        }),
+                    }
+                );
+
+                zoomData = await zoomRes.json();
+
+                if (!zoomRes.ok) {
+                    console.error("Zoom error:", zoomData);
+                    zoomData = null;
                 }
-            );
-
-            zoomData = await zoomRes.json();
-
-            if (!zoomRes.ok) {
-                console.error("Zoom error:", zoomData);
-                zoomData = null;
             }
         }
-    }
 
-    // GOOGLE CALENDAR INTEGRATION
-    const googleToken = await getFreshGoogleAccessToken(user.id);
-    if (googleToken) {
-        const oauth2Client = new google.auth.OAuth2();
-        oauth2Client.setCredentials({ access_token: googleToken });
-        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+        if (googleToken) {
+            const oauth2Client = new google.auth.OAuth2();
+            oauth2Client.setCredentials({access_token: googleToken});
+            const calendar = google.calendar({version: "v3", auth: oauth2Client});
 
-        try {
-            const googleRes = await calendar.events.insert({
-                calendarId: "primary",
-                requestBody: {
-                    summary: body.title,
-                    description: body.description + (zoomData ? `\n\nZoom Link: ${zoomData.join_url}` : ""),
-                    start: {
-                        dateTime: startDate.toISOString(),
+            try {
+                const googleRes = await calendar.events.insert({
+                    calendarId: "primary",
+                    requestBody: {
+                        summary: body.title,
+                        description: body.description + (zoomData ? `\n\nZoom Link: ${zoomData.join_url}` : ""),
+                        start: {
+                            dateTime: startDate.toISOString(),
+                        },
+                        end: {
+                            dateTime: new Date(startDate.getTime() + body.duration * 60000).toISOString(),
+                        },
+                        location: zoomData ? zoomData.join_url : "",
                     },
-                    end: {
-                        dateTime: new Date(startDate.getTime() + body.duration * 60000).toISOString(),
-                    },
-                    location: zoomData ? zoomData.join_url : "",
-                },
-            });
-            googleEventId = googleRes.data.id;
-        } catch (error) {
-            console.error("Google Calendar error:", error);
+                });
+                googleEventId = googleRes.data.id;
+            } catch (error) {
+                console.error("Google Calendar error:", error);
+            }
         }
-    }
+    } else if (meeting.type === "google-meet") {
 
+    }
     // Insert meeting
     const inserted = await db
         .insert(meetings)
@@ -132,7 +135,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             hasTranscript: body.hasTranscript ?? false,
             autoRescheduled: body.autoRescheduled ?? false,
             conflictReason: body.conflictReason ?? null,
-            googleEventId: googleEventId,
+            googleEventId: googleEventId ? googleToken : null,
             userId: internalUserId
         })
         .returning();

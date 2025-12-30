@@ -10,7 +10,7 @@ export async function GET() {
         if (!user?.id) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
-        const result = await db.select().from(clients).where(eq(clients.userId, user.id)).orderBy(clients.id);
+        const result = await db.select().from(clients).where(eq(clients.userId, user.id));
         return NextResponse.json(result);
     } catch (error) {
         console.error(error);

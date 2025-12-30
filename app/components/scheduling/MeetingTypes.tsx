@@ -99,14 +99,11 @@ export function MeetingTypes() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
-      // call your API to update active
       await updateActiveMeetingType(id, active)
     },
     onMutate: async ({ id, active }: {id: number, active: boolean}) => {
       await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
-
       const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
-
       queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
           old?.map(type =>
               type.id === id ? { ...type, active } : type
