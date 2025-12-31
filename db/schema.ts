@@ -68,6 +68,7 @@ export const meetings = pgTable("meetings", {
     autoRescheduled: boolean("auto_rescheduled").default(false),
     conflictReason: text("conflict_reason"),
     origin: text("origin"),
+    googleEventId: text("google_event_id"),
 
     userId: varchar("user_id")
         .notNull()

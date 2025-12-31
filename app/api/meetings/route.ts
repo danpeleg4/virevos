@@ -50,22 +50,43 @@ export async function GET() {
 
         const events = list.data.items ?? [];
 
-        // Existing DB meetings
-        const existing = await db
-            .select({ id: meetings.id })
+        // Existing DB meetings for this user
+        const existingMeetings = await db
+            .select()
             .from(meetings)
             .where(eq(meetings.userId, internalUserId));
 
-        const existingIds = new Set(existing.map(m => m.id));
+        const existingMap = new Map(existingMeetings.map(m => [m.googleEventId || m.id, m]));
+        const googleEventIds = new Set(events.map(e => e.id).filter(Boolean) as string[]);
+
+        // 1. Delete meetings from DB if they were removed from Google Calendar
+        // (Only for those that originated from Google OR have a googleEventId)
+        for (const m of existingMeetings) {
+            const googleId = m.googleEventId || m.id;
+            // We only sync deletions for events that were either imported from Google or synced to Google
+            if ((m.origin === "google_calendar" || m.googleEventId) && !googleEventIds.has(googleId)) {
+                // Check if the meeting date is today (since we only listed today's events)
+                const startOfTodayStr = startOfToday.toISOString().slice(0, 10);
+                if (m.date === startOfTodayStr) {
+                    await db.delete(meetings).where(eq(meetings.id, m.id));
+                    existingMap.delete(googleId);
+                }
+            }
+        }
+
         const meetingsToInsert = [];
         for (const e of events) {
             if (!e.id || !e.start) continue;
 
+            // Skip events created by the app itself that haven't been processed yet
+            // (They should have appId in extendedProperties)
             if (e.extendedProperties?.private?.appId) {
-                continue;
-            }
-
-            if (existingIds.has(e.id)) {
+                // If it exists in DB, we might want to update googleEventId if not set
+                const appId = e.extendedProperties.private.appId;
+                const dbMeeting = existingMeetings.find(m => m.id === appId);
+                if (dbMeeting && !dbMeeting.googleEventId) {
+                    await db.update(meetings).set({ googleEventId: e.id }).where(eq(meetings.id, appId));
+                }
                 continue;
             }
 
@@ -92,18 +113,54 @@ export async function GET() {
                 Math.round((end.getTime() - start.getTime()) / 60000)
             );
 
-            meetingsToInsert.push({
-                id: e.id, // Google event ID
-                title: e.summary ?? "Untitled",
-                description: e.description ?? null,
-                link: e.hangoutLink ?? e.htmlLink ?? null,
+            const title = e.summary ?? "Untitled";
+            const description = e.description ?? null;
+            const link = e.hangoutLink ?? e.htmlLink ?? null;
+            const dateStr = start.toISOString().slice(0, 10);
+            const timeStr = start.toTimeString().slice(0, 5);
+            const status = e.status ?? "confirmed";
 
-                date: start.toISOString().slice(0, 10),
-                time: start.toTimeString().slice(0, 5),
+            if (existingMap.has(e.id)) {
+                // 2. Update existing meeting if changed
+                const m = existingMap.get(e.id)!;
+                const hasChanged = 
+                    m.title !== title || 
+                    m.description !== description || 
+                    m.link !== link || 
+                    m.date !== dateStr || 
+                    m.time !== timeStr || 
+                    m.duration !== durationMinutes ||
+                    m.status !== status;
+
+                if (hasChanged) {
+                    await db.update(meetings)
+                        .set({
+                            title,
+                            description,
+                            link,
+                            date: dateStr,
+                            time: timeStr,
+                            duration: durationMinutes,
+                            status
+                        })
+                        .where(eq(meetings.id, m.id));
+                }
+                continue;
+            }
+
+            // 3. Insert new meeting
+            meetingsToInsert.push({
+                id: e.id,
+                googleEventId: e.id,
+                title,
+                description,
+                link,
+                date: dateStr,
+                time: timeStr,
                 duration: durationMinutes,
                 origin: "google_calendar",
                 type: "in-person",
-                status: e.status ?? "confirmed",
+                status,
                 userId: internalUserId,
             });
         }

@@ -92,6 +92,13 @@
       "when": 1767215262014,
       "tag": "0012_spooky_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1767219376238,
+      "tag": "0013_thick_scorpion",
+      "breakpoints": true
     }
   ]
 }
