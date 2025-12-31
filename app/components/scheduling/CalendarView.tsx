@@ -26,7 +26,7 @@ import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
 import type { Meeting, NewMeetingInput } from "@/types/meeting";
 import axios from "axios";
-import {addMeetingToCalendar, deleteEventFromCalendar} from '@/lib/server_actions/calendar'
+import { addMeetingToCalendar, deleteEventFromCalendar } from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -42,7 +42,7 @@ export function CalendarView() {
         const [year, month, day] = dateStr.split("-").map(Number);
         return new Date(year, month - 1, day); // LOCAL date, not UTC
     }
-    
+
     const meetings = useQuery({
         queryKey: ["meetings"],
         queryFn: async () => {
@@ -86,7 +86,7 @@ export function CalendarView() {
         const selectedDate = currentDate.toDateString();
         return meetingDate === selectedDate;
     });
-    
+
     const formattedDate = currentDate.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
@@ -156,9 +156,9 @@ export function CalendarView() {
     };
 
     return (
-        <div className="space-y-6">
-            {/* === Stats Cards === */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="flex flex-col gap-6 h-full min-h-0">
+        {/* === Stats Cards === */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
@@ -215,8 +215,8 @@ export function CalendarView() {
             </div>
 
             {/* === Controls === */}
-            <Card>
-                <CardHeader>
+            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <Button className="cursor-pointer" variant="outline" size="sm" onClick={handlePrevDay}>
@@ -243,8 +243,8 @@ export function CalendarView() {
                     </div>
                 </CardHeader>
 
-                <CardContent>
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
                         <div className="divide-y divide-gray-100">
                             {hours.map((hour) => {
                                 const timeLabel = `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;

@@ -230,7 +230,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto">{children}</main>
+                <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
             </div>
 
             <AIAssistant isOpen={aiOpen} onClose={() => setAiOpen(false)} />
