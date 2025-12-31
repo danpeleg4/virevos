@@ -36,6 +36,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         .where(eq(users.user_id, user.id))
         .limit(1);
 
+    const startDate = parseDateTime(body.date, body.time);
     if (dbUser.length === 0) {
         return
     }
@@ -44,7 +45,6 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     let googleEventId: string | null = null;
     const internalUserId = dbUser[0].user_id;
     const email = dbUser[0].email;
-    const appUID = `vire${crypto.randomUUID()}`;
 
     if (meeting.type === "Zoom") {
         // ZOOM INTEGRATION
@@ -53,8 +53,6 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             .from(zoomTokens)
             .where(eq(zoomTokens.userId, user.id))
             .limit(1);
-
-        const startDate = parseDateTime(body.date, body.time);
 
         if (tokenRow.length > 0) {
             const accessToken = await getFreshZoomAccessToken(user.id);
@@ -120,8 +118,37 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                 console.error("Google Calendar error:", error);
             }
         }
-    } else if (meeting.type === "google-meet") {
+        // TODO IMPLEMENT GOOGLE-MEET INTEGRATION
+    } else {
+        if (googleToken) {
+            const oauth2Client = new google.auth.OAuth2();
+            oauth2Client.setCredentials({access_token: googleToken});
+            const calendar = google.calendar({version: "v3", auth: oauth2Client});
 
+            try {
+                const googleEvent = await calendar.events.insert({
+                    calendarId: "primary",
+                    requestBody: {
+                        summary: body.title,
+                        description: body.description,
+                        start: {
+                            dateTime: startDate.toISOString(),
+                        },
+                        end: {
+                            dateTime: new Date(startDate.getTime() + body.duration * 60000).toISOString(),
+                        },
+                        extendedProperties: {
+                            private: {
+                                appId: meeting.id,
+                            },
+                        },
+                    },
+                });
+                googleEventId = googleEvent.data.id || null;
+            } catch (error) {
+                console.error("Google Calendar error:", error);
+            }
+        }
     }
 
     // Insert meeting

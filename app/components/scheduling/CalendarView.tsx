@@ -288,10 +288,7 @@ export function CalendarView() {
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end">
-                                                                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                                                                    <DropdownMenuItem>Reschedule</DropdownMenuItem>
-                                                                    <DropdownMenuItem>Copy Link</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => deleteEvent.mutate(meeting.id)}>Cancel</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => deleteEvent.mutate(meeting.id)}>Delete</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         </div>
