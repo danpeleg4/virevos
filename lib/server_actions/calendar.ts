@@ -44,8 +44,9 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     let googleEventId = null;
     const internalUserId = dbUser[0].user_id;
     const email = dbUser[0].email;
+    const appUID = `vire${crypto.randomUUID()}`;
 
-    if (meeting.type === "zoom") {
+    if (meeting.type === "Zoom") {
         // ZOOM INTEGRATION
         const tokenRow = await db
             .select()
@@ -80,7 +81,6 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                         }),
                     }
                 );
-
                 zoomData = await zoomRes.json();
 
                 if (!zoomRes.ok) {
@@ -106,6 +106,11 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                         },
                         end: {
                             dateTime: new Date(startDate.getTime() + body.duration * 60000).toISOString(),
+                        },
+                        extendedProperties: {
+                            private: {
+                                appId: appUID,
+                            },
                         },
                         location: zoomData ? zoomData.join_url : "",
                     },

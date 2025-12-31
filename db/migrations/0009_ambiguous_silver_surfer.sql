@@ -1,0 +1,1 @@
+ALTER TABLE "meetings" ADD COLUMN "google_cal_uid" text;

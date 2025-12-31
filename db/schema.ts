@@ -67,7 +67,7 @@ export const meetings = pgTable("meetings", {
     hasTranscript: boolean("has_transcript").default(false),
     autoRescheduled: boolean("auto_rescheduled").default(false),
     conflictReason: text("conflict_reason"),
-    googleEventId: text("google_event_id"),
+    origin: text("origin"),
 
     userId: varchar("user_id")
         .notNull()

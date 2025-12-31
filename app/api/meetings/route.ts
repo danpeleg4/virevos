@@ -25,9 +25,8 @@ export async function GET() {
 
     const internalUserId = dbUser[0].user_id;
 
-    // Get Google access token
+    // Google token
     const token = await getFreshGoogleAccessToken(user.id);
-
     if (token) {
         const oauth2Client = new google.auth.OAuth2();
         oauth2Client.setCredentials({ access_token: token });
@@ -40,7 +39,7 @@ export async function GET() {
         const endOfToday = new Date();
         endOfToday.setHours(23, 59, 59, 999);
 
-        // Fetch today's events
+        // Fetch Google events
         const list = await calendar.events.list({
             calendarId: "primary",
             timeMin: startOfToday.toISOString(),
@@ -49,56 +48,72 @@ export async function GET() {
             orderBy: "startTime",
         });
 
-        const todayEvents = list.data.items ?? [];
+        const events = list.data.items ?? [];
 
-        // Existing meetings
+        // Existing DB meetings
         const existing = await db
             .select({ id: meetings.id })
             .from(meetings)
             .where(eq(meetings.userId, internalUserId));
 
         const existingIds = new Set(existing.map(m => m.id));
+        const meetingsToInsert = [];
+        for (const e of events) {
+            if (!e.id || !e.start) continue;
 
-        // Map new Google events -> DB rows
-        const newMeetings = todayEvents
-            .filter(e => e.id && e.start && !existingIds.has(e.id))
-            .map(e => {
-                const start = e.start?.dateTime
-                    ? new Date(e.start.dateTime)
-                    : new Date(e.start!.date!);
+            if (e.extendedProperties?.private?.appId) {
+                continue;
+            }
 
-                const end = e.end?.dateTime
-                    ? new Date(e.end.dateTime)
-                    : new Date(e.end!.date!);
+            if (existingIds.has(e.id)) {
+                continue;
+            }
 
-                const durationMinutes = Math.max(
-                    1,
-                    Math.round((end.getTime() - start.getTime()) / 60000)
-                );
+            let start: Date;
+            if (e.start?.dateTime) {
+                start = new Date(e.start.dateTime);
+            } else if (e.start?.date) {
+                start = new Date(e.start.date);
+            } else {
+                continue;
+            }
 
-                return {
-                    id: e.id!, // Google event ID
-                    title: e.summary ?? "Untitled",
-                    description: e.description ?? null,
-                    link: e.hangoutLink ?? e.htmlLink ?? null,
+            let end: Date;
+            if (e.end?.dateTime) {
+                end = new Date(e.end.dateTime);
+            } else if (e.end?.date) {
+                end = new Date(e.end.date);
+            } else {
+                end = start;
+            }
 
-                    date: start.toISOString().slice(0, 10), // YYYY-MM-DD
-                    time: start.toTimeString().slice(0, 5), // HH:mm
-                    duration: durationMinutes,
+            const durationMinutes = Math.max(
+                1,
+                Math.round((end.getTime() - start.getTime()) / 60000)
+            );
 
-                    type: "google",
-                    status: e.status ?? "confirmed",
+            meetingsToInsert.push({
+                id: e.id, // Google event ID
+                title: e.summary ?? "Untitled",
+                description: e.description ?? null,
+                link: e.hangoutLink ?? e.htmlLink ?? null,
 
-                    userId: internalUserId,
-                };
+                date: start.toISOString().slice(0, 10),
+                time: start.toTimeString().slice(0, 5),
+                duration: durationMinutes,
+                origin: "google_calendar",
+                type: "in-person",
+                status: e.status ?? "confirmed",
+                userId: internalUserId,
             });
+        }
 
-        if (newMeetings.length > 0) {
-            await db.insert(meetings).values(newMeetings);
+        if (meetingsToInsert.length > 0) {
+            await db.insert(meetings).values(meetingsToInsert);
         }
     }
 
-    // Return meetings from DB
+    // Return DB meetings
     const rows = await db.query.meetings.findMany({
         where: eq(meetings.userId, internalUserId),
         with: {
