@@ -26,26 +26,26 @@ export default function Communications() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
-                    <TabsTrigger value="inbox" className="relative">
+                    <TabsTrigger value="inbox" className="relative cursor-pointer">
                         Inbox
                         {unreadCount > 0 && (
                             <Badge className="ml-2 bg-red-500 text-white">{unreadCount}</Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger value="scheduled">
+                    <TabsTrigger value="scheduled" className="cursor-pointer">
                         Scheduled
                         {scheduledCount > 0 && (
                             <Badge className="ml-2" variant="outline">{scheduledCount}</Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger value="summaries">Summaries</TabsTrigger>
-                    <TabsTrigger value="health" className="relative">
+                    <TabsTrigger value="summaries" className="cursor-pointer">Summaries</TabsTrigger>
+                    <TabsTrigger value="health" className="relative cursor-pointer">
                         Comms Health
                         {healthIssues > 0 && (
                             <Badge className="ml-2 bg-orange-500 text-white">{healthIssues}</Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger value="portal">Client Portal</TabsTrigger>
+                    <TabsTrigger value="portal" className="cursor-pointer">Client Portal</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="inbox">
