@@ -8,7 +8,6 @@ export type clients = {
     avatar: string | null,
     industry: string | null,
     phone: string | null,
-    joinedDate: string,
     notes: string,
     address?: string,
     createdAt?: Date | null,

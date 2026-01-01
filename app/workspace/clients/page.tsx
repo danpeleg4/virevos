@@ -97,7 +97,6 @@ export default function Clients() {
                 avatar: newClient.name[0],
                 industry: industry,
                 notes: "",
-                joinedDate: new Date().toLocaleDateString(),
             };
 
             queryClient.setQueryData<clients[]>(["clients"], [
@@ -146,7 +145,7 @@ export default function Clients() {
                             Add Client
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-md">
                         <DialogHeader>
                             <DialogTitle>Add New Client</DialogTitle>
                             <DialogDescription>
@@ -335,7 +334,7 @@ export default function Clients() {
                                 <td className="px-6 py-4">
                                     <div className="flex items-center text-sm text-gray-600">
                                         <Calendar className="h-3 w-3 mr-2" />
-                                        {client.joinedDate}
+                                        {(client?.createdAt)?.toDateString()}
                                     </div>
                                 </td>
                             </tr>
@@ -392,7 +391,7 @@ export default function Clients() {
                                     <div>
                                         <DialogTitle className="text-2xl">{selectedClient.name}</DialogTitle>
                                         <DialogDescription className="mt-1">
-                                            Client since {selectedClient.joinedDate}
+                                            Client since {(selectedClient.createdAt)?.toDateString()}
                                         </DialogDescription>
                                     </div>
                                 </div>
