@@ -1,1 +1,0 @@
-ALTER TABLE "meeting_types" ADD COLUMN "active" boolean DEFAULT true NOT NULL;

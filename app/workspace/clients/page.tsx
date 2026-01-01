@@ -15,7 +15,7 @@ import {
     DialogTrigger,
 } from "@/app/components/ui/dialog";
 import { Label } from "@/app/components/ui/label";
-import {Plus, Search, Mail, Phone, Calendar, Building2, ChevronRight, ChevronLeft, FolderOpen} from "lucide-react";
+import {Plus, Search, Mail, Phone, Calendar, ChevronRight, ChevronLeft, FolderOpen} from "lucide-react";
 import axios from "axios";
 import { clients } from "@/types/clients";
 import {
@@ -75,6 +75,8 @@ export default function Clients() {
             name: string;
             email: string;
             phone: string;
+            industry: string;
+            notes?: string;
         }) => {
             const res = await axios.post("/api/clients", newClient);
             return res.data;
@@ -87,7 +89,7 @@ export default function Clients() {
                 queryClient.getQueryData<clients[]>(["clients"]) ?? [];
 
             const optimisticClient: clients = {
-                id: Number(crypto.randomUUID()),
+                id: Date.now(),
                 name: newClient.name,
                 email: newClient.email,
                 phone: newClient.phone,
@@ -197,7 +199,7 @@ export default function Clients() {
                                     Cancel
                                 </Button>
                                 <Button onClick={() => {
-                                    addClient.mutate({ name, email, phone });
+                                    addClient.mutate({ name, email, phone, industry });
                                 }}>Add Client</Button>
                             </div>
                         </div>
@@ -269,9 +271,9 @@ export default function Clients() {
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                        {paginatedClients.map((client) => (
+                        {paginatedClients.map((client, index) => (
                             <tr
-                                key={client.id}
+                                key={client?.id ?? `temp-${index}-${client.name}`}
                                 onClick={() => handleClientClick(client)}
                                 className="cursor-pointer transition-colors hover:bg-gray-50"
                             >
@@ -334,7 +336,9 @@ export default function Clients() {
                                 <td className="px-6 py-4">
                                     <div className="flex items-center text-sm text-gray-600">
                                         <Calendar className="h-3 w-3 mr-2" />
-                                        {(client?.createdAt)?.toDateString()}
+                                        {client?.createdAt
+                                            ? new Date(client.createdAt).toDateString()
+                                            : "—"}
                                     </div>
                                 </td>
                             </tr>
@@ -391,7 +395,7 @@ export default function Clients() {
                                     <div>
                                         <DialogTitle className="text-2xl">{selectedClient.name}</DialogTitle>
                                         <DialogDescription className="mt-1">
-                                            Client since {(selectedClient.createdAt)?.toDateString()}
+                                            Client since {selectedClient?.createdAt ? new Date(selectedClient.createdAt).toDateString() : "—"}
                                         </DialogDescription>
                                     </div>
                                 </div>
@@ -425,10 +429,6 @@ export default function Clients() {
                                         <div className="flex items-center text-gray-700">
                                             <Phone className="h-4 w-4 mr-3 flex-shrink-0" />
                                             <span>{selectedClient.phone}</span>
-                                        </div>
-                                        <div className="flex items-center text-gray-700">
-                                            <Building2 className="h-4 w-4 mr-3 flex-shrink-0" />
-                                            <span>{selectedClient.address}</span>
                                         </div>
                                     </div>
                                 </div>

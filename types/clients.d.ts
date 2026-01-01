@@ -1,5 +1,5 @@
 export type clients = {
-    id?: number,
+    id: number,
     name: string,
     email: string | null,
     status: string,
@@ -9,7 +9,6 @@ export type clients = {
     industry: string | null,
     phone: string | null,
     notes: string,
-    address?: string,
     createdAt?: Date | null,
     updatedAt?: Date | null
 }

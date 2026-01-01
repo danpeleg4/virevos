@@ -3,10 +3,22 @@ CREATE TABLE "clients" (
 	"name" text NOT NULL,
 	"email" text,
 	"phone" text,
+	"industry" text,
+	"notes" text,
+	"status" text DEFAULT 'active' NOT NULL,
 	"user_id" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now(),
-	CONSTRAINT "clients_name_unique" UNIQUE("name")
+	CONSTRAINT "clients_id_unique" UNIQUE("id")
+);
+--> statement-breakpoint
+CREATE TABLE "google_tokens" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "google_tokens_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"access_token" text NOT NULL,
+	"refresh_token" text NOT NULL,
+	"expires_in" bigint NOT NULL,
+	"connected" boolean DEFAULT false,
+	"user_id" varchar NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "meeting_attendees" (
@@ -14,6 +26,18 @@ CREATE TABLE "meeting_attendees" (
 	"meeting_id" text NOT NULL,
 	"name" text NOT NULL,
 	"initials" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "meeting_types" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "meeting_types_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"name" text NOT NULL,
+	"duration" integer NOT NULL,
+	"platform" text NOT NULL,
+	"description" text,
+	"color" text NOT NULL,
+	"max_bookings" integer,
+	"active" boolean DEFAULT true NOT NULL,
+	"user_id" varchar NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "meetings" (
@@ -30,6 +54,8 @@ CREATE TABLE "meetings" (
 	"has_transcript" boolean DEFAULT false,
 	"auto_rescheduled" boolean DEFAULT false,
 	"conflict_reason" text,
+	"origin" text,
+	"google_event_id" text,
 	"user_id" varchar NOT NULL
 );
 --> statement-breakpoint
@@ -55,7 +81,7 @@ CREATE TABLE "project_files" (
 --> statement-breakpoint
 CREATE TABLE "projects" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "projects_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"client_name" text NOT NULL,
+	"client_id" integer,
 	"title" text NOT NULL,
 	"description" text,
 	"status" text DEFAULT 'in-progress' NOT NULL,
@@ -99,13 +125,15 @@ CREATE TABLE "zoom_tokens" (
 );
 --> statement-breakpoint
 ALTER TABLE "clients" ADD CONSTRAINT "clients_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "google_tokens" ADD CONSTRAINT "google_tokens_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "meeting_attendees" ADD CONSTRAINT "meeting_attendees_meeting_id_meetings_id_fk" FOREIGN KEY ("meeting_id") REFERENCES "public"."meetings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "meeting_types" ADD CONSTRAINT "meeting_types_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "meetings" ADD CONSTRAINT "meetings_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notes" ADD CONSTRAINT "notes_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notes" ADD CONSTRAINT "notes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_files" ADD CONSTRAINT "project_files_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_files" ADD CONSTRAINT "project_files_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "projects" ADD CONSTRAINT "projects_client_name_clients_name_fk" FOREIGN KEY ("client_name") REFERENCES "public"."clients"("name") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_client_id_clients_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."clients"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

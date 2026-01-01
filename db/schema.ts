@@ -18,11 +18,13 @@ export const users = pgTable("users", {
 
 // CLIENTS
 export const clients = pgTable("clients", {
-    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-    name: text("name").notNull().unique(),
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey().unique(),
+    name: text("name").notNull(),
     email: text("email"),
     phone: text("phone"),
     industry: text("industry"),
+    notes: text("notes"),
+    status: text("status").notNull().default("active"),
 
     userId: varchar("user_id")
         .notNull()
@@ -36,8 +38,8 @@ export const clients = pgTable("clients", {
 export const projects = pgTable("projects", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
 
-    clientName: text("client_name")
-        .references(() => clients.name, { onDelete: "cascade" }),
+    clientId: integer("client_id")
+        .references(() => clients.id, { onDelete: "cascade" }),
 
     name: text("title").notNull(),
     description: text("description"),
@@ -200,7 +202,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
         references: [users.user_id],
     }),
     client: one(clients, {
-        fields: [projects.clientName],
+        fields: [projects.clientId],
         references: [clients.id],
     }),
     tasks: many(tasks),
