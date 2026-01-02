@@ -41,7 +41,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         try {
             const result = await addFileMetadata({ projectId: project.id }, file);
             console.log("Uploaded:", result);
-            queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+            await queryClient.invalidateQueries({queryKey: ["files", project.id]});
         } catch (err) {
             console.error("Upload failed:", err);
         }

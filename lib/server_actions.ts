@@ -2,7 +2,7 @@
 
 import { db } from "@/db/db";
 import { notes, projectFiles, projects, tasks } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import { AddFileMetadataInput, Project, ProjectNote } from "@/types/projects";
 import { supabase } from "./supabase"
@@ -149,10 +149,11 @@ export async function addNotes(
     return inserted[0];
 }
 
-export async function changeProjectStatus(project: Project){
+export async function changeProjectStatus(project: Project, newStatus: string){
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
 
-    const { id, status } = project;
-    await db.update(projects).set({status: status}).where(eq(projects.id, id));
+    const { id } = project;
+    await db.update(projects).set({status: newStatus}).where(and(eq(projects.id, id),
+        eq(projects.userId, user.id)));
 }

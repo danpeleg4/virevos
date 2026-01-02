@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from '@/types/projects';
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ export default function ProjectsPage() {
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("all");
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const projectsQuery = useQuery({
         queryKey: ["projects"],
@@ -23,9 +24,12 @@ export default function ProjectsPage() {
     });
 
     const completedMutation = useMutation({
-        mutationFn: async (project: Project) => {
-            await changeProjectStatus(project);
+        mutationFn: async ({project, newStatus}: {project: Project, newStatus: string}) => {
+            await changeProjectStatus(project, newStatus);
         },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects"] })
+        }
     });
 
     // Update completed projects once data loads
@@ -35,10 +39,13 @@ export default function ProjectsPage() {
         projectsQuery.data.projects.forEach((p: Project) => {
             const isCompleted = p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
             if (isCompleted && p.status !== "completed") {
-                completedMutation.mutate(p);
+                completedMutation.mutate({project: p, newStatus: "completed"});
+            }
+            else if (!isCompleted && p.status === "completed") {
+                completedMutation.mutate({project: p, newStatus: "in-progress"});
             }
         });
-    }, [completedMutation, projectsQuery.data]);
+    }, [projectsQuery.data]);
 
     // Map for display only
     const projects: Project[] = projectsQuery.data?.projects.map((p: Project) => {
