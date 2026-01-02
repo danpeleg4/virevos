@@ -13,19 +13,26 @@ export async function GET() {
     const projects = await db.query.projects.findMany({
         where: (fields, { eq }) => eq(fields.userId, user.id),
         with: {
-            tasks: true
-        }
+            tasks: true,
+            client: {
+                columns: {
+                    id: true,
+                    name: true,
+                },
+            },
+        },
     });
 
-    // Add per-project stats
     const projectsWithStats = projects.map(p => {
         const totalTasks = p.tasks.length;
         const completedTasks = p.tasks.filter(t => t.completed).length;
-        const percentage = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
+        const percentage =
+            totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
 
         return {
             ...p,
-            stats: { totalTasks, completedTasks, percentage }
+            clientName: p.client?.name ?? null,
+            stats: { totalTasks, completedTasks, percentage },
         };
     });
 

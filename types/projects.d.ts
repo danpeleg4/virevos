@@ -14,6 +14,7 @@ interface ProjectStats {
 }
 
 interface Project {
+    clientName?: string,
     id: number,
     name,
     clientId,

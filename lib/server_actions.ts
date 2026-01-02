@@ -148,3 +148,11 @@ export async function addNotes(
 
     return inserted[0];
 }
+
+export async function changeProjectStatus(project: Project){
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+
+    const { id, status } = project;
+    await db.update(projects).set({status: status}).where(eq(projects.id, id));
+}
