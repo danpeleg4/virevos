@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/db";
-import { projects } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { projects, clients } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 
 export async function GET(
@@ -20,20 +20,31 @@ export async function GET(
             return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
         }
 
-        const project = await db
-            .select()
+        const result = await db
+            .select({
+                id: projects.id,
+                name: projects.name,
+                clientId: projects.clientId,
+                clientName: clients.name,
+            })
             .from(projects)
-            .where(eq(projects.id, projectId))
+            .leftJoin(clients, eq(projects.clientId, clients.id))
+            .where(
+                and(
+                    eq(projects.id, projectId),
+                    eq(projects.userId, user.id)
+                )
+            )
             .limit(1);
 
-        if (project.length === 0) {
+        if (result.length === 0) {
             return NextResponse.json(
                 { error: "Project not found" },
                 { status: 404 }
             );
         }
 
-        return NextResponse.json(project[0]);
+        return NextResponse.json(result[0]);
     } catch (error) {
         console.error(error);
         return NextResponse.json(

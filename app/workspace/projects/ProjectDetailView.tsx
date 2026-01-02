@@ -190,7 +190,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
           </Button>
           <div>
             <h1 className="text-2xl text-gray-900">{project.name}</h1>
-            <p className="text-gray-600 mt-1">{project.clientId}</p>
+            <p className="text-gray-600 mt-1">{project.clientName}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
