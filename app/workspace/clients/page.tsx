@@ -15,7 +15,7 @@ import {
     DialogTrigger,
 } from "@/app/components/ui/dialog";
 import { Label } from "@/app/components/ui/label";
-import {Plus, Search, Mail, Phone, Calendar, ChevronRight, ChevronLeft, FolderOpen} from "lucide-react";
+import {Plus, Search, Mail, Phone, Calendar, ChevronRight, ChevronLeft, FolderOpen, Trash2} from "lucide-react";
 import axios from "axios";
 import { clients } from "@/types/clients";
 import {
@@ -391,20 +391,29 @@ export default function Clients() {
                 <DialogContent className="max-w-2xl">
                     {selectedClient && (
                         <>
-                            <DialogHeader>
+                            <DialogHeader className="flex flex-row items-start justify-between">
                                 <div className="flex items-center space-x-4">
                                     <Avatar className="h-16 w-16">
                                         <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
                                             {selectedClient.avatar}
                                         </AvatarFallback>
                                     </Avatar>
+
                                     <div>
-                                        <DialogTitle className="text-2xl">{selectedClient.name}</DialogTitle>
+                                        <DialogTitle className="text-2xl">
+                                            {selectedClient.name}
+                                        </DialogTitle>
                                         <DialogDescription className="mt-1">
-                                            Client since {selectedClient?.createdAt ? new Date(selectedClient.createdAt).toDateString() : "—"}
+                                            Client since{" "}
+                                            {selectedClient?.createdAt
+                                                ? new Date(selectedClient.createdAt).toDateString()
+                                                : "—"}
                                         </DialogDescription>
                                     </div>
                                 </div>
+                                <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+                                    <Trash2 className="text-red-500 cursor-pointer hover:text-red-600" />
+                                </Button>
                             </DialogHeader>
 
                             <div className="space-y-6 mt-6">
