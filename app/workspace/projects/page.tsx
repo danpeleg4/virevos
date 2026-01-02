@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ProjectDetailView } from "@/app/workspace/projects/ProjectDetailView";
 import { ProjectList } from "./ProjectList";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import {useQuery} from "@tanstack/react-query";
@@ -10,7 +9,6 @@ import { Project } from '@/types/projects'
 import { useRouter } from "next/navigation";
 
 export default function ProjectsPage() {
-    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("all");
     const router = useRouter();
@@ -24,7 +22,6 @@ export default function ProjectsPage() {
     })
 
     const projects: Project[] = projectsQuery.data?.projects.map((p: Project) => {
-        // Update status based on tasks
         const isCompleted = p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
 
         return {

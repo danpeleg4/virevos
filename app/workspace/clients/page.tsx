@@ -233,13 +233,19 @@ export default function Clients() {
                 <Card className="p-6">
                     <p className="text-sm text-gray-600">Active Projects</p>
                     <p className="text-3xl mt-2 text-gray-900">
-                        {getClients?.data?.reduce((sum, c) => sum + c.activeProjects, 0)}
+                        {getClients?.data?.reduce(
+                            (sum, c) => sum + Number(c.activeProjects || 0),
+                            0
+                        )}
                     </p>
                 </Card>
                 <Card className="p-6">
                     <p className="text-sm text-gray-600">Completed Projects</p>
                     <p className="text-3xl mt-2 text-gray-900">
-                        {getClients?.data?.reduce((sum, c) => sum + c.completedProjects, 0)}
+                        {getClients?.data?.reduce(
+                            (sum, c) => sum + Number(c.completedProjects || 0),
+                            0
+                        )}
                     </p>
                 </Card>
             </div>
@@ -313,11 +319,11 @@ export default function Clients() {
                                         <div className="flex items-center text-sm text-gray-600">
                                             <FolderOpen className="h-3 w-3 mr-2" />
                                             <span className="text-green-600">
-                          {client.activeProjects}
+                          {client.completedProjects}
                         </span>
                                             <span className="mx-1">/</span>
                                             <span className="text-gray-500">
-                          {client.completedProjects}
+                          {client.activeProjects}
                         </span>
                                         </div>
                                     </div>
