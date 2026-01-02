@@ -9,7 +9,7 @@ export type clients = {
     avatar: string | null,
     industry: string | null,
     phone: string | null,
-    notes: string,
+    notes?: string | null,
     createdAt?: Date | null,
     updatedAt?: Date | null
 }

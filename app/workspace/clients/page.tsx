@@ -24,6 +24,15 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 import { deleteClient } from "@/lib/server_actions";
+import {Textarea} from "@/app/components/ui/textarea";
+
+type CreateClientInput = {
+    name: string;
+    email: string;
+    phone: string;
+    industry: string;
+    notes: string;
+};
 
 const ITEMS_PER_PAGE = 8;
 
@@ -36,6 +45,7 @@ export default function Clients() {
     const [selectedClient, setSelectedClient] = useState<clients | null>(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [industry, setIndustry] = useState("");
+    const [notes, setNotes] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
     const getClients = useQuery({
@@ -80,13 +90,7 @@ export default function Clients() {
     const queryClient = useQueryClient();
 
     const addClient = useMutation({
-        mutationFn: async (newClient: {
-            name: string;
-            email: string;
-            phone: string;
-            industry: string;
-            notes?: string;
-        }) => {
+        mutationFn: async (newClient: CreateClientInput) => {
             const res = await axios.post("/api/clients", newClient);
             return res.data;
         },
@@ -106,8 +110,8 @@ export default function Clients() {
                 activeProjects: 0,
                 completedProjects: 0,
                 avatar: newClient.name[0],
-                industry: industry,
-                notes: "",
+                industry: newClient.industry,
+                notes: newClient.notes,
                 totalProjects: 0,
             };
 
@@ -120,6 +124,7 @@ export default function Clients() {
             setName("");
             setEmail("");
             setPhone("");
+            setNotes("");
             setIndustry("");
 
             return { previousClients };
@@ -203,13 +208,22 @@ export default function Clients() {
                                     onChange={(e) => setIndustry(e.target.value)}
                                 />
                             </div>
+                            <div>
+                                <Label>Notes</Label>
+                                <Textarea
+                                    placeholder="Describe Notes..."
+                                    className="mt-2"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                />
+                            </div>
 
                             <div className="flex justify-end space-x-3 pt-4">
                                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                                     Cancel
                                 </Button>
                                 <Button onClick={() => {
-                                    addClient.mutate({ name, email, phone, industry });
+                                    addClient.mutate({ name, email, phone, industry, notes });
                                 }}>Add Client</Button>
                             </div>
                         </div>
@@ -297,7 +311,7 @@ export default function Clients() {
                                     <div className="flex items-center space-x-3">
                                         <Avatar className="h-10 w-10">
                                             <AvatarFallback className="bg-blue-100 text-blue-600">
-                                                {client.avatar}
+                                                {client.name[0]}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
@@ -405,7 +419,7 @@ export default function Clients() {
                                 <div className="flex items-center space-x-4">
                                     <Avatar className="h-16 w-16">
                                         <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
-                                            {selectedClient.avatar}
+                                            {selectedClient.name[0]}
                                         </AvatarFallback>
                                     </Avatar>
 

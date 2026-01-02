@@ -58,7 +58,7 @@ export async function POST(req: Request) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
         const body = await req.json();
-        const { name, email, phone, industry } = body;
+        const { name, email, phone, industry, notes } = body;
 
         if (!name || !email) {
             return NextResponse.json({ message: "Name & email required" }, { status: 400 });
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
                 phone: phone ? phone : null,
                 industry: industry ? industry : null,
                 status: "active",
-                notes: "",
+                notes: notes,
                 userId: user.id
             })
             .returning();
