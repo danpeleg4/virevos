@@ -23,7 +23,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { deleteClient } from "@/lib/server_actions";
+import {deleteClient, updateNotes} from "@/lib/server_actions";
 import {Textarea} from "@/app/components/ui/textarea";
 
 type CreateClientInput = {
@@ -47,6 +47,8 @@ export default function Clients() {
     const [industry, setIndustry] = useState("");
     const [notes, setNotes] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [editingNotes, setEditingNotes] = useState(false);
+    const [draftNotes, setDraftNotes] = useState("");
 
     const getClients = useQuery({
         queryKey: ["clients"],
@@ -77,6 +79,7 @@ export default function Clients() {
 
     const handleClientClick = (client: clients) => {
         setSelectedClient(client);
+        setDraftNotes(client.notes ?? "");
         setDetailsOpen(true);
     };
 
@@ -144,6 +147,42 @@ export default function Clients() {
             queryClient.invalidateQueries({ queryKey: ["clients"] });
         },
     });
+
+    const updateNotesMutation = useMutation({
+        mutationFn: async ({ id, notes }: { id: number; notes: string }) => {
+            await updateNotes(id, notes);
+        },
+
+        onMutate: async ({ id, notes }) => {
+            await queryClient.cancelQueries({ queryKey: ["clients"] });
+
+            const previousClients =
+                queryClient.getQueryData<clients[]>(["clients"]) ?? [];
+
+            queryClient.setQueryData<clients[]>(["clients"], (old) =>
+                old?.map((c) =>
+                    c.id === id ? { ...c, notes } : c
+                )
+            );
+
+            setSelectedClient((prev) =>
+                prev && prev.id === id ? { ...prev, notes } : prev
+            );
+
+            return { previousClients };
+        },
+
+        onError: (_err, _vars, context) => {
+            if (context?.previousClients) {
+                queryClient.setQueryData(["clients"], context.previousClients);
+            }
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+        },
+    });
+
 
     return (
         <div className="p-6 space-y-6">
@@ -496,10 +535,40 @@ export default function Clients() {
 
                                 {/* Notes */}
                                 <div>
-                                    <h3 className="mb-3 text-gray-900">Notes</h3>
-                                    <p className="text-sm text-gray-700">
-                                        {selectedClient.notes}
-                                    </p>
+                                    <div>
+                                        <h3 className="mb-3 text-gray-900">Notes</h3>
+
+                                        {editingNotes ? (
+                                            <Textarea
+                                                autoFocus
+                                                value={draftNotes}
+                                                onChange={(e) => setDraftNotes(e.target.value)}
+                                                onBlur={() => {
+                                                    setEditingNotes(false);
+
+                                                    if (draftNotes !== selectedClient.notes) {
+                                                        updateNotesMutation.mutate({
+                                                            id: selectedClient.id,
+                                                            notes: draftNotes,
+                                                        });
+                                                    }
+                                                }}
+                                                className="min-h-[120px]"
+                                            />
+                                        ) : (
+                                            <div
+                                                onClick={() => setEditingNotes(true)}
+                                                className="min-h-[120px] cursor-text rounded-md border border-gray-200 p-3 text-sm text-gray-700 hover:bg-gray-50 whitespace-pre-wrap"
+                                            >
+                                                {selectedClient.notes || (
+                                                    <span className="text-gray-400">
+                                                        Click to add notes…
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
                                 </div>
 
                                 {/* Actions */}
