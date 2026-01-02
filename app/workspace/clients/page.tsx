@@ -23,6 +23,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
+import { deleteClient } from "@/lib/server_actions";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -44,6 +45,15 @@ export default function Clients() {
             return res.data as clients[];
         },
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number) => {
+            await deleteClient(id)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["clients"] })
+        }
+    })
 
     const filteredClients = getClients?.data?.filter((client) =>
         client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -68,7 +78,6 @@ export default function Clients() {
         setCurrentPage((prev) => Math.min(totalPages, prev + 1));
     };
     const queryClient = useQueryClient();
-
 
     const addClient = useMutation({
         mutationFn: async (newClient: {
@@ -412,8 +421,11 @@ export default function Clients() {
                                         </DialogDescription>
                                     </div>
                                 </div>
-                                <Button variant="outline" onClick={() => setDetailsOpen(false)}>
-                                    <Trash2 className="text-red-500 cursor-pointer hover:text-red-600" />
+                                <Button variant="outline" onClick={() => {
+                                    setDetailsOpen(false)
+                                    deleteMutation.mutate(selectedClient?.id)
+                                }}>
+                                    <Trash2 className="text-red-500" />
                                 </Button>
                             </DialogHeader>
 

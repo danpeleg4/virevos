@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/db/db";
-import { notes, projectFiles, projects, tasks } from "@/db/schema";
+import {clients, notes, projectFiles, projects, tasks} from "@/db/schema";
 import {and, eq} from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import { AddFileMetadataInput, Project, ProjectNote } from "@/types/projects";
@@ -156,4 +156,10 @@ export async function changeProjectStatus(project: Project, newStatus: string){
     const { id } = project;
     await db.update(projects).set({status: newStatus}).where(and(eq(projects.id, id),
         eq(projects.userId, user.id)));
+}
+
+export async function deleteClient(id: number) {
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+    await db.delete(clients).where(and(eq(clients.id, id), eq(clients.userId, user.id)));
 }

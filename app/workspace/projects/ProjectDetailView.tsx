@@ -135,7 +135,6 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                             : task
                     )
             );
-
             return { previousTasks };
         },
 

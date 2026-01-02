@@ -7,7 +7,7 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from '@/types/projects';
 import { useRouter } from "next/navigation";
-import { changeProjectStatus } from "@/lib/server_actions";
+import {changeProjectStatus, deleteClient} from "@/lib/server_actions";
 
 export default function ProjectsPage() {
     const [search, setSearch] = useState("");
@@ -20,7 +20,7 @@ export default function ProjectsPage() {
         queryFn: async () => {
             const res = await axios.get(`/api/projects/get-projects`);
             return res.data;
-        }
+        },
     });
 
     const completedMutation = useMutation({
@@ -40,9 +40,11 @@ export default function ProjectsPage() {
             const isCompleted = p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
             if (isCompleted && p.status !== "completed") {
                 completedMutation.mutate({project: p, newStatus: "completed"});
+                queryClient.invalidateQueries({queryKey: ["clients"]});
             }
             else if (!isCompleted && p.status === "completed") {
                 completedMutation.mutate({project: p, newStatus: "in-progress"});
+                queryClient.invalidateQueries({queryKey: ["clients"]});
             }
         });
     }, [projectsQuery.data]);

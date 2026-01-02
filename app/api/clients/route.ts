@@ -13,7 +13,7 @@ export async function GET() {
 
         const result = await db
             .select({
-                clientId: clients.id,
+                id: clients.id,
                 name: clients.name,
                 email: clients.email,
                 phone: clients.phone,
