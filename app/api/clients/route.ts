@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import {clients, projects} from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { eq, sql } from "drizzle-orm";
+import {and, eq, sql} from "drizzle-orm";
 
 export async function GET() {
     try {
@@ -22,6 +22,11 @@ export async function GET() {
                 notes: clients.notes,
                 createdAt: clients.createdAt,
                 updatedAt: clients.updatedAt,
+
+
+                totalProjects: sql<number>`
+                    COUNT(${projects.id})
+                `,
 
                 completedProjects: sql<number>`
       COUNT(CASE WHEN ${projects.status} = 'completed' THEN 1 END)

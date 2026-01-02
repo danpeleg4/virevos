@@ -99,6 +99,7 @@ export default function Clients() {
                 avatar: newClient.name[0],
                 industry: industry,
                 notes: "",
+                totalProjects: 0,
             };
 
             queryClient.setQueryData<clients[]>(["clients"], [
@@ -323,7 +324,7 @@ export default function Clients() {
                         </span>
                                             <span className="mx-1">/</span>
                                             <span className="text-gray-500">
-                          {client.activeProjects}
+                          {client.totalProjects}
                         </span>
                                         </div>
                                     </div>
