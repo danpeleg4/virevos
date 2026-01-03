@@ -341,9 +341,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ x: 400 }}
+                    key="ai-assistant-panel"
+                    initial={{ x: "100%" }}
                     animate={{ x: 0 }}
-                    exit={{ x: 400 }}
+                    exit={{ x: "100%" }}
                     transition={{ type: "spring", damping: 30, stiffness: 300 }}
                     className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
                 >
@@ -597,6 +598,7 @@ function ThinkingStepComponent({
             <AnimatePresence>
                 {isExpanded && (step.details || step.files) && (
                     <motion.div
+                        key="step-details"
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
