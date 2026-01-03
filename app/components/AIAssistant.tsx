@@ -74,15 +74,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
             id: "1",
             role: "assistant",
             content: "Hi! I'm your Virevos AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
-            suggestions: [
-                "Create a new automation",
-                "Show overdue tasks",
-                "Suggest next actions",
-            ],
         },
     ]);
     const [input, setInput] = useState("");
-    const [selectedModel, setSelectedModel] = useState("gpt-4");
+    const [selectedModel, setSelectedModel] = useState("gpt-4o");
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -207,129 +202,126 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         return steps;
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!input.trim()) return;
+
+        const currentInput = input;
+        setInput("");
 
         const userMessage: Message = {
             id: Date.now().toString(),
             role: "user",
-            content: input,
+            content: currentInput,
         };
 
-        setMessages((prev) => [...prev, userMessage]);
-        const currentInput = input;
-        setInput("");
-
-        // Add thinking message
         const thinkingMessageId = (Date.now() + 1).toString();
         const thinkingMessage: Message = {
             id: thinkingMessageId,
             role: "assistant",
             content: "",
             isThinking: true,
-            thinking: simulateThinking(currentInput),
+            thinking: [
+                {
+                    id: "1",
+                    type: "planning",
+                    title: "Thinking...",
+                    status: "active",
+                }
+            ],
         };
 
-        setMessages((prev) => [...prev, thinkingMessage]);
+        setMessages((prev) => [...prev, userMessage, thinkingMessage]);
 
-        // Simulate thinking steps
-        const steps = simulateThinking(currentInput);
-        steps.forEach((step, index) => {
-            setTimeout(() => {
-                setMessages((prev) =>
-                    prev.map((msg) =>
-                        msg.id === thinkingMessageId
-                            ? {
-                                ...msg,
-                                thinking: msg.thinking?.map((s, i) =>
-                                    i === index ? { ...s, status: "active" as const } : s
-                                ),
-                            }
-                            : msg
-                    )
-                );
-
-                // Complete the step after a delay
-                setTimeout(() => {
-                    setMessages((prev) =>
-                        prev.map((msg) =>
-                            msg.id === thinkingMessageId
-                                ? {
-                                    ...msg,
-                                    thinking: msg.thinking?.map((s, i) =>
-                                        i === index ? { ...s, status: "completed" as const } : s
-                                    ),
-                                }
-                                : msg
-                        )
-                    );
-                }, 800);
-            }, index * 1200);
-        });
-
-        // Generate response after thinking
-        setTimeout(() => {
-            let response = "";
-            let suggestions: string[] = [];
-
-            if (currentInput.toLowerCase().includes("automation")) {
-                response = `I've designed a comprehensive automation workflow for you:\n\n**Client Onboarding Automation**\n\n• **Trigger**: New client added to system\n• **Actions**:\n  - Send personalized welcome email\n  - Create initial project structure\n  - Schedule kickoff meeting\n  - Assign onboarding tasks to team\n\n**Expected Benefits**:\n- Save ~2.5 hours per client\n- Ensure consistent onboarding experience\n- Reduce manual task creation by 85%\n\nWould you like me to activate this automation?`;
-                suggestions = ["Activate automation", "Customize workflow", "Test with sample data"];
-            } else if (currentInput.toLowerCase().includes("overdue") || currentInput.toLowerCase().includes("task")) {
-                response = `Here's your task overview:\n\n**Overdue Tasks (3)**:\n\n1. **TechCorp website redesign review**\n   - Due: 2 days ago\n   - Priority: High\n   - Blocking: Final deployment\n\n2. **DesignCo proposal**\n   - Due: Yesterday  \n   - Priority: Medium\n   - Client follow-up needed\n\n3. **Monthly analytics report**\n   - Due: Today\n   - Priority: Medium\n   - Draft 80% complete\n\n**Recommendation**: Focus on TechCorp review first as it's blocking deployment.\n\nWould you like me to reschedule these tasks or send notifications?`;
-                suggestions = ["Reschedule all", "Focus on high priority", "Send client updates"];
-            } else {
-                response = `I can assist you with:\n\n**Task Management**\n• View and organize tasks\n• Set priorities and deadlines\n• Track progress across projects\n\n**Automation**\n• Create custom workflows\n• Set up triggers and actions\n• Monitor automation performance\n\n**Project Insights**\n• Generate reports\n• Analyze team productivity\n• Forecast project timelines\n\nWhat would you like to explore?`;
-                suggestions = ["Create automation", "View task analytics", "Generate project report"];
+        try {
+            const response = await fetch(`/api/stream/${encodeURIComponent(currentInput)}`);
+            
+            if (!response.ok) {
+                throw new Error("Failed to connect to assistant");
             }
 
-            // Stream the response
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedContent = "";
+            let hasStartedStreaming = false;
+
+            if (!reader) throw new Error("No reader available");
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n");
+
+                for (const line of lines) {
+                    if (line.trim() === "") continue;
+                    
+                    if (line.startsWith("data: ")) {
+                        const data = line.slice(6);
+                        if (data === "[error]") {
+                            throw new Error("Error from assistant");
+                        }
+                        
+                        accumulatedContent += data;
+                        
+                        if (!hasStartedStreaming) {
+                            hasStartedStreaming = true;
+                            setMessages((prev) =>
+                                prev.map((msg) =>
+                                    msg.id === thinkingMessageId
+                                        ? {
+                                            ...msg,
+                                            isThinking: false,
+                                            thinking: msg.thinking?.map(s => ({ ...s, status: "completed" })),
+                                            streamedContent: accumulatedContent,
+                                        }
+                                        : msg
+                                )
+                            );
+                        } else {
+                            setMessages((prev) =>
+                                prev.map((msg) =>
+                                    msg.id === thinkingMessageId
+                                        ? {
+                                            ...msg,
+                                            streamedContent: accumulatedContent,
+                                        }
+                                        : msg
+                                )
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Finalize message
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg.id === thinkingMessageId
+                        ? {
+                            ...msg,
+                            content: accumulatedContent,
+                            streamedContent: undefined,
+                        }
+                        : msg
+                )
+            );
+
+        } catch (error) {
+            console.error("AI Assistant Error:", error);
             setMessages((prev) =>
                 prev.map((msg) =>
                     msg.id === thinkingMessageId
                         ? {
                             ...msg,
                             isThinking: false,
-                            streamedContent: "",
+                            content: "I'm sorry, I encountered an error while processing your request. Please try again.",
+                            thinking: msg.thinking?.map(s => ({ ...s, status: "pending" as const })),
                         }
                         : msg
                 )
             );
-
-            // Simulate streaming
-            let currentIndex = 0;
-            const streamInterval = setInterval(() => {
-                if (currentIndex < response.length) {
-                    const chunk = response.slice(currentIndex, currentIndex + 3);
-                    currentIndex += 3;
-
-                    setMessages((prev) =>
-                        prev.map((msg) =>
-                            msg.id === thinkingMessageId
-                                ? {
-                                    ...msg,
-                                    streamedContent: (msg.streamedContent || "") + chunk,
-                                }
-                                : msg
-                        )
-                    );
-                } else {
-                    clearInterval(streamInterval);
-                    setMessages((prev) =>
-                        prev.map((msg) =>
-                            msg.id === thinkingMessageId
-                                ? {
-                                    ...msg,
-                                    content: response,
-                                    streamedContent: undefined,
-                                    suggestions,
-                                }
-                                : msg
-                        )
-                    );
-                }
-            }, 20);
-        }, steps.length * 1200 + 500);
+        }
     };
 
     const handleSuggestionClick = (suggestion: string) => {
@@ -365,6 +357,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
                                     <SelectItem value="gpt-4">GPT-4</SelectItem>
                                     <SelectItem value="gpt-3.5">GPT-3.5</SelectItem>
                                     <SelectItem value="claude">Claude</SelectItem>
