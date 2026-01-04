@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
+import ReactMarkdown from 'react-markdown';
 import {
     X,
     Send,
@@ -21,7 +22,6 @@ import {
     Loader2,
     ChevronRight
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface AIAssistantProps {
     isOpen: boolean;
@@ -73,7 +73,7 @@ const nextBestActions = [
 ];
 
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-    const [selectedModel, setSelectedModel] = useState("gpt-4o");
+    const [selectedModel, setSelectedModel] = useState("");
     const {messages, sendMessage} = useChat();
     const [input, setInput] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -169,7 +169,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
     const handleSend = async () => {
         if (!input.trim()) return;
-        sendMessage({ text: input })
+        await sendMessage({text: input})
         setInput("");
     };
 
@@ -203,17 +203,6 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Select value={selectedModel} onValueChange={setSelectedModel}>
-                                <SelectTrigger className="w-[120px] h-8 bg-white border-gray-300 text-gray-900 text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                                    <SelectItem value="gpt-4">GPT-4</SelectItem>
-                                    <SelectItem value="gpt-3.5">GPT-3.5</SelectItem>
-                                    <SelectItem value="claude">Claude</SelectItem>
-                                </SelectContent>
-                            </Select>
                             <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 hover:text-gray-900">
                                 <X className="h-5 w-5" />
                             </Button>
@@ -344,12 +333,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                                 {/* Content */}
                                                 {message.parts && (
                                                     <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                                                        <div className="prose prose-sm max-w-none">
-                                                            <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                                                                {message.parts?.map((part, i) =>
-                                                                    part.type === "text" ? <span key={i}>{part.text}</span> : null
-                                                                )}
-                                                            </p>
+                                                        <div className="prose prose-sm max-w-none text-sm text-gray-800">
+                                                            {message.parts?.map((part, i) =>
+                                                                part.type === "text" ? <ReactMarkdown key={i}>{part.text}</ReactMarkdown> : null
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -383,7 +370,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                         <div className="flex items-center justify-between mt-2">
                             <p className="text-xs text-gray-500">
                                 <Sparkles className="h-3 w-3 inline mr-1" />
-                                Agent • {selectedModel}
+                                Agent
                             </p>
                         </div>
                     </div>

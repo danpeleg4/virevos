@@ -17,22 +17,14 @@ import {
 import { Label } from "@/app/components/ui/label";
 import {Plus, Search, Mail, Phone, Calendar, ChevronRight, ChevronLeft, FolderOpen, Trash2} from "lucide-react";
 import axios from "axios";
-import { clients } from "@/types/clients";
+import {clients, CreateClientInput} from "@/types/clients";
 import {
     useMutation,
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import {deleteClient, updateNotes} from "@/lib/server_actions";
+import {addAClient, deleteClient, updateNotes} from "@/lib/server_actions";
 import {Textarea} from "@/app/components/ui/textarea";
-
-type CreateClientInput = {
-    name: string;
-    email: string;
-    phone: string;
-    industry: string;
-    notes: string;
-};
 
 const ITEMS_PER_PAGE = 8;
 
@@ -94,8 +86,8 @@ export default function Clients() {
 
     const addClient = useMutation({
         mutationFn: async (newClient: CreateClientInput) => {
-            const res = await axios.post("/api/clients", newClient);
-            return res.data;
+            const res = await addAClient(newClient)
+            return res;
         },
 
         onMutate: async (newClient) => {
