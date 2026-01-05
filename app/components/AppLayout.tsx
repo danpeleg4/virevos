@@ -12,7 +12,6 @@ import {
     FolderKanban,
     Users,
     CheckSquare,
-    Zap,
     ScrollText,
     CreditCard,
     Settings,
@@ -21,7 +20,7 @@ import {
     LogOut,
     Sparkles,
     CalendarDays,
-    Inbox,
+    Inbox, Video,
 } from "lucide-react";
 
 import { AIAssistant } from "./AIAssistant";
@@ -35,8 +34,9 @@ const navItems = [
     { icon: FolderKanban, label: "Projects", path: "/workspace/projects" },
     { icon: CheckSquare, label: "Tasks", path: "/workspace/tasks" },
     { icon: CalendarDays, label: "Calendar", path: "/workspace/calendar" },
+    { icon: Video, label: "Meetings", path: "/workspace/meetings" },
     { icon: Inbox, label: "Communications", path: "/workspace/communications" },
-    { icon: Zap, label: "Automations", path: "/workspace/automations" },
+    //{ icon: Zap, label: "Automations", path: "/workspace/automations" },
     { icon: ScrollText, label: "Activity Logs", path: "/workspace/logs" },
     { icon: CreditCard, label: "Billing", path: "/workspace/billing" },
     { icon: Settings, label: "Settings", path: "/workspace/settings" },

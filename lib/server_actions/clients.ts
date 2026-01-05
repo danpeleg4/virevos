@@ -1,6 +1,6 @@
 "use server"
 
-import {CreateClientInput} from "@/types/clients";
+import {CreateClientInput, UpdateClientInput} from "@/types/clients";
 import {currentUser} from "@clerk/nextjs/server";
 import {NextResponse} from "next/server";
 import {db} from "@/db/db";
@@ -40,6 +40,29 @@ export async function addAClient(body: CreateClientInput) {
         console.error(error);
         return { message: "Server error" }
     }
+}
+
+export async function updateExistingClient(newClient: UpdateClientInput) {
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+
+    const { id, name, email, phone, industry, notes } = newClient;
+
+    // Build update object dynamically
+    const updateData: Partial<UpdateClientInput> = {};
+    if (name !== undefined && name !== null && name !== "") updateData.name = name;
+    if (email !== undefined && email !== null && email !== "") updateData.email = email;
+    if (phone !== undefined && phone !== null && phone !== "") updateData.phone = phone;
+    if (industry !== undefined && industry !== null && industry !== "") updateData.industry = industry;
+    if (notes !== undefined && notes !== null && notes !== "") updateData.notes = notes;
+
+    // Only run update if there's at least one field
+    if (Object.keys(updateData).length === 0) return;
+
+    await db
+        .update(clients)
+        .set(updateData)
+        .where(and(eq(clients.userId, user.id), eq(clients.id, id)));
 }
 
 export async function deleteClient({id}: { id: number; }) {
