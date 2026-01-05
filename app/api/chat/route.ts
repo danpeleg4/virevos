@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import {convertToModelMessages, FlexibleSchema, stepCountIs, streamText, tool, UIMessage} from 'ai';
+import { convertToModelMessages, FlexibleSchema, stepCountIs, streamText, tool, UIMessage } from 'ai';
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { currentUser } from "@clerk/nextjs/server";
@@ -7,7 +7,7 @@ import { users } from "@/db/schema";
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { CreateClientInput } from "@/types/clients";
-import {addAClient, deleteClient} from "@/lib/server_actions/clients";
+import { addAClient } from "@/lib/server_actions/clients";
 
 export async function POST(req: NextRequest) {
     const { messages }: { messages: UIMessage[] } = await req.json();
