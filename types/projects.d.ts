@@ -14,9 +14,10 @@ interface ProjectStats {
 }
 
 interface Project {
+    clientName?: string,
     id: number,
     name,
-    clientName,
+    clientId,
     status,
     dueDate,
     priority,
@@ -31,15 +32,6 @@ interface ProjectNote {
     userId: string | null;
     updatedAt: Date | string | null;
     projectId: number | null;
-}
-
-interface Note {
-    id: number
-    content: string
-    createdAt: Date | null
-    updatedAt: Date | null
-    userId: string | null
-    projectId: number | null
 }
 
 export type AddFileMetadataInput = {

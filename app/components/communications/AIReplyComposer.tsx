@@ -187,7 +187,7 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
             {tonePresets.map((preset) => (
               <SelectItem key={preset.value} value={preset.value}>
                 <div>
-                  <div className="font-medium">{preset.label}</div>
+                  <div className="font-medium text-left">{preset.label}</div>
                   <div className="text-xs text-gray-500">{preset.description}</div>
                 </div>
               </SelectItem>

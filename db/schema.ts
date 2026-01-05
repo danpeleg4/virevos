@@ -13,15 +13,19 @@ export const users = pgTable("users", {
     name: text("name"),
     email: text("email").notNull(),
     image: text("image"),
+    ai_credits: integer("ai_credits").notNull().default(10),
     createdAt: timestamp("created_at").defaultNow(),
 });
 
 // CLIENTS
 export const clients = pgTable("clients", {
-    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-    name: text("name").notNull().unique(),
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey().unique(),
+    name: text("name").notNull(),
     email: text("email"),
     phone: text("phone"),
+    industry: text("industry"),
+    notes: text("notes"),
+    status: text("status").notNull().default("active"),
 
     userId: varchar("user_id")
         .notNull()
@@ -35,8 +39,8 @@ export const clients = pgTable("clients", {
 export const projects = pgTable("projects", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
 
-    clientName: text("client_name")
-        .references(() => clients.name, { onDelete: "cascade" }),
+    clientId: integer("client_id")
+        .references(() => clients.id, { onDelete: "cascade" }),
 
     name: text("title").notNull(),
     description: text("description"),
@@ -67,6 +71,7 @@ export const meetings = pgTable("meetings", {
     hasTranscript: boolean("has_transcript").default(false),
     autoRescheduled: boolean("auto_rescheduled").default(false),
     conflictReason: text("conflict_reason"),
+    origin: text("origin"),
     googleEventId: text("google_event_id"),
 
     userId: varchar("user_id")
@@ -198,7 +203,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
         references: [users.user_id],
     }),
     client: one(clients, {
-        fields: [projects.clientName],
+        fields: [projects.clientId],
         references: [clients.id],
     }),
     tasks: many(tasks),

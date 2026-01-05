@@ -3,11 +3,11 @@
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs";
-import {AlertCircle, CheckCircle, Clock, Search, TrendingUp} from "lucide-react";
-import {Badge} from "@/app/components/ui/badge";
-import {task_percentage} from "@/lib/task_percentage";
-import {Progress} from "@/app/components/ui/progress";
-import {useState} from "react";
+import { AlertCircle, CheckCircle, Clock, Search, TrendingUp } from "lucide-react";
+import { Badge } from "@/app/components/ui/badge";
+import { task_percentage } from "@/lib/task_percentage";
+import { Progress } from "@/app/components/ui/progress";
+import { useState } from "react";
 import { Project } from '@/types/projects'
 
 interface ProjectListProps {

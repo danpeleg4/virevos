@@ -111,26 +111,6 @@ export default function Tasks() {
                 />
             </div>
 
-            {/* Stats */}
-            <div className="grid gap-6 sm:grid-cols-4">
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">Total Tasks</p>
-                    <p className="text-3xl text-gray-900 mt-2">{taskCounts.all}</p>
-                </Card>
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">To Do</p>
-                    <p className="text-3xl text-gray-900 mt-2">{taskCounts.todo}</p>
-                </Card>
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">In Progress</p>
-                    <p className="text-3xl text-gray-900 mt-2">{taskCounts.inProgress}</p>
-                </Card>
-                <Card className="p-6">
-                    <p className="text-sm text-gray-600">Completed</p>
-                    <p className="text-3xl text-gray-900 mt-2">{taskCounts.completed}</p>
-                </Card>
-            </div>
-
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>

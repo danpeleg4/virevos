@@ -1,6 +1,6 @@
 {
-  "id": "4ff26535-5fbb-4117-9209-0c319eca61e8",
-  "prevId": "073170e5-b3d2-4028-9057-9795a079cbc2",
+  "id": "e8d124d2-6116-4bd4-ac0b-f626f97b4572",
+  "prevId": "400626b6-c475-4b6d-b532-0e24f316a63a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -43,6 +43,25 @@
           "primaryKey": false,
           "notNull": false
         },
+        "industry": {
+          "name": "industry",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
         "user_id": {
           "name": "user_id",
           "type": "varchar",
@@ -82,14 +101,89 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "clients_name_unique": {
-          "name": "clients_name_unique",
+        "clients_id_unique": {
+          "name": "clients_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "name"
+            "id"
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.google_tokens": {
+      "name": "google_tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "google_tokens_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_in": {
+          "name": "expires_in",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connected": {
+          "name": "connected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "google_tokens_user_id_users_user_id_fk": {
+          "name": "google_tokens_user_id_users_user_id_fk",
+          "tableFrom": "google_tokens",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -145,6 +239,99 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.meeting_types": {
+      "name": "meeting_types",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "meeting_types_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration": {
+          "name": "duration",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_bookings": {
+          "name": "max_bookings",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "meeting_types_user_id_users_user_id_fk": {
+          "name": "meeting_types_user_id_users_user_id_fk",
+          "tableFrom": "meeting_types",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -238,6 +425,18 @@
         },
         "conflict_reason": {
           "name": "conflict_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "google_event_id": {
+          "name": "google_event_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -481,9 +680,9 @@
             "cycle": false
           }
         },
-        "client_name": {
-          "name": "client_name",
-          "type": "text",
+        "client_id": {
+          "name": "client_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -536,15 +735,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "projects_client_name_clients_name_fk": {
-          "name": "projects_client_name_clients_name_fk",
+        "projects_client_id_clients_id_fk": {
+          "name": "projects_client_id_clients_id_fk",
           "tableFrom": "projects",
           "tableTo": "clients",
           "columnsFrom": [
-            "client_name"
+            "client_id"
           ],
           "columnsTo": [
-            "name"
+            "id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -736,6 +935,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "ai_credits": {
+          "name": "ai_credits",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
         },
         "created_at": {
           "name": "created_at",

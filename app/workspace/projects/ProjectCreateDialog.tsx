@@ -21,8 +21,8 @@ import {
 import { Plus } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
-import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {createProject} from "@/lib/server_actions";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createProject } from "@/lib/server_actions";
 import { Project } from '@/types/projects'
 
 export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
@@ -38,7 +38,7 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
         mutationFn: async (project: Project) => {
             await createProject(project)
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["projects"] })
         }
     })
@@ -47,7 +47,7 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
         createNewProject.mutate({
             id: 1,
             name: projectName,
-            clientName: client,
+            clientId: Number(client),
             priority,
             dueDate,
             status: "in-progress",
@@ -100,7 +100,7 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {(clients ?? []).map((c) => (
-                                        <SelectItem key={c.id} value={c.name}>
+                                        <SelectItem key={c.id} value={(c.id).toString()}>
                                             {c.name}
                                         </SelectItem>
                                     ))}

@@ -29,7 +29,7 @@ import { task_percentage } from "@/lib/task_percentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addFileMetadata, addNotes, deleteProject, deleteTask, updateTaskStatus } from '@/lib/server_actions'
-import { Note, Project, ProjectFile } from "@/types/projects";
+import { Project, ProjectFile, ProjectNote } from "@/types/projects";
 
 export function ProjectDetailView({ onBackAction, project }: { onBackAction: () => void; project: Project }) {
     const [newNote, setNewNote] = useState("");
@@ -41,7 +41,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
         try {
             const result = await addFileMetadata({ projectId: project.id }, file);
             console.log("Uploaded:", result);
-            queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+            await queryClient.invalidateQueries({queryKey: ["files", project.id]});
         } catch (err) {
             console.error("Upload failed:", err);
         }
@@ -135,7 +135,6 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
                             : task
                     )
             );
-
             return { previousTasks };
         },
 
@@ -444,7 +443,7 @@ export function ProjectDetailView({ onBackAction, project }: { onBackAction: () 
               </div>
 
               <div className="space-y-3">
-                {notesQuery.data?.map((note: Note) => (
+                {notesQuery.data?.map((note: ProjectNote) => (
                   <div
                     key={note.id}
                     className="p-3 bg-gray-50 rounded-lg border border-gray-200"

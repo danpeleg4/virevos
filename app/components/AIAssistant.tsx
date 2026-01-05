@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useChat } from "@ai-sdk/react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
+import ReactMarkdown from 'react-markdown';
 import {
     X,
     Send,
@@ -20,7 +22,6 @@ import {
     Loader2,
     ChevronRight
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface AIAssistantProps {
     isOpen: boolean;
@@ -35,17 +36,20 @@ interface ThinkingStep {
     status: "pending" | "active" | "completed";
     details?: string[];
     files?: { name: string; changes: string }[];
+    tools?: {
+        name: string;
+        input?: any;
+        output?: any;
+    }[];
 }
 
-interface Message {
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    thinking?: ThinkingStep[];
-    suggestions?: string[];
-    isThinking?: boolean;
-    streamedContent?: string;
-}
+const initialMessages = [
+    {
+        id: "1",
+        role: "assistant",
+        content: "Hi! I'm your Virevos AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
+    },
+];
 
 const nextBestActions = [
     {
@@ -69,20 +73,9 @@ const nextBestActions = [
 ];
 
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: "1",
-            role: "assistant",
-            content: "Hi! I'm your Virevos AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
-            suggestions: [
-                "Create a new automation",
-                "Show overdue tasks",
-                "Suggest next actions",
-            ],
-        },
-    ]);
-    const [input, setInput] = useState("");
-    const [selectedModel, setSelectedModel] = useState("gpt-4");
+    const [selectedModel, setSelectedModel] = useState("");
+    const {messages, sendMessage} = useChat();
+    const [input, setInput] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -91,259 +84,110 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         }
     }, [messages]);
 
-    const simulateThinking = (userInput: string): ThinkingStep[] => {
-        const steps: ThinkingStep[] = [];
-
-        if (userInput.toLowerCase().includes("automation") || userInput.toLowerCase().includes("workflow")) {
-            steps.push(
+    const simulateThinking = (
+        userText: string,
+        usedTools: boolean
+    ): ThinkingStep[] => {
+        if (!usedTools) {
+            // TEXT-ONLY RESPONSE
+            return [
                 {
-                    id: "1",
+                    id: "think",
                     type: "planning",
-                    title: "Analyzing your automation requirements",
+                    title: "Thinking",
                     status: "completed",
                     details: [
-                        "Reviewing current workflow patterns",
-                        "Identifying automation opportunities",
-                        "Checking integration compatibility"
-                    ]
-                },
-                {
-                    id: "2",
-                    type: "executing",
-                    title: "Building automation template",
-                    status: "completed",
-                    files: [
-                        { name: "client_onboarding.yml", changes: "+24 -0" },
-                        { name: "automation_config.json", changes: "+12 -3" }
+                        "Understanding intent",
+                        "Reasoning through response",
                     ],
-                    details: [
-                        "Creating trigger conditions",
-                        "Setting up action sequences",
-                        "Configuring notifications"
-                    ]
                 },
                 {
-                    id: "3",
-                    type: "analyzing",
-                    title: "Optimizing automation flow",
-                    status: "completed",
-                    details: [
-                        "Testing trigger reliability",
-                        "Validating action sequences",
-                        "Estimating time savings: ~2.5 hrs/week"
-                    ]
-                },
-                {
-                    id: "4",
-                    type: "completed",
-                    title: "Automation ready to deploy",
-                    status: "completed"
-                }
-            );
-        } else if (userInput.toLowerCase().includes("task") || userInput.toLowerCase().includes("overdue")) {
-            steps.push(
-                {
-                    id: "1",
-                    type: "planning",
-                    title: "Searching task database",
-                    status: "completed",
-                    details: [
-                        "Querying active tasks",
-                        "Filtering by status and deadlines",
-                        "Sorting by priority"
-                    ]
-                },
-                {
-                    id: "2",
-                    type: "analyzing",
-                    title: "Analyzing task dependencies",
-                    status: "completed",
-                    details: [
-                        "Found 3 overdue tasks",
-                        "Identified 2 blocking dependencies",
-                        "Calculated priority scores"
-                    ]
-                },
-                {
-                    id: "3",
-                    type: "completed",
-                    title: "Task analysis complete",
-                    status: "completed"
-                }
-            );
-        } else {
-            steps.push(
-                {
-                    id: "1",
-                    type: "planning",
-                    title: "Understanding your request",
-                    status: "completed",
-                    details: [
-                        "Processing natural language input",
-                        "Identifying intent and context",
-                        "Mapping to available actions"
-                    ]
-                },
-                {
-                    id: "2",
-                    type: "analyzing",
-                    title: "Generating personalized response",
-                    status: "completed",
-                    details: [
-                        "Accessing your workflow history",
-                        "Analyzing current project state",
-                        "Crafting contextual suggestions"
-                    ]
-                },
-                {
-                    id: "3",
+                    id: "respond",
                     type: "completed",
                     title: "Response ready",
-                    status: "completed"
-                }
-            );
+                    status: "completed",
+                },
+            ];
         }
 
-        return steps;
+        // TOOL-AUGMENTED RESPONSE
+        return [
+            {
+                id: "plan",
+                type: "planning",
+                title: "Planning tool usage",
+                status: "completed",
+                details: [
+                    "Identifying required tools",
+                    "Preparing tool inputs",
+                ],
+            },
+            {
+                id: "execute",
+                type: "executing",
+                title: "Executing tools",
+                status: "completed",
+            },
+            {
+                id: "analyze",
+                type: "analyzing",
+                title: "Analyzing tool results",
+                status: "completed",
+            },
+            {
+                id: "complete",
+                type: "completed",
+                title: "Final answer ready",
+                status: "completed",
+            },
+        ];
     };
 
-    const handleSend = () => {
+    const getUserText = (message: any): string => {
+        if (!message?.parts) return "";
+
+        return message.parts
+            .filter((part: any) => part.type === "text")
+            .map((part: any) => part.text)
+            .join("");
+    };
+
+    const hasToolUsage = (message: any): boolean => {
+        return message.parts?.some(
+            (part: any) =>
+                part.type === "tool-call" || part.type === "tool-result"
+        );
+    };
+
+    const getToolParts = (message: any) => {
+        return message.parts?.filter(
+            (part: any) =>
+                part.type === "tool-call" || part.type === "tool-result"
+        ) ?? [];
+    };
+
+
+    const handleSend = async () => {
         if (!input.trim()) return;
-
-        const userMessage: Message = {
-            id: Date.now().toString(),
-            role: "user",
-            content: input,
-        };
-
-        setMessages((prev) => [...prev, userMessage]);
-        const currentInput = input;
+        await sendMessage({text: input})
         setInput("");
-
-        // Add thinking message
-        const thinkingMessageId = (Date.now() + 1).toString();
-        const thinkingMessage: Message = {
-            id: thinkingMessageId,
-            role: "assistant",
-            content: "",
-            isThinking: true,
-            thinking: simulateThinking(currentInput),
-        };
-
-        setMessages((prev) => [...prev, thinkingMessage]);
-
-        // Simulate thinking steps
-        const steps = simulateThinking(currentInput);
-        steps.forEach((step, index) => {
-            setTimeout(() => {
-                setMessages((prev) =>
-                    prev.map((msg) =>
-                        msg.id === thinkingMessageId
-                            ? {
-                                ...msg,
-                                thinking: msg.thinking?.map((s, i) =>
-                                    i === index ? { ...s, status: "active" as const } : s
-                                ),
-                            }
-                            : msg
-                    )
-                );
-
-                // Complete the step after a delay
-                setTimeout(() => {
-                    setMessages((prev) =>
-                        prev.map((msg) =>
-                            msg.id === thinkingMessageId
-                                ? {
-                                    ...msg,
-                                    thinking: msg.thinking?.map((s, i) =>
-                                        i === index ? { ...s, status: "completed" as const } : s
-                                    ),
-                                }
-                                : msg
-                        )
-                    );
-                }, 800);
-            }, index * 1200);
-        });
-
-        // Generate response after thinking
-        setTimeout(() => {
-            let response = "";
-            let suggestions: string[] = [];
-
-            if (currentInput.toLowerCase().includes("automation")) {
-                response = `I've designed a comprehensive automation workflow for you:\n\n**Client Onboarding Automation**\n\n• **Trigger**: New client added to system\n• **Actions**:\n  - Send personalized welcome email\n  - Create initial project structure\n  - Schedule kickoff meeting\n  - Assign onboarding tasks to team\n\n**Expected Benefits**:\n- Save ~2.5 hours per client\n- Ensure consistent onboarding experience\n- Reduce manual task creation by 85%\n\nWould you like me to activate this automation?`;
-                suggestions = ["Activate automation", "Customize workflow", "Test with sample data"];
-            } else if (currentInput.toLowerCase().includes("overdue") || currentInput.toLowerCase().includes("task")) {
-                response = `Here's your task overview:\n\n**Overdue Tasks (3)**:\n\n1. **TechCorp website redesign review**\n   - Due: 2 days ago\n   - Priority: High\n   - Blocking: Final deployment\n\n2. **DesignCo proposal**\n   - Due: Yesterday  \n   - Priority: Medium\n   - Client follow-up needed\n\n3. **Monthly analytics report**\n   - Due: Today\n   - Priority: Medium\n   - Draft 80% complete\n\n**Recommendation**: Focus on TechCorp review first as it's blocking deployment.\n\nWould you like me to reschedule these tasks or send notifications?`;
-                suggestions = ["Reschedule all", "Focus on high priority", "Send client updates"];
-            } else {
-                response = `I can assist you with:\n\n**Task Management**\n• View and organize tasks\n• Set priorities and deadlines\n• Track progress across projects\n\n**Automation**\n• Create custom workflows\n• Set up triggers and actions\n• Monitor automation performance\n\n**Project Insights**\n• Generate reports\n• Analyze team productivity\n• Forecast project timelines\n\nWhat would you like to explore?`;
-                suggestions = ["Create automation", "View task analytics", "Generate project report"];
-            }
-
-            // Stream the response
-            setMessages((prev) =>
-                prev.map((msg) =>
-                    msg.id === thinkingMessageId
-                        ? {
-                            ...msg,
-                            isThinking: false,
-                            streamedContent: "",
-                        }
-                        : msg
-                )
-            );
-
-            // Simulate streaming
-            let currentIndex = 0;
-            const streamInterval = setInterval(() => {
-                if (currentIndex < response.length) {
-                    const chunk = response.slice(currentIndex, currentIndex + 3);
-                    currentIndex += 3;
-
-                    setMessages((prev) =>
-                        prev.map((msg) =>
-                            msg.id === thinkingMessageId
-                                ? {
-                                    ...msg,
-                                    streamedContent: (msg.streamedContent || "") + chunk,
-                                }
-                                : msg
-                        )
-                    );
-                } else {
-                    clearInterval(streamInterval);
-                    setMessages((prev) =>
-                        prev.map((msg) =>
-                            msg.id === thinkingMessageId
-                                ? {
-                                    ...msg,
-                                    content: response,
-                                    streamedContent: undefined,
-                                    suggestions,
-                                }
-                                : msg
-                        )
-                    );
-                }
-            }, 20);
-        }, steps.length * 1200 + 500);
     };
 
     const handleSuggestionClick = (suggestion: string) => {
-        setInput(suggestion);
-        setTimeout(() => handleSend(), 100);
+        //append({
+        //    role: "user",
+        //    content: suggestion,
+        //});
     };
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ x: 400 }}
+                    key="ai-assistant-panel"
+                    initial={{ x: "100%" }}
                     animate={{ x: 0 }}
-                    exit={{ x: 400 }}
+                    exit={{ x: "100%" }}
                     transition={{ type: "spring", damping: 30, stiffness: 300 }}
                     className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
                 >
@@ -359,16 +203,6 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Select value={selectedModel} onValueChange={setSelectedModel}>
-                                <SelectTrigger className="w-[120px] h-8 bg-white border-gray-300 text-gray-900 text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="gpt-4">GPT-4</SelectItem>
-                                    <SelectItem value="gpt-3.5">GPT-3.5</SelectItem>
-                                    <SelectItem value="claude">Claude</SelectItem>
-                                </SelectContent>
-                            </Select>
                             <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 hover:text-gray-900">
                                 <X className="h-5 w-5" />
                             </Button>
@@ -432,76 +266,86 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
                     {/* Messages */}
                     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
-                        {messages.map((message, msgIndex) => (
-                            <motion.div
-                                key={message.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: msgIndex * 0.1 }}
-                                className={`flex ${
-                                    message.role === "user" ? "justify-end" : "justify-start"
-                                }`}
-                            >
-                                <div className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}>
-                                    {message.role === "user" ? (
-                                        <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
-                                            <p className="text-sm">{message.content}</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {/* Thinking Steps */}
-                                            {message.thinking && message.thinking.length > 0 && (
-                                                <div className="space-y-2">
-                                                    {message.thinking.map((step, stepIndex) => (
-                                                        <ThinkingStepComponent
-                                                            key={step.id}
-                                                            step={step}
-                                                            index={stepIndex}
-                                                            isLast={stepIndex === message.thinking!.length - 1}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
+                        {messages.map((message, msgIndex) => {
+                            const usedTools = hasToolUsage(message);
+                            const toolParts = getToolParts(message);
 
-                                            {/* Streamed or Final Content */}
-                                            {(message.streamedContent || message.content) && (
-                                                <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                                                    <div className="prose prose-sm max-w-none">
-                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                                                            {message.streamedContent || message.content}
-                                                            {message.streamedContent && (
-                                                                <motion.span
-                                                                    animate={{ opacity: [1, 0] }}
-                                                                    transition={{ duration: 0.8, repeat: Infinity }}
-                                                                    className="inline-block w-1 h-4 bg-blue-500 ml-1"
-                                                                />
-                                                            )}
-                                                        </p>
+                            const thinkingSteps =
+                                message.role === "assistant" && msgIndex > 0
+                                    ? simulateThinking(
+                                        getUserText(messages[msgIndex - 1]),
+                                        usedTools
+                                    ).map(step =>
+                                        step.type === "executing" && usedTools
+                                            ? {
+                                                ...step,
+                                                details: toolParts.map((p: any) =>
+                                                    p.type === "tool-call"
+                                                        ? `Calling ${p.toolName}`
+                                                        : `Result from ${p.toolName}`
+                                                ),
+                                                tools: toolParts.map((p: any) => ({
+                                                    name: p.toolName,
+                                                    input: p.args,
+                                                    output: p.result,
+                                                }))
+                                            }
+                                            : step
+                                    )
+                                    : [];
+                            return (
+                                <motion.div
+                                    key={message.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: msgIndex * 0.1 }}
+                                    className={`flex ${
+                                        message.role === "user" ? "justify-end" : "justify-start"
+                                    }`}
+                                >
+                                    <div className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}>
+                                        {message.role === "user" ? (
+                                            <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
+                                                {message.parts.map((part, i) => {
+                                                    if (part.type === "text") {
+                                                        return <p key={`${message.id}-${i}`}>{part.text}</p>;
+                                                    }
+                                                    return null;
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {/* Thinking Steps */}
+                                                {thinkingSteps.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        {thinkingSteps.map((step, stepIndex) => (
+
+                                                            <ThinkingStepComponent
+                                                                key={step.id}
+                                                                step={step}
+                                                                index={stepIndex}
+                                                                isLast={stepIndex === thinkingSteps.length - 1}
+                                                            />
+                                                        ))}
                                                     </div>
+                                                )}
 
-                                                    {message.suggestions && message.suggestions.length > 0 && !message.streamedContent && (
-                                                        <div className="mt-4 space-y-2">
-                                                            {message.suggestions.map((suggestion, index) => (
-                                                                <motion.button
-                                                                    key={index}
-                                                                    initial={{ opacity: 0, x: -10 }}
-                                                                    animate={{ opacity: 1, x: 0 }}
-                                                                    transition={{ delay: index * 0.1 }}
-                                                                    onClick={() => handleSuggestionClick(suggestion)}
-                                                                    className="block w-full text-left text-xs px-3 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
-                                                                >
-                                                                    {suggestion}
-                                                                </motion.button>
-                                                            ))}
+                                                {/* Content */}
+                                                {message.parts && (
+                                                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                                                        <div className="prose prose-sm max-w-none text-sm text-gray-800">
+                                                            {message.parts?.map((part, i) =>
+                                                                part.type === "text" ? <ReactMarkdown key={i}>{part.text}</ReactMarkdown> : null
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
                     </div>
 
                     {/* Input */}
@@ -526,7 +370,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                         <div className="flex items-center justify-between mt-2">
                             <p className="text-xs text-gray-500">
                                 <Sparkles className="h-3 w-3 inline mr-1" />
-                                Agent • {selectedModel}
+                                Agent
                             </p>
                         </div>
                     </div>
@@ -597,6 +441,7 @@ function ThinkingStepComponent({
             <AnimatePresence>
                 {isExpanded && (step.details || step.files) && (
                     <motion.div
+                        key="step-details"
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -629,6 +474,29 @@ function ThinkingStepComponent({
                                                 </Button>
                                             </div>
                                         </motion.div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {step.tools && step.tools.length > 0 && (
+                                <div className="space-y-1.5 mb-2">
+                                    {step.tools.map((tool, i) => (
+                                        <div
+                                            key={i}
+                                            className="p-2 bg-gray-100 rounded text-xs text-gray-700"
+                                        >
+                                            <div className="font-medium">{tool.name}</div>
+                                            {tool.input && (
+                                                <pre className="mt-1 text-[11px] text-gray-600">
+                        Input: {JSON.stringify(tool.input, null, 2)}
+                    </pre>
+                                            )}
+                                            {tool.output && (
+                                                <pre className="mt-1 text-[11px] text-green-700">
+                        Output: {JSON.stringify(tool.output, null, 2)}
+                    </pre>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
                             )}
