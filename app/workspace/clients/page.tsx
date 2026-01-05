@@ -15,16 +15,16 @@ import {
     DialogTrigger,
 } from "@/app/components/ui/dialog";
 import { Label } from "@/app/components/ui/label";
-import {Plus, Search, Mail, Phone, Calendar, ChevronRight, ChevronLeft, FolderOpen, Trash2} from "lucide-react";
+import { Plus, Search, Mail, Phone, Calendar, ChevronRight, ChevronLeft, FolderOpen, Trash2 } from "lucide-react";
 import axios from "axios";
-import {clients, CreateClientInput} from "@/types/clients";
+import { clients, CreateClientInput } from "@/types/clients";
 import {
     useMutation,
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import {addAClient, deleteClient, updateNotes} from "@/lib/server_actions";
-import {Textarea} from "@/app/components/ui/textarea";
+import { addAClient, deleteClient, updateNotes } from "@/lib/server_actions/clients";
+import { Textarea } from "@/app/components/ui/textarea";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -51,8 +51,8 @@ export default function Clients() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            await deleteClient(id)
+        mutationFn: async ({id}: {id: number}) => {
+            await deleteClient({id})
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["clients"] })
@@ -468,7 +468,8 @@ export default function Clients() {
                                 </div>
                                 <Button variant="outline" onClick={() => {
                                     setDetailsOpen(false)
-                                    deleteMutation.mutate(selectedClient?.id)
+                                    const a = {id: selectedClient?.id};
+                                    deleteMutation.mutate(a)
                                 }}>
                                     <Trash2 className="text-red-500" />
                                 </Button>

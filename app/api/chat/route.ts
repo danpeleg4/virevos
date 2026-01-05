@@ -6,8 +6,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { users } from "@/db/schema";
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
-import {CreateClientInput} from "@/types/clients";
-import {addAClient} from "@/lib/server_actions";
+import { CreateClientInput } from "@/types/clients";
+import {addAClient, deleteClient} from "@/lib/server_actions/clients";
 
 export async function POST(req: NextRequest) {
     const { messages }: { messages: UIMessage[] } = await req.json();
@@ -33,34 +33,6 @@ export async function POST(req: NextRequest) {
         stopWhen: stepCountIs(5),
         messages: await convertToModelMessages(messages),
         tools: {
-            weather: tool({
-                description: 'Get the weather in a location (fahrenheit)',
-                inputSchema: z.object({
-                    location: z.string().describe('The location to get the weather for'),
-                }),
-                execute: async ({ location }) => {
-                    const temperature = Math.round(Math.random() * (90 - 32) + 32);
-                    return {
-                        location,
-                        temperature,
-                    };
-                },
-            }),
-            convertFahrenheitToCelsius: tool({
-                description: 'Convert a temperature in fahrenheit to celsius',
-                inputSchema: z.object({
-                    temperature: z
-                        .number()
-                        .describe('The temperature in fahrenheit to convert'),
-                }),
-                execute: async ({ temperature }) => {
-                    const celsius = Math.round((temperature - 32) * (5 / 9));
-                    return {
-                        celsius,
-                    };
-                },
-            }),
-
             addClient: tool({
                 description: 'Create a new client',
                 inputSchema: z.object({
@@ -80,7 +52,18 @@ export async function POST(req: NextRequest) {
                     };
                 },
             }),
-
+            deleteClient: tool({
+                description: 'Deletes a client',
+                inputSchema: z.object({
+                    id: z.number(),
+                }),
+                execute: async ({id}: {id: number}) => {
+                    await deleteClient({id})
+                    return {
+                        message: "Client deleted successfully",
+                    };
+                },
+            }),
         },
     });
 
