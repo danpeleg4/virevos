@@ -142,7 +142,7 @@ export default function Clients() {
 
     const updateNotesMutation = useMutation({
         mutationFn: async ({ id, notes }: { id: number; notes: string }) => {
-            await updateNotes(id, notes);
+            await updateNotes({id, notes});
         },
 
         onMutate: async ({ id, notes }) => {

@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import {SignInButton, SignOutButton, SignUp, SignUpButton, useUser} from "@clerk/nextjs";
+import {SignInButton, SignOutButton, SignUpButton, useUser} from "@clerk/nextjs";
 
 const menuItems = [
   {

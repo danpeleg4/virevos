@@ -48,7 +48,7 @@ export async function deleteClient({id}: { id: number; }) {
     await db.delete(clients).where(and(eq(clients.id, id), eq(clients.userId, user.id)));
 }
 
-export async function updateNotes(id: number, notes: string) {
+export async function updateNotes({id, notes}: {id: number, notes: string}) {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
     await db.update(clients).set({notes: notes}).where(and(eq(clients.id, id), eq(clients.userId, user.id)));
