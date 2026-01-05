@@ -8,16 +8,22 @@ import { AddFileMetadataInput, Project, ProjectNote } from "@/types/projects";
 import { supabase } from "./supabase"
 
 export async function deleteProject(projectId: number) {
-    await db.delete(tasks).where(eq(tasks.projectId, projectId));
-    await db.delete(notes).where(eq(notes.projectId, projectId));
-    await db.delete(projects).where(eq(projects.id, projectId));
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+    await db.delete(tasks).where(and(eq(tasks.projectId, projectId), eq(tasks.userId, user.id)));
+    await db.delete(notes).where(and(eq(notes.projectId, projectId), eq(notes.userId, user.id)));
+    await db.delete(projects).where(and(eq(projects.id, projectId), eq(projects.userId, user.id)));
 }
 
 export async function deleteTask(taskId: number) {
-    await db.delete(tasks).where(eq(tasks.id, taskId));
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+    await db.delete(tasks).where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 }
 
 export async function updateTaskStatus(status: string, taskId: number) {
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
     if (!["todo", "in-progress", "completed"].includes(status)){
         throw new Error("Invalid status");
     }
@@ -34,17 +40,21 @@ export async function updateTaskStatus(status: string, taskId: number) {
     await db
         .update(tasks)
         .set({ status, completed: status === "completed" })
-        .where(eq(tasks.id, taskId));
+        .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 
     return { success: true, id: taskId, status }
 }
 
 export async function changePriorityStatus(taskId: number, priority: string){
-    await db.update(tasks).set({priority: priority}).where(eq(tasks.id, taskId));
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+    await db.update(tasks).set({priority: priority}).where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 }
 
 export async function updateTaskDueDate(taskId: number, dueDate: string){
-    await db.update(tasks).set({dueDate: dueDate}).where(eq(tasks.id, taskId));
+    const user = await currentUser();
+    if (!user?.id) throw new Error("No user");
+    await db.update(tasks).set({dueDate: dueDate}).where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 }
 
 export async function addProjectTasksAction(task: { projectId?: number | null } & Task): Promise<Task> {
@@ -69,15 +79,10 @@ export async function addProjectTasksAction(task: { projectId?: number | null } 
 export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
-
     if (!file) throw new Error("No file provided");
-
     const filePath = `projects/${user.id}/${Date.now()}-${file.name}`;
     const fls = await db.select().from(projectFiles).where(eq(projectFiles.userId, user.id));
-    if (fls.length >= 3) {
-        return
-    }
-
+    if (fls.length >= 3) return
     const { error: uploadError } = await supabase.storage
         .from("ProjectFiles")
         .upload(filePath, file, { upsert: false });
