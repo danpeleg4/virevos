@@ -52,18 +52,6 @@ export async function POST(req: NextRequest) {
                     };
                 },
             }),
-            deleteClient: tool({
-                description: 'Deletes a client',
-                inputSchema: z.object({
-                    id: z.number(),
-                }),
-                execute: async ({id}: {id: number}) => {
-                    await deleteClient({id})
-                    return {
-                        message: "Client deleted successfully",
-                    };
-                },
-            }),
         },
     });
 
