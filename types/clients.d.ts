@@ -1,14 +1,14 @@
 export type clients = {
     id: number,
     name: string,
-    email: string | null,
+    email: string,
     status: string,
     activeProjects: number,
     completedProjects: number,
     totalProjects: number,
-    avatar: string | null,
+    avatar?: string | null,
     industry: string | null,
-    phone: string | null,
+    phone: string,
     notes?: string | null,
     createdAt?: Date | null,
     updatedAt?: Date | null
@@ -21,3 +21,12 @@ type CreateClientInput = {
     industry: string;
     notes: string;
 };
+
+type UpdateClientInput = {
+    id: number,
+    name?: string;
+    email?: string;
+    phone?: string;
+    industry?: string;
+    notes?: string;
+}

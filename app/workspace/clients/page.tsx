@@ -17,13 +17,13 @@ import {
 import { Label } from "@/app/components/ui/label";
 import { Plus, Search, Mail, Phone, Calendar, ChevronRight, ChevronLeft, FolderOpen, Trash2 } from "lucide-react";
 import axios from "axios";
-import { clients, CreateClientInput } from "@/types/clients";
+import {clients, CreateClientInput, UpdateClientInput} from "@/types/clients";
 import {
     useMutation,
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { addAClient, deleteClient, updateNotes } from "@/lib/server_actions/clients";
+import {addAClient, deleteClient, updateExistingClient, updateNotes} from "@/lib/server_actions/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 
 const ITEMS_PER_PAGE = 8;
@@ -41,6 +41,7 @@ export default function Clients() {
     const [currentPage, setCurrentPage] = useState(1);
     const [editingNotes, setEditingNotes] = useState(false);
     const [draftNotes, setDraftNotes] = useState("");
+    const [isEditing, setIsEditing] = useState(false);
 
     const getClients = useQuery({
         queryKey: ["clients"],
@@ -140,9 +141,49 @@ export default function Clients() {
         },
     });
 
+    const updateClient = useMutation({
+        mutationFn: async (newClient: UpdateClientInput) => {
+            const res = updateExistingClient(newClient);
+            return res;
+        },
+        onMutate: async (newClient: UpdateClientInput) => {
+            await queryClient.cancelQueries({ queryKey: ["clients"] });
+
+            const previousClients = queryClient.getQueryData<clients[]>(["clients"]) ?? [];
+
+            // Optimistically update the existing client
+            queryClient.setQueryData<clients[]>(["clients"], previousClients.map(c =>
+                c.id === newClient.id
+                    ? { ...c, ...newClient } // merge the updated fields
+                    : c
+            ));
+
+            // Also update the selected client immediately
+            setSelectedClient(prev =>
+                prev && prev.id === newClient.id ? { ...prev, ...newClient } : prev
+            );
+
+            return { previousClients };
+        },
+
+        onError: (_err, _newClient, context) => {
+            if (context?.previousClients) {
+                queryClient.setQueryData(
+                    ["clients", _newClient.id],
+                    context.previousClients
+                );
+            }
+            alert("Failed to update client");
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+        },
+    })
+
     const updateNotesMutation = useMutation({
         mutationFn: async ({ id, notes }: { id: number; notes: string }) => {
-            await updateNotes(id, notes);
+            await updateNotes({id, notes});
         },
 
         onMutate: async ({ id, notes }) => {
@@ -174,7 +215,6 @@ export default function Clients() {
             queryClient.invalidateQueries({ queryKey: ["clients"] });
         },
     });
-
 
     return (
         <div className="p-6 space-y-6">
@@ -456,7 +496,14 @@ export default function Clients() {
 
                                     <div>
                                         <DialogTitle className="text-2xl">
-                                            {selectedClient.name}
+                                            {
+                                                isEditing ? (
+                                                    <Input placeholder={selectedClient.name}
+                                                           onChange={(e) => setName(e.target.value)}>
+                                                    </Input>
+                                                ) :
+                                                selectedClient.name
+                                            }
                                         </DialogTitle>
                                         <DialogDescription className="mt-1">
                                             Client since{" "}
@@ -498,11 +545,28 @@ export default function Clients() {
                                     <div className="space-y-3">
                                         <div className="flex items-center text-gray-700">
                                             <Mail className="h-4 w-4 mr-3 flex-shrink-0" />
-                                            <span>{selectedClient.email}</span>
+                                            <span>                                            {
+                                                isEditing ? (
+                                                        <Input
+                                                            placeholder={selectedClient.email}
+                                                            onChange={(e) => setEmail(e.target.value)}>
+                                                        </Input>
+                                                    )
+                                                    :
+                                                    selectedClient.email
+                                            }</span>
                                         </div>
                                         <div className="flex items-center text-gray-700">
                                             <Phone className="h-4 w-4 mr-3 flex-shrink-0" />
-                                            <span>{selectedClient.phone}</span>
+                                            <span>{
+                                                isEditing ? (
+                                                    <Input
+                                                        placeholder={selectedClient.phone}
+                                                        onChange={(e) => setPhone(e.target.value)}>
+                                                    </Input>
+                                                    ) :
+                                                selectedClient.phone
+                                            }</span>
                                         </div>
                                     </div>
                                 </div>
@@ -569,7 +633,11 @@ export default function Clients() {
                                     <Button variant="outline" onClick={() => setDetailsOpen(false)}>
                                         Close
                                     </Button>
-                                    <Button>Edit Client</Button>
+                                    <Button onClick={() => {
+                                        setIsEditing(!isEditing)
+                                        const id = selectedClient.id
+                                        updateClient.mutate({ id, name, email, phone, industry, notes });
+                                    }}>{isEditing ? "Save Client" : "Edit Client"}</Button>
                                 </div>
                             </div>
                         </>
