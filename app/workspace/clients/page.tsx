@@ -595,35 +595,14 @@ export default function Clients() {
                                     <div>
                                         <h3 className="mb-3 text-gray-900">Notes</h3>
 
-                                        {editingNotes ? (
-                                            <Textarea
-                                                autoFocus
-                                                value={draftNotes}
-                                                onChange={(e) => setDraftNotes(e.target.value)}
-                                                onBlur={() => {
-                                                    setEditingNotes(false);
-
-                                                    if (draftNotes !== selectedClient.notes) {
-                                                        updateNotesMutation.mutate({
-                                                            id: selectedClient.id,
-                                                            notes: draftNotes,
-                                                        });
-                                                    }
-                                                }}
-                                                className="min-h-[120px]"
-                                            />
-                                        ) : (
-                                            <div
-                                                onClick={() => setEditingNotes(true)}
-                                                className="min-h-[120px] cursor-text rounded-md border border-gray-200 p-3 text-sm text-gray-700 hover:bg-gray-50 whitespace-pre-wrap"
-                                            >
-                                                {selectedClient.notes || (
-                                                    <span className="text-gray-400">
-                                                        Click to add notes…
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
+                                        {
+                                            isEditing ? (
+                                                    <Input placeholder={selectedClient.notes}
+                                                           onChange={(e) => setNotes(e.target.value)}>
+                                                    </Input>
+                                                ) :
+                                                selectedClient.notes
+                                        }
                                     </div>
 
                                 </div>
