@@ -614,8 +614,16 @@ export default function Clients() {
                                     </Button>
                                     <Button onClick={() => {
                                         setIsEditing(!isEditing)
-                                        const id = selectedClient.id
-                                        updateClient.mutate({ id, name, email, phone, industry, notes });
+                                        const updatedData = {
+                                            id: selectedClient.id,
+                                            name: name || selectedClient.name,
+                                            email: email || selectedClient.email,
+                                            phone: phone || selectedClient.phone,
+                                            industry: industry || selectedClient.industry,
+                                            notes: notes || selectedClient.notes,
+                                        };
+
+                                        updateClient.mutate(updatedData);
                                     }}>{isEditing ? "Save Client" : "Edit Client"}</Button>
                                 </div>
                             </div>
