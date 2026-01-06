@@ -6,7 +6,7 @@ export type clients = {
     activeProjects: number,
     completedProjects: number,
     totalProjects: number,
-    avatar: string | null,
+    avatar?: string | null,
     industry: string | null,
     phone: string,
     notes?: string | null,

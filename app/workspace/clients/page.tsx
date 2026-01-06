@@ -149,33 +149,19 @@ export default function Clients() {
         onMutate: async (newClient: UpdateClientInput) => {
             await queryClient.cancelQueries({ queryKey: ["clients"] });
 
-            const previousClients =
-                queryClient.getQueryData<clients[]>(["clients"]) ?? [];
+            const previousClients = queryClient.getQueryData<clients[]>(["clients"]) ?? [];
 
-            const optimisticClient: clients = {
-                id: Date.now(),
-                name: newClient.name ?? "",
-                email: newClient.email ?? "",
-                phone: newClient.phone ?? "",
-                status: "active",
-                activeProjects: 0,
-                completedProjects: 0,
-                industry: newClient.industry ?? "",
-                notes: newClient.notes,
-                totalProjects: 0,
-            };
+            // Optimistically update the existing client
+            queryClient.setQueryData<clients[]>(["clients"], previousClients.map(c =>
+                c.id === newClient.id
+                    ? { ...c, ...newClient } // merge the updated fields
+                    : c
+            ));
 
-            queryClient.setQueryData<clients[]>(["clients"], [
-                ...previousClients,
-                optimisticClient,
-            ]);
-
-            setDialogOpen(false);
-            setName("");
-            setEmail("");
-            setPhone("");
-            setNotes("");
-            setIndustry("");
+            // Also update the selected client immediately
+            setSelectedClient(prev =>
+                prev && prev.id === newClient.id ? { ...prev, ...newClient } : prev
+            );
 
             return { previousClients };
         },
@@ -183,11 +169,11 @@ export default function Clients() {
         onError: (_err, _newClient, context) => {
             if (context?.previousClients) {
                 queryClient.setQueryData(
-                    ["clients"],
+                    ["clients", _newClient.id],
                     context.previousClients
                 );
             }
-            alert("Failed to add client");
+            alert("Failed to update client");
         },
 
         onSettled: () => {
@@ -229,14 +215,6 @@ export default function Clients() {
             queryClient.invalidateQueries({ queryKey: ["clients"] });
         },
     });
-
-    const setClientState = (selectedClient: clients) => {
-        setName(selectedClient.name);
-        setEmail(selectedClient.email);
-        setPhone(selectedClient.phone);
-        if (selectedClient.industry) setIndustry(selectedClient.industry);
-        if (selectedClient.notes) setNotes(selectedClient.notes);
-    }
 
     return (
         <div className="p-6 space-y-6">
