@@ -22,6 +22,7 @@ import {
     Loader2,
     ChevronRight
 } from "lucide-react";
+import {useQueryClient} from "@tanstack/react-query";
 
 interface AIAssistantProps {
     isOpen: boolean;
@@ -77,12 +78,26 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     const {messages, sendMessage} = useChat();
     const [input, setInput] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
+
+    useEffect(() => {
+        messages.map((message) => {
+            if (message.role !== "assistant") return;
+            message.parts.map((part, i) => {
+                if (part.type === "tool-addClient") {
+                    queryClient.invalidateQueries({
+                        queryKey: ["clients"],
+                    });
+                }
+            });
+        });
+    }, [messages, queryClient]);
 
     const simulateThinking = (
         userText: string,
@@ -169,8 +184,8 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
     const handleSend = async () => {
         if (!input.trim()) return;
-        await sendMessage({text: input})
         setInput("");
+        await sendMessage({text: input})
     };
 
     const handleSuggestionClick = (suggestion: string) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -42,6 +42,7 @@ export default function Clients() {
     const [editingNotes, setEditingNotes] = useState(false);
     const [draftNotes, setDraftNotes] = useState("");
     const [isEditing, setIsEditing] = useState(false);
+    const queryClient = useQueryClient();
 
     const getClients = useQuery({
         queryKey: ["clients"],
@@ -83,7 +84,6 @@ export default function Clients() {
     const handleNextPage = () => {
         setCurrentPage((prev) => Math.min(totalPages, prev + 1));
     };
-    const queryClient = useQueryClient();
 
     const addClient = useMutation({
         mutationFn: async (newClient: CreateClientInput) => {
@@ -162,6 +162,12 @@ export default function Clients() {
             setSelectedClient(prev =>
                 prev && prev.id === newClient.id ? { ...prev, ...newClient } : prev
             );
+
+            setName("");
+            setEmail("");
+            setPhone("");
+            setNotes("");
+            setIndustry("");
 
             return { previousClients };
         },

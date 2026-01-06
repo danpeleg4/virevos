@@ -9,7 +9,6 @@ import {
     Video,
     Calendar,
     CheckCircle,
-    RefreshCw,
     ExternalLink,
     Settings,
 } from "lucide-react";
@@ -29,36 +28,6 @@ interface Integration {
 }
 
 const INITIAL_INTEGRATIONS: Integration[] = [
-    {
-        id: "zoom",
-        name: "Zoom",
-        description: "Video conferencing and meeting recordings",
-        icon: Video,
-        connected: false,
-        syncStatus: "synced",
-        lastSync: "2 minutes ago",
-        features: [
-            "Auto-create Zoom links for meetings",
-            "Record meetings automatically",
-            "Generate transcripts",
-            "Import meeting attendees",
-        ],
-    },
-    {
-        id: "google-meet",
-        name: "Google Meet",
-        description: "Google's video conferencing platform",
-        icon: Video,
-        connected: false,
-        syncStatus: "synced",
-        lastSync: "5 minutes ago",
-        features: [
-            "Auto-create Meet links",
-            "Access meeting recordings",
-            "Live transcription",
-            "Calendar integration",
-        ],
-    },
     {
         id: "google-calendar",
         name: "Google Calendar",
@@ -102,17 +71,13 @@ export function IntegrationSettings() {
     const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
         queryKey: ["integrations"],
         queryFn: async () => {
-            const [zoomCheck, googleCheck] = await Promise.all([
-                axios.post("/api/integrations/zoom", { action: "connect" }),
+            const [googleCheck] = await Promise.all([
                 axios.post("/api/integrations/google", { action: "status" })
             ]);
             
-            const { zoom, googleMeetsConnected } = zoomCheck.data;
             const googleCalendarConnected = googleCheck.data.connected;
 
             return INITIAL_INTEGRATIONS.map(int => {
-                if (int.id === "zoom") return { ...int, connected: zoom };
-                if (int.id === "google-meet") return { ...int, connected: googleMeetsConnected };
                 if (int.id === "google-calendar") return { ...int, connected: googleCalendarConnected };
                 return int;
             });
@@ -121,11 +86,6 @@ export function IntegrationSettings() {
 
     const mutation = useMutation({
         mutationFn: async ({ id, action }: { id: string, action: "disconnect" | "connect" }) => {
-            if (id === "zoom" && action === "disconnect") {
-                await axios.post("/api/integrations/zoom", {
-                    action: "disconnect",
-                });
-            }
             if (id === "google-calendar" && action === "disconnect") {
                 await axios.post("/api/integrations/google", {
                     action: "disconnect",
@@ -139,25 +99,6 @@ export function IntegrationSettings() {
 
     const toggleConnection = (id: string) => {
         const integration = integrations.find((i) => i.id === id);
-
-        if (id === "zoom" && integration && !integration.connected) {
-            const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID!;
-            const redirectUri = process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI!;
-            const zoomAuthUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-            const zoomAuthUrlProd = `https://zoom.us/oauth/authorize?response_type=code&client_id=DB1IU7XpQAyataDgLryAQg&redirect_uri=https://www.virevos.com/api/integrations/zoom`
-            const redirect = process.env.NODE_ENV === "development"
-                ? zoomAuthUrl
-                : zoomAuthUrlProd;
-
-            router.push(redirect);
-            return;
-        }
-
-        if (id === "zoom" && integration && integration.connected) {
-            mutation.mutate({ id: "zoom", action: "disconnect" });
-            return;
-        }
-
         if (id === "google-calendar" && integration && !integration.connected) {
             router.push("/api/google");
             return;

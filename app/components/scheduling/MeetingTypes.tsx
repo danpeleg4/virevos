@@ -207,7 +207,7 @@ export function MeetingTypes() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration (minutes)</Label>
                   <Select
@@ -223,23 +223,6 @@ export function MeetingTypes() {
                       <SelectItem value="45">45 minutes</SelectItem>
                       <SelectItem value="60">60 minutes</SelectItem>
                       <SelectItem value="90">90 minutes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="platform">Platform</Label>
-                  <Select
-                    value={platform}
-                    onValueChange={(val) => setPlatform(val as "zoom" | "google-meet" | "In-Person")}
-                  >
-                    <SelectTrigger id="platform">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="zoom">Zoom</SelectItem>
-                      <SelectItem value="google-meet">Google Meet</SelectItem>
-                      <SelectItem value="In-Person">In-Person</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -365,24 +348,12 @@ export function MeetingTypes() {
                         />
                     ) : null
                   }
-                  <Button size="sm" variant="outline">
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View
-                  </Button>
                 </div>
 
                 <div className="flex items-center space-x-2 pt-2 border-t border-gray-200">
                   <Button size="sm" variant="outline">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Users className="h-4 w-4 mr-2" />
-                    Customize Questions
                   </Button>
                   <Button
                       onClick={() => deleteMeetingType.mutate(type.id)}
