@@ -182,7 +182,7 @@ export function MeetingTypes() {
                   <Input id="name" placeholder="e.g., Discovery Call" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="duration">Duration (minutes)</Label>
                     <Select defaultValue="30">
@@ -195,20 +195,6 @@ export function MeetingTypes() {
                         <SelectItem value="45">45 minutes</SelectItem>
                         <SelectItem value="60">60 minutes</SelectItem>
                         <SelectItem value="90">90 minutes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="platform">Platform</Label>
-                    <Select defaultValue="zoom">
-                      <SelectTrigger id="platform">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="zoom">Zoom</SelectItem>
-                        <SelectItem value="google-meet">Google Meet</SelectItem>
-                        <SelectItem value="teams">Microsoft Teams</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -356,11 +342,10 @@ export function MeetingTypes() {
                   </DialogHeader>
 
                   <Tabs defaultValue="general" className="mt-4">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="general">General</TabsTrigger>
-                      <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
-                      <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                      <TabsTrigger value="questions">Questions</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="general" className="cursor-pointer">General</TabsTrigger>
+                      <TabsTrigger value="scheduling" className="cursor-pointer">Scheduling</TabsTrigger>
+                      <TabsTrigger value="notifications" className="cursor-pointer">Notifications</TabsTrigger>
                     </TabsList>
 
                     {/* General Tab */}
@@ -449,54 +434,6 @@ export function MeetingTypes() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-platform">Platform</Label>
-                          <Select
-                              value={editingType.platform}
-                              onValueChange={(value: "zoom" | "google-meet" | "teams") =>
-                                  setEditingType({ ...editingType, platform: value })
-                              }
-                          >
-                            <SelectTrigger id="edit-platform">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="zoom">
-                                <div className="flex items-center">
-                                  <Video className="h-4 w-4 mr-2" />
-                                  Zoom
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="google-meet">
-                                <div className="flex items-center">
-                                  <Video className="h-4 w-4 mr-2" />
-                                  Google Meet
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="teams">
-                                <div className="flex items-center">
-                                  <Video className="h-4 w-4 mr-2" />
-                                  Microsoft Teams
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-location">Location/Link</Label>
-                          <Input
-                              id="edit-location"
-                              value={editingType.location || ""}
-                              onChange={(e) =>
-                                  setEditingType({ ...editingType, location: e.target.value })
-                              }
-                              placeholder="Virtual, or custom link"
-                          />
                         </div>
                       </div>
 
@@ -684,53 +621,6 @@ export function MeetingTypes() {
                             </p>
                           </div>
                         </div>
-                      </div>
-                    </TabsContent>
-
-                    {/* Questions Tab */}
-                    <TabsContent value="questions" className="space-y-4 mt-4">
-                      <div>
-                        <Label className="mb-2 block">Custom Booking Questions</Label>
-                        <p className="text-sm text-gray-500 mb-4">
-                          Collect additional information from attendees when they book
-                        </p>
-
-                        <div className="space-y-3">
-                          {editingType.customQuestions?.map((q, index) => (
-                              <div
-                                  key={index}
-                                  className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}
-                              >
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="flex-1 mr-4">
-                                    <Input
-                                        value={q.question}
-                                        className="mb-2"
-                                        placeholder="Question text"
-                                    />
-                                    <div className="flex items-center space-x-2">
-                                      <Switch checked={q.required} />
-                                      <span className="text-xs text-gray-500">Required</span>
-                                    </div>
-                                  </div>
-                                  <Button size="sm" variant="ghost" className="text-red-600">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                          ))}
-                        </div>
-
-                        <Button variant="outline" className="w-full mt-3">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Question
-                        </Button>
-                      </div>
-
-                      <div className={`p-4 rounded-lg border bg-blue-50 border-blue-200`}>
-                        <p className={`text-sm text-blue-900`}>
-                          <strong>Default questions:</strong> Name, email, and time zone are always collected
-                        </p>
                       </div>
                     </TabsContent>
                   </Tabs>
