@@ -41,85 +41,9 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         return
     }
 
-    let zoomData = null;
     let googleEventId: string | null = null;
     const internalUserId = dbUser[0].user_id;
     const email = dbUser[0].email;
-
-    if (meeting.type === "Zoom") {
-        // ZOOM INTEGRATION
-        const tokenRow = await db
-            .select()
-            .from(zoomTokens)
-            .where(eq(zoomTokens.userId, user.id))
-            .limit(1);
-
-        if (tokenRow.length > 0) {
-            const accessToken = await getFreshZoomAccessToken(user.id);
-            if (accessToken) {
-                const zoomRes = await fetch(
-                    `https://api.zoom.us/v2/users/${email}/meetings`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Authorization": `Bearer ${accessToken}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            topic: body.title,
-                            agenda: body.description ? body.description : "",
-                            type: 2,
-                            start_time: startDate.toISOString(),
-                            duration: body.duration,
-                            settings: {
-                                host_video: true,
-                                auto_recording: "cloud",
-                                participant_video: false,
-                            },
-                        }),
-                    }
-                );
-                zoomData = await zoomRes.json();
-
-                if (!zoomRes.ok) {
-                    console.error("Zoom error:", zoomData);
-                    zoomData = null;
-                }
-            }
-        }
-
-        if (googleToken) {
-            const oauth2Client = new google.auth.OAuth2();
-            oauth2Client.setCredentials({access_token: googleToken});
-            const calendar = google.calendar({version: "v3", auth: oauth2Client});
-
-            try {
-                const googleEvent = await calendar.events.insert({
-                    calendarId: "primary",
-                    requestBody: {
-                        summary: body.title,
-                        description: body.description + (zoomData ? `\n\nZoom Link: ${zoomData.join_url}` : ""),
-                        start: {
-                            dateTime: startDate.toISOString(),
-                        },
-                        end: {
-                            dateTime: new Date(startDate.getTime() + body.duration * 60000).toISOString(),
-                        },
-                        extendedProperties: {
-                            private: {
-                                appId: meeting.id,
-                            },
-                        },
-                        location: zoomData ? zoomData.join_url : "",
-                    },
-                });
-                googleEventId = googleEvent.data.id || null;
-            } catch (error) {
-                console.error("Google Calendar error:", error);
-            }
-        }
-        // TODO IMPLEMENT GOOGLE-MEET INTEGRATION
-    } else {
         if (googleToken) {
             const oauth2Client = new google.auth.OAuth2();
             oauth2Client.setCredentials({access_token: googleToken});
@@ -149,16 +73,15 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                 console.error("Google Calendar error:", error);
             }
         }
-    }
 
     // Insert meeting
     const inserted = await db
         .insert(meetings)
         .values({
-            id: zoomData ? zoomData.id.toString() : Math.random().toString(36).substring(7),
+            id: Math.random().toString(36).substring(7),
             title: body.title,
             description: body.description,
-            link: zoomData ? zoomData.join_url : null,
+            link: null,
             origin: "app",
             date: body.date,
             time: body.time,

@@ -234,7 +234,7 @@ export function CalendarView() {
                             </Button>
                         </div>
 
-                        {/* NEW BOOK MEETING BUTTON */}
+                        {/* ADD EVENT BUTTON */}
                         <BookMeetingDialog
                             dialogOpen={dialogOpen}
                             setDialogOpen={setDialogOpen}

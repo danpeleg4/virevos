@@ -23,7 +23,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import {addAClient, deleteClient, updateExistingClient, updateNotes} from "@/lib/server_actions/clients";
+import { addAClient, deleteClient, updateExistingClient } from "@/lib/server_actions/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 
 const ITEMS_PER_PAGE = 8;
@@ -39,9 +39,9 @@ export default function Clients() {
     const [industry, setIndustry] = useState("");
     const [notes, setNotes] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [editingNotes, setEditingNotes] = useState(false);
     const [draftNotes, setDraftNotes] = useState("");
     const [isEditing, setIsEditing] = useState(false);
+    const queryClient = useQueryClient();
 
     const getClients = useQuery({
         queryKey: ["clients"],
@@ -83,7 +83,6 @@ export default function Clients() {
     const handleNextPage = () => {
         setCurrentPage((prev) => Math.min(totalPages, prev + 1));
     };
-    const queryClient = useQueryClient();
 
     const addClient = useMutation({
         mutationFn: async (newClient: CreateClientInput) => {
@@ -163,6 +162,12 @@ export default function Clients() {
                 prev && prev.id === newClient.id ? { ...prev, ...newClient } : prev
             );
 
+            setName("");
+            setEmail("");
+            setPhone("");
+            setNotes("");
+            setIndustry("");
+
             return { previousClients };
         },
 
@@ -180,41 +185,6 @@ export default function Clients() {
             queryClient.invalidateQueries({ queryKey: ["clients"] });
         },
     })
-
-    const updateNotesMutation = useMutation({
-        mutationFn: async ({ id, notes }: { id: number; notes: string }) => {
-            await updateNotes({id, notes});
-        },
-
-        onMutate: async ({ id, notes }) => {
-            await queryClient.cancelQueries({ queryKey: ["clients"] });
-
-            const previousClients =
-                queryClient.getQueryData<clients[]>(["clients"]) ?? [];
-
-            queryClient.setQueryData<clients[]>(["clients"], (old) =>
-                old?.map((c) =>
-                    c.id === id ? { ...c, notes } : c
-                )
-            );
-
-            setSelectedClient((prev) =>
-                prev && prev.id === id ? { ...prev, notes } : prev
-            );
-
-            return { previousClients };
-        },
-
-        onError: (_err, _vars, context) => {
-            if (context?.previousClients) {
-                queryClient.setQueryData(["clients"], context.previousClients);
-            }
-        },
-
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ["clients"] });
-        },
-    });
 
     return (
         <div className="p-6 space-y-6">
@@ -614,8 +584,16 @@ export default function Clients() {
                                     </Button>
                                     <Button onClick={() => {
                                         setIsEditing(!isEditing)
-                                        const id = selectedClient.id
-                                        updateClient.mutate({ id, name, email, phone, industry, notes });
+                                        const updatedData = {
+                                            id: selectedClient.id,
+                                            name: name || selectedClient.name,
+                                            email: email || selectedClient.email,
+                                            phone: phone || selectedClient.phone,
+                                            industry: industry || selectedClient.industry,
+                                            notes: notes || selectedClient.notes,
+                                        };
+
+                                        updateClient.mutate(updatedData);
                                     }}>{isEditing ? "Save Client" : "Edit Client"}</Button>
                                 </div>
                             </div>

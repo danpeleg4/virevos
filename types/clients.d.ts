@@ -7,7 +7,7 @@ export type clients = {
     completedProjects: number,
     totalProjects: number,
     avatar?: string | null,
-    industry: string | null,
+    industry: string | undefined,
     phone: string,
     notes?: string | undefined,
     createdAt?: Date | null,

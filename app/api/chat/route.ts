@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
                 execute: async ({ createClientInput }: { createClientInput: CreateClientInput }) => {
                     const res = await addAClient(createClientInput)
                     return {
+                        kind: "clients_updated",
                         client: res,
                         message: "Client created successfully",
                     };
@@ -55,5 +56,7 @@ export async function POST(req: NextRequest) {
         },
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+        sendReasoning: true,
+    });
 }
