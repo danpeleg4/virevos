@@ -23,6 +23,7 @@ import {
     ChevronRight
 } from "lucide-react";
 import {useQueryClient} from "@tanstack/react-query";
+import {clients, CreateClientInput} from "@/types/clients";
 
 interface AIAssistantProps {
     isOpen: boolean;
@@ -39,8 +40,8 @@ interface ThinkingStep {
     files?: { name: string; changes: string }[];
     tools?: {
         name: string;
-        input?: any;
-        output?: any;
+        input?: string
+        output?: string;
     }[];
 }
 
@@ -73,28 +74,53 @@ const nextBestActions = [
     },
 ];
 
+type AddClientToolOutput = {
+    kind: "clients_updated";
+    client: {
+        id: number;
+        name: string;
+        email: string;
+        phone: string;
+        //status: "pending" | "active" | "completed";
+        industry: string;
+        notes?: string;
+    };
+    message: string;
+};
+
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     const [selectedModel, setSelectedModel] = useState("");
     const {messages, sendMessage} = useChat();
     const [input, setInput] = useState('');
-    const scrollRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
+    const processedToolParts = useRef<Set<string>>(new Set());
 
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages]);
+        messages.forEach(message => {
+            message.parts.forEach(part => {
+                if (part.type !== "tool-addClient") return;
+                if (!part.output) return;
 
-    useEffect(() => {
-        messages.map((message) => {
-            if (message.role !== "assistant") return;
-            message.parts.map((part, i) => {
-                if (part.type === "tool-addClient") {
-                    queryClient.invalidateQueries({
-                        queryKey: ["clients"],
-                    });
-                }
+                // run only once per tool call
+                if (processedToolParts.current.has(part.toolCallId)) return;
+                processedToolParts.current.add(part.toolCallId);
+
+                const clientData = part.output as AddClientToolOutput;
+                const newClient = clientData.client;
+
+                const optimisticClient = {
+                    ...newClient,
+                    status: "active",
+                    totalProjects: 0,
+                    activeProjects: 0,
+                    completedProjects: 0,
+                    avatar: newClient.name[0],
+                };
+
+                queryClient.setQueryData<clients[]>(["clients"], (old = []) => [
+                    ...old,
+                    optimisticClient,
+                ]);
             });
         });
     }, [messages, queryClient]);
@@ -280,11 +306,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                     </div>
 
                     {/* Messages */}
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
                         {messages.map((message, msgIndex) => {
                             const usedTools = hasToolUsage(message);
                             const toolParts = getToolParts(message);
-
                             const thinkingSteps =
                                 message.role === "assistant" && msgIndex > 0
                                     ? simulateThinking(
