@@ -1,4 +1,4 @@
-import {useMemo, useState} from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -18,142 +18,130 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "../ui/dialog";
 import { Switch } from "../ui/switch";
-import { Plus, Video, Users, Clock, Copy, ExternalLink, Edit, Trash2 } from "lucide-react";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {createMeetsType, deleteMeetsType, updateActiveMeetingType} from "@/lib/server_actions/calendar";
-import axios from "axios";
+import { Plus, Video, Users, Clock, Copy, ExternalLink, Edit, Trash2, Calendar, Mail, Bell, Link as LinkIcon, CheckCircle2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 interface MeetingType {
-  id: number;
+  id: string;
   name: string;
   duration: number;
-  description: string | null;
+  description: string;
   color: string;
-  platform: "zoom" | "google-meet" | "In-Person";
-  bookingLink?: string;
+  platform: "zoom" | "google-meet" | "teams";
+  bookingLink: string;
   active: boolean;
-  maxBookings?: number | null;
+  maxPerDay?: number;
+  location?: string;
+  bufferTime?: number;
+  confirmationEmail?: boolean;
+  reminderEmail?: boolean;
+  requiresApproval?: boolean;
+  customQuestions?: { question: string; required: boolean }[];
 }
 
+const mockMeetingTypes: MeetingType[] = [
+  {
+    id: "1",
+    name: "Discovery Call",
+    duration: 30,
+    description: "Initial consultation to understand client needs and explore how FlowTask can help",
+    color: "blue",
+    platform: "zoom",
+    bookingLink: "flowtask.com/book/discovery-call",
+    active: true,
+    maxPerDay: 3,
+    location: "Virtual",
+    bufferTime: 10,
+    confirmationEmail: true,
+    reminderEmail: true,
+    requiresApproval: false,
+    customQuestions: [
+      { question: "What are your main pain points?", required: true },
+      { question: "How did you hear about us?", required: false },
+    ],
+  },
+  {
+    id: "2",
+    name: "Client Onboarding",
+    duration: 60,
+    description: "Comprehensive onboarding session for new clients",
+    color: "green",
+    platform: "zoom",
+    bookingLink: "flowtask.com/book/onboarding",
+    active: true,
+    maxPerDay: 2,
+    location: "Virtual",
+    bufferTime: 15,
+    confirmationEmail: true,
+    reminderEmail: true,
+    requiresApproval: true,
+  },
+  {
+    id: "3",
+    name: "Quick Check-in",
+    duration: 15,
+    description: "Brief status update or quick question",
+    color: "purple",
+    platform: "google-meet",
+    bookingLink: "flowtask.com/book/check-in",
+    active: true,
+    location: "Virtual",
+    bufferTime: 5,
+    confirmationEmail: true,
+    reminderEmail: false,
+    requiresApproval: false,
+  },
+  {
+    id: "4",
+    name: "Strategy Session",
+    duration: 90,
+    description: "Deep dive into workflow optimization and automation strategy",
+    color: "orange",
+    platform: "zoom",
+    bookingLink: "flowtask.com/book/strategy",
+    active: true,
+    maxPerDay: 1,
+    location: "Virtual",
+    bufferTime: 20,
+    confirmationEmail: true,
+    reminderEmail: true,
+    requiresApproval: true,
+  },
+];
 
 export function MeetingTypes() {
+  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>(mockMeetingTypes);
   const [isCreating, setIsCreating] = useState(false);
   const [editingType, setEditingType] = useState<MeetingType | null>(null);
-  const [name, setName] = useState("");
-  const [duration, setDuration] = useState(30);
-  const [platform, setPlatform] = useState<"zoom" | "google-meet" | "In-Person">("zoom");
-  const [description, setDescription] = useState("");
-  const [color, setColor] = useState("blue");
-  const [maxBookings, setMaxBookings] = useState<number | undefined>(undefined);
-  const queryClient = useQueryClient();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const getMeetingTypes = useQuery<MeetingType[]>({
-    queryKey: ["meetingTypes"],
-    queryFn: async () => {
-      const res = await axios.get('/api/meetings/meeting-types')
-      return res.data
-    }
-  })
+  const toggleActive = (id: string) => {
+    setMeetingTypes(
+        meetingTypes.map((type) =>
+            type.id === id ? { ...type, active: !type.active } : type
+        )
+    );
+  };
 
-  const createMeetingType = useMutation({
-    mutationFn: (data: {
-      name: string;
-      duration: number;
-      description: string;
-      color: string;
-      platform: "zoom" | "google-meet" | "In-Person";
-      maxBookings?: number
-    }) => createMeetsType(data),
-    onMutate: async (newType) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+  const handleEdit = (type: MeetingType) => {
+    setEditingType(type);
+    setIsEditDialogOpen(true);
+  };
 
-      // Snapshot previous value
-      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
-
-      // Optimistically update
-      queryClient.setQueryData(["meetingTypes"], (old: MeetingType[] | undefined) => [
-        ...(old || []),
-        {
-          id: Math.floor(Math.random() * 1000000), // temporary ID for optimistic update
-          active: true,
-          ...newType,
-        }
-      ]);
-
-      return { previous };
-    },
-    onError: (_err, _newType, context) => {
-      // Revert on error
-      if (context?.previous) {
-        queryClient.setQueryData(["meetingTypes"], context.previous);
-      }
-    },
-    onSettled: () => {
-      // Refetch to sync with server
-      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
-    }
-  });
-
-  const toggleActiveMutation = useMutation({
-    mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
-      await updateActiveMeetingType(id, active)
-    },
-    onMutate: async ({ id, active }: {id: number, active: boolean}) => {
-      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
-      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
-      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
-          old?.map(type =>
-              type.id === id ? { ...type, active } : type
+  const handleSaveEdit = () => {
+    if (editingType) {
+      setMeetingTypes(
+          meetingTypes.map((type) =>
+              type.id === editingType.id ? editingType : type
           )
       );
-
-      return { previous };
-    },
-    onError: (_err, _vars, context) => {
-      // rollback on error
-      if (context?.previous) {
-        queryClient.setQueryData(["meetingTypes"], context.previous);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+      setIsEditDialogOpen(false);
+      setEditingType(null);
     }
-  });
-
-  const deleteMeetingType = useMutation({
-    mutationFn: async (id: number) => deleteMeetsType(id),
-    onMutate: async (id: number) => {
-      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
-
-      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
-
-      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
-          old?.filter(type => type.id !== id)
-      );
-
-      return { previous };
-    },
-    onError: (_err, _id, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["meetingTypes"], context.previous);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
-    },
-  });
-
-  const sortedMeetingTypes = useMemo(() => {
-    if (!getMeetingTypes.data) return [];
-
-    return [...getMeetingTypes.data].sort((a, b) => {
-      // active first
-      return Number(b.active) - Number(a.active);
-    });
-  }, [getMeetingTypes.data]);
+  };
 
   const getColorClass = (color: string) => {
     const colors: Record<string, string> = {
@@ -165,211 +153,614 @@ export function MeetingTypes() {
     return colors[color] || colors.blue;
   };
 
-  const getPlatformIcon = (platform: "zoom" | "google-meet" | "In-Person" | string) => {
-    switch (platform) {
-      case "zoom":
-      case "google-meet":
-        return <Video className="h-4 w-4" />;
-      case "In-Person":
-        return <Users className="h-4 w-4" />;
-      default:
-        return <Video className="h-4 w-4" />;
-    }
+  const getPlatformIcon = (platform: string) => {
+    return <Video className="h-4 w-4" />;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-600">
-            Create different meeting types with custom durations, descriptions, and booking links
-          </p>
-        </div>
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsCreating(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Meeting Type
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create Meeting Type</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Meeting Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Discovery Call"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-4">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-gray-600">
+              Create different meeting types with custom durations, descriptions, and booking links
+            </p>
+          </div>
+          <Dialog open={isCreating} onOpenChange={setIsCreating}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Meeting Type
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create Meeting Type</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Select
-                    value={duration.toString()}
-                    onValueChange={(val) => setDuration(parseInt(val))}
-                  >
-                    <SelectTrigger id="duration">
+                  <Label htmlFor="name">Meeting Name</Label>
+                  <Input id="name" placeholder="e.g., Discovery Call" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Duration (minutes)</Label>
+                    <Select defaultValue="30">
+                      <SelectTrigger id="duration">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 minutes</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="45">45 minutes</SelectItem>
+                        <SelectItem value="60">60 minutes</SelectItem>
+                        <SelectItem value="90">90 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="platform">Platform</Label>
+                    <Select defaultValue="zoom">
+                      <SelectTrigger id="platform">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="zoom">Zoom</SelectItem>
+                        <SelectItem value="google-meet">Google Meet</SelectItem>
+                        <SelectItem value="teams">Microsoft Teams</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                      id="description"
+                      placeholder="What is this meeting for?"
+                      rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="color">Color</Label>
+                  <Select defaultValue="blue">
+                    <SelectTrigger id="color">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="15">15 minutes</SelectItem>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="45">45 minutes</SelectItem>
-                      <SelectItem value="60">60 minutes</SelectItem>
-                      <SelectItem value="90">90 minutes</SelectItem>
+                      <SelectItem value="blue">Blue</SelectItem>
+                      <SelectItem value="green">Green</SelectItem>
+                      <SelectItem value="purple">Purple</SelectItem>
+                      <SelectItem value="orange">Orange</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="What is this meeting for?"
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max-per-day">Max Bookings Per Day (Optional)</Label>
+                  <Input
+                      id="max-per-day"
+                      type="number"
+                      placeholder="Leave empty for unlimited"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="color">Color</Label>
-                <Select
-                  value={color}
-                  onValueChange={(val) => setColor(val)}
-                >
-                  <SelectTrigger id="color">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="blue">Blue</SelectItem>
-                    <SelectItem value="green">Green</SelectItem>
-                    <SelectItem value="purple">Purple</SelectItem>
-                    <SelectItem value="orange">Orange</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsCreating(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => setIsCreating(false)}>Create Meeting Type</Button>
+                </div>
               </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="max-per-day">Max Bookings Per Day (Optional)</Label>
-                <Input
-                  id="max-per-day"
-                  type="number"
-                  placeholder="Leave empty for unlimited"
-                  value={maxBookings || ""}
-                  onChange={(e) => setMaxBookings(e.target.value ? parseInt(e.target.value) : undefined)}
-                />
-              </div>
+        <div className="grid grid-cols-1 gap-4">
+          {meetingTypes.map((type) => (
+              <Card key={type.id} className={`border-l-4 ${type.active ? '' : 'opacity-60'}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <CardTitle className="text-lg">{type.name}</CardTitle>
+                        <Badge className={getColorClass(type.color)}>
+                          {type.duration} min
+                        </Badge>
+                        {type.maxPerDay && (
+                            <Badge variant="outline">
+                              Max {type.maxPerDay}/day
+                            </Badge>
+                        )}
+                        {!type.active && (
+                            <Badge variant="secondary">Inactive</Badge>
+                        )}
+                      </div>
+                      <CardDescription>{type.description}</CardDescription>
+                    </div>
+                    <Switch
+                        checked={type.active}
+                        onCheckedChange={() => toggleActive(type.id)}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-4 text-gray-600">
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {type.duration} minutes
+                        </div>
+                        <div className="flex items-center">
+                          {getPlatformIcon(type.platform)}
+                          <span className="ml-1 capitalize">
+                        {type.platform.replace("-", " ")}
+                      </span>
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => setIsCreating(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  createMeetingType.mutate({
-                    name,
-                    duration,
-                    description,
-                    color,
-                    platform,
-                    maxBookings
-                  });
-                  setIsCreating(false);
-                  setName(""); setDuration(30); setPlatform("zoom");
-                  setDescription(""); setColor("blue"); setMaxBookings(undefined);
-                }}>
-                  Create Meeting Type
-                </Button>
-              </div>
-            </div>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                          readOnly
+                          value={`https://${type.bookingLink}`}
+                          className="flex-1 text-sm bg-gray-50"
+                      />
+                      <Button size="sm" variant="outline">
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center space-x-2 pt-2 border-t border-gray-200">
+                      <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(type)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Users className="h-4 w-4 mr-2" />
+                        Customize Questions
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-red-600 ml-auto">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          ))}
+        </div>
+
+        {/* Edit Meeting Type Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            {editingType && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Edit Meeting Type</DialogTitle>
+                    <DialogDescription>
+                      Configure your meeting settings, notifications, and booking options
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <Tabs defaultValue="general" className="mt-4">
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="general">General</TabsTrigger>
+                      <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
+                      <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                      <TabsTrigger value="questions">Questions</TabsTrigger>
+                    </TabsList>
+
+                    {/* General Tab */}
+                    <TabsContent value="general" className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-name">Meeting Name</Label>
+                        <Input
+                            id="edit-name"
+                            value={editingType.name}
+                            onChange={(e) =>
+                                setEditingType({ ...editingType, name: e.target.value })
+                            }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-description">Description</Label>
+                        <Textarea
+                            id="edit-description"
+                            value={editingType.description}
+                            onChange={(e) =>
+                                setEditingType({ ...editingType, description: e.target.value })
+                            }
+                            rows={3}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-duration">Duration</Label>
+                          <Select
+                              value={editingType.duration.toString()}
+                              onValueChange={(value) =>
+                                  setEditingType({ ...editingType, duration: parseInt(value) })
+                              }
+                          >
+                            <SelectTrigger id="edit-duration">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="15">15 minutes</SelectItem>
+                              <SelectItem value="30">30 minutes</SelectItem>
+                              <SelectItem value="45">45 minutes</SelectItem>
+                              <SelectItem value="60">60 minutes</SelectItem>
+                              <SelectItem value="90">90 minutes</SelectItem>
+                              <SelectItem value="120">2 hours</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-color">Color</Label>
+                          <Select
+                              value={editingType.color}
+                              onValueChange={(value) =>
+                                  setEditingType({ ...editingType, color: value })
+                              }
+                          >
+                            <SelectTrigger id="edit-color">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="blue">
+                                <div className="flex items-center">
+                                  <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                                  Blue
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="green">
+                                <div className="flex items-center">
+                                  <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                                  Green
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="purple">
+                                <div className="flex items-center">
+                                  <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                                  Purple
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="orange">
+                                <div className="flex items-center">
+                                  <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+                                  Orange
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-platform">Platform</Label>
+                          <Select
+                              value={editingType.platform}
+                              onValueChange={(value: "zoom" | "google-meet" | "teams") =>
+                                  setEditingType({ ...editingType, platform: value })
+                              }
+                          >
+                            <SelectTrigger id="edit-platform">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="zoom">
+                                <div className="flex items-center">
+                                  <Video className="h-4 w-4 mr-2" />
+                                  Zoom
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="google-meet">
+                                <div className="flex items-center">
+                                  <Video className="h-4 w-4 mr-2" />
+                                  Google Meet
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="teams">
+                                <div className="flex items-center">
+                                  <Video className="h-4 w-4 mr-2" />
+                                  Microsoft Teams
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-location">Location/Link</Label>
+                          <Input
+                              id="edit-location"
+                              value={editingType.location || ""}
+                              onChange={(e) =>
+                                  setEditingType({ ...editingType, location: e.target.value })
+                              }
+                              placeholder="Virtual, or custom link"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-booking-link">Booking Link</Label>
+                        <div className="flex items-center space-x-2">
+                          <div className="flex-1 flex items-center border border-gray-200 rounded-lg px-3 py-2 bg-gray-50">
+                            <span className="text-sm text-gray-500 mr-1">https://</span>
+                            <Input
+                                id="edit-booking-link"
+                                value={editingType.bookingLink}
+                                onChange={(e) =>
+                                    setEditingType({ ...editingType, bookingLink: e.target.value })
+                                }
+                                className="border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                          </div>
+                          <Button size="sm" variant="outline">
+                            <LinkIcon className="h-4 w-4 mr-2" />
+                            Copy
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className={`flex items-center justify-between p-4 rounded-lg border bg-gray-50 border-gray-200`}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${
+                              editingType.active
+                                  ? "bg-green-100"
+                                  : "bg-gray-200"
+                          }`}>
+                            <CheckCircle2 className={`h-5 w-5 ${
+                                editingType.active ? "text-green-600" : "text-gray-400"
+                            }`} />
+                          </div>
+                          <div>
+                            <p className={`text-sm text-gray-900`}>
+                              Meeting Type Status
+                            </p>
+                            <p className={`text-xs text-gray-500`}>
+                              {editingType.active ? "Active and bookable" : "Inactive and hidden"}
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                            checked={editingType.active}
+                            onCheckedChange={(checked) =>
+                                setEditingType({ ...editingType, active: checked })
+                            }
+                        />
+                      </div>
+                    </TabsContent>
+
+                    {/* Scheduling Tab */}
+                    <TabsContent value="scheduling" className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="buffer-time">Buffer Time Between Meetings</Label>
+                        <Select
+                            value={editingType.bufferTime?.toString() || "0"}
+                            onValueChange={(value) =>
+                                setEditingType({ ...editingType, bufferTime: parseInt(value) })
+                            }
+                        >
+                          <SelectTrigger id="buffer-time">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">No buffer</SelectItem>
+                            <SelectItem value="5">5 minutes</SelectItem>
+                            <SelectItem value="10">10 minutes</SelectItem>
+                            <SelectItem value="15">15 minutes</SelectItem>
+                            <SelectItem value="20">20 minutes</SelectItem>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500">
+                          Time to prepare between back-to-back meetings
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="max-per-day">Maximum Bookings Per Day</Label>
+                        <Input
+                            id="max-per-day"
+                            type="number"
+                            value={editingType.maxPerDay || ""}
+                            onChange={(e) =>
+                                setEditingType({
+                                  ...editingType,
+                                  maxPerDay: e.target.value ? parseInt(e.target.value) : undefined,
+                                })
+                            }
+                            placeholder="Unlimited"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Leave empty for unlimited bookings
+                        </p>
+                      </div>
+
+                      <div className={`p-4 rounded-lg border bg-blue-50 border-blue-200`}>
+                        <div className="flex items-start space-x-3">
+                          <Calendar className={`h-5 w-5 mt-0.5 text-blue-600`} />
+                          <div>
+                            <p className={`text-sm mb-1 text-gray-900`}>
+                              Booking Window
+                            </p>
+                            <p className={`text-xs text-gray-600`}>
+                              Configure how far in advance people can book. Available in Availability settings.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="mb-0">Require Approval</Label>
+                          <Switch
+                              checked={editingType.requiresApproval || false}
+                              onCheckedChange={(checked) =>
+                                  setEditingType({ ...editingType, requiresApproval: checked })
+                              }
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Bookings require manual approval before being confirmed
+                        </p>
+                      </div>
+                    </TabsContent>
+
+                    {/* Notifications Tab */}
+                    <TabsContent value="notifications" className="space-y-4 mt-4">
+                      <div className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-3">
+                            <Mail className={`h-5 w-5 text-gray-600`} />
+                            <div>
+                              <Label className="mb-0">Confirmation Email</Label>
+                              <p className="text-xs text-gray-500">
+                                Send booking confirmation to attendees
+                              </p>
+                            </div>
+                          </div>
+                          <Switch
+                              checked={editingType.confirmationEmail || false}
+                              onCheckedChange={(checked) =>
+                                  setEditingType({ ...editingType, confirmationEmail: checked })
+                              }
+                          />
+                        </div>
+                      </div>
+
+                      <div className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-3">
+                            <Bell className={`h-5 w-5 text-gray-600`} />
+                            <div>
+                              <Label className="mb-0">Reminder Email</Label>
+                              <p className="text-xs text-gray-500">
+                                Send reminder 24 hours before meeting
+                              </p>
+                            </div>
+                          </div>
+                          <Switch
+                              checked={editingType.reminderEmail || false}
+                              onCheckedChange={(checked) =>
+                                  setEditingType({ ...editingType, reminderEmail: checked })
+                              }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Email Template Preview</Label>
+                        <div className={`p-4 rounded-lg border bg-white border-gray-200`}>
+                          <div className="space-y-2 text-sm">
+                            <p className="text-gray-900">
+                              <strong>Subject:</strong> Your {editingType.name} is confirmed
+                            </p>
+                            <p className="text-gray-600">
+                              Hi [Name],<br /><br />
+                              Your {editingType.name} has been scheduled for [Date] at [Time].<br /><br />
+                              Duration: {editingType.duration} minutes<br />
+                              Location: {editingType.location || "Virtual"}<br /><br />
+                              [Meeting Link]
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* Questions Tab */}
+                    <TabsContent value="questions" className="space-y-4 mt-4">
+                      <div>
+                        <Label className="mb-2 block">Custom Booking Questions</Label>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Collect additional information from attendees when they book
+                        </p>
+
+                        <div className="space-y-3">
+                          {editingType.customQuestions?.map((q, index) => (
+                              <div
+                                  key={index}
+                                  className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1 mr-4">
+                                    <Input
+                                        value={q.question}
+                                        className="mb-2"
+                                        placeholder="Question text"
+                                    />
+                                    <div className="flex items-center space-x-2">
+                                      <Switch checked={q.required} />
+                                      <span className="text-xs text-gray-500">Required</span>
+                                    </div>
+                                  </div>
+                                  <Button size="sm" variant="ghost" className="text-red-600">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                          ))}
+                        </div>
+
+                        <Button variant="outline" className="w-full mt-3">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Question
+                        </Button>
+                      </div>
+
+                      <div className={`p-4 rounded-lg border bg-blue-50 border-blue-200`}>
+                        <p className={`text-sm text-blue-900`}>
+                          <strong>Default questions:</strong> Name, email, and time zone are always collected
+                        </p>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+
+                  {/* Footer Actions */}
+                  <div className={`flex justify-between items-center pt-4 mt-4 border-t border-gray-200`}>
+                    <Button
+                        variant="ghost"
+                        className="text-red-600"
+                        onClick={() => {
+                          setIsEditDialogOpen(false);
+                          setEditingType(null);
+                        }}
+                    >
+                      Cancel Changes
+                    </Button>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                        Save as Draft
+                      </Button>
+                      <Button onClick={handleSaveEdit}>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                </>
+            )}
           </DialogContent>
         </Dialog>
       </div>
-
-      <div className="grid grid-cols-1 gap-4">
-        {sortedMeetingTypes?.slice(0, 5).map((type) => (
-          <Card key={type.id} className={`border-l-4 ${type.active ? '' : 'opacity-60'}`}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <CardTitle className="text-lg">{type.name}</CardTitle>
-                    <Badge className={getColorClass(type.color)}>
-                      {type.duration} min
-                    </Badge>
-                    {type.maxBookings && (
-                      <Badge variant="outline">
-                        Max {type.maxBookings}/day
-                      </Badge>
-                    )}
-                    {!type.active && (
-                      <Badge variant="secondary">Inactive</Badge>
-                    )}
-                  </div>
-                  <CardDescription>{type.description}</CardDescription>
-                </div>
-                <Switch
-                  checked={type.active}
-                  onCheckedChange={() => toggleActiveMutation.mutate({ id: type.id, active: !type.active })}
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-4 text-gray-600">
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {type.duration} minutes
-                    </div>
-                    <div className="flex items-center">
-                      {getPlatformIcon(type.platform)}
-                      <span className="ml-1 capitalize">
-                        {type.platform.replace("-", " ")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  {
-                    type.bookingLink ? (
-                        <Input
-                            readOnly
-                            value={`https://${type.bookingLink}`}
-                            className="flex-1 text-sm bg-gray-50"
-                        />
-                    ) : null
-                  }
-                </div>
-
-                <div className="flex items-center space-x-2 pt-2 border-t border-gray-200">
-                  <Button size="sm" variant="outline">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button
-                      onClick={() => deleteMeetingType.mutate(type.id)}
-                      size="sm"
-                      variant="ghost"
-                      className="text-red-600 ml-auto"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
   );
 }

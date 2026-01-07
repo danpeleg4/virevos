@@ -446,20 +446,20 @@ export function MeetingNotes() {
                       <div className="flex-1">
                         <DialogTitle className="text-2xl">{selectedNote.meetingTitle}</DialogTitle>
                         <DialogDescription className="mt-2">
-                          <div className="flex flex-wrap items-center gap-3 text-sm">
-                            <div className="flex items-center">
+                          <span className="flex flex-wrap items-center gap-3 text-sm">
+                            <span className="flex items-center">
                               <Calendar className="h-4 w-4 mr-1" />
-                              {selectedNote.date} at {selectedNote.time}
-                            </div>
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-1" />
+                                {selectedNote.date} at {selectedNote.time}
+                            </span>
+                          <span className="flex items-center">
+                            <Clock className="h-4 w-4 mr-1" />
                               {selectedNote.duration}
-                            </div>
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 mr-1" />
+                            </span>
+                          <span className="flex items-center">
+                            <Users className="h-4 w-4 mr-1" />
                               {selectedNote.attendees.length} participants
-                            </div>
-                          </div>
+                            </span>
+                              </span>
                         </DialogDescription>
                       </div>
                     </div>
