@@ -56,5 +56,7 @@ export async function POST(req: NextRequest) {
         },
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+        sendReasoning: true,
+    });
 }
