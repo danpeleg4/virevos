@@ -12,19 +12,6 @@ export async function GET() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Fetch internal user
-    const dbUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.user_id, user.id))
-        .limit(1);
-
-    if (dbUser.length === 0) {
-        return new NextResponse("User not found", { status: 404 });
-    }
-
-    const internalUserId = dbUser[0].user_id;
-
     // Google token
     const token = await getFreshGoogleAccessToken(user.id);
     if (token) {
@@ -54,7 +41,7 @@ export async function GET() {
         const existingMeetings = await db
             .select()
             .from(meetings)
-            .where(eq(meetings.userId, internalUserId));
+            .where(eq(meetings.userId, user.id));
 
         const existingMap = new Map(existingMeetings.map(m => [m.googleEventId || m.id, m]));
         const googleEventIds = new Set(events.map(e => e.id).filter(Boolean) as string[]);
@@ -161,7 +148,7 @@ export async function GET() {
                 origin: "google_calendar",
                 type: "in-person",
                 status,
-                userId: internalUserId,
+                userId: user.id,
             });
         }
 
@@ -172,7 +159,7 @@ export async function GET() {
 
     // Return DB meetings
     const rows = await db.query.meetings.findMany({
-        where: eq(meetings.userId, internalUserId),
+        where: eq(meetings.userId, user.id),
         with: {
             attendees: true,
         },

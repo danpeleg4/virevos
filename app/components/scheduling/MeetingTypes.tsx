@@ -345,12 +345,6 @@ export function MeetingTypes() {
                           <Clock className="h-4 w-4 mr-1" />
                           {type.duration} minutes
                         </div>
-                        <div className="flex items-center">
-                          {getPlatformIcon(type.platform)}
-                          <span className="ml-1 capitalize">
-                        {type.platform.replace("-", " ")}
-                      </span>
-                        </div>
                       </div>
                     </div>
 
@@ -703,9 +697,6 @@ export function MeetingTypes() {
                       Cancel Changes
                     </Button>
                     <div className="flex space-x-2">
-                      <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                        Save as Draft
-                      </Button>
                       <Button onClick={handleSaveEdit}>
                         <CheckCircle2 className="h-4 w-4 mr-2" />
                         Save Changes

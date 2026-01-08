@@ -102,10 +102,8 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             googleEventId,
         })
         .returning();
-
     return inserted;
 }
-
 
 export async function deleteEventFromCalendar(id: string) {
     const user = await currentUser();

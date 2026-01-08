@@ -176,7 +176,7 @@ export function BookMeetingDialog({
                             onClick={() => {
                                 if (!meetingType || !date || !time) return;
                                 const payload: NewMeetingInput = {
-                                    id: Date.now().toString(),
+                                    id: Date.now(),
                                     title,
                                     description,
                                     date,

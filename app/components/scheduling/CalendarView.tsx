@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -24,7 +24,7 @@ import {
 import { motion } from "motion/react";
 import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
-import type { Meeting, NewMeetingInput } from "@/types/meeting";
+import type {Meeting, MeetingType, NewMeetingInput} from "@/types/meeting";
 import axios from "axios";
 import { addMeetingToCalendar, deleteEventFromCalendar } from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,6 +43,14 @@ export function CalendarView() {
         return new Date(year, month - 1, day); // LOCAL date, not UTC
     }
 
+    const getMeetingTypes = useQuery<MeetingType[]>({
+        queryKey: ["meetingTypes"],
+        queryFn: async () => {
+            const res = await axios.get('/api/meetings/meeting-types')
+            return res.data
+        }
+    })
+
     const meetings = useQuery({
         queryKey: ["meetings"],
         queryFn: async () => {
@@ -57,6 +65,7 @@ export function CalendarView() {
         }
     })
 
+    //TODO ADD OPTIMISTIC UPDATES
     const mutation = useMutation({
         mutationFn: async (meeting: NewMeetingInput) => {
             const res = await addMeetingToCalendar(meeting);
@@ -129,19 +138,19 @@ export function CalendarView() {
         mutation.mutate(meeting);
     };
 
-    const getStatusColor = (status: Meeting["status"]) => {
-        switch (status) {
-            case "scheduled":
-                return "bg-blue-100 text-blue-700 border-blue-200";
-            case "rescheduled":
-                return "bg-yellow-100 text-yellow-700 border-yellow-200";
-            case "conflict":
-                return "bg-red-100 text-red-700 border-red-200";
-            case "completed":
-                return "bg-green-100 text-green-700 border-green-200";
-            default:
-                return "bg-gray-100 text-gray-700 border-gray-200";
-        }
+    const getStatusColor = (type: string) => {
+        const types = getMeetingTypes?.data;
+        if (!types) return "bg-gray-100 text-gray-700 border-gray-200";
+
+        const t = types.find(mt => mt.name === type);
+        if (!t) return "bg-gray-100 text-gray-700 border-gray-200";
+
+        // Derive Tailwind classes dynamically
+        const bg = `bg-${t.color.toLowerCase()}-100`;
+        const text = `text-${t.color.toLowerCase()}-700`;
+        const border = `border-${t.color.toLowerCase()}-200`;
+
+        return `${bg} ${text} ${border}`;
     };
 
     const getTypeIcon = (type: string) => {
@@ -267,7 +276,7 @@ export function CalendarView() {
                                                     <div
                                                         onClick={() => handleMeetingClick(meeting)}
                                                         className={`p-3 rounded-lg border cursor-pointer hover:shadow-md ${getStatusColor(
-                                                            meeting.status
+                                                            meeting.type
                                                         )}`}
                                                     >
                                                         <div className="flex items-start justify-between mb-2">
