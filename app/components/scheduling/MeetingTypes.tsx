@@ -210,16 +210,38 @@ export function MeetingTypes() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="color">Color</Label>
-                  <Select defaultValue="blue">
-                    <SelectTrigger id="color">
+                  <Label htmlFor="edit-color">Color</Label>
+                  <Select
+                      defaultValue="blue"
+                  >
+                    <SelectTrigger id="edit-color">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="blue">Blue</SelectItem>
-                      <SelectItem value="green">Green</SelectItem>
-                      <SelectItem value="purple">Purple</SelectItem>
-                      <SelectItem value="orange">Orange</SelectItem>
+                      <SelectItem value="blue">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                          Blue
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="green">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                          Green
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="purple">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                          Purple
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="orange">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+                          Orange
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
