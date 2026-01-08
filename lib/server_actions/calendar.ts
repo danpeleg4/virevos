@@ -182,6 +182,7 @@ export async function editMeetingType(editType: MeetingType) {
     try {
         await db.update(meetingTypes).set({
             name: editType.name,
+            description: editType.description,
             active: editType.active,
             duration: editType.duration,
             color: editType.color,
