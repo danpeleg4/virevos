@@ -1,24 +1,18 @@
-// Shared Meeting-related types used across client and server
 export interface MeetingType {
     id: number;
     name: string;
     duration: number;
-    description: string | number | readonly string[] | undefined;
+    description: string;
     color: string;
-    platform: "zoom" | "google-meet" | "In-Person";
     bookingLink?: string;
     active: boolean;
     maxBookings?: number | null;
     maxPerDay?: number;
-    location?: string;
     bufferTime?: number;
     confirmationEmail?: boolean;
     reminderEmail?: boolean;
     requiresApproval?: boolean;
-    customQuestions?: { question: string; required: boolean }[];
 }
-
-export type MeetingTypePlatform = "zoom" | "google-meet" | "In-Person";
 
 export type MeetingStatus = "scheduled" | "rescheduled" | "conflict" | "completed";
 
@@ -27,15 +21,14 @@ export interface Attendee {
     initials: string;
 }
 
-// Full Meeting object as stored/returned by the API
 export interface Meeting {
     id: string;
     title: string;
     description: string;
-    link: string; // meeting/join URL if applicable
-    date: string; // YYYY-MM-DD
-    time: string; // e.g., "3:30 PM"
-    duration: number; // in minutes
+    link: string;
+    date: string;
+    time: string;
+    duration: number;
     type: MeetingTypePlatform;
     attendees?: Attendee[];
     status: MeetingStatus;
@@ -46,7 +39,6 @@ export interface Meeting {
     googleEventId?: string | null;
 }
 
-// Input payload when creating a new meeting (prior to link generation)
 export interface NewMeetingInput {
     id: number;
     title: string;

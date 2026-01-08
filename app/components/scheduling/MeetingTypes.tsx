@@ -21,20 +21,23 @@ import {
   DialogDescription,
 } from "../ui/dialog";
 import { Switch } from "../ui/switch";
-import { Plus, Video, Users, Clock, Copy, ExternalLink, Edit, Trash2, Calendar, Mail, Bell, Link as LinkIcon, CheckCircle2 } from "lucide-react";
+import { Plus, Users, Clock, Copy, ExternalLink, Edit, Trash2, Calendar, Mail, Bell, Link as LinkIcon, CheckCircle2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { createMeetsType, deleteMeetsType, updateActiveMeetingType } from "@/lib/server_actions/calendar";
+import {
+  createMeetsType,
+  deleteMeetsType,
+  editMeetingType,
+  updateActiveMeetingType
+} from "@/lib/server_actions/calendar";
 import { MeetingType } from "@/types/meeting";
 
 export function MeetingTypes() {
-  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>();
   const [isCreating, setIsCreating] = useState(false);
   const [editingType, setEditingType] = useState<MeetingType | null>(null);
   const [name, setName] = useState("");
   const [duration, setDuration] = useState(30);
-  const [platform, setPlatform] = useState<"zoom" | "google-meet" | "In-Person">("zoom");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("blue");
   const [maxBookings, setMaxBookings] = useState<number | undefined>(undefined);
@@ -48,6 +51,37 @@ export function MeetingTypes() {
       return res.data
     }
   })
+
+  const updateMeetingType = useMutation({
+    mutationFn: async (updated: MeetingType) => {
+      await editMeetingType(updated);
+      return updated;
+    },
+
+    onMutate: async (updated) => {
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], (old) =>
+          old?.map((type) =>
+              type.id === updated.id ? { ...type, ...updated } : type
+          )
+      );
+
+      return { previous };
+    },
+
+    onError: (_err, _updated, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    },
+  });
 
   const createMeetingType = useMutation({
     mutationFn: (data: {
@@ -152,15 +186,10 @@ export function MeetingTypes() {
   };
 
   const handleSaveEdit = () => {
-    if (editingType) {
-      setMeetingTypes(
-          meetingTypes?.map((type) =>
-              type.id === editingType.id ? editingType : type
-          )
-      );
-      setIsEditDialogOpen(false);
-      setEditingType(null);
-    }
+    if (!editingType) return;
+    updateMeetingType.mutate(editingType);
+    setIsEditDialogOpen(false);
+    setEditingType(null);
   };
 
   const getColorClass = (color: string) => {
@@ -171,10 +200,6 @@ export function MeetingTypes() {
       orange: "bg-orange-100 text-orange-700 border-orange-200",
     };
     return colors[color] || colors.blue;
-  };
-
-  const getPlatformIcon = (platform: string) => {
-    return <Video className="h-4 w-4" />;
   };
 
   return (
@@ -675,7 +700,6 @@ export function MeetingTypes() {
                               Hi [Name],<br /><br />
                               Your {editingType.name} has been scheduled for [Date] at [Time].<br /><br />
                               Duration: {editingType.duration} minutes<br />
-                              Location: {editingType.location || "Virtual"}<br /><br />
                               [Meeting Link]
                             </p>
                           </div>
