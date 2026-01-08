@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useMemo, useState} from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -23,108 +23,129 @@ import {
 import { Switch } from "../ui/switch";
 import { Plus, Video, Users, Clock, Copy, ExternalLink, Edit, Trash2, Calendar, Mail, Bell, Link as LinkIcon, CheckCircle2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-
-interface MeetingType {
-  id: string;
-  name: string;
-  duration: number;
-  description: string;
-  color: string;
-  platform: "zoom" | "google-meet" | "teams";
-  bookingLink: string;
-  active: boolean;
-  maxPerDay?: number;
-  location?: string;
-  bufferTime?: number;
-  confirmationEmail?: boolean;
-  reminderEmail?: boolean;
-  requiresApproval?: boolean;
-  customQuestions?: { question: string; required: boolean }[];
-}
-
-const mockMeetingTypes: MeetingType[] = [
-  {
-    id: "1",
-    name: "Discovery Call",
-    duration: 30,
-    description: "Initial consultation to understand client needs and explore how FlowTask can help",
-    color: "blue",
-    platform: "zoom",
-    bookingLink: "flowtask.com/book/discovery-call",
-    active: true,
-    maxPerDay: 3,
-    location: "Virtual",
-    bufferTime: 10,
-    confirmationEmail: true,
-    reminderEmail: true,
-    requiresApproval: false,
-    customQuestions: [
-      { question: "What are your main pain points?", required: true },
-      { question: "How did you hear about us?", required: false },
-    ],
-  },
-  {
-    id: "2",
-    name: "Client Onboarding",
-    duration: 60,
-    description: "Comprehensive onboarding session for new clients",
-    color: "green",
-    platform: "zoom",
-    bookingLink: "flowtask.com/book/onboarding",
-    active: true,
-    maxPerDay: 2,
-    location: "Virtual",
-    bufferTime: 15,
-    confirmationEmail: true,
-    reminderEmail: true,
-    requiresApproval: true,
-  },
-  {
-    id: "3",
-    name: "Quick Check-in",
-    duration: 15,
-    description: "Brief status update or quick question",
-    color: "purple",
-    platform: "google-meet",
-    bookingLink: "flowtask.com/book/check-in",
-    active: true,
-    location: "Virtual",
-    bufferTime: 5,
-    confirmationEmail: true,
-    reminderEmail: false,
-    requiresApproval: false,
-  },
-  {
-    id: "4",
-    name: "Strategy Session",
-    duration: 90,
-    description: "Deep dive into workflow optimization and automation strategy",
-    color: "orange",
-    platform: "zoom",
-    bookingLink: "flowtask.com/book/strategy",
-    active: true,
-    maxPerDay: 1,
-    location: "Virtual",
-    bufferTime: 20,
-    confirmationEmail: true,
-    reminderEmail: true,
-    requiresApproval: true,
-  },
-];
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { createMeetsType, deleteMeetsType, updateActiveMeetingType } from "@/lib/server_actions/calendar";
+import { MeetingType } from "@/types/meeting";
 
 export function MeetingTypes() {
-  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>(mockMeetingTypes);
+  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>();
   const [isCreating, setIsCreating] = useState(false);
   const [editingType, setEditingType] = useState<MeetingType | null>(null);
+  const [name, setName] = useState("");
+  const [duration, setDuration] = useState(30);
+  const [platform, setPlatform] = useState<"zoom" | "google-meet" | "In-Person">("zoom");
+  const [description, setDescription] = useState("");
+  const [color, setColor] = useState("blue");
+  const [maxBookings, setMaxBookings] = useState<number | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const toggleActive = (id: string) => {
-    setMeetingTypes(
-        meetingTypes.map((type) =>
-            type.id === id ? { ...type, active: !type.active } : type
-        )
-    );
-  };
+  const getMeetingTypes = useQuery<MeetingType[]>({
+    queryKey: ["meetingTypes"],
+    queryFn: async () => {
+      const res = await axios.get('/api/meetings/meeting-types')
+      return res.data
+    }
+  })
+
+  const createMeetingType = useMutation({
+    mutationFn: (data: {
+      name: string;
+      duration: number;
+      description: string;
+      color: string;
+      platform: "zoom" | "google-meet" | "In-Person";
+      maxBookings?: number
+    }) => createMeetsType(data),
+    onMutate: async (newType) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      // Snapshot previous value
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      // Optimistically update
+      queryClient.setQueryData(["meetingTypes"], (old: MeetingType[] | undefined) => [
+        ...(old || []),
+        {
+          id: Math.floor(Math.random() * 1000000), // temporary ID for optimistic update
+          active: true,
+          ...newType,
+        }
+      ]);
+
+      return { previous };
+    },
+    onError: (_err, _newType, context) => {
+      // Revert on error
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      // Refetch to sync with server
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    }
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
+      await updateActiveMeetingType(id, active)
+    },
+    onMutate: async ({ id, active }: { id: number, active: boolean }) => {
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
+          old?.map(type =>
+              type.id === id ? { ...type, active } : type
+          )
+      );
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      // rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    }
+  });
+
+  const deleteMeetingType = useMutation({
+    mutationFn: async (id: number) => deleteMeetsType(id),
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey: ["meetingTypes"] });
+
+      const previous = queryClient.getQueryData<MeetingType[]>(["meetingTypes"]);
+
+      queryClient.setQueryData<MeetingType[]>(["meetingTypes"], old =>
+          old?.filter(type => type.id !== id)
+      );
+
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["meetingTypes"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetingTypes"] });
+    },
+  });
+
+  const sortedMeetingTypes = useMemo(() => {
+    if (!getMeetingTypes.data) return [];
+
+    return [...getMeetingTypes.data].sort((a, b) => {
+      // active first
+      return Number(b.active) - Number(a.active);
+    });
+  }, [getMeetingTypes.data]);
 
   const handleEdit = (type: MeetingType) => {
     setEditingType(type);
@@ -134,7 +155,7 @@ export function MeetingTypes() {
   const handleSaveEdit = () => {
     if (editingType) {
       setMeetingTypes(
-          meetingTypes.map((type) =>
+          meetingTypes?.map((type) =>
               type.id === editingType.id ? editingType : type
           )
       );
@@ -185,7 +206,10 @@ export function MeetingTypes() {
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="duration">Duration (minutes)</Label>
-                    <Select defaultValue="30">
+                    <Select defaultValue="30"
+                            value={duration.toString()}
+                            onValueChange={(val) => setDuration(parseInt(val))}
+                    >
                       <SelectTrigger id="duration">
                         <SelectValue />
                       </SelectTrigger>
@@ -206,6 +230,8 @@ export function MeetingTypes() {
                       id="description"
                       placeholder="What is this meeting for?"
                       rows={3}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
 
@@ -213,6 +239,8 @@ export function MeetingTypes() {
                   <Label htmlFor="edit-color">Color</Label>
                   <Select
                       defaultValue="blue"
+                      value={color}
+                      onValueChange={(val) => setColor(val)}
                   >
                     <SelectTrigger id="edit-color">
                       <SelectValue />
@@ -252,6 +280,7 @@ export function MeetingTypes() {
                       id="max-per-day"
                       type="number"
                       placeholder="Leave empty for unlimited"
+                      onChange={(e) => setMaxBookings(e.target.value ? parseInt(e.target.value) : undefined)}
                   />
                 </div>
 
@@ -259,7 +288,23 @@ export function MeetingTypes() {
                   <Button variant="outline" onClick={() => setIsCreating(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={() => setIsCreating(false)}>Create Meeting Type</Button>
+                  <Button onClick={() => {
+                    createMeetingType.mutate({
+                      name,
+                      duration,
+                      description,
+                      color,
+                      platform,
+                      maxBookings
+                    });
+
+                    setIsCreating(false);
+                    setName("");
+                    setDuration(30);
+                    setDescription("");
+                    setColor("blue");
+                    setMaxBookings(undefined);
+                  }}>Create Meeting Type</Button>
                 </div>
               </div>
             </DialogContent>
@@ -267,7 +312,7 @@ export function MeetingTypes() {
         </div>
 
         <div className="grid grid-cols-1 gap-4">
-          {meetingTypes.map((type) => (
+          {sortedMeetingTypes?.map((type) => (
               <Card key={type.id} className={`border-l-4 ${type.active ? '' : 'opacity-60'}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -290,7 +335,7 @@ export function MeetingTypes() {
                     </div>
                     <Switch
                         checked={type.active}
-                        onCheckedChange={() => toggleActive(type.id)}
+                        onCheckedChange={() => toggleActiveMutation.mutate({ id: type.id, active: !type.active })}
                     />
                   </div>
                 </CardHeader>
@@ -340,7 +385,7 @@ export function MeetingTypes() {
                         <Users className="h-4 w-4 mr-2" />
                         Customize Questions
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-red-600 ml-auto">
+                      <Button onClick={() => deleteMeetingType.mutate(type.id)} size="sm" variant="ghost" className="text-red-600 ml-auto">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </Button>

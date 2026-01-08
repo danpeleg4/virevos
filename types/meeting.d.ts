@@ -3,12 +3,19 @@ export interface MeetingType {
     id: number;
     name: string;
     duration: number;
-    description: string | null;
+    description: string | number | readonly string[] | undefined;
     color: string;
     platform: "zoom" | "google-meet" | "In-Person";
     bookingLink?: string;
     active: boolean;
     maxBookings?: number | null;
+    maxPerDay?: number;
+    location?: string;
+    bufferTime?: number;
+    confirmationEmail?: boolean;
+    reminderEmail?: boolean;
+    requiresApproval?: boolean;
+    customQuestions?: { question: string; required: boolean }[];
 }
 
 export type MeetingTypePlatform = "zoom" | "google-meet" | "In-Person";
@@ -41,7 +48,7 @@ export interface Meeting {
 
 // Input payload when creating a new meeting (prior to link generation)
 export interface NewMeetingInput {
-    id: string;
+    id: number;
     title: string;
     description: string;
     date: string;
