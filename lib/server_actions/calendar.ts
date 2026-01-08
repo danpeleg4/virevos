@@ -2,102 +2,110 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import {meetings, meetingTypes, users, zoomTokens} from "@/db/schema";
+import { meetings, meetingTypes, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { NewMeetingInput } from "@/types/meeting";
-import { getFreshZoomAccessToken } from '@/lib/zoom_access'
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
 import { parseDateTime } from "@/lib/date_utils";
 
+type MeetingUpdate = Partial<typeof meetings.$inferInsert>;
 
 type meetingData = {
     name: string;
     duration: number;
     description: string;
     color: string;
-    platform: "zoom" | "google-meet" | "In-Person";
     maxBookings?: number
 }
 
 export async function addMeetingToCalendar(meeting: NewMeetingInput) {
-    const body: NewMeetingInput = meeting
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
     }
 
-    const googleToken = await getFreshGoogleAccessToken(user.id);
-
-    // Lookup internal DB user
     const dbUser = await db
         .select()
         .from(users)
         .where(eq(users.user_id, user.id))
         .limit(1);
 
-    const startDate = parseDateTime(body.date, body.time);
     if (dbUser.length === 0) {
-        return
+        throw new Error("User not found in database");
     }
 
-    let googleEventId: string | null = null;
     const internalUserId = dbUser[0].user_id;
-    const email = dbUser[0].email;
-        if (googleToken) {
-            const oauth2Client = new google.auth.OAuth2();
-            oauth2Client.setCredentials({access_token: googleToken});
-            const calendar = google.calendar({version: "v3", auth: oauth2Client});
+    const startDate = parseDateTime(meeting.date, meeting.time);
+    const meetingId = crypto.randomUUID();
 
-            try {
-                const googleEvent = await calendar.events.insert({
-                    calendarId: "primary",
-                    requestBody: {
-                        summary: body.title,
-                        description: body.description,
-                        start: {
-                            dateTime: startDate.toISOString(),
-                        },
-                        end: {
-                            dateTime: new Date(startDate.getTime() + body.duration * 60000).toISOString(),
-                        },
-                        extendedProperties: {
-                            private: {
-                                appId: meeting.id,
-                            },
+    let googleEventId: string | null = null;
+    const googleToken = await getFreshGoogleAccessToken(user.id);
+
+    if (googleToken) {
+        const oauth2Client = new google.auth.OAuth2();
+        oauth2Client.setCredentials({ access_token: googleToken });
+
+        const calendar = google.calendar({
+            version: "v3",
+            auth: oauth2Client,
+        });
+
+        try {
+            const googleEvent = await calendar.events.insert({
+                calendarId: "primary",
+                requestBody: {
+                    summary: meeting.title,
+                    description: meeting.description,
+                    start: {
+                        dateTime: startDate.toISOString(),
+                        timeZone: "UTC",
+                    },
+                    end: {
+                        dateTime: new Date(
+                            startDate.getTime() + meeting.duration * 60000
+                        ).toISOString(),
+                        timeZone: "UTC",
+                    },
+                    extendedProperties: {
+                        private: {
+                            appMeetingId: meetingId,
                         },
                     },
-                });
-                googleEventId = googleEvent.data.id || null;
-            } catch (error) {
-                console.error("Google Calendar error:", error);
-            }
-        }
+                },
+            });
 
-    // Insert meeting
-    const inserted = await db
+            googleEventId = googleEvent.data.id ?? null;
+        } catch (error) {
+            console.error("Google Calendar error:", error);
+        }
+    }
+
+    const [inserted] = await db
         .insert(meetings)
         .values({
-            id: Math.random().toString(36).substring(7),
-            title: body.title,
-            description: body.description,
+            id: meetingId,
+            title: meeting.title,
+            description: meeting.description,
             link: null,
             origin: "app",
-            date: body.date,
-            time: body.time,
-            duration: body.duration,
-            type: body.type,
-            status: body.status,
-            hasNotes: body.hasNotes ?? false,
-            hasTranscript: body.hasTranscript ?? false,
-            autoRescheduled: body.autoRescheduled ?? false,
-            conflictReason: body.conflictReason ?? null,
+            date: meeting.date,
+            time: meeting.time,
+            duration: meeting.duration,
+            type: meeting.type,
+            status: meeting.status,
+            hasNotes: meeting.hasNotes ?? false,
+            hasTranscript: meeting.hasTranscript ?? false,
+            autoRescheduled: meeting.autoRescheduled ?? false,
+            conflictReason: meeting.conflictReason ?? null,
             userId: internalUserId,
-            googleEventId: googleEventId
+            googleEventId,
         })
         .returning();
-    return inserted[0];
+
+    return inserted;
 }
+
 
 export async function deleteEventFromCalendar(id: string) {
     const user = await currentUser();
@@ -190,10 +198,23 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
     }
 
     const meeting = meetingRow[0];
+    const dbUpdates: MeetingUpdate = {
+        title: updates.title,
+        description: updates.description,
+        date: updates.date,
+        time: updates.time,
+        duration: updates.duration,
+        type: updates.type,
+        status: updates.status,
+        hasNotes: updates.hasNotes,
+        hasTranscript: updates.hasTranscript,
+        autoRescheduled: updates.autoRescheduled,
+        conflictReason: updates.conflictReason,
+    };
 
     // Update in DB
     await db.update(meetings)
-        .set(updates)
+        .set(dbUpdates)
         .where(eq(meetings.id, id));
 
     // Sync to Google Calendar if connected

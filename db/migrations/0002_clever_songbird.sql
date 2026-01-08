@@ -1,0 +1,1 @@
+ALTER TABLE "meeting_types" DROP COLUMN "platform";

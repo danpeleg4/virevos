@@ -55,7 +55,6 @@ export function MeetingTypes() {
       duration: number;
       description: string;
       color: string;
-      platform: "zoom" | "google-meet" | "In-Person";
       maxBookings?: number
     }) => createMeetsType(data),
     onMutate: async (newType) => {
@@ -294,7 +293,6 @@ export function MeetingTypes() {
                       duration,
                       description,
                       color,
-                      platform,
                       maxBookings
                     });
 
