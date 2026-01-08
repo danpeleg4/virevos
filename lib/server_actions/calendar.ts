@@ -59,13 +59,13 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
                     description: meeting.description,
                     start: {
                         dateTime: startDate.toISOString(),
-                        timeZone: "UTC",
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                     },
                     end: {
                         dateTime: new Date(
                             startDate.getTime() + meeting.duration * 60000
                         ).toISOString(),
-                        timeZone: "UTC",
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                     },
                     extendedProperties: {
                         private: {
