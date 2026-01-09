@@ -8,7 +8,6 @@ import {MeetingType, NewMeetingInput} from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
 import { parseDateTime } from "@/lib/date_utils";
-import {NextResponse} from "next/server";
 
 type MeetingUpdate = Partial<typeof meetings.$inferInsert>;
 
@@ -153,7 +152,7 @@ export async function createMeetsType(data: meetingData) {
         throw new Error("Unauthorized");
     }
     const all = {...data, userId: user.id}
-    const s = await db.select().from(meetingTypes).where(eq(meetings.userId, user.id));
+    const s = await db.select().from(meetingTypes).where(eq(meetingTypes.userId, user.id));
     if (s.length >= 5) return
     await db.insert(meetingTypes).values(all)
 }
@@ -161,7 +160,6 @@ export async function createMeetsType(data: meetingData) {
 export async function updateActiveMeetingType(id: number, active: boolean) {
     const user = await currentUser();
     if (!user?.id) throw new Error("Unauthorized");
-
     const result = await db
         .update(meetingTypes)
         .set({ active })

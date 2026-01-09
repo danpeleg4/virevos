@@ -1,5 +1,5 @@
-import {useMemo, useState} from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { useMemo, useState, useEffect } from "react";
+import { CardContent, CardHeader, CardTitle, CardDescription, Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -21,8 +21,10 @@ import {
   DialogDescription,
 } from "../ui/dialog";
 import { Switch } from "../ui/switch";
-import { Plus, Users, Clock, Copy, ExternalLink, Edit, Trash2, Calendar, Mail, Bell, Link as LinkIcon, CheckCircle2 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import {
+  Plus, Clock, Copy, ExternalLink, Edit, Trash2, Link as LinkIcon, CheckCircle2,
+  AlertCircleIcon
+} from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -32,6 +34,7 @@ import {
   updateActiveMeetingType
 } from "@/lib/server_actions/calendar";
 import { MeetingType } from "@/types/meeting";
+import {Alert, AlertDescription, AlertTitle} from "@/app/components/ui/alert";
 
 export function MeetingTypes() {
   const [isCreating, setIsCreating] = useState(false);
@@ -42,6 +45,7 @@ export function MeetingTypes() {
   const [color, setColor] = useState("blue");
   const [maxBookings, setMaxBookings] = useState<number | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showLimitAlert, setShowLimitAlert] = useState(false);
   const queryClient = useQueryClient();
 
   const getMeetingTypes = useQuery<MeetingType[]>({
@@ -202,8 +206,29 @@ export function MeetingTypes() {
     return colors[color] || colors.blue;
   };
 
+  useEffect(() => {
+    if (!showLimitAlert) return;
+
+    const hide = setTimeout(() => setShowLimitAlert(false), 3000); // visible duration
+    return () => clearTimeout(hide);
+  }, [showLimitAlert]);
+
+
   return (
       <div className="space-y-6">
+        <div
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md
+  transition-all duration-500 ease-in-out
+  ${showLimitAlert ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}`}
+        >
+          <Alert variant="destructive" className="text-red-600">
+            <AlertCircleIcon className="h-4 w-4" />
+            <AlertTitle className="ml-2">Unable to Add Meeting Type</AlertTitle>
+            <AlertDescription className="ml-2">
+              Please upgrade your plan to create more than 5 meeting types.
+            </AlertDescription>
+          </Alert>
+        </div>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-gray-600">
@@ -224,7 +249,8 @@ export function MeetingTypes() {
               <div className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Meeting Name</Label>
-                  <Input id="name" placeholder="e.g., Discovery Call" />
+                  <Input id="name" placeholder="e.g., Discovery Call"
+                         onChange={(e) => setName(e.target.value)}/>
                 </div>
 
                 <div className="grid gap-4">
@@ -313,6 +339,11 @@ export function MeetingTypes() {
                     Cancel
                   </Button>
                   <Button onClick={() => {
+                    if ((getMeetingTypes.data?.length ?? 0) >= 5) {
+                      setShowLimitAlert(true);
+                      setIsCreating(false)
+                      return;
+                    }
                     createMeetingType.mutate({
                       name,
                       duration,
@@ -398,10 +429,6 @@ export function MeetingTypes() {
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
-                      <Button size="sm" variant="outline">
-                        <Users className="h-4 w-4 mr-2" />
-                        Customize Questions
-                      </Button>
                       <Button onClick={() => deleteMeetingType.mutate(type.id)} size="sm" variant="ghost" className="text-red-600 ml-auto">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
@@ -425,15 +452,6 @@ export function MeetingTypes() {
                     </DialogDescription>
                   </DialogHeader>
 
-                  <Tabs defaultValue="general" className="mt-4">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="general" className="cursor-pointer">General</TabsTrigger>
-                      <TabsTrigger value="scheduling" className="cursor-pointer">Scheduling</TabsTrigger>
-                      <TabsTrigger value="notifications" className="cursor-pointer">Notifications</TabsTrigger>
-                    </TabsList>
-
-                    {/* General Tab */}
-                    <TabsContent value="general" className="space-y-4 mt-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-name">Meeting Name</Label>
                         <Input
@@ -569,144 +587,6 @@ export function MeetingTypes() {
                             }
                         />
                       </div>
-                    </TabsContent>
-
-                    {/* Scheduling Tab */}
-                    <TabsContent value="scheduling" className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="buffer-time">Buffer Time Between Meetings</Label>
-                        <Select
-                            value={editingType.bufferTime?.toString() || "0"}
-                            onValueChange={(value) =>
-                                setEditingType({ ...editingType, bufferTime: parseInt(value) })
-                            }
-                        >
-                          <SelectTrigger id="buffer-time">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">No buffer</SelectItem>
-                            <SelectItem value="5">5 minutes</SelectItem>
-                            <SelectItem value="10">10 minutes</SelectItem>
-                            <SelectItem value="15">15 minutes</SelectItem>
-                            <SelectItem value="20">20 minutes</SelectItem>
-                            <SelectItem value="30">30 minutes</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-gray-500">
-                          Time to prepare between back-to-back meetings
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="max-per-day">Maximum Bookings Per Day</Label>
-                        <Input
-                            id="max-per-day"
-                            type="number"
-                            value={editingType.maxPerDay || ""}
-                            onChange={(e) =>
-                                setEditingType({
-                                  ...editingType,
-                                  maxPerDay: e.target.value ? parseInt(e.target.value) : undefined,
-                                })
-                            }
-                            placeholder="Unlimited"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Leave empty for unlimited bookings
-                        </p>
-                      </div>
-
-                      <div className={`p-4 rounded-lg border bg-blue-50 border-blue-200`}>
-                        <div className="flex items-start space-x-3">
-                          <Calendar className={`h-5 w-5 mt-0.5 text-blue-600`} />
-                          <div>
-                            <p className={`text-sm mb-1 text-gray-900`}>
-                              Booking Window
-                            </p>
-                            <p className={`text-xs text-gray-600`}>
-                              Configure how far in advance people can book. Available in Availability settings.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <Label className="mb-0">Require Approval</Label>
-                          <Switch
-                              checked={editingType.requiresApproval || false}
-                              onCheckedChange={(checked) =>
-                                  setEditingType({ ...editingType, requiresApproval: checked })
-                              }
-                          />
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Bookings require manual approval before being confirmed
-                        </p>
-                      </div>
-                    </TabsContent>
-
-                    {/* Notifications Tab */}
-                    <TabsContent value="notifications" className="space-y-4 mt-4">
-                      <div className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-3">
-                            <Mail className={`h-5 w-5 text-gray-600`} />
-                            <div>
-                              <Label className="mb-0">Confirmation Email</Label>
-                              <p className="text-xs text-gray-500">
-                                Send booking confirmation to attendees
-                              </p>
-                            </div>
-                          </div>
-                          <Switch
-                              checked={editingType.confirmationEmail || false}
-                              onCheckedChange={(checked) =>
-                                  setEditingType({ ...editingType, confirmationEmail: checked })
-                              }
-                          />
-                        </div>
-                      </div>
-
-                      <div className={`p-4 rounded-lg border bg-gray-50 border-gray-200`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-3">
-                            <Bell className={`h-5 w-5 text-gray-600`} />
-                            <div>
-                              <Label className="mb-0">Reminder Email</Label>
-                              <p className="text-xs text-gray-500">
-                                Send reminder 24 hours before meeting
-                              </p>
-                            </div>
-                          </div>
-                          <Switch
-                              checked={editingType.reminderEmail || false}
-                              onCheckedChange={(checked) =>
-                                  setEditingType({ ...editingType, reminderEmail: checked })
-                              }
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Email Template Preview</Label>
-                        <div className={`p-4 rounded-lg border bg-white border-gray-200`}>
-                          <div className="space-y-2 text-sm">
-                            <p className="text-gray-900">
-                              <strong>Subject:</strong> Your {editingType.name} is confirmed
-                            </p>
-                            <p className="text-gray-600">
-                              Hi [Name],<br /><br />
-                              Your {editingType.name} has been scheduled for [Date] at [Time].<br /><br />
-                              Duration: {editingType.duration} minutes<br />
-                              [Meeting Link]
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
 
                   {/* Footer Actions */}
                   <div className={`flex justify-between items-center pt-4 mt-4 border-t border-gray-200`}>

@@ -6,12 +6,7 @@ export interface MeetingType {
     color: string;
     bookingLink?: string;
     active: boolean;
-    maxBookings?: number | null;
     maxPerDay?: number;
-    bufferTime?: number;
-    confirmationEmail?: boolean;
-    reminderEmail?: boolean;
-    requiresApproval?: boolean;
 }
 
 export type MeetingStatus = "scheduled" | "rescheduled" | "conflict" | "completed";
