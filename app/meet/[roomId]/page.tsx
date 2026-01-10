@@ -129,12 +129,11 @@ export default function InMeetingView() {
             </div>
 
             {/* Video Grid */}
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 flex">
                 {participants.map((participant) => (
-                    <ParticipantVideo
-                        key={participant.sid}
-                        participant={participant}
-                    />
+                    <div key={participant.sid} className="relative flex-1">
+                        <ParticipantVideo participant={participant} />
+                    </div>
                 ))}
             </div>
 
@@ -220,46 +219,69 @@ export default function InMeetingView() {
 // Component to render a participant's video
 function ParticipantVideo({ participant }: { participant: Participant }) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const audioRef = useRef<HTMLDivElement>(null);
 
+    // Attach video & audio tracks
     useEffect(() => {
-        // Clear old videos
-        containerRef.current?.innerHTML && (containerRef.current.innerHTML = "");
+        if (!containerRef.current || !audioRef.current) return;
 
-        // Attach all subscribed video tracks
-        participant.videoTrackPublications.forEach((pub) => {
-            if (pub.isSubscribed) {
-                const el = pub.track?.attach();
-                if (el && containerRef.current) {
-                    el.style.width = "100%";
-                    el.style.height = "100%";
-                    el.style.objectFit = "cover";
-                    containerRef.current.appendChild(el);
-                }
+        const attachTrack = (track: RemoteTrack | any) => {
+            const el = track.attach();
+            if (!el) return;
+            if (track.kind === "video") {
+                el.style.width = "100%";
+                el.style.height = "100%";
+                el.style.objectFit = "cover";
+                containerRef.current?.appendChild(el);
+            } else if (track.kind === "audio") {
+                el.autoplay = true;
+                audioRef.current?.appendChild(el);
             }
-        });
-    }, [participant.videoTrackPublications, participant.sid]);
+        };
 
-    // If no video, show placeholder
+        // Attach existing tracks
+        participant.videoTrackPublications.forEach((pub) => {
+            if (pub.isSubscribed && pub.track) attachTrack(pub.track);
+        });
+
+        participant.audioTrackPublications.forEach((pub) => {
+            if (pub.isSubscribed && pub.track) attachTrack(pub.track);
+        });
+
+        const handleTrackSubscribed = (track: RemoteTrack) => attachTrack(track);
+        participant.on("trackSubscribed", handleTrackSubscribed);
+
+        // Cleanup
+        return () => {
+            participant.removeListener("trackSubscribed", handleTrackSubscribed);
+            if (containerRef.current) containerRef.current.innerHTML = "";
+            if (audioRef.current) audioRef.current.innerHTML = "";
+        };
+    }, [participant]);
+
+
     const hasVideo = Array.from(participant.videoTrackPublications.values()).some((pub) => pub.isSubscribed);
 
     return (
-        <div className="absolute inset-0" ref={containerRef}>
-            {!hasVideo && (
-                <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span className="text-2xl text-gray-300">{participant.identity[0].toUpperCase()}</span>
+        <>
+            <div className="absolute inset-0" ref={containerRef}>
+                {!hasVideo && (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span className="text-2xl text-gray-300">{participant.identity[0].toUpperCase()}</span>
+                            </div>
+                            <p className="text-white">{participant.identity}</p>
                         </div>
-                        <p className="text-white">{participant.identity}</p>
                     </div>
+                )}
+                <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-2">
+                    <span>{participant.identity}</span>
+                    {!participant.isMicrophoneEnabled && <MicOff className="h-3 w-3 text-red-400" />}
                 </div>
-            )}
-
-            {/* Participant Name and Mute */}
-            <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-2">
-                <span>{participant.identity}</span>
-                {!participant.isMicrophoneEnabled && <MicOff className="h-3 w-3 text-red-400" />}
             </div>
-        </div>
+            {/* Hidden audio container */}
+            <div ref={audioRef} className="hidden" />
+        </>
     );
 }
