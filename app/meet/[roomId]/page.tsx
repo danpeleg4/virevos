@@ -37,6 +37,19 @@ export default function InMeetingView() {
     const roomRef = useRef<Room | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
 
+    function attachTrack(track: RemoteTrack) {
+        const el = track.attach();
+        el.autoplay = true;
+        el.autoplay = true;
+        if (track.kind === "video") {
+            el.style.width = "200px"; // example
+            el.style.height = "150px";
+            document.body.appendChild(el);
+        } else if (track.kind === "audio") {
+            document.body.appendChild(el);
+        }
+    }
+
     // Join the room
     const joinRoom = async () => {
         const res = await axios.get(`/api/token/${roomId}?name=${encodeURIComponent(name)}`);
@@ -52,11 +65,32 @@ export default function InMeetingView() {
         }
 
         // Add yourself to participants
-        setParticipants([room.localParticipant]);
+        setParticipants([
+            room.localParticipant,
+            ...Array.from(room.remoteParticipants.values()),
+        ]);
 
-        // Track new participants
-        room.on(RoomEvent.ParticipantConnected, (p: Participant) => {
-            setParticipants((prev) => [...prev, p]);
+        room.remoteParticipants.forEach((participant) => {
+            // Attach any already-subscribed tracks
+            participant.trackPublications.forEach((pub) => {
+                if (pub.track) {
+                    attachTrack(pub.track);
+                }
+            });
+
+            // Listen for new tracks from this participant
+            participant.on("trackSubscribed", (track) => attachTrack(track));
+        });
+
+        room.on(RoomEvent.ParticipantConnected, (participant) => {
+            setParticipants((prev) => [...prev, participant]);
+
+            // Attach any existing tracks they may already have
+            participant.trackPublications.forEach((pub) => {
+                if (pub.track) attachTrack(pub.track);
+            });
+
+            participant.on("trackSubscribed", (track) => attachTrack(track));
         });
 
         room.on(RoomEvent.ParticipantDisconnected, (p: Participant) => {
