@@ -10,7 +10,6 @@ import {
     DialogTitle,
 } from "../../components/ui/dialog";
 import { Video, Users, Check, VideoOff, Mic, MicOff } from "lucide-react";
-import { motion } from "framer-motion";
 import {useParams, useRouter} from "next/navigation";
 import {
     createLocalTracks,
@@ -25,8 +24,6 @@ import axios from "axios";
 export default function InMeetingView() {
     const params = useParams();
     const roomId = params.roomId as string;
-    //console.log("roomId", roomId);
-
     const [name, setName] = useState("");
     const [joined, setJoined] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
@@ -240,11 +237,11 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
         };
 
         // Attach existing tracks
-        participant.videoTrackPublications.forEach((pub) => {
+        participant.videoTrackPublications.values().forEach((pub) => {
             if (pub.isSubscribed && pub.track) attachTrack(pub.track);
         });
 
-        participant.audioTrackPublications.forEach((pub) => {
+        participant.audioTrackPublications.values().forEach((pub) => {
             if (pub.isSubscribed && pub.track) attachTrack(pub.track);
         });
 
