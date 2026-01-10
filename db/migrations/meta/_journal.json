@@ -15,6 +15,20 @@
       "when": 1767566204464,
       "tag": "0001_far_invaders",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767842780823,
+      "tag": "0002_clever_songbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1767846471572,
+      "tag": "0003_silly_captain_britain",
+      "breakpoints": true
     }
   ]
 }

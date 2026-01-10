@@ -19,7 +19,7 @@ export const users = pgTable("users", {
 
 // CLIENTS
 export const clients = pgTable("clients", {
-    id: integer("id").generatedAlwaysAsIdentity().primaryKey().unique(),
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
     name: text("name").notNull(),
     email: text("email"),
     phone: text("phone"),
@@ -83,7 +83,6 @@ export const meetingTypes = pgTable("meeting_types", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
     name: text("name").notNull(),
     duration: integer("duration").notNull(),
-    platform: text("platform").notNull(),
     description: text("description"),
     color: text("color").notNull(),
     maxBookings: integer("max_bookings"),

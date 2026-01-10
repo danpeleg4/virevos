@@ -1,0 +1,265 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react";
+import { Button } from "../../components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "../../components/ui/dialog";
+import { Video, Users, Check, VideoOff, Mic, MicOff } from "lucide-react";
+import { motion } from "framer-motion";
+import {useParams, useRouter} from "next/navigation";
+import {
+    createLocalTracks,
+    Room,
+    Participant,
+    RemoteTrackPublication,
+    RemoteTrack,
+    RoomEvent
+} from "livekit-client";
+import axios from "axios";
+
+export default function InMeetingView() {
+    const params = useParams();
+    const roomId = params.roomId as string;
+    //console.log("roomId", roomId);
+
+    const [name, setName] = useState("");
+    const [joined, setJoined] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isCameraOff, setIsCameraOff] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const router = useRouter();
+
+    const roomRef = useRef<Room | null>(null);
+    const [participants, setParticipants] = useState<Participant[]>([]);
+
+    // Join the room
+    const joinRoom = async () => {
+        const res = await axios.get(`/api/token/${roomId}?name=${encodeURIComponent(name)}`);
+        const { token, url } = res.data;
+        const room = new Room();
+        roomRef.current = room;
+        await room.connect(url, token);
+
+        // Publish local tracks
+        const localTracks = await createLocalTracks({ audio: true, video: true });
+        for (const track of localTracks) {
+            await room.localParticipant.publishTrack(track);
+        }
+
+        // Add yourself to participants
+        setParticipants([room.localParticipant]);
+
+        // Track new participants
+        room.on(RoomEvent.ParticipantConnected, (p: Participant) => {
+            setParticipants((prev) => [...prev, p]);
+        });
+
+        room.on(RoomEvent.ParticipantDisconnected, (p: Participant) => {
+            setParticipants((prev) => prev.filter((part) => part.sid !== p.sid));
+        });
+
+        // TrackSubscribed fires when a participant adds a track
+        room.on(RoomEvent.TrackSubscribed, (track: RemoteTrack, pub: RemoteTrackPublication, participant: Participant) => {
+            // Force re-render to attach the new track
+            setParticipants((prev) => [...prev]);
+        });
+
+        // Enable local camera/mic
+        await room.localParticipant.setCameraEnabled(true);
+        await room.localParticipant.setMicrophoneEnabled(true);
+
+        setJoined(true);
+    };
+
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    if (!joined) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
+                <h1 className="text-2xl mb-4">Enter your name to join</h1>
+                <input
+                    className="p-2 rounded text-black mb-4"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
+                <button
+                    className="px-4 py-2 bg-blue-600 rounded"
+                    onClick={joinRoom}
+                    disabled={!name}
+                >
+                    Join
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="fixed inset-0 bg-gray-900 flex flex-col z-50">
+            {/* Recording Indicator */}
+            {isRecording && (
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+                    <div className="bg-red-600 text-white px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        <span className="text-sm">
+              Recording • {Math.floor(recordingTime / 60)}:
+                            {(recordingTime % 60).toString().padStart(2, "0")}
+            </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Meeting Name */}
+            <div className="absolute top-4 left-4 z-10">
+                <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
+                    <p className="text-sm">Meeting: {roomId}</p>
+                </div>
+            </div>
+
+            {/* Video Grid */}
+            <div className="absolute inset-0">
+                {participants.map((participant) => (
+                    <ParticipantVideo
+                        key={participant.sid}
+                        participant={participant}
+                    />
+                ))}
+            </div>
+
+            {/* Control Bar */}
+            <div className="p-6 flex justify-center">
+                <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-4 flex items-center space-x-3">
+                    <button
+                        onClick={() => setIsMuted(!isMuted)}
+                        className={`p-4 rounded-full transition-colors ${
+                            isMuted ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
+                        }`}
+                    >
+                        {isMuted ? <MicOff className="h-5 w-5 text-white" /> : <Mic className="h-5 w-5 text-white" />}
+                    </button>
+
+                    <button
+                        onClick={() => setIsCameraOff(!isCameraOff)}
+                        className={`p-4 rounded-full transition-colors ${
+                            isCameraOff ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
+                        }`}
+                    >
+                        {isCameraOff ? <VideoOff className="h-5 w-5 text-white" /> : <Video className="h-5 w-5 text-white" />}
+                    </button>
+
+                    <button className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors">
+                        <Users className="h-5 w-5 text-white" />
+                    </button>
+
+                    <button
+                        onClick={() => setIsRecording(!isRecording)}
+                        className={`p-4 rounded-full transition-colors ${
+                            isRecording ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
+                        }`}
+                    >
+                        <div className={`h-5 w-5 rounded ${isRecording ? "bg-white" : "bg-red-600"}`}></div>
+                    </button>
+
+                    <button
+                        onClick={handleCopyLink}
+                        className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
+                    >
+                        {copied ? <Check className="h-5 w-5 text-green-400" /> : <Users className="h-5 w-5 text-white" />}
+                    </button>
+
+                    <button
+                        onClick={() => setShowLeaveConfirm(true)}
+                        className="p-4 rounded-full bg-red-600 hover:bg-red-700 transition-colors ml-3"
+                    >
+                        <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {/* Leave Confirmation */}
+            <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Leave Meeting?</DialogTitle>
+                        <DialogDescription>Are you sure you want to leave this meeting?</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end space-x-3 mt-4">
+                        <Button variant="outline" onClick={() => setShowLeaveConfirm(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                roomRef.current?.disconnect();
+                                router.push('/')
+                            }}
+                        >
+                            Leave Meeting
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+
+// Component to render a participant's video
+function ParticipantVideo({ participant }: { participant: Participant }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // Clear old videos
+        containerRef.current?.innerHTML && (containerRef.current.innerHTML = "");
+
+        // Attach all subscribed video tracks
+        participant.videoTrackPublications.forEach((pub) => {
+            if (pub.isSubscribed) {
+                const el = pub.track?.attach();
+                if (el && containerRef.current) {
+                    el.style.width = "100%";
+                    el.style.height = "100%";
+                    el.style.objectFit = "cover";
+                    containerRef.current.appendChild(el);
+                }
+            }
+        });
+    }, [participant.videoTrackPublications, participant.sid]);
+
+    // If no video, show placeholder
+    const hasVideo = Array.from(participant.videoTrackPublications.values()).some((pub) => pub.isSubscribed);
+
+    return (
+        <div className="absolute inset-0" ref={containerRef}>
+            {!hasVideo && (
+                <div className="w-full h-full flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span className="text-2xl text-gray-300">{participant.identity[0].toUpperCase()}</span>
+                        </div>
+                        <p className="text-white">{participant.identity}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Participant Name and Mute */}
+            <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-2">
+                <span>{participant.identity}</span>
+                {!participant.isMicrophoneEnabled && <MicOff className="h-3 w-3 text-red-400" />}
+            </div>
+        </div>
+    );
+}

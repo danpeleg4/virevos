@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -28,6 +28,7 @@ import {
     PlayCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface Meeting {
     id: number;
@@ -97,9 +98,10 @@ export default function Meetings() {
     const [copied, setCopied] = useState(false);
     const [activeView, setActiveView] = useState<"home" | "in-meeting" | "summary" | "transcription">("home");
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+    const router = useRouter();
 
     const handleStartMeeting = () => {
-        const link = `https://meet.flowtask.com/${Math.random().toString(36).substr(2, 9)}`;
+        const link = `https://meet.virevos.com/${Math.random().toString(36).substr(2, 9)}`;
         setMeetingLink(link);
         // In a real app, this would create the meeting and navigate to it
     };
@@ -124,9 +126,12 @@ export default function Meetings() {
         setActiveView("transcription");
     };
 
-    if (activeView === "in-meeting") {
-        return <InMeetingView meeting={selectedMeeting!} onLeave={() => setActiveView("home")} onEndMeeting={() => setActiveView("summary")} />;
-    }
+    useEffect(() => {
+        if (activeView === "in-meeting") {
+            router.push(`/meet/${meetingName}`);
+        }
+    }, [activeView, meetingName, router]);
+
 
     if (activeView === "summary") {
         return <MeetingSummary meeting={selectedMeeting!} onBack={() => setActiveView("home")} onViewTranscription={handleViewTranscription} />;
@@ -332,81 +337,6 @@ export default function Meetings() {
                             />
                         </div>
 
-                        <div className="space-y-3">
-                            <Label>Settings</Label>
-                            <div
-                                className={`flex items-center justify-between p-4 rounded-lg border bg-gray-50 border-gray-200`}
-                            >
-                                <div className="flex items-center space-x-3">
-                                    {cameraOn ? (
-                                        <Video className="h-5 w-5 text-blue-600" />
-                                    ) : (
-                                        <VideoOff className="h-5 w-5 text-gray-400" />
-                                    )}
-                                    <div>
-                                        <p
-                                            className={`text-sm text-gray-900`}
-                                        >
-                                            Camera
-                                        </p>
-                                        <p
-                                            className={`text-xs text-gray-500`}
-                                        >
-                                            {cameraOn ? "On" : "Off"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setCameraOn(!cameraOn)}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                        cameraOn ? "bg-blue-600" : "bg-gray-300"
-                                    }`}
-                                >
-                  <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          cameraOn ? "translate-x-6" : "translate-x-1"
-                      }`}
-                  />
-                                </button>
-                            </div>
-
-                            <div
-                                className={`flex items-center justify-between p-4 rounded-lg border bg-gray-50 border-gray-200`}
-                            >
-                                <div className="flex items-center space-x-3">
-                                    {micOn ? (
-                                        <Mic className="h-5 w-5 text-blue-600" />
-                                    ) : (
-                                        <MicOff className="h-5 w-5 text-gray-400" />
-                                    )}
-                                    <div>
-                                        <p
-                                            className={`text-sm text-gray-900`}
-                                        >
-                                            Microphone
-                                        </p>
-                                        <p
-                                            className={`text-xs text-gray-500`}
-                                        >
-                                            {micOn ? "On" : "Off"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setMicOn(!micOn)}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                        micOn ? "bg-blue-600" : "bg-gray-300"
-                                    }`}
-                                >
-                  <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          micOn ? "translate-x-6" : "translate-x-1"
-                      }`}
-                  />
-                                </button>
-                            </div>
-                        </div>
-
                         {!meetingLink ? (
                             <Button
                                 className="w-full"
@@ -481,183 +411,6 @@ export default function Meetings() {
                         </div>
 
                         <Button className="w-full">Join Meeting</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
-}
-
-// In-Meeting View Component
-function InMeetingView({ meeting, onLeave, onEndMeeting }: { meeting: Meeting; onLeave: () => void; onEndMeeting: () => void }) {
-    const [isMuted, setIsMuted] = useState(false);
-    const [isCameraOff, setIsCameraOff] = useState(false);
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordingTime, setRecordingTime] = useState(0);
-    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-    const [copied, setCopied] = useState(false);
-
-    const participants = [
-        { id: 1, name: "You", avatar: "YO", isMuted: isMuted, cameraOff: isCameraOff },
-        { id: 2, name: "Sarah Chen", avatar: "SC", isMuted: false, cameraOff: false },
-        { id: 3, name: "Michael Ross", avatar: "MR", isMuted: true, cameraOff: false },
-        { id: 4, name: "Emma Wilson", avatar: "EW", isMuted: false, cameraOff: false },
-    ];
-
-    const handleCopyLink = () => {
-        navigator.clipboard.writeText("https://meet.flowtask.com/abc123xyz");
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    return (
-        <div className={`fixed inset-0 bg-gray-900 flex flex-col z-50`}>
-            {/* Recording Indicator */}
-            {isRecording && (
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-red-600 text-white px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                        <span className="text-sm">Recording • {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}</span>
-                    </div>
-                </div>
-            )}
-
-            {/* Meeting Name */}
-            <div className="absolute top-4 left-4 z-10">
-                <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
-                    <p className="text-sm">{meeting.name}</p>
-                </div>
-            </div>
-
-            {/* Video Grid */}
-            <div className="flex-1 p-6 flex items-center justify-center">
-                <div className="grid grid-cols-2 gap-4 max-w-6xl w-full">
-                    {participants.map((participant) => (
-                        <motion.div
-                            key={participant.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="relative aspect-video bg-gray-800 rounded-xl overflow-hidden"
-                        >
-                            {participant.cameraOff ? (
-                                <div className="w-full h-full flex items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <span className="text-2xl text-gray-300">{participant.avatar}</span>
-                                        </div>
-                                        <p className="text-white">{participant.name}</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <span className="text-2xl text-white">{participant.avatar}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Participant Name */}
-                            <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-2">
-                                <span>{participant.name}</span>
-                                {participant.isMuted && (
-                                    <MicOff className="h-3 w-3 text-red-400" />
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Control Bar */}
-            <div className="p-6 flex justify-center">
-                <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-4 flex items-center space-x-3">
-                    <button
-                        onClick={() => setIsMuted(!isMuted)}
-                        className={`p-4 rounded-full transition-colors ${
-                            isMuted ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
-                        }`}
-                    >
-                        {isMuted ? (
-                            <MicOff className="h-5 w-5 text-white" />
-                        ) : (
-                            <Mic className="h-5 w-5 text-white" />
-                        )}
-                    </button>
-
-                    <button
-                        onClick={() => setIsCameraOff(!isCameraOff)}
-                        className={`p-4 rounded-full transition-colors ${
-                            isCameraOff ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
-                        }`}
-                    >
-                        {isCameraOff ? (
-                            <VideoOff className="h-5 w-5 text-white" />
-                        ) : (
-                            <Video className="h-5 w-5 text-white" />
-                        )}
-                    </button>
-
-                    <button className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors">
-                        <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                    </button>
-
-                    <button
-                        onClick={() => setIsRecording(!isRecording)}
-                        className={`p-4 rounded-full transition-colors ${
-                            isRecording ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
-                        }`}
-                    >
-                        <div className={`h-5 w-5 rounded ${isRecording ? "bg-white" : "bg-red-600"}`}></div>
-                    </button>
-
-                    <button
-                        onClick={handleCopyLink}
-                        className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
-                    >
-                        {copied ? (
-                            <Check className="h-5 w-5 text-green-400" />
-                        ) : (
-                            <Users className="h-5 w-5 text-white" />
-                        )}
-                    </button>
-
-                    <button
-                        onClick={() => setShowLeaveConfirm(true)}
-                        className="p-4 rounded-full bg-red-600 hover:bg-red-700 transition-colors ml-3"
-                    >
-                        <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            {/* Leave Confirmation */}
-            <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Leave Meeting?</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to leave this meeting?
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex justify-end space-x-3 mt-4">
-                        <Button variant="outline" onClick={() => setShowLeaveConfirm(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => {
-                                setShowLeaveConfirm(false);
-                                onEndMeeting();
-                            }}
-                        >
-                            Leave Meeting
-                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
