@@ -11,7 +11,7 @@ import {
 } from "../../components/ui/dialog";
 import { Video, Users, Check, VideoOff, Mic, MicOff } from "lucide-react";
 import { motion } from "framer-motion";
-import { useParams } from "next/navigation";
+import {useParams, useRouter} from "next/navigation";
 import {
     createLocalTracks,
     Room,
@@ -35,6 +35,7 @@ export default function InMeetingView() {
     const [recordingTime, setRecordingTime] = useState(0);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [copied, setCopied] = useState(false);
+    const router = useRouter();
 
     const roomRef = useRef<Room | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -128,19 +129,13 @@ export default function InMeetingView() {
             </div>
 
             {/* Video Grid */}
-            <div className="flex-1 p-6 flex items-center justify-center">
-                <div className="grid grid-cols-2 gap-4 max-w-6xl w-full">
-                    {participants.map((participant) => (
-                        <motion.div
-                            key={participant.sid}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="relative aspect-video bg-gray-800 rounded-xl overflow-hidden flex items-center justify-center"
-                        >
-                            <ParticipantVideo participant={participant} />
-                        </motion.div>
-                    ))}
-                </div>
+            <div className="absolute inset-0">
+                {participants.map((participant) => (
+                    <ParticipantVideo
+                        key={participant.sid}
+                        participant={participant}
+                    />
+                ))}
             </div>
 
             {/* Control Bar */}
@@ -210,6 +205,7 @@ export default function InMeetingView() {
                             variant="destructive"
                             onClick={() => {
                                 roomRef.current?.disconnect();
+                                router.push('/')
                             }}
                         >
                             Leave Meeting
@@ -247,7 +243,7 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
     const hasVideo = Array.from(participant.videoTrackPublications.values()).some((pub) => pub.isSubscribed);
 
     return (
-        <div className="relative w-full h-full" ref={containerRef}>
+        <div className="absolute inset-0" ref={containerRef}>
             {!hasVideo && (
                 <div className="w-full h-full flex items-center justify-center">
                     <div className="text-center">

@@ -5,7 +5,6 @@ export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ roomId: string }> }
 ) {
-    // await params to get the actual object
     const { roomId } = await params;
 
     // Get the participant name from query params
@@ -34,6 +33,6 @@ export async function GET(
 
     return NextResponse.json({
         token,
-        url: process.env.NEXT_PUBLIC_LIVEKIT_URL, // e.g., wss://your-livekit-server.com
+        url: process.env.NEXT_PUBLIC_LIVEKIT_URL,
     });
 }
