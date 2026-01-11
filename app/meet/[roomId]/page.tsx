@@ -17,7 +17,7 @@ import {
     Participant,
     RemoteTrackPublication,
     RemoteTrack,
-    RoomEvent
+    RoomEvent, Track
 } from "livekit-client";
 import axios from "axios";
 
@@ -37,22 +37,12 @@ export default function InMeetingView() {
     const roomRef = useRef<Room | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
 
-    function attachTrack(track: RemoteTrack) {
-        const el = track.attach();
-        el.autoplay = true;
-        el.autoplay = true;
-        if (track.kind === "video") {
-            el.style.width = "200px"; // example
-            el.style.height = "150px";
-            document.body.appendChild(el);
-        } else if (track.kind === "audio") {
-            document.body.appendChild(el);
-        }
-    }
-
-    // Join the room
+    const nameOfMeeting = roomId.split("-")[0];
     const joinRoom = async () => {
-        const res = await axios.get(`/api/token/${roomId}?name=${encodeURIComponent(name)}`);
+        const res = await axios.post(`/api/token`, {
+            roomId: nameOfMeeting,
+            name: name
+        });
         const { token, url } = res.data;
         const room = new Room();
         roomRef.current = room;
@@ -64,37 +54,17 @@ export default function InMeetingView() {
             await room.localParticipant.publishTrack(track);
         }
 
-        // Add yourself to participants
         setParticipants([
             room.localParticipant,
             ...Array.from(room.remoteParticipants.values()),
         ]);
 
-        room.remoteParticipants.forEach((participant) => {
-            // Attach any already-subscribed tracks
-            participant.trackPublications.forEach((pub) => {
-                if (pub.track) {
-                    attachTrack(pub.track);
-                }
-            });
-
-            // Listen for new tracks from this participant
-            participant.on("trackSubscribed", (track) => attachTrack(track));
+        room.on(RoomEvent.ParticipantConnected, (p) => {
+            setParticipants((prev) => [...prev, p]);
         });
 
-        room.on(RoomEvent.ParticipantConnected, (participant) => {
-            setParticipants((prev) => [...prev, participant]);
-
-            // Attach any existing tracks they may already have
-            participant.trackPublications.forEach((pub) => {
-                if (pub.track) attachTrack(pub.track);
-            });
-
-            participant.on("trackSubscribed", (track) => attachTrack(track));
-        });
-
-        room.on(RoomEvent.ParticipantDisconnected, (p: Participant) => {
-            setParticipants((prev) => prev.filter((part) => part.sid !== p.sid));
+        room.on(RoomEvent.ParticipantDisconnected, (p) => {
+            setParticipants((prev) => prev.filter(x => x.sid !== p.sid));
         });
 
         // TrackSubscribed fires when a participant adds a track
@@ -114,6 +84,22 @@ export default function InMeetingView() {
         navigator.clipboard.writeText(window.location.href);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const toggleMute = async () => {
+        if (!roomRef.current) return;
+
+        const next = !isMuted;
+        await roomRef.current.localParticipant.setMicrophoneEnabled(!next);
+        setIsMuted(next);
+    };
+
+    const toggleCamera = async () => {
+        if (!roomRef.current) return;
+
+        const next = !isCameraOff;
+        await roomRef.current.localParticipant.setCameraEnabled(!next);
+        setIsCameraOff(next);
     };
 
     if (!joined) {
@@ -155,7 +141,7 @@ export default function InMeetingView() {
             {/* Meeting Name */}
             <div className="absolute top-4 left-4 z-10">
                 <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
-                    <p className="text-sm">Meeting: {roomId}</p>
+                    <p className="text-sm">Meeting: {nameOfMeeting}</p>
                 </div>
             </div>
 
@@ -169,10 +155,10 @@ export default function InMeetingView() {
             </div>
 
             {/* Control Bar */}
-            <div className="p-6 flex justify-center">
+            <div className="p-6 fixed bottom-0 left-0 right-0 flex justify-center">
                 <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-4 flex items-center space-x-3">
                     <button
-                        onClick={() => setIsMuted(!isMuted)}
+                        onClick={toggleMute}
                         className={`p-4 rounded-full transition-colors ${
                             isMuted ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
                         }`}
@@ -181,16 +167,12 @@ export default function InMeetingView() {
                     </button>
 
                     <button
-                        onClick={() => setIsCameraOff(!isCameraOff)}
+                        onClick={toggleCamera}
                         className={`p-4 rounded-full transition-colors ${
                             isCameraOff ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
                         }`}
                     >
                         {isCameraOff ? <VideoOff className="h-5 w-5 text-white" /> : <Video className="h-5 w-5 text-white" />}
-                    </button>
-
-                    <button className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors">
-                        <Users className="h-5 w-5 text-white" />
                     </button>
 
                     <button
@@ -256,7 +238,7 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
     useEffect(() => {
         if (!containerRef.current || !audioRef.current) return;
 
-        const attachTrack = (track: RemoteTrack | any) => {
+        const attachTrack = (track: RemoteTrack | Track) => {
             const el = track.attach();
             if (!el) return;
             if (track.kind === "video") {

@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -100,8 +100,10 @@ export default function Meetings() {
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const router = useRouter();
 
+    const meetingURL = `${meetingName}-${crypto.randomUUID()}`
+
     const handleStartMeeting = () => {
-        const link = `https://meet.virevos.com/${Math.random().toString(36).substr(2, 9)}`;
+        const link = `https://virevos.com/meet/${meetingURL}`;
         setMeetingLink(link);
         // In a real app, this would create the meeting and navigate to it
     };
@@ -128,7 +130,7 @@ export default function Meetings() {
 
     useEffect(() => {
         if (activeView === "in-meeting") {
-            router.push(`/meet/${meetingName}`);
+            router.push(`/meet/${meetingURL}`);
         }
     }, [activeView, meetingName, router]);
 
@@ -139,6 +141,28 @@ export default function Meetings() {
 
     if (activeView === "transcription") {
         return <TranscriptionView meeting={selectedMeeting!} onBack={() => setActiveView("summary")} />;
+    }
+
+    const color = (meeting: Meeting) => {
+        switch (meeting.status){
+            case "live":
+                return "text-red-600"
+            case "upcoming":
+                return "text-blue-600"
+            default:
+                return "text-gray-600"
+        }
+    }
+
+    const bgColor = (meeting: Meeting) => {
+        switch (meeting.status) {
+            case "live":
+                return "bg-red-100"
+            case "upcoming":
+                return "bg-blue-100"
+            default:
+                return "bg-gray-100"
+        }
     }
 
     return (
@@ -235,18 +259,10 @@ export default function Meetings() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-4 flex-1">
                                         <div
-                                            className={`p-3 rounded-lg ${
-                                                meeting.status === "live"
-                                                    ? "bg-red-100"
-                                                    : "bg-gray-100"
-                                            }`}
+                                            className={`p-3 rounded-lg ${bgColor(meeting)}`}
                                         >
                                             <Video
-                                                className={`h-5 w-5 ${
-                                                    meeting.status === "live"
-                                                        ? "text-red-600"
-                                                        : "text-gray-600"
-                                                }`}
+                                                className={`h-5 w-5 ${color(meeting)}`}
                                             />
                                         </div>
                                         <div className="flex-1">
