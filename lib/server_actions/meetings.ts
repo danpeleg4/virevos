@@ -2,6 +2,9 @@
 
 import fetch from "node-fetch";
 import { AccessToken } from "livekit-server-sdk";
+import { Pinecone } from '@pinecone-database/pinecone'
+
+const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
 async function createRoomCreateToken() {
     const at = new AccessToken(
@@ -50,4 +53,24 @@ export async function createRoom(roomName: string, userId?: string) {
     if (!res.ok && res.status !== 409) {
         throw new Error(await res.text());
     }
+}
+
+export async function getPastMeetingTranscript(text: string, userId: string) {
+    const indexName = 'vire-recording';
+    const index = pc.index(indexName).namespace(userId);
+
+    // Search the dense index
+    const results = await index.searchRecords({
+        query: {
+            topK: 10,
+            inputs: { text: text },
+        },
+    });
+    console.log(results);
+
+    // Print the results
+    //results.result.hits.forEach(hit => {
+    //    console.log(`id: ${hit._id}, score: ${hit._score.toFixed(2)}, text: ${hit.fields}`);
+    //});
+
 }
