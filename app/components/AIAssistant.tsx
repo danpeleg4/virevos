@@ -258,7 +258,9 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                                                         <div className="prose prose-sm max-w-none text-sm text-gray-800">
                                                             {message.parts?.map((part, i) => {
                                                                 if (part.type === "text") {
-                                                                    return <p key={i}>{part.text}</p>;
+                                                                    return  <ReactMarkdown key={i}>
+                                                                        {part.text}
+                                                                    </ReactMarkdown>;
                                                                 }
                                                                 if (part.type == "reasoning"){
                                                                     return (

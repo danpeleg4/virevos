@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AccessToken } from "livekit-server-sdk";
-import {createRoom} from "@/lib/server_actions/meetings";
-import {currentUser} from "@clerk/nextjs/server";
+import { createRoom } from "@/lib/server_actions/meetings";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function POST(req: NextRequest) {
     const user = await currentUser();
