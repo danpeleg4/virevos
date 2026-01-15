@@ -6,7 +6,6 @@ import { UnifiedInbox } from "../../components/communications/UnifiedInbox";
 import { ScheduledMessages } from "../../components/communications/ScheduledMessages";
 import { ClientPortal } from "../../components/communications/ClientPortal";
 import { ConversationSummaries } from "../../components/communications/ConversationSummaries";
-import { CommsHealthDashboard } from "../../components/communications/CommsHealthDashboard";
 import { Badge } from "../../components/ui/badge";
 
 export default function Communications() {
@@ -39,12 +38,6 @@ export default function Communications() {
                         )}
                     </TabsTrigger>
                     <TabsTrigger value="summaries" className="cursor-pointer">Summaries</TabsTrigger>
-                    <TabsTrigger value="health" className="relative cursor-pointer">
-                        Comms Health
-                        {healthIssues > 0 && (
-                            <Badge className="ml-2 bg-orange-500 text-white">{healthIssues}</Badge>
-                        )}
-                    </TabsTrigger>
                     <TabsTrigger value="portal" className="cursor-pointer">Client Portal</TabsTrigger>
                 </TabsList>
 
@@ -58,10 +51,6 @@ export default function Communications() {
 
                 <TabsContent value="summaries">
                     <ConversationSummaries />
-                </TabsContent>
-
-                <TabsContent value="health">
-                    <CommsHealthDashboard />
                 </TabsContent>
 
                 <TabsContent value="portal">
