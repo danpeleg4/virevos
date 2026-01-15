@@ -17,7 +17,7 @@ export interface Attendee {
 }
 
 export interface Meeting {
-    id: string;
+    id: int;
     title: string;
     description: string;
     link: string;
@@ -26,7 +26,7 @@ export interface Meeting {
     duration: number;
     type: MeetingTypePlatform;
     attendees?: Attendee[];
-    status: MeetingStatus;
+    status: MeetingStatus | string;
     conflictReason?: string | null | undefined;
     autoRescheduled?: boolean;
     hasNotes?: boolean;

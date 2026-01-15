@@ -8,6 +8,7 @@ import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { CreateClientInput } from "@/types/clients";
 import { addAClient } from "@/lib/server_actions/clients";
+import { getPastMeetingTranscript } from "@/lib/server_actions/meetings";
 
 export async function POST(req: NextRequest) {
     const { messages }: { messages: UIMessage[] } = await req.json();
@@ -50,6 +51,20 @@ export async function POST(req: NextRequest) {
                         kind: "clients_updated",
                         client: res,
                         message: "Client created successfully",
+                    };
+                },
+            }),
+            getPastMeetingData: tool({
+                description: 'Get meeting transcript data and does semantic search to find relevant info',
+                inputSchema: z.object({
+                    text: z.string().describe("Text to apply semantic search"),
+                }) as FlexibleSchema,
+                execute: async ({ text }: { text: string }) => {
+                    const res = await getPastMeetingTranscript(text, user.id)
+                    const combinedText = res.join("\n");
+                    return {
+                        kind: "meeting_data",
+                        message: combinedText,
                     };
                 },
             }),

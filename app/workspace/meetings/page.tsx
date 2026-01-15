@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -22,71 +22,13 @@ import {
     Users,
     Copy,
     Check,
-    VideoOff,
-    Mic,
-    MicOff,
     PlayCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-
-interface Meeting {
-    id: number;
-    name: string;
-    date: string;
-    time: string;
-    status: "upcoming" | "live" | "ended";
-    participants: number;
-    duration?: string;
-    hasRecording?: boolean;
-}
-
-const mockMeetings: Meeting[] = [
-    {
-        id: 1,
-        name: "Weekly Team Standup",
-        date: "Jan 6, 2026",
-        time: "10:00 AM",
-        status: "live",
-        participants: 8,
-    },
-    {
-        id: 2,
-        name: "Client Demo - TechCorp",
-        date: "Jan 6, 2026",
-        time: "2:00 PM",
-        status: "upcoming",
-        participants: 4,
-    },
-    {
-        id: 3,
-        name: "Design Review Session",
-        date: "Jan 7, 2026",
-        time: "11:00 AM",
-        status: "upcoming",
-        participants: 6,
-    },
-    {
-        id: 4,
-        name: "Project Kickoff - StartupXYZ",
-        date: "Jan 5, 2026",
-        time: "3:00 PM",
-        status: "ended",
-        participants: 5,
-        duration: "45 min",
-        hasRecording: true,
-    },
-    {
-        id: 5,
-        name: "Monthly All-Hands",
-        date: "Jan 4, 2026",
-        time: "9:00 AM",
-        status: "ended",
-        participants: 25,
-        duration: "1h 15min",
-        hasRecording: true,
-    },
-];
+import {useQuery} from "@tanstack/react-query";
+import axios from "axios";
+import { Meeting } from "@/types/meeting";
 
 export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
@@ -100,8 +42,24 @@ export default function Meetings() {
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const router = useRouter();
 
+    const meetingURL = `${meetingName}-${crypto.randomUUID()}`
+
+    const meetings = useQuery({
+        queryKey: ["meetings"],
+        queryFn: async () => {
+            const res = await axios.get("/api/meetings");
+            const data: Meeting[] = res.data;
+
+            // Ensure attendees array exists to avoid runtime crashes
+            return data.map(m => ({
+                ...m,
+                attendees: m.attendees ?? [],
+            }));
+        }
+    })
+
     const handleStartMeeting = () => {
-        const link = `https://meet.virevos.com/${Math.random().toString(36).substr(2, 9)}`;
+        const link = `https://virevos.com/meet/${meetingURL}`;
         setMeetingLink(link);
         // In a real app, this would create the meeting and navigate to it
     };
@@ -128,7 +86,7 @@ export default function Meetings() {
 
     useEffect(() => {
         if (activeView === "in-meeting") {
-            router.push(`/meet/${meetingName}`);
+            router.push(`/meet/${meetingURL}`);
         }
     }, [activeView, meetingName, router]);
 
@@ -139,6 +97,28 @@ export default function Meetings() {
 
     if (activeView === "transcription") {
         return <TranscriptionView meeting={selectedMeeting!} onBack={() => setActiveView("summary")} />;
+    }
+
+    const color = (meeting: Meeting) => {
+        switch (meeting.status){
+            case "live":
+                return "text-red-600"
+            case "upcoming":
+                return "text-blue-600"
+            default:
+                return "text-gray-600"
+        }
+    }
+
+    const bgColor = (meeting: Meeting) => {
+        switch (meeting.status) {
+            case "live":
+                return "bg-red-100"
+            case "upcoming":
+                return "bg-blue-100"
+            default:
+                return "bg-gray-100"
+        }
     }
 
     return (
@@ -154,13 +134,6 @@ export default function Meetings() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <Button
-                        variant="outline"
-                        onClick={() => setJoinModalOpen(true)}
-                    >
-                        <Link2 className="h-4 w-4 mr-2" />
-                        Join with Link
-                    </Button>
                     <Button onClick={() => setStartModalOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Start New Meeting
@@ -180,7 +153,7 @@ export default function Meetings() {
                                 Live Now
                             </p>
                             <p className={`text-2xl mt-1`}>
-                                {mockMeetings.filter((m) => m.status === "live").length}
+                                {meetings?.data?.filter((m) => m.status === "live").length}
                             </p>
                         </div>
                     </div>
@@ -195,7 +168,7 @@ export default function Meetings() {
                                 Upcoming
                             </p>
                             <p className={`text-2xl mt-1 `}>
-                                {mockMeetings.filter((m) => m.status === "upcoming").length}
+                                {meetings?.data?.filter((m) => m.status === "upcoming").length}
                             </p>
                         </div>
                     </div>
@@ -209,9 +182,6 @@ export default function Meetings() {
                             <p className={`text-sm`}>
                                 Recordings
                             </p>
-                            <p className={`text-2xl mt-1 `}>
-                                {mockMeetings.filter((m) => m.hasRecording).length}
-                            </p>
                         </div>
                     </div>
                 </Card>
@@ -223,7 +193,7 @@ export default function Meetings() {
                     Your Meetings
                 </h2>
                 <div className="space-y-3">
-                    {mockMeetings.map((meeting) => (
+                    {meetings?.data?.map((meeting) => (
                         <motion.div
                             key={meeting.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -235,18 +205,10 @@ export default function Meetings() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-4 flex-1">
                                         <div
-                                            className={`p-3 rounded-lg ${
-                                                meeting.status === "live"
-                                                    ? "bg-red-100"
-                                                    : "bg-gray-100"
-                                            }`}
+                                            className={`p-3 rounded-lg ${bgColor(meeting)}`}
                                         >
                                             <Video
-                                                className={`h-5 w-5 ${
-                                                    meeting.status === "live"
-                                                        ? "text-red-600"
-                                                        : "text-gray-600"
-                                                }`}
+                                                className={`h-5 w-5 ${color(meeting)}`}
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -254,7 +216,7 @@ export default function Meetings() {
                                                 <h3
                                                     className={`text-gray-900`}
                                                 >
-                                                    {meeting.name}
+                                                    {meeting.title}
                                                 </h3>
                                                 <Badge
                                                     className={
@@ -281,7 +243,7 @@ export default function Meetings() {
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     <Users className="h-3 w-3" />
-                                                    <span>{meeting.participants} participants</span>
+                                                    <span>{meeting.attendees.length} participants</span>
                                                 </div>
                                                 {meeting.duration && (
                                                     <span>• Duration: {meeting.duration}</span>
@@ -296,7 +258,7 @@ export default function Meetings() {
                                                 Join Now
                                             </Button>
                                         )}
-                                        {meeting.status === "ended" && meeting.hasRecording && (
+                                        {meeting.status === "ended" && (
                                             <Button variant="outline" onClick={() => handleViewSummary(meeting)}>
                                                 <PlayCircle className="h-4 w-4 mr-2" />
                                                 View Recording
@@ -378,7 +340,6 @@ export default function Meetings() {
                                 <Button
                                     className="w-full"
                                     onClick={() => {
-                                        handleJoinMeeting(mockMeetings[0]);
                                         setStartModalOpen(false);
                                     }}
                                 >
@@ -405,7 +366,7 @@ export default function Meetings() {
                         <div>
                             <Label>Meeting Link or ID</Label>
                             <Input
-                                placeholder="https://meet.flowtask.com/abc123xyz"
+                                placeholder="https://meet.virevos.com/abc123xyz"
                                 className="mt-2"
                             />
                         </div>
@@ -431,7 +392,7 @@ function MeetingSummary({ meeting, onBack, onViewTranscription }: { meeting: Mee
 
             <div>
                 <h1 className={`text-3xl `}>
-                    {meeting.name}
+                    {meeting.title}
                 </h1>
                 <p className={`mt-1 text-gray-600`}>
                     {meeting.date} at {meeting.time} • {meeting.duration}
@@ -495,7 +456,7 @@ function MeetingSummary({ meeting, onBack, onViewTranscription }: { meeting: Mee
                 Participants
               </span>
                             <span className="text-gray-900">
-                {meeting.participants}
+                {meeting?.attendees?.length}
               </span>
                         </div>
                         <div className="flex justify-between">
@@ -560,7 +521,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                     Meeting Transcription
                 </h1>
                 <p className={`mt-1 text-gray-600`}>
-                    {meeting.name} • {meeting.date}
+                    {meeting.title} • {meeting.date}
                 </p>
             </div>
 
