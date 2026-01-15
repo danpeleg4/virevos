@@ -1,4 +1,6 @@
-export const metadata = {
+import {Metadata} from "next";
+
+export const metadata: Metadata = {
     title: "Privacy Policy | Virevos",
     description: "Learn how Virevos collects, uses, and protects your data.",
 };

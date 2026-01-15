@@ -1,4 +1,6 @@
-export const metadata = {
+import {Metadata} from "next";
+
+export const metadata: Metadata = {
     title: "Terms of Service | Virevos",
     description: "Terms and conditions for using the Virevos platform.",
 };
