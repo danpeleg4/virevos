@@ -134,13 +134,6 @@ export default function Meetings() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <Button
-                        variant="outline"
-                        onClick={() => setJoinModalOpen(true)}
-                    >
-                        <Link2 className="h-4 w-4 mr-2" />
-                        Join with Link
-                    </Button>
                     <Button onClick={() => setStartModalOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Start New Meeting

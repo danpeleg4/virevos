@@ -23,7 +23,7 @@ export interface Meeting {
     link: string;
     date: string;
     time: string;
-    duration: number | string;
+    duration: number;
     type: MeetingTypePlatform;
     attendees?: Attendee[];
     status: MeetingStatus | string;
