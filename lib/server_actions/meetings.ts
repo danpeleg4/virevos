@@ -55,22 +55,29 @@ export async function createRoom(roomName: string, userId?: string) {
     }
 }
 
-export async function getPastMeetingTranscript(text: string, userId: string) {
+export async function getPastMeetingTranscript(
+    text: string,
+    userId: string
+) {
     const indexName = 'vire-recording';
     const index = pc.index(indexName).namespace(userId);
 
-    // Search the dense index
     const results = await index.searchRecords({
         query: {
             topK: 10,
-            inputs: { text: text },
+            inputs: { text },
         },
     });
-    console.log(results);
 
-    // Print the results
-    //results.result.hits.forEach(hit => {
-    //    console.log(`id: ${hit._id}, score: ${hit._score.toFixed(2)}, text: ${hit.fields}`);
-    //});
+    const arr: string[] = [];
 
+    results.result.hits.forEach((hit) => {
+        const fields = hit.fields as { chunk_text?: string };
+
+        if (fields.chunk_text) {
+            arr.push(fields.chunk_text);
+        }
+    });
+
+    return arr;
 }

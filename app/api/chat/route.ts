@@ -59,12 +59,12 @@ export async function POST(req: NextRequest) {
                 inputSchema: z.object({
                     text: z.string().describe("Text to apply semantic search"),
                 }) as FlexibleSchema,
-                execute: async (text: string) => {
+                execute: async ({ text }: { text: string }) => {
                     const res = await getPastMeetingTranscript(text, user.id)
+                    const combinedText = res.join("\n");
                     return {
                         kind: "meeting_data",
-                        client: res,
-                        message: "Processed successfully",
+                        message: combinedText,
                     };
                 },
             }),
