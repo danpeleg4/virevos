@@ -4,9 +4,9 @@ import { googleTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    process.env.GOOGLE_CLIENT_ID as string,
+    process.env.GOOGLE_CLIENT_SECRET as string,
+    process.env.GOOGLE_REDIRECT_URI as string
 );
 
 export async function getFreshGoogleAccessToken(userId: string) {
@@ -23,7 +23,7 @@ export async function getFreshGoogleAccessToken(userId: string) {
 
     // If token still valid → return it
     // google tokens expires_in is usually an absolute timestamp in ms when using oauth2Client.getToken
-    if (tokenData.expires_in > now + 30000) {
+    if (tokenData.expires_in && tokenData.expires_in > now + 30000) {
         return tokenData.access_token;
     }
 
@@ -35,9 +35,14 @@ export async function getFreshGoogleAccessToken(userId: string) {
     try {
         const { credentials } = await oauth2Client.refreshAccessToken();
         
-        const updateData: any = {
-            access_token: credentials.access_token,
-            expires_in: credentials.expiry_date,
+        const updateData: {
+            access_token?: string;
+            expires_in: number;
+            connected: boolean;
+            refresh_token?: string;
+        } = {
+            access_token: credentials.access_token ?? undefined,
+            expires_in: credentials.expiry_date as number,
             connected: true,
         };
         
@@ -51,7 +56,7 @@ export async function getFreshGoogleAccessToken(userId: string) {
             .where(eq(googleTokens.userId, userId));
 
         return credentials.access_token;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Google refresh error", error);
         return null;
     }
