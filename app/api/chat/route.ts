@@ -8,7 +8,7 @@ import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { CreateClientInput } from "@/types/clients";
 import { addAClient } from "@/lib/server_actions/clients";
-import {getPastMeetingTranscript} from "@/lib/server_actions/meetings";
+import { getPastMeetingTranscript } from "@/lib/server_actions/meetings";
 
 export async function POST(req: NextRequest) {
     const { messages }: { messages: UIMessage[] } = await req.json();
