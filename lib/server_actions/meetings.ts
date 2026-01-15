@@ -23,6 +23,9 @@ async function createRoomCreateToken() {
 }
 
 export async function createRoom(roomName: string, userId?: string) {
+    if (!userId) {
+        return "user is required"
+    }
     const token = await createRoomCreateToken();
 
     const res = await fetch(
@@ -53,6 +56,7 @@ export async function createRoom(roomName: string, userId?: string) {
     if (!res.ok && res.status !== 409) {
         throw new Error(await res.text());
     }
+    return "success"
 }
 
 export async function getPastMeetingTranscript(

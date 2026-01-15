@@ -17,16 +17,16 @@ export interface Attendee {
 }
 
 export interface Meeting {
-    id: string;
+    id: int;
     title: string;
     description: string;
     link: string;
     date: string;
     time: string;
-    duration: number;
+    duration: number | string;
     type: MeetingTypePlatform;
     attendees?: Attendee[];
-    status: MeetingStatus;
+    status: MeetingStatus | string;
     conflictReason?: string | null | undefined;
     autoRescheduled?: boolean;
     hasNotes?: boolean;
