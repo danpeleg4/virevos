@@ -13,52 +13,53 @@ import {
     CheckCircle2, Play
 } from "lucide-react";
 import { Button } from "./ui/button";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const features = [
     {
         icon: Zap,
-        title: "Powerful Automation",
-        description: "Build custom workflows with our visual automation builder. Connect apps, trigger actions, and eliminate repetitive tasks.",
+        title: "Client Workflow Automation",
+        description: "Automate client onboarding, follow-ups, and project pipelines to save time and stay organized.",
         gradient: "from-yellow-400 to-orange-500",
-        benefits: ["No-code builder", "150+ integrations", "Smart triggers"],
+        benefits: ["No-code workflow builder", "Email & task automation", "Custom triggers"],
     },
     {
         icon: Users,
-        title: "Team Collaboration",
-        description: "Keep everyone aligned with real-time updates, shared workspaces, and seamless communication tools.",
+        title: "Client Collaboration",
+        description: "Manage clients in one place with shared projects, messages, and task updates.",
         gradient: "from-blue-400 to-blue-600",
-        benefits: ["Real-time sync", "Team workspaces", "Activity feeds"],
+        benefits: ["Shared workspaces", "Real-time messaging", "File & task sharing"],
     },
     {
         icon: Calendar,
-        title: "Smart Scheduling",
-        description: "AI-powered scheduling that learns from your patterns and automatically prevents conflicts.",
+        title: "Smart Project Scheduling",
+        description: "Organize deadlines, milestones, and client meetings with AI-assisted scheduling and reminders.",
         gradient: "from-purple-400 to-purple-600",
-        benefits: ["AI scheduling", "Calendar sync", "Time blocking"],
+        benefits: ["AI-assisted scheduling", "Deadline tracking", "Calendar sync"],
     },
     {
         icon: Bot,
         title: "AI Assistant",
-        description: "Get instant help with tasks, generate content, and receive smart suggestions powered by AI.",
+        description: "Get instant help with proposals, emails, and content creation. AI suggests next steps for your projects.",
         gradient: "from-pink-400 to-rose-600",
-        benefits: ["Smart suggestions", "Auto-drafts", "Context aware"],
+        benefits: ["Smart suggestions", "Auto-drafts", "Project context aware"],
     },
     {
         icon: BarChart3,
-        title: "Advanced Analytics",
-        description: "Track productivity, monitor progress, and make data-driven decisions with comprehensive reports.",
+        title: "Freelancer Analytics",
+        description: "Track earnings, client activity, and productivity metrics to make better business decisions.",
         gradient: "from-green-400 to-emerald-600",
-        benefits: ["Custom reports", "Real-time data", "Insights"],
+        benefits: ["Revenue tracking", "Client insights", "Productivity reports"],
     },
     {
         icon: Lock,
-        title: "Enterprise Security",
-        description: "Bank-level encryption, SSO, and compliance certifications to keep your data safe.",
+        title: "Secure Client Data",
+        description: "Keep your projects and client information safe with enterprise-grade security and compliance.",
         gradient: "from-gray-700 to-gray-900",
-        benefits: ["SOC 2 certified", "GDPR compliant", "256-bit encryption"],
+        benefits: ["Data encryption", "GDPR & SOC 2 compliant", "Access control"],
     },
 ];
+
 
 export default function Features() {
     const router = useRouter();
