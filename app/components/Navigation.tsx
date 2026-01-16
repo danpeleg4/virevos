@@ -113,6 +113,7 @@ export function Navigation() {
                 className="hidden md:flex md:items-center md:space-x-3"
             >
               {isSignedIn ? (
+                  <>
                       <SignOutButton>
                         <Button
                             variant="ghost"
@@ -121,6 +122,13 @@ export function Navigation() {
                           Logout
                         </Button>
                         </SignOutButton>
+                    <Button
+                        onClick={() => router.push("/workspace/dashboard")}
+                        className="bg-gray-900 hover:bg-gray-800 text-sm px-4 rounded-lg text-white"
+                    >
+                      Go to Dashboard
+                    </Button>
+                  </>
               ) : (
                   <>
                   <SignInButton>
@@ -271,6 +279,7 @@ export function Navigation() {
 
                     <div className="pt-4 space-y-2 border-t border-gray-200">
                       {isSignedIn ? (
+                          <>
                           <SignOutButton>
                             <Button
                                 variant="outline"
@@ -279,6 +288,13 @@ export function Navigation() {
                               Logout
                             </Button>
                           </SignOutButton>
+                            <Button
+                                onClick={() => router.push("/workspace/dashboard")}
+                                className="w-full bg-gray-900 hover:bg-gray-800 text-sm"
+                            >
+                              Go to Dashboard
+                            </Button>
+                          </>
                       ) : (
                           <>
                           <SignInButton>
@@ -289,10 +305,8 @@ export function Navigation() {
                               Login
                             </Button>
                           </SignInButton>
-                        <Button
-                        className="w-full bg-gray-900 hover:bg-gray-800 text-sm"
-                        >
-                        Sign Up
+                        <Button className="w-full bg-gray-900 hover:bg-gray-800 text-sm">
+                          Sign Up
                         </Button>
                           </>
                       )}
