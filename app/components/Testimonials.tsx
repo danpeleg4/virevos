@@ -1,122 +1,166 @@
-import { Card } from "./ui/card";
-import { Star } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+"use client"
+
+import { motion } from "motion/react";
+import { Star, Quote } from "lucide-react";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
 const testimonials = [
   {
-    name: "Sarah Chen",
-    role: "Product Manager at TechCorp",
-    image: "https://i.pravatar.cc/150?img=5",
-    content: "Virevos has completely transformed how our team collaborates. We've seen a 40% increase in productivity since switching.",
+    content: "FlowTask has completely transformed how our team works. The automation features alone have saved us 20+ hours per week.",
+    author: "Sarah Chen",
+    role: "VP of Operations",
+    company: "TechCorp",
+    initials: "SC",
     rating: 5,
   },
   {
-    name: "Michael Rodriguez",
-    role: "CEO at StartupXYZ",
-    image: "https://i.pravatar.cc/150?img=8",
-    content: "The AI-powered features are game-changing. It feels like having a personal assistant that knows exactly what I need to do next.",
+    content: "The best project management tool we've used. Clean interface, powerful features, and the AI assistant is incredibly helpful.",
+    author: "Michael Rodriguez",
+    role: "Product Manager",
+    company: "StartupXYZ",
+    initials: "MR",
     rating: 5,
   },
   {
-    name: "Emily Thompson",
-    role: "Creative Director at DesignCo",
-    image: "https://i.pravatar.cc/150?img=9",
-    content: "Finally, a productivity tool that doesn't get in the way. It's intuitive, beautiful, and actually helps us get work done faster.",
+    content: "We switched from 5 different tools to just FlowTask. The integration capabilities are outstanding and it's so much easier to manage everything in one place.",
+    author: "Emily Thompson",
+    role: "CEO",
+    company: "GrowthCo",
+    initials: "ET",
     rating: 5,
   },
   {
-    name: "David Park",
-    role: "Engineering Lead at DevTeam",
-    image: "https://i.pravatar.cc/150?img=12",
-    content: "The integrations with our existing tools made the transition seamless. Our entire team was up and running in less than a day.",
+    content: "The smart scheduling feature is a game-changer. No more double bookings or scheduling conflicts. It just works.",
+    author: "David Kim",
+    role: "Engineering Lead",
+    company: "DevTeam",
+    initials: "DK",
     rating: 5,
   },
   {
-    name: "Jessica Williams",
-    role: "Operations Manager at GlobalCo",
-    image: "https://i.pravatar.cc/150?img=20",
-    content: "The analytics dashboard gives us incredible insights into our team's workflow. We can now identify bottlenecks before they become problems.",
+    content: "Outstanding customer support and the platform is constantly improving. The automation builder is incredibly intuitive.",
+    author: "Lisa Anderson",
+    role: "Operations Director",
+    company: "ScaleUp Inc",
+    initials: "LA",
     rating: 5,
   },
   {
-    name: "Alex Turner",
-    role: "Freelance Consultant",
-    image: "https://i.pravatar.cc/150?img=15",
-    content: "As a solo consultant, Virevos helps me stay organized across multiple client projects. The free plan is perfect for my needs!",
+    content: "FlowTask has become essential to our workflow. The team collaboration features keep everyone aligned and productive.",
+    author: "James Wilson",
+    role: "CTO",
+    company: "InnovateLabs",
+    initials: "JW",
     rating: 5,
   },
 ];
 
 export function Testimonials() {
   return (
-    <section className="py-20 sm:py-32 bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl text-gray-900 mb-4">
-            Loved by teams worldwide
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Join thousands of satisfied customers who have transformed their productivity with Virevos.
-          </p>
-        </div>
+      <section className="relative bg-gradient-to-br from-gray-50 to-blue-50 py-24 sm:py-32 overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
-        {/* Testimonials Grid */}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((testimonial, index) => (
-            <Card key={index} className="p-6 border-gray-200 hover:shadow-lg transition-shadow duration-300">
-              {/* Rating */}
-              <div className="flex space-x-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center space-x-1 mb-6"
+            >
+              {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
+              ))}
+              <span className="ml-2 text-sm text-gray-600">5.0 from 2,000+ reviews</span>
+            </motion.div>
 
-              {/* Content */}
-              <p className="text-gray-600 mb-6">
-                "{testimonial.content}"
-              </p>
+            <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl sm:text-5xl text-gray-900 mb-6"
+            >
+              Loved by teams worldwide
+            </motion.h2>
 
-              {/* Author */}
-              <div className="flex items-center space-x-3">
-                <ImageWithFallback
-                  src={testimonial.image}
-                  alt={testimonial.name}
-                  className="h-12 w-12 rounded-full object-cover"
-                />
-                <div>
-                  <p className="text-gray-900">
-                    {testimonial.name}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {testimonial.role}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
+            <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="text-xl text-gray-600"
+            >
+              Join thousands of companies using FlowTask to work smarter
+            </motion.p>
+          </div>
+
+          {/* Testimonials Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {testimonials.map((testimonial, index) => (
+                <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                >
+                  <div className="h-full bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-gray-300 transition-all duration-300">
+                    {/* Quote Icon */}
+                    <div className="mb-4">
+                      <Quote className="h-8 w-8 text-blue-600 opacity-50" />
+                    </div>
+
+                    {/* Stars */}
+                    <div className="flex items-center space-x-1 mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+
+                    {/* Content */}
+                    <p className="text-gray-700 mb-6 leading-relaxed">
+                      &#34;{testimonial.content}&#34;
+                    </p>
+
+                    {/* Author */}
+                    <div className="flex items-center space-x-3 pt-4 border-t border-gray-100">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                          {testimonial.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-sm text-gray-900">{testimonial.author}</div>
+                        <div className="text-xs text-gray-600">
+                          {testimonial.role} at {testimonial.company}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+            ))}
+          </div>
+
+          {/* Company Logos */}
+          <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-20 text-center"
+          >
+            <p className="text-sm text-gray-500 mb-8">Trusted by leading companies</p>
+            <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-12 opacity-60">
+              {["TechCorp", "StartupXYZ", "GrowthCo", "DevTeam", "InnovateLabs", "ScaleUp"].map((company, index) => (
+                  <div key={index} className="text-xl text-gray-400 font-semibold">
+                    {company}
+                  </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
-
-        {/* Stats Section */}
-        <div className="mt-20 grid grid-cols-2 gap-8 md:grid-cols-4 text-center">
-          <div>
-            <p className="text-4xl text-gray-900 mb-2">2,000+</p>
-            <p className="text-gray-600">Active Teams</p>
-          </div>
-          <div>
-            <p className="text-4xl text-gray-900 mb-2">50K+</p>
-            <p className="text-gray-600">Users Worldwide</p>
-          </div>
-          <div>
-            <p className="text-4xl text-gray-900 mb-2">99.9%</p>
-            <p className="text-gray-600">Uptime</p>
-          </div>
-          <div>
-            <p className="text-4xl text-gray-900 mb-2">4.9/5</p>
-            <p className="text-gray-600">User Rating</p>
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
   );
 }
