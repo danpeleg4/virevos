@@ -62,8 +62,8 @@ const mockNotes: MeetingNote[] = [
     duration: "45 min",
     attendees: [
       { name: "Sarah Johnson", initials: "SJ", email: "sarah@acme.com" },
-      { name: "Mike Chen", initials: "MC", email: "mike@flowtask.com" },
-      { name: "Emily Davis", initials: "ED", email: "emily@flowtask.com" },
+      { name: "Mike Chen", initials: "MC", email: "mike@virevos.com" },
+      { name: "Emily Davis", initials: "ED", email: "emily@virevos.com" },
     ],
     summary: "Initial onboarding session for Acme Corp. Covered platform overview, automation setup, and integration requirements. Client expressed interest in advanced workflow automation and calendar integrations. Discussed timeline for implementation and training schedule.",
     actionItems: [
@@ -83,11 +83,11 @@ const mockNotes: MeetingNote[] = [
       "Prioritize calendar and email integrations first",
     ],
     transcript: [
-      { speaker: "Sarah Johnson", time: "00:00", text: "Thanks for meeting with us today. We're excited to get started with FlowTask." },
+      { speaker: "Sarah Johnson", time: "00:00", text: "Thanks for meeting with us today. We're excited to get started with virevos." },
       { speaker: "Mike Chen", time: "00:05", text: "Great to meet you Sarah! Let me give you a quick overview of what we'll cover today." },
       { speaker: "Mike Chen", time: "00:12", text: "First, I'll walk you through the core features, then we can dive into your specific automation needs." },
       { speaker: "Sarah Johnson", time: "00:25", text: "Perfect. We're particularly interested in the Salesforce integration. How does that work?" },
-      { speaker: "Emily Davis", time: "00:32", text: "Great question! Our Salesforce integration syncs bidirectionally, so any updates in FlowTask reflect in Salesforce and vice versa." },
+      { speaker: "Emily Davis", time: "00:32", text: "Great question! Our Salesforce integration syncs bidirectionally, so any updates in virevos reflect in Salesforce and vice versa." },
       { speaker: "Sarah Johnson", time: "00:45", text: "That's exactly what we need. We currently have about 5 people who would use this initially." },
       { speaker: "Mike Chen", time: "00:52", text: "Perfect. We recommend starting with a pilot team like that. It helps everyone get comfortable with the platform." },
       { speaker: "Sarah Johnson", time: "01:08", text: "Makes sense. What about the timeline? We'd like to have this fully operational by end of month." },
@@ -104,9 +104,9 @@ const mockNotes: MeetingNote[] = [
     time: "2:00 PM",
     duration: "1h 30min",
     attendees: [
-      { name: "Development Team", initials: "DT", email: "dev@flowtask.com" },
-      { name: "John Doe", initials: "JD", email: "john@flowtask.com" },
-      { name: "Alex Kim", initials: "AK", email: "alex@flowtask.com" },
+      { name: "Development Team", initials: "DT", email: "dev@virevos.com" },
+      { name: "John Doe", initials: "JD", email: "john@virevos.com" },
+      { name: "Alex Kim", initials: "AK", email: "alex@virevos.com" },
     ],
     summary: "Planned Sprint 23 with focus on automation improvements and new scheduling features. Team committed to 45 story points. Discussed technical debt and performance optimizations.",
     actionItems: [
@@ -148,8 +148,8 @@ const mockNotes: MeetingNote[] = [
     time: "11:00 AM",
     duration: "1h",
     attendees: [
-      { name: "Alex Kim", initials: "AK", email: "alex@flowtask.com" },
-      { name: "Design Team", initials: "DT", email: "design@flowtask.com" },
+      { name: "Alex Kim", initials: "AK", email: "alex@virevos.com" },
+      { name: "Design Team", initials: "DT", email: "design@virevos.com" },
     ],
     summary: "Reviewed new dashboard designs and provided feedback on UX improvements. Focused on information hierarchy, data visualization, and mobile responsiveness.",
     actionItems: [
@@ -177,9 +177,9 @@ const mockNotes: MeetingNote[] = [
     time: "10:00 AM",
     duration: "2h",
     attendees: [
-      { name: "Emily Davis", initials: "ED", email: "emily@flowtask.com" },
-      { name: "Robert Wilson", initials: "RW", email: "robert@flowtask.com" },
-      { name: "Leadership Team", initials: "LT", email: "leadership@flowtask.com" },
+      { name: "Emily Davis", initials: "ED", email: "emily@virevos.com" },
+      { name: "Robert Wilson", initials: "RW", email: "robert@virevos.com" },
+      { name: "Leadership Team", initials: "LT", email: "leadership@virevos.com" },
     ],
     summary: "Strategic planning for Q1 goals, resource allocation, and key initiatives. Discussed revenue targets, hiring plans, and product roadmap priorities.",
     actionItems: [

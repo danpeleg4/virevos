@@ -79,76 +79,20 @@ export function Navigation() {
                 transition={{ delay: 0.1 }}
                 className="hidden md:flex md:items-center md:space-x-1"
             >
-              {/* Product Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                      variant="ghost"
-                      className="text-sm text-gray-700 hover:text-gray-900 transition-colors hover:bg-transparent"
-                  >
-                    Product
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[500px] p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">TEMPLATES</p>
-                      <div className="space-y-2">
-                        {productTemplates.map((template, index) => (
-                            <div
-                                key={index}
-                                className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                                onClick={() => handleNavigation("/features")}
-                            >
-                              <div className={`${template.color} w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0`}>
-                                {template.icon}
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-900 mb-0.5">{template.title}</p>
-                                <p className="text-xs text-gray-600">{template.description}</p>
-                              </div>
-                            </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="pt-3 border-t border-gray-200">
-                      <button
-                          onClick={() => handleNavigation("/features")}
-                          className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
-                      >
-                        Browse all templates →
-                      </button>
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Learn Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                      variant="ghost"
-                      className="text-sm text-gray-700 hover:text-gray-900 transition-colors hover:bg-transparent"
-                  >
-                    Learn
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  {learnItems.map((item, index) => (
-                      <DropdownMenuItem
-                          key={index}
-                          onClick={() => handleNavigation(item.path)}
-                          className="cursor-pointer"
-                      >
-                        {item.label}
-                      </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Simple Links */}
+              <Button
+                  onClick={() => handleNavigation("/features")}
+                  variant="ghost"
+                  className="text-sm text-gray-700 hover:text-gray-900 transition-colors hover:bg-transparent"
+              >
+                Product
+              </Button>
+              <Button
+                  onClick={() => handleNavigation("/learn")}
+                  variant="ghost"
+                  className="text-sm text-gray-700 hover:text-gray-900 transition-colors hover:bg-transparent"
+              >
+                Learn
+              </Button>
               <Button
                   variant="ghost"
                   className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
@@ -156,7 +100,6 @@ export function Navigation() {
               >
                 Pricing
               </Button>
-
               <Button
                   variant="ghost"
                   className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
@@ -173,13 +116,6 @@ export function Navigation() {
                 transition={{ delay: 0.2 }}
                 className="hidden md:flex md:items-center md:space-x-3"
             >
-              <Button
-                  variant="ghost"
-                  className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
-                  onClick={() => handleNavigation("/contact")}
-              >
-                Contact Sales
-              </Button>
               <Button
                   variant="ghost"
                   onClick={() => router.push("/workspace/dashboard")}

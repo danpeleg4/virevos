@@ -75,7 +75,7 @@ export default function Customers() {
                             transition={{ duration: 0.5 }}
                             className="text-5xl sm:text-6xl text-gray-900 mb-6"
                         >
-                            Trusted by teams worldwide
+                            Trusted by Freelancers worldwide
                         </motion.h1>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}

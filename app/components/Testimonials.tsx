@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 
 const testimonials = [
   {
-    content: "FlowTask has completely transformed how our team works. The automation features alone have saved us 20+ hours per week.",
+    content: "Virevos has completely transformed how our team works. The automation features alone have saved us 20+ hours per week.",
     author: "Sarah Chen",
     role: "VP of Operations",
     company: "TechCorp",
@@ -22,7 +22,7 @@ const testimonials = [
     rating: 5,
   },
   {
-    content: "We switched from 5 different tools to just FlowTask. The integration capabilities are outstanding and it's so much easier to manage everything in one place.",
+    content: "We switched from 5 different tools to just Virevos. The integration capabilities are outstanding and it's so much easier to manage everything in one place.",
     author: "Emily Thompson",
     role: "CEO",
     company: "GrowthCo",
@@ -46,7 +46,7 @@ const testimonials = [
     rating: 5,
   },
   {
-    content: "FlowTask has become essential to our workflow. The team collaboration features keep everyone aligned and productive.",
+    content: "Virevos has become essential to our workflow. The team collaboration features keep everyone aligned and productive.",
     author: "James Wilson",
     role: "CTO",
     company: "InnovateLabs",
@@ -93,7 +93,7 @@ export function Testimonials() {
                 transition={{ delay: 0.2 }}
                 className="text-xl text-gray-600"
             >
-              Join thousands of companies using FlowTask to work smarter
+              Join thousands of companies using Virevos to work smarter
             </motion.p>
           </div>
 

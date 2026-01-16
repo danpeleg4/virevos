@@ -125,7 +125,7 @@ export function Hero() {
                     </div>
                     <div className="flex-1 text-center">
                       <div className="inline-block bg-white border border-gray-200 rounded px-3 py-1 text-xs text-gray-600">
-                        app.flowtask.com
+                        app.virevos.com
                       </div>
                     </div>
                   </div>
