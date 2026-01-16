@@ -4,13 +4,8 @@ import { Button } from "./ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
+import {SignInButton, SignOutButton, useUser} from "@clerk/nextjs";
 
 // Product dropdown templates
 const productTemplates = [
@@ -46,6 +41,7 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const router = useRouter();
+  const { isSignedIn, isLoaded } = useUser()
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -116,19 +112,33 @@ export function Navigation() {
                 transition={{ delay: 0.2 }}
                 className="hidden md:flex md:items-center md:space-x-3"
             >
-              <Button
-                  variant="ghost"
-                  onClick={() => router.push("/workspace/dashboard")}
-                  className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
-              >
-                Login
-              </Button>
-              <Button
-                  onClick={() => router.push("/onboard")}
-                  className="bg-gray-900 hover:bg-gray-800 text-sm px-4 rounded-lg text-white"
-              >
-                Sign Up
-              </Button>
+              {isSignedIn ? (
+                      <SignOutButton>
+                        <Button
+                            variant="ghost"
+                            className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
+                        >
+                          Logout
+                        </Button>
+                        </SignOutButton>
+              ) : (
+                  <>
+                  <SignInButton>
+                  <Button
+                      variant="ghost"
+                      className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
+                  >
+                    Login
+                  </Button>
+                    </SignInButton>
+                <Button
+                    onClick={() => router.push("/onboard")}
+                    className="bg-gray-900 hover:bg-gray-800 text-sm px-4 rounded-lg text-white"
+                >
+                  Sign Up
+                </Button>
+            </>
+              )}
             </motion.div>
 
             {/* Mobile menu button */}
@@ -205,24 +215,6 @@ export function Navigation() {
                       </AnimatePresence>
                     </div>
 
-                    {/* Solutions */}
-                    <div className="space-y-1">
-                      <button
-                          onClick={() =>
-                              setOpenDropdown(openDropdown === "solutions" ? null : "solutions")
-                          }
-                          className="flex items-center justify-between w-full text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"
-                      >
-                        <span className="text-sm">Solutions</span>
-                        <motion.div
-                            animate={{ rotate: openDropdown === "solutions" ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </motion.div>
-                      </button>
-                    </div>
-
                     {/* Learn */}
                     <div className="space-y-1">
                       <button
@@ -274,30 +266,36 @@ export function Navigation() {
                         onClick={() => handleNavigation("/customers")}
                         className="block w-full text-left text-sm text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"
                     >
-                      Enterprise
+                      Customers
                     </button>
 
                     <div className="pt-4 space-y-2 border-t border-gray-200">
-                      <Button
-                          variant="ghost"
-                          className="w-full justify-start text-sm"
-                          onClick={() => handleNavigation("/contact")}
-                      >
-                        Contact Sales
-                      </Button>
-                      <Button
-                          variant="outline"
-                          className="w-full text-sm"
-                          onClick={() => handleNavigation("/app/dashboard")}
-                      >
-                        Login
-                      </Button>
-                      <Button
-                          className="w-full bg-gray-900 hover:bg-gray-800 text-sm"
-                          onClick={() => handleNavigation("/onboarding")}
-                      >
+                      {isSignedIn ? (
+                          <SignOutButton>
+                            <Button
+                                variant="outline"
+                                className="w-full text-sm"
+                            >
+                              Logout
+                            </Button>
+                          </SignOutButton>
+                      ) : (
+                          <>
+                          <SignInButton>
+                            <Button
+                                variant="outline"
+                                className="w-full text-sm"
+                            >
+                              Login
+                            </Button>
+                          </SignInButton>
+                        <Button
+                        className="w-full bg-gray-900 hover:bg-gray-800 text-sm"
+                        >
                         Sign Up
-                      </Button>
+                        </Button>
+                          </>
+                      )}
                     </div>
                   </div>
                 </motion.div>

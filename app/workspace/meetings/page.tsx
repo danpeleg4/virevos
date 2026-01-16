@@ -155,7 +155,7 @@ export default function Meetings() {
                             <p className={`text-2xl mt-1`}>
                                 {meetings?.data?.filter((m) => m.status === "live").length}
                             </p>
-                        </div>
+                        </div>\
                     </div>
                 </Card>
                 <Card className={`p-6`}>
