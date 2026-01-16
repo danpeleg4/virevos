@@ -292,7 +292,7 @@ export default function Resources() {
                             Contact Support
                         </Button>
                         <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-transparent text-white border-white hover:bg-white hover:text-blue-600">
-                            Schedule a Demo
+                            Watch Demo
                         </Button>
                     </div>
                 </div>

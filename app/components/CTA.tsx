@@ -30,8 +30,8 @@ export function CTA() {
             >
               <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-2">
                 <Sparkles className="h-4 w-4 text-white" />
-                <span className="text-sm text-white">
-                Join 50,000+ teams already using FlowTask
+                <span className="text-sm text-white">\
+                Join 50,000+ teams already using Virevos
               </span>
               </div>
             </motion.div>

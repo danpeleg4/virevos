@@ -10,7 +10,7 @@ import {
     Lock,
     Sparkles,
     ArrowRight,
-    CheckCircle2
+    CheckCircle2, Play
 } from "lucide-react";
 import { Button } from "./ui/button";
 import {useRouter} from "next/navigation";
@@ -85,7 +85,7 @@ export default function Features() {
                         transition={{ delay: 0.1 }}
                         className="text-4xl sm:text-5xl text-gray-900 mb-6"
                     >
-                        Built for modern teams
+                        Built for Freelancers
                     </motion.h2>
 
                     <motion.p
@@ -137,7 +137,7 @@ export default function Features() {
                                 </ul>
 
                                 {/* Learn More Link */}
-                                <button className="flex items-center text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
+                                <button className="cursor-pointer flex items-center text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
                                     Learn more
                                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                 </button>
@@ -157,7 +157,7 @@ export default function Features() {
                         <Button
                             size="lg"
                             onClick={() => router.push("/features")}
-                            className="bg-gray-900 hover:bg-gray-800 text-white px-8 rounded-xl"
+                            className="bg-gray-900 hover:bg-gray-800 py-6 text-lg text-white px-8 rounded-xl"
                         >
                             Explore all features
                             <ArrowRight className="ml-2 h-5 w-5" />
@@ -165,10 +165,11 @@ export default function Features() {
                         <Button
                             size="lg"
                             variant="outline"
-                            onClick={() => router.push("/contact")}
-                            className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-8 rounded-xl"
+                            className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg rounded-xl group"
+                            onClick={() => router.push("/workspace/dashboard")}
                         >
-                            Schedule a demo
+                            <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                            Watch demo
                         </Button>
                     </div>
                 </motion.div>

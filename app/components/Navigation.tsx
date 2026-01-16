@@ -34,13 +34,6 @@ const productTemplates = [
   },
 ];
 
-const solutionCompanies = [
-  { label: "Startup", path: "/solutions/startup" },
-  { label: "Non-profit", path: "/solutions/non-profit" },
-  { label: "Education", path: "/solutions/education" },
-  { label: "Agency", path: "/solutions/agency" },
-];
-
 const learnItems = [
   { label: "Documentation", path: "/learn/docs" },
   { label: "Guides & Tutorials", path: "/learn/guides" },
@@ -126,35 +119,6 @@ export function Navigation() {
                       >
                         Browse all templates →
                       </button>
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Solutions Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                      variant="ghost"
-                      className="text-sm text-gray-700 hover:text-gray-900 transition-colors hover:bg-transparent"
-                  >
-                    Solutions
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64 p-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">COMPANIES</p>
-                    <div className="space-y-1">
-                      {solutionCompanies.map((item, index) => (
-                          <div
-                              key={index}
-                              onClick={() => handleNavigation(item.path)}
-                              className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md cursor-pointer transition-colors"
-                          >
-                            {item.label}
-                          </div>
-                      ))}
                     </div>
                   </div>
                 </DropdownMenuContent>
@@ -321,29 +285,6 @@ export function Navigation() {
                           <ChevronDown className="h-4 w-4" />
                         </motion.div>
                       </button>
-
-                      <AnimatePresence>
-                        {openDropdown === "solutions" && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden pl-4 space-y-1"
-                            >
-                              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">COMPANIES</p>
-                              {solutionCompanies.map((item, index) => (
-                                  <button
-                                      key={index}
-                                      onClick={() => handleNavigation(item.path)}
-                                      className="block w-full text-left text-sm text-gray-700 hover:text-gray-900 transition-colors py-2"
-                                  >
-                                    {item.label}
-                                  </button>
-                              ))}
-                            </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
 
                     {/* Learn */}
