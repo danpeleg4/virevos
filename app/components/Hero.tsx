@@ -1,140 +1,173 @@
 "use client"
 
 import { Button } from "./ui/button";
-import { ArrowRight, PlayCircle } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { motion } from "motion/react";
-import Link from "next/link";
+import { ArrowRight, Play, CheckCircle2, Sparkles } from "lucide-react";
+import {useRouter} from "next/navigation";
 
 export function Hero() {
-
+  const router = useRouter();
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white py-20 sm:py-32">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
-          {/* Left Column - Text Content */}
-          <div className="flex flex-col space-y-8">
+      <section className="relative bg-white overflow-hidden">
+        {/* Subtle gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 opacity-60"></div>
+
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="py-24 sm:py-32 lg:py-40">
+            {/* Announcement Badge */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full w-fit"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center mb-8"
             >
-              <span className="text-sm">🎉 New: AI-powered task suggestions</span>
+              <div className="inline-flex items-center space-x-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <Sparkles className="h-4 w-4 text-purple-600" />
+                <span className="text-sm text-gray-700">
+                Introducing AI-powered automations
+              </span>
+                <ArrowRight className="h-3 w-3 text-gray-400" />
+              </div>
             </motion.div>
 
-            <div className="space-y-4">
+            {/* Main Hero Content */}
+            <div className="text-center max-w-4xl mx-auto">
               <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-5xl sm:text-6xl lg:text-7xl tracking-tight text-gray-900"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 mb-6 leading-tight"
               >
-                Work smarter, not harder
+                Work flows better with{" "}
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Virevos
+              </span>
               </motion.h1>
+
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-xl text-gray-600 max-w-2xl"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
               >
-                Virevos helps teams organize, track, and deliver their best work.
-                Boost productivity by 10x with our intelligent task management platform.
+                The all-in-one productivity platform that combines project management,
+                automation, and AI to help you work smarter.
               </motion.p>
+
+              {/* CTA Buttons */}
+              <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+              >
+                <Button
+                    size="lg"
+                    className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all group"
+                    onClick={() => router.push("/onboard")}
+                >
+                  Start for free
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg rounded-xl group"
+                    onClick={() => router.push("/workspace/dashboard")}
+                >
+                  <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                  Watch demo
+                </Button>
+              </motion.div>
+
+              {/* Social Proof */}
+              <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-gray-600"
+              >
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <span>Free 14-day trial</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <span>No credit card required</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <span>Cancel anytime</span>
+                </div>
+              </motion.div>
             </div>
 
+            {/* Product Screenshot */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4"
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-20 max-w-6xl mx-auto"
             >
-              <Button size="lg" className="text-lg px-8 py-6">
-                  <Link href="/workspace/dashboard">
-                      Start Free Trial
-                  </Link>
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6">
-                <PlayCircle className="mr-2 h-5 w-5" />
-                  <Link href="/workspace/dashboard">
-                Watch Demo
-                  </Link>
-              </Button>
+              <div className="relative">
+                {/* Glow effect */}
+                <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl opacity-20 blur-3xl"></div>
+
+                {/* Screenshot container */}
+                <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+                  <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center space-x-2">
+                    <div className="flex space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                    <div className="flex-1 text-center">
+                      <div className="inline-block bg-white border border-gray-200 rounded px-3 py-1 text-xs text-gray-600">
+                        app.virevos.com
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Screenshot placeholder with gradient */}
+                  <div className="aspect-[16/10] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+                    <div className="w-full h-full bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
+                          <Sparkles className="h-8 w-8 text-white" />
+                        </div>
+                        <p className="text-gray-400">Dashboard Preview</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
+            {/* Stats */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex items-center space-x-8 pt-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="mt-24 grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto"
             >
-              <div className="flex -space-x-2">
-                {[
-                  "https://images.unsplash.com/photo-1647884866497-0bacd3f9e388?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYXBweSUyMGJ1c2luZXNzJTIwcGVyc29ufGVufDF8fHx8MTc2MjY3NzIxOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-                  "https://i.pravatar.cc/150?img=1",
-                  "https://i.pravatar.cc/150?img=2",
-                  "https://i.pravatar.cc/150?img=3",
-                ].map((src, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.5 + i * 0.1 }}
-                  >
-                    <ImageWithFallback
-                      src={src}
-                      alt="User"
-                      className="h-10 w-10 rounded-full border-2 border-white object-cover"
-                    />
-                  </motion.div>
-                ))}
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">
-                  <span className="text-gray-900">2,000+</span> teams already using Virevos
-                </p>
-              </div>
+              {[
+                { number: "50K+", label: "Active users" },
+                { number: "99.9%", label: "Uptime" },
+                { number: "2M+", label: "Tasks completed" },
+                { number: "150+", label: "Integrations" },
+              ].map((stat, index) => (
+                  <div key={index} className="text-center">
+                    <div className="text-3xl sm:text-4xl text-gray-900 mb-2">
+                      {stat.number}
+                    </div>
+                    <div className="text-sm text-gray-600">{stat.label}</div>
+                  </div>
+              ))}
             </motion.div>
           </div>
-
-          {/* Right Column - Image */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="relative lg:block"
-          >
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1652177217044-4f62dacf0ceb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9kdWN0aXZlJTIwd29ya3NwYWNlJTIwZGVza3xlbnwxfHx8fDE3NjI3MTgxMzV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                alt="Productivity Dashboard"
-                className="w-full h-auto"
-              />
-            </div>
-
-            {/* Floating Stats Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 50, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-              className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-6 max-w-xs"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="bg-green-100 rounded-full p-3">
-                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl text-gray-900">+127%</p>
-                  <p className="text-sm text-gray-600">Productivity boost</p>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
         </div>
-      </div>
-    </section>
+      </section>
   );
 }
