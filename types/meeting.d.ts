@@ -9,7 +9,7 @@ export interface MeetingType {
     maxPerDay?: number;
 }
 
-export type MeetingStatus = "scheduled" | "rescheduled" | "conflict" | "completed";
+export type MeetingStatus = "scheduled" | "rescheduled" | "conflict" | "completed" | "cancelled" | "ended" | "upcoming";
 
 export interface Attendee {
     name: string;

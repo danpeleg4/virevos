@@ -81,6 +81,11 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         }
     }
 
+    // Determine meeting status
+    const now = new Date();
+    const status = startDate > now ? "upcoming" : "scheduled";
+
+
     const [inserted] = await db
         .insert(meetings)
         .values({
@@ -93,7 +98,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             time: meeting.time,
             duration: meeting.duration,
             type: meeting.type,
-            status: meeting.status,
+            status: status,
             hasNotes: meeting.hasNotes ?? false,
             hasTranscript: meeting.hasTranscript ?? false,
             autoRescheduled: meeting.autoRescheduled ?? false,

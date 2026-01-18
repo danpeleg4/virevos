@@ -141,52 +141,6 @@ export default function Meetings() {
                 </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid gap-6 sm:grid-cols-3">
-                <Card className={`p-6`}>
-                    <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg`}>
-                            <Video className={`h-5 w-5`} />
-                        </div>
-                        <div>
-                            <p className={`text-sm`}>
-                                Live Now
-                            </p>
-                            <p className={`text-2xl mt-1`}>
-                                {meetings?.data?.filter((m) => m.status === "live").length}
-                            </p>
-                        </div>\
-                    </div>
-                </Card>
-                <Card className={`p-6`}>
-                    <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg`}>
-                            <Calendar className={`h-5 w-5`} />
-                        </div>
-                        <div>
-                            <p className={`text-sm`}>
-                                Upcoming
-                            </p>
-                            <p className={`text-2xl mt-1 `}>
-                                {meetings?.data?.filter((m) => m.status === "upcoming").length}
-                            </p>
-                        </div>
-                    </div>
-                </Card>
-                <Card className={`p-6 `}>
-                    <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg`}>
-                            <PlayCircle className={`h-5 w-5`} />
-                        </div>
-                        <div>
-                            <p className={`text-sm`}>
-                                Recordings
-                            </p>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-
             {/* Meetings List */}
             <div className="space-y-4">
                 <h2 className={`text-xl `}>
@@ -341,6 +295,7 @@ export default function Meetings() {
                                     className="w-full"
                                     onClick={() => {
                                         setStartModalOpen(false);
+                                        router.push(`/meet/${meetingURL}`);
                                     }}
                                 >
                                     <Video className="h-4 w-4 mr-2" />
