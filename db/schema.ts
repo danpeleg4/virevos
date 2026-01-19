@@ -142,11 +142,9 @@ export const projectFiles = pgTable("project_files", {
 // MEETING ATTENDEES
 export const meetingAttendees = pgTable("meeting_attendees", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-
     meetingId: text("meeting_id")
         .notNull()
         .references(() => meetings.id, { onDelete: "cascade" }),
-
     name: text("name").notNull(),
     initials: text("initials").notNull(),
 });

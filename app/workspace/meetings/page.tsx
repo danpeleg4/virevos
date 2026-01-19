@@ -65,11 +65,6 @@ export default function Meetings() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleJoinMeeting = (meeting: Meeting) => {
-        setSelectedMeeting(meeting);
-        setActiveView("in-meeting");
-    };
-
     const handleViewSummary = (meeting: Meeting) => {
         setSelectedMeeting(meeting);
         setActiveView("summary");
@@ -194,13 +189,13 @@ export default function Meetings() {
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        {meeting.status === "live" && (
-                                            <Button onClick={() => handleJoinMeeting(meeting)}>
+                                        {meeting.status === "active" && (
+                                            <Button onClick={() => handleStartMeeting()}>
                                                 <Video className="h-4 w-4 mr-2" />
                                                 Join Now
                                             </Button>
                                         )}
-                                        {meeting.status === "ended" && (
+                                        {meeting.status === "scheduled" && (
                                             <Button variant="outline" onClick={() => handleViewSummary(meeting)}>
                                                 <PlayCircle className="h-4 w-4 mr-2" />
                                                 View Recording
