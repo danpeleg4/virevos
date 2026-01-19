@@ -76,7 +76,7 @@ export default function Meetings() {
 
     const color = (meeting: Meeting) => {
         switch (meeting.status){
-            case "live":
+            case "active":
                 return "text-red-600"
             case "upcoming":
                 return "text-blue-600"
@@ -87,7 +87,7 @@ export default function Meetings() {
 
     const bgColor = (meeting: Meeting) => {
         switch (meeting.status) {
-            case "live":
+            case "active":
                 return "bg-red-100"
             case "upcoming":
                 return "bg-blue-100"
@@ -145,11 +145,11 @@ export default function Meetings() {
                                                 <h3
                                                     className={`text-gray-900`}
                                                 >
-                                                    {meeting.title}
+                                                    {decodeURIComponent(meeting.title)}
                                                 </h3>
                                                 <Badge
                                                     className={
-                                                        meeting.status === "live"
+                                                        meeting.status === "active"
                                                             ? "bg-red-100 text-red-700 border-red-200"
                                                             : meeting.status === "upcoming"
                                                                 ? "bg-blue-100 text-blue-700 border-blue-200"
@@ -175,7 +175,7 @@ export default function Meetings() {
                                                     <span>{meeting.attendees.length} participants</span>
                                                 </div>
                                                 {meeting.duration && (
-                                                    <span>• Duration: {meeting.duration}</span>
+                                                    <span>• Duration: {meeting.duration}m</span>
                                                 )}
                                             </div>
                                         </div>
