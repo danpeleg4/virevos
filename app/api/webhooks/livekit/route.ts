@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Parse JSON body
     const event = await req.json();
     console.log("Received event:", event);
-    if (event.event === "room_finished" || event.event === "room.finished") {
+    if (event.event === "room_finished") {
     const res = await db.select().from(meetings).where(eq(meetings.id, event.room.sid))
         if (res.length > 0) {
             const finishedAt = new Date(event.timestamp).getTime();
@@ -35,10 +35,13 @@ export async function POST(req: NextRequest) {
         }
     }
     if (event.event === "participant_joined") {
+        if (event.participant.kind === 'EGRESS') {
+            return NextResponse.json({ status: "EGRESS OUT" });
+        }
         await db.insert(meetingAttendees).values({
             meetingId: event.room.sid,
             name: event.participant.identity,
-            initials: event.participant.identity.split(" ")[0]
+            initials: event.participant.identity[0]
         })
     }
 
