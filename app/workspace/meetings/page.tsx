@@ -34,8 +34,6 @@ export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
     const [joinModalOpen, setJoinModalOpen] = useState(false);
     const [meetingName, setMeetingName] = useState("");
-    const [cameraOn, setCameraOn] = useState(true);
-    const [micOn, setMicOn] = useState(true);
     const [meetingLink, setMeetingLink] = useState("");
     const [copied, setCopied] = useState(false);
     const [activeView, setActiveView] = useState<"home" | "in-meeting" | "summary" | "transcription">("home");
@@ -49,8 +47,6 @@ export default function Meetings() {
         queryFn: async () => {
             const res = await axios.get("/api/meetings");
             const data: Meeting[] = res.data;
-
-            // Ensure attendees array exists to avoid runtime crashes
             return data.map(m => ({
                 ...m,
                 attendees: m.attendees ?? [],
@@ -61,7 +57,6 @@ export default function Meetings() {
     const handleStartMeeting = () => {
         const link = `https://virevos.com/meet/${meetingURL}`;
         setMeetingLink(link);
-        // In a real app, this would create the meeting and navigate to it
     };
 
     const handleCopyLink = () => {
@@ -83,13 +78,6 @@ export default function Meetings() {
     const handleViewTranscription = () => {
         setActiveView("transcription");
     };
-
-    useEffect(() => {
-        if (activeView === "in-meeting") {
-            router.push(`/meet/${meetingURL}`);
-        }
-    }, [activeView, meetingName, router]);
-
 
     if (activeView === "summary") {
         return <MeetingSummary meeting={selectedMeeting!} onBack={() => setActiveView("home")} onViewTranscription={handleViewTranscription} />;

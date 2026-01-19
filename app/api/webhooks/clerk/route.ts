@@ -36,7 +36,6 @@ const initialMeetingTypes: MeetingTypeInput[] = [
 
 export async function POST(req: Request) {
     const evt = await verifyWebhook(req);
-
     if (evt.type === "user.created") {
         const { id, email_addresses, first_name, last_name } = evt.data;
         await db.insert(users).values({

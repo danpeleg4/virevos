@@ -84,15 +84,13 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     // Determine meeting status
     const now = new Date();
     const status = startDate > now ? "upcoming" : "scheduled";
-
-
     const [inserted] = await db
         .insert(meetings)
         .values({
             id: meetingId,
             title: meeting.title,
             description: meeting.description,
-            link: null,
+            link: `https://virevos.com/meet/${crypto.randomUUID()}`,
             origin: "app",
             date: meeting.date,
             time: meeting.time,

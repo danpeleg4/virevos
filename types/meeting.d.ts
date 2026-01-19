@@ -43,7 +43,7 @@ export interface NewMeetingInput {
     duration: number;
     type: string;
     attendees?: Attendee[];
-    status: Extract<MeetingStatus, "scheduled" | "rescheduled" | "conflict" | "completed">;
+    status: MeetingStatus;
     hasNotes?: boolean;
     hasTranscript?: boolean;
     autoRescheduled?: boolean;
