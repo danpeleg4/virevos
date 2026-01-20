@@ -322,6 +322,16 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
         { speaker: "Emma Wilson", time: "00:48", text: "Yesterday I finished the API documentation for the v2 endpoints. Today I'm planning to work on the authentication flow improvements we discussed last week." },
     ];
 
+    useEffect(() => {
+        const fn = async () => {
+            const res = await axios.post(`/api/transcript`, {
+                meetingName: meeting.title,
+            });
+            console.log(res.data);
+        }
+        fn()
+    }, []);
+
     return (
         <div className={`p-6`}>
             <div className="flex items-center space-x-4 mb-6">
