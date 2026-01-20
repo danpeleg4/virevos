@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -328,6 +328,12 @@ type TranscribedChunk = {
 function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () => void }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
+    const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
 
     function formatTime(seconds: number): string {
         const mins = Math.floor(seconds / 60);
@@ -352,6 +358,62 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
         fn();
     }, [meeting.title]);
 
+    // Fetch signed URLs from API
+    useEffect(() => {
+        const fetchRecording = async () => {
+            try {
+                const res = await axios.post(`/api/recording`, {
+                    meetingId: meeting.title
+                });
+                setVideoUrl(res.data.videoUrl || null);
+                setAudioUrl(res.data.audioUrl || null);
+            } catch (err) {
+                console.error("Failed to fetch recording:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRecording();
+    }, [meeting.id]);
+
+    // Sync video and audio playback
+    useEffect(() => {
+        const video = videoRef.current;
+        const audio = audioRef.current;
+
+        if (!video || !audio) return;
+
+        // When video plays, start audio
+        const handlePlay = () => {
+            audio.currentTime = video.currentTime;
+            audio.play();
+        };
+
+        // When video pauses, pause audio
+        const handlePause = () => {
+            audio.pause();
+        };
+
+        // Keep audio time in sync with video
+        const handleTimeUpdate = () => {
+            if (Math.abs(video.currentTime - audio.currentTime) > 0.3) {
+                audio.currentTime = video.currentTime;
+            }
+        };
+
+        video.addEventListener("play", handlePlay);
+        video.addEventListener("pause", handlePause);
+        video.addEventListener("timeupdate", handleTimeUpdate);
+
+        return () => {
+            video.removeEventListener("play", handlePlay);
+            video.removeEventListener("pause", handlePause);
+            video.removeEventListener("timeupdate", handleTimeUpdate);
+        };
+    }, [videoUrl, audioUrl]);
+
+    if (loading) return <p>Loading recording...</p>;
+
     return (
         <div className={`p-6`}>
             <div className="flex items-center space-x-4 mb-6">
@@ -373,9 +435,19 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 {/* Video Player */}
                 <div className="lg:col-span-2">
                     <Card className={`p-6 `}>
-                        <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                            <PlayCircle className="h-16 w-16 text-white/50" />
-                        </div>
+                            {videoUrl ? (
+                                <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+                                    <video
+                                        ref={videoRef}
+                                        src={videoUrl}
+                                        className="w-full rounded-lg bg-black"
+                                        controls
+                                    />
+                                    {audioUrl && <audio ref={audioRef} src={audioUrl} />}
+                                </div>
+                            ) : (
+                                <p>No video available</p>
+                            )}
                         <div className="flex items-center space-x-4">
                             <Button size="sm">
                                 <PlayCircle className="h-4 w-4 mr-2" />

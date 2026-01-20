@@ -30,7 +30,6 @@ async function streamToString(stream: Readable | undefined): Promise<string> {
 export async function POST(req: NextRequest) {
     const { meetingName } = await req.json();
     const user = await currentUser();
-
     if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 });
     }

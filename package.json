@@ -15,6 +15,7 @@
     "@ai-sdk/gateway": "^3.0.5",
     "@ai-sdk/react": "^3.0.6",
     "@aws-sdk/client-s3": "^3.971.0",
+    "@aws-sdk/s3-request-presigner": "^3.971.0",
     "@clerk/clerk-sdk-node": "^5.1.6",
     "@clerk/nextjs": "^6.35.2",
     "@livekit/components-react": "^2.9.17",
