@@ -15,14 +15,17 @@ const s3 = new S3Client({
     },
 });
 
-async function streamToString(stream: Readable): Promise<string> {
+async function streamToString(stream: Readable | undefined): Promise<string> {
+    if (!stream) throw new Error("No stream provided");
+
     return new Promise((resolve, reject) => {
         const chunks: Buffer[] = [];
-        stream.on("data", (chunk) => chunks.push(chunk));
+        stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
         stream.on("error", reject);
         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
     });
 }
+
 
 export async function POST(req: NextRequest) {
     const { meetingName } = await req.json();
@@ -69,11 +72,17 @@ export async function POST(req: NextRequest) {
                     })
                 );
 
-                const bodyString = await streamToString(response.Body);
-                console.log("Got JSON file:", file.Key, bodyString);
+                if (!response.Body) {
+                    throw new Error(`S3 file ${file.Key} has no body`);
+                }
+
+                // Convert Node stream to string
+                const bodyString = await streamToString(response.Body as Readable);
+                //console.log("Got JSON file:", file.Key, bodyString);
                 return JSON.parse(bodyString);
             })
         );
+
 
         return NextResponse.json(results);
     } catch (error) {

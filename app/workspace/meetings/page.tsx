@@ -309,28 +309,48 @@ export default function Meetings() {
     );
 }
 
+type RawChunk = {
+    id: string;
+    chunk_text: string;
+    speaker: string;
+    start_time: number;
+    end_time: number;
+    room: string;
+};
+
+type TranscribedChunk = {
+    speaker: string;
+    time: string;
+    text: string;
+};
+
 // Transcription View Component
 function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () => void }) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
 
-    const transcript = [
-        { speaker: "Sarah Chen", time: "00:00", text: "Good morning everyone! Let's start with our standup. Michael, would you like to go first?" },
-        { speaker: "Michael Ross", time: "00:08", text: "Sure, thanks Sarah. Yesterday I completed the client dashboard redesign. The new layout is much cleaner and the performance has improved significantly." },
-        { speaker: "Emma Wilson", time: "00:25", text: "That's great Michael! I reviewed the pull request this morning and it looks really good. Just left a few minor comments about the mobile responsive behavior." },
-        { speaker: "Michael Ross", time: "00:35", text: "Thanks Emma, I'll address those today. My plan for today is to implement the feedback and then start working on the analytics integration." },
-        { speaker: "Sarah Chen", time: "00:45", text: "Perfect. Emma, what about you?" },
-        { speaker: "Emma Wilson", time: "00:48", text: "Yesterday I finished the API documentation for the v2 endpoints. Today I'm planning to work on the authentication flow improvements we discussed last week." },
-    ];
+    function formatTime(seconds: number): string {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
 
     useEffect(() => {
         const fn = async () => {
             const res = await axios.post(`/api/transcript`, {
                 meetingName: meeting.title,
             });
-            console.log(res.data);
+
+            const formatted = res.data[0].map((item: RawChunk) => ({
+                speaker: item.speaker,
+                time: formatTime((item.start_time)),
+                text: item.chunk_text,
+            }));
+            console.log(formatted);
+            setFormattedData(formatted);
         }
-        fn()
-    }, []);
+        fn();
+    }, [meeting.title]);
 
     return (
         <div className={`p-6`}>
@@ -445,26 +465,24 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                             />
                         </div>
                         <div className="space-y-4 overflow-y-auto h-[calc(100%-60px)]">
-                            {transcript.map((entry, index) => (
-                                <div
-                                    key={index}
-                                    className={`p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50`}
-                                >
-                                    <div className="flex items-start space-x-3">
-                                        <span className={`text-xs text-gray-400 mt-1`}>
-                                            {entry.time}
-                                        </span>
-                                        <div className="flex-1">
-                                            <p className={`text-sm mb-1 "text-blue-600`}>
-                                                {entry.speaker}
-                                            </p>
-                                            <p className={`text-sm text-gray-700`}>
-                                                {entry.text}
-                                            </p>
+                            {formattedData.length > 0 ? (
+                                formattedData.map((entry, index) => (
+                                    <div
+                                        key={index}
+                                        className="p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+                                    >
+                                        <div className="flex items-start space-x-3">
+                                            <span className="text-xs text-gray-400 mt-1">{entry.time}</span>
+                                            <div className="flex-1">
+                                                <p className="text-sm mb-1 text-blue-600">{entry.speaker}</p>
+                                                <p className="text-sm text-gray-700">{entry.text}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-gray-400 text-sm">Loading transcript...</p>
+                            )}
                         </div>
                     </Card>
                 </div>
