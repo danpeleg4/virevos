@@ -22,7 +22,7 @@ import {
     Users,
     Copy,
     Check,
-    PlayCircle,
+    PlayCircle, Pause,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -330,7 +330,10 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -412,6 +415,92 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
         };
     }, [videoUrl, audioUrl]);
 
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const onTimeUpdate = () => {
+            setCurrentTime(video.currentTime);
+        };
+
+        const onLoadedMetadata = () => {
+            if (!isNaN(video.duration)) {
+                setDuration(video.duration);
+            }
+        };
+
+        video.addEventListener("timeupdate", onTimeUpdate);
+        video.addEventListener("loadedmetadata", onLoadedMetadata);
+
+        return () => {
+            video.removeEventListener("timeupdate", onTimeUpdate);
+            video.removeEventListener("loadedmetadata", onLoadedMetadata);
+        };
+    }, [videoUrl]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const onEnded = () => setIsPlaying(false);
+
+        video.addEventListener("ended", onEnded);
+        return () => video.removeEventListener("ended", onEnded);
+    }, []);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const onPlay = () => setIsPlaying(true);
+        const onPause = () => setIsPlaying(false);
+
+        video.addEventListener("play", onPlay);
+        video.addEventListener("pause", onPause);
+
+        return () => {
+            video.removeEventListener("play", onPlay);
+            video.removeEventListener("pause", onPause);
+        };
+    }, [videoUrl]);
+
+    const togglePlay = () => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (video.paused) {
+            video.play();
+            setIsPlaying(true);
+        } else {
+            video.pause();
+            setIsPlaying(false);
+        }
+    };
+
+    const formatClock = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${String(s).padStart(2, "0")}`;
+    };
+
+    const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+        const bar = e.currentTarget;
+        const rect = bar.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percent = clickX / rect.width;
+        const newTime = percent * duration;
+
+        if (videoRef.current) {
+            videoRef.current.currentTime = newTime;
+        }
+        if (audioRef.current) {
+            audioRef.current.currentTime = newTime;
+        }
+
+        setCurrentTime(newTime);
+    };
+
     if (loading) return <p>Loading recording...</p>;
 
     return (
@@ -441,7 +530,8 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                                         ref={videoRef}
                                         src={videoUrl}
                                         className="w-full rounded-lg bg-black"
-                                        controls
+                                        controls={false}
+                                        muted
                                     />
                                     {audioUrl && <audio ref={audioRef} src={audioUrl} />}
                                 </div>
@@ -449,17 +539,32 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                                 <p>No video available</p>
                             )}
                         <div className="flex items-center space-x-4">
-                            <Button size="sm">
-                                <PlayCircle className="h-4 w-4 mr-2" />
-                                Play
+                            <Button size="sm" onClick={togglePlay}>
+                                {isPlaying ? (
+                                    <>
+                                        <Pause className="h-4 w-4 mr-2" />
+                                        Pause
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlayCircle className="h-4 w-4 mr-2" />
+                                        Play
+                                    </>
+                                )}
                             </Button>
                             <div className="flex-1">
-                                <div className={`h-2 rounded-full bg-gray-200`}>
-                                    <div className="h-2 bg-blue-600 rounded-full" style={{ width: "35%" }}></div>
+                                <div
+                                    className="h-2 rounded-full bg-gray-200 cursor-pointer"
+                                    onClick={onSeek}
+                                >
+                                    <div
+                                        className="h-2 bg-blue-600 rounded-full transition-all"
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
                                 </div>
                             </div>
                             <span className={`text-sm text-gray-600`}>
-                                15:30 / 45:00
+                                {formatClock(currentTime)} / {formatClock(duration)}
                             </span>
                         </div>
                     </Card>
