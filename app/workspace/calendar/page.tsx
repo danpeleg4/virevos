@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { CalendarView } from "../../components/scheduling/CalendarView";
-import { MeetingTypes } from "../../components/scheduling/MeetingTypes";
 import { IntegrationSettings } from "../../components/scheduling/IntegrationSettings";
 import { AutoScheduleSettings } from "../../components/scheduling/AutoScheduleSettings";
 import { MeetingNotes } from "../../components/scheduling/MeetingNotes";

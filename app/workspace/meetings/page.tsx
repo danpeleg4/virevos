@@ -2,7 +2,7 @@
 
 import React, {useEffect, useRef, useState} from "react";
 import { Button } from "../../components/ui/button";
-import { Card } from "../../components/ui/card";
+import {Card, CardContent} from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import {
@@ -528,8 +528,8 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     if (loading) return <p>Loading recording...</p>;
 
     return (
-        <div className="h-screen overflow-hidden flex flex-col p-6">
-        <div className="flex items-center space-x-4 mb-6">
+        <div className="h-full min-h-0 flex flex-col p-6 bg-white overflow-hidden">
+            <div className="flex items-center space-x-4 mb-6">
                 <Button variant="ghost" onClick={onBack}>
                     ← Back to Summary
                 </Button>
@@ -544,164 +544,127 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3 mt-6 flex-1 min-h-0">
-            {/* Video Player */}
-                <div className="lg:col-span-2">
-                    <Card className="p-6 flex-1 flex flex-col">
+            <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
+                {/* LEFT COLUMN: Video + Stats */}
+                <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
+
+                    {/* Video Card */}
+                    <Card className="p-6 flex flex-col min-h-0 shadow-sm">
+                        <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative mb-4">
                             {videoUrl ? (
-                                <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4 flex-1">
-                                    <video
-                                        ref={videoRef}
-                                        src={videoUrl}
-                                        className="w-full h-full rounded-lg bg-black"
-                                        controls={false}
-                                        muted
-                                    />
-                                    {audioUrl && <audio ref={audioRef} src={audioUrl} />}
-                                </div>
+                                <video
+                                    ref={videoRef}
+                                    src={videoUrl}
+                                    className="w-full h-full object-contain"
+                                    muted
+                                />
                             ) : (
-                                <p>No video available</p>
+                                <div className="flex items-center justify-center h-full text-white">
+                                    No video found
+                                </div>
                             )}
+                            {audioUrl && <audio ref={audioRef} src={audioUrl} />}
+                        </div>
+
+                        {/* Video Controls */}
                         <div className="flex items-center space-x-4">
-                            <Button size="sm" onClick={togglePlay}>
-                                {isPlaying ? (
-                                    <>
-                                        <Pause className="h-4 w-4 mr-2" />
-                                        Pause
-                                    </>
-                                ) : (
-                                    <>
-                                        <PlayCircle className="h-4 w-4 mr-2" />
-                                        Play
-                                    </>
-                                )}
+                            <Button size="sm" onClick={togglePlay} className="shrink-0">
+                                {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <PlayCircle className="h-4 w-4 mr-2" />}
+                                {isPlaying ? "Pause" : "Play"}
                             </Button>
                             <div className="flex-1">
-                                <div
-                                    className="h-2 rounded-full bg-gray-200 cursor-pointer"
-                                    onClick={onSeek}
-                                >
+                                <div className="h-2 rounded-full bg-gray-100 cursor-pointer" onClick={onSeek}>
                                     <div
                                         className="h-2 bg-blue-600 rounded-full transition-all"
                                         style={{ width: `${progressPercent}%` }}
                                     />
                                 </div>
                             </div>
-                            <span className={`text-sm text-gray-600`}>
+                            <span className="text-sm font-mono text-gray-500 tabular-nums">
                                 {formatClock(currentTime)} / {formatClock(duration)}
                             </span>
                         </div>
                     </Card>
 
-                 {/* Meeting Stats & Quick Actions */}
-                 <div className="mt-6 grid gap-6 lg:grid-cols-2">
-                    <div className="lg:col-span-1">
-                        <Card className={`p-6 h-full min-h-50`}>
-                            <h3 className={`mb-4 `}>
-                                Meeting Stats
-                            </h3>
-                            <div className="space-y-3">
+                    {/* Stats & Actions Row */}
+                    <div className="grid grid-cols-2 gap-6">
+                        <Card className="p-5 shadow-sm">
+                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Stats</h3>
+                            <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                        Duration
-                                    </span>
-                                    <span className="text-gray-900">
-                                        {meeting.duration}
-                                    </span>
+                                    <span className="text-gray-600">Duration</span>
+                                    <span className="font-medium">{meeting.duration}m</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                        Participants
-                                    </span>
-                                    <span className="text-gray-900">
-                                        {meeting?.attendees?.length}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                        Recording Size
-                                    </span>
-                                    <span className="text-gray-900">
-                                        124 MB
-                                    </span>
+                                    <span className="text-gray-600">Participants</span>
+                                    <span className="font-medium">{meeting?.attendees?.length}</span>
                                 </div>
                             </div>
                         </Card>
-                    </div>
 
-                    {/* Quick Actions */}
-                    <div className="lg:col-span-1">
-                        <Card className={`p-6 h-full min-h-50`}>
-                            <h3 className={`mb-4`}>
-                                Quick Actions
-                            </h3>
-                            <div className="space-y-2">
-                                <Button variant="outline" className="w-full justify-start">
-                                    <Link2 className="h-4 w-4 mr-2" />
-                                    Share Recording Link
+                        <Card className="p-5 shadow-sm">
+                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Actions</h3>
+                            <div className="flex flex-col gap-2">
+                                <Button variant="outline" size="sm" className="justify-start">
+                                    <Link2 className="h-4 w-4 mr-2" /> Share
                                 </Button>
-                                <Button variant="outline" className="w-full justify-start">
-                                    <Copy className="h-4 w-4 mr-2" />
-                                    Copy Transcription
-                                </Button>
-                                <Button variant="outline" className="w-full justify-start">
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    Schedule Follow-up
+                                <Button variant="outline" size="sm" className="justify-start">
+                                    <Copy className="h-4 w-4 mr-2" /> Copy Transcript
                                 </Button>
                             </div>
                         </Card>
-                    </div>
                     </div>
                 </div>
 
-                {/* Transcription Panel */}
-                <div className="lg:col-span-1 lg:row-span-2 min-h-0">
-                    <Card className="p-6 flex flex-col flex-1 min-h-0">
-                    <div className="mb-4">
-                            <Input
-                                placeholder="Search transcript..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full"
-                            />
-                        </div>
-                        <div
-                            className="space-y-4 overflow-y-auto flex-1"
-                            ref={containerRef}
-                        >
-                            {formattedData.length > 0 ? (
-                                formattedData.map((entry, index) => {
-                                    const isActive = index === currentChunkIndex;
-                                    return (
-                                        <div
-                                            key={index}
-                                            className={`p-3 rounded-lg cursor-pointer transition-colors
-                                                ${isActive ? 'bg-blue-100' : 'hover:bg-gray-50'}`}
-                                        >
-                                            <div className="flex items-start space-x-3">
-                                                <span className="text-xs text-gray-400 mt-1">
-                                                    {entry.time}
-                                                </span>
-                                                <div className="flex-1">
-                                                    <p className="text-sm mb-1 text-blue-600">
-                                                        {entry.speaker}
-                                                    </p>
-                                                    <p className="text-sm text-gray-700">
-                                                        {entry.text}
-                                                    </p>
-                                                </div>
+                {/* RIGHT COLUMN: Transcription (Scrolls independently) */}
+                <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
+                    <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                    <div className="p-4 border-b bg-gray-50/50">
+                        <Input
+                            placeholder="Search transcript..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-white"
+                        />
+                    </div>
+
+                    <div
+                        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+                        ref={containerRef}
+                    >
+                        {formattedData.length > 0 ? (
+                            formattedData.map((entry, index) => {
+                                const isActive = index === currentChunkIndex;
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`p-3 rounded-xl transition-all duration-200 border border-transparent 
+                                            ${isActive ? 'bg-blue-50 border-blue-100 shadow-sm' : 'hover:bg-gray-50'}`}
+                                    >
+                                        <div className="flex gap-3">
+                                            <span className="text-[10px] font-mono text-gray-400 mt-1 tabular-nums">
+                                                {entry.time}
+                                            </span>
+                                            <div>
+                                                <p className={`text-xs font-bold mb-0.5 ${isActive ? 'text-blue-600' : 'text-gray-900'}`}>
+                                                    {entry.speaker}
+                                                </p>
+                                                <p className="text-sm text-gray-600 leading-relaxed">
+                                                    {entry.text}
+                                                </p>
                                             </div>
                                         </div>
-                                    );
-                                })
-                            ) : (
-                                <p className="text-gray-400 text-sm">
-                                    Loading transcript...
-                                </p>
-                            )}
-                        </div>
-                    </Card>
-                </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">
+                                Loading transcript segments...
+                            </div>
+                        )}
+                    </div>
+                        </CardContent>
+                </Card>
             </div>
         </div>
     );

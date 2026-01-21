@@ -1,6 +1,5 @@
 "use server"
 
-import fetch from "node-fetch";
 import { AccessToken } from "livekit-server-sdk";
 import { Pinecone } from '@pinecone-database/pinecone'
 import {db} from "@/db/db";
