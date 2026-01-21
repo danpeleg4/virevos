@@ -24,7 +24,7 @@ import {
 import { motion } from "motion/react";
 import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
 import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
-import type {Meeting, MeetingType, NewMeetingInput} from "@/types/meeting";
+import type {Meeting, NewMeetingInput} from "@/types/meeting";
 import axios from "axios";
 import { addMeetingToCalendar, deleteEventFromCalendar } from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,14 +42,6 @@ export function CalendarView() {
         const [year, month, day] = dateStr.split("-").map(Number);
         return new Date(year, month - 1, day); // LOCAL date, not UTC
     }
-
-    const getMeetingTypes = useQuery<MeetingType[]>({
-        queryKey: ["meetingTypes"],
-        queryFn: async () => {
-            const res = await axios.get('/api/meetings/meeting-types')
-            return res.data
-        }
-    })
 
     const meetings = useQuery({
         queryKey: ["meetings"],
@@ -136,32 +128,6 @@ export function CalendarView() {
 
     const addMeeting = async (meeting: NewMeetingInput) => {
         mutation.mutate(meeting);
-    };
-
-    const getStatusColor = (type: string) => {
-        const types = getMeetingTypes?.data;
-        if (!types) return "bg-gray-100 text-gray-700 border-gray-200";
-
-        const t = types.find(mt => mt.name === type);
-        if (!t) return "bg-gray-100 text-gray-700 border-gray-200";
-
-        // Derive Tailwind classes dynamically
-        const bg = `bg-${t.color.toLowerCase()}-100`;
-        const text = `text-${t.color.toLowerCase()}-700`;
-        const border = `border-${t.color.toLowerCase()}-200`;
-
-        return `${bg} ${text} ${border}`;
-    };
-
-    const getTypeIcon = (type: string) => {
-        switch (type) {
-            case "zoom":
-                return <Video className="h-3 w-3" />;
-            case "google-meet":
-                return <Video className="h-3 w-3" />;
-            default:
-                return <CalendarIcon className="h-3 w-3" />;
-        }
     };
 
     return (
@@ -275,13 +241,11 @@ export function CalendarView() {
                                                 >
                                                     <div
                                                         onClick={() => handleMeetingClick(meeting)}
-                                                        className={`p-3 rounded-lg border cursor-pointer hover:shadow-md ${getStatusColor(
-                                                            meeting.type
-                                                        )}`}
+                                                        className={`p-3 rounded-lg border cursor-pointer hover:shadow-md`}
                                                     >
                                                         <div className="flex items-start justify-between mb-2">
                                                             <div className="flex items-center space-x-2">
-                                                                {getTypeIcon(meeting.type)}
+                                                                <CalendarIcon className="h-3 w-3" />
                                                                 <span className="text-sm">{decodeURIComponent(meeting.title)}</span>
                                                             </div>
 
