@@ -347,12 +347,16 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     }
 
     useEffect(() => {
-        if (currentChunkIndex === null) return;
+        if (typeof currentChunkIndex !== "number") return;
+
         const container = containerRef.current;
         if (!container) return;
-        const activeElem = container.children[currentChunkIndex] as HTMLElement;
+
+        const children = Array.from(container.children) as HTMLElement[];
+        const activeElem = children[currentChunkIndex];
+
         if (activeElem) {
-            activeElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }, [currentChunkIndex]);
 
