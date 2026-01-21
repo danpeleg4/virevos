@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { Button } from "../../components/ui/button";
-import { Card } from "../../components/ui/card";
+import {Card, CardContent} from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import {
@@ -22,7 +22,7 @@ import {
     Users,
     Copy,
     Check,
-    PlayCircle,
+    PlayCircle, Pause,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -34,8 +34,6 @@ export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
     const [joinModalOpen, setJoinModalOpen] = useState(false);
     const [meetingName, setMeetingName] = useState("");
-    const [cameraOn, setCameraOn] = useState(true);
-    const [micOn, setMicOn] = useState(true);
     const [meetingLink, setMeetingLink] = useState("");
     const [copied, setCopied] = useState(false);
     const [activeView, setActiveView] = useState<"home" | "in-meeting" | "summary" | "transcription">("home");
@@ -49,8 +47,6 @@ export default function Meetings() {
         queryFn: async () => {
             const res = await axios.get("/api/meetings");
             const data: Meeting[] = res.data;
-
-            // Ensure attendees array exists to avoid runtime crashes
             return data.map(m => ({
                 ...m,
                 attendees: m.attendees ?? [],
@@ -61,7 +57,6 @@ export default function Meetings() {
     const handleStartMeeting = () => {
         const link = `https://virevos.com/meet/${meetingURL}`;
         setMeetingLink(link);
-        // In a real app, this would create the meeting and navigate to it
     };
 
     const handleCopyLink = () => {
@@ -70,38 +65,18 @@ export default function Meetings() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleJoinMeeting = (meeting: Meeting) => {
-        setSelectedMeeting(meeting);
-        setActiveView("in-meeting");
-    };
-
     const handleViewSummary = (meeting: Meeting) => {
         setSelectedMeeting(meeting);
         setActiveView("summary");
     };
 
-    const handleViewTranscription = () => {
-        setActiveView("transcription");
-    };
-
-    useEffect(() => {
-        if (activeView === "in-meeting") {
-            router.push(`/meet/${meetingURL}`);
-        }
-    }, [activeView, meetingName, router]);
-
-
     if (activeView === "summary") {
-        return <MeetingSummary meeting={selectedMeeting!} onBack={() => setActiveView("home")} onViewTranscription={handleViewTranscription} />;
-    }
-
-    if (activeView === "transcription") {
-        return <TranscriptionView meeting={selectedMeeting!} onBack={() => setActiveView("summary")} />;
+        return <TranscriptionView meeting={selectedMeeting!} onBack={() => setActiveView("home")} />;
     }
 
     const color = (meeting: Meeting) => {
         switch (meeting.status){
-            case "live":
+            case "active":
                 return "text-red-600"
             case "upcoming":
                 return "text-blue-600"
@@ -112,7 +87,7 @@ export default function Meetings() {
 
     const bgColor = (meeting: Meeting) => {
         switch (meeting.status) {
-            case "live":
+            case "active":
                 return "bg-red-100"
             case "upcoming":
                 return "bg-blue-100"
@@ -139,52 +114,6 @@ export default function Meetings() {
                         Start New Meeting
                     </Button>
                 </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="grid gap-6 sm:grid-cols-3">
-                <Card className={`p-6`}>
-                    <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg`}>
-                            <Video className={`h-5 w-5`} />
-                        </div>
-                        <div>
-                            <p className={`text-sm`}>
-                                Live Now
-                            </p>
-                            <p className={`text-2xl mt-1`}>
-                                {meetings?.data?.filter((m) => m.status === "live").length}
-                            </p>
-                        </div>\
-                    </div>
-                </Card>
-                <Card className={`p-6`}>
-                    <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg`}>
-                            <Calendar className={`h-5 w-5`} />
-                        </div>
-                        <div>
-                            <p className={`text-sm`}>
-                                Upcoming
-                            </p>
-                            <p className={`text-2xl mt-1 `}>
-                                {meetings?.data?.filter((m) => m.status === "upcoming").length}
-                            </p>
-                        </div>
-                    </div>
-                </Card>
-                <Card className={`p-6 `}>
-                    <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg`}>
-                            <PlayCircle className={`h-5 w-5`} />
-                        </div>
-                        <div>
-                            <p className={`text-sm`}>
-                                Recordings
-                            </p>
-                        </div>
-                    </div>
-                </Card>
             </div>
 
             {/* Meetings List */}
@@ -216,11 +145,11 @@ export default function Meetings() {
                                                 <h3
                                                     className={`text-gray-900`}
                                                 >
-                                                    {meeting.title}
+                                                    {decodeURIComponent(meeting.title)}
                                                 </h3>
                                                 <Badge
                                                     className={
-                                                        meeting.status === "live"
+                                                        meeting.status === "active"
                                                             ? "bg-red-100 text-red-700 border-red-200"
                                                             : meeting.status === "upcoming"
                                                                 ? "bg-blue-100 text-blue-700 border-blue-200"
@@ -246,14 +175,14 @@ export default function Meetings() {
                                                     <span>{meeting.attendees.length} participants</span>
                                                 </div>
                                                 {meeting.duration && (
-                                                    <span>• Duration: {meeting.duration}</span>
+                                                    <span>• Duration: {meeting.duration}m</span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        {meeting.status === "live" && (
-                                            <Button onClick={() => handleJoinMeeting(meeting)}>
+                                        {meeting.status === "active" && (
+                                            <Button onClick={() => handleStartMeeting()}>
                                                 <Video className="h-4 w-4 mr-2" />
                                                 Join Now
                                             </Button>
@@ -341,6 +270,7 @@ export default function Meetings() {
                                     className="w-full"
                                     onClick={() => {
                                         setStartModalOpen(false);
+                                        router.push(`/meet/${meetingURL}`);
                                     }}
                                 >
                                     <Video className="h-4 w-4 mr-2" />
@@ -379,137 +309,230 @@ export default function Meetings() {
     );
 }
 
-// Meeting Summary Component
-function MeetingSummary({ meeting, onBack, onViewTranscription }: { meeting: Meeting; onBack: () => void; onViewTranscription: () => void }) {
+type RawChunk = {
+    id: string;
+    chunk_text: string;
+    speaker: string;
+    start_time: number;
+    end_time: number;
+    room: string;
+};
 
-    return (
-        <div className={`p-6 space-y-6`}>
-            <div className="flex items-center space-x-4 mb-6">
-                <Button variant="ghost" onClick={onBack}>
-                    ← Back
-                </Button>
-            </div>
-
-            <div>
-                <h1 className={`text-3xl `}>
-                    {meeting.title}
-                </h1>
-                <p className={`mt-1 text-gray-600`}>
-                    {meeting.date} at {meeting.time} • {meeting.duration}
-                </p>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-                {/* Recording Playback */}
-                <Card className={`p-6 `}>
-                    <h3 className={`mb-4 `}>
-                        Recording
-                    </h3>
-                    <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                        <PlayCircle className="h-16 w-16 text-white/50" />
-                    </div>
-                    <div className="flex space-x-3">
-                        <Button className="flex-1">
-                            <PlayCircle className="h-4 w-4 mr-2" />
-                            Play Recording
-                        </Button>
-                        <Button variant="outline">Download</Button>
-                    </div>
-                </Card>
-
-                {/* Transcription */}
-                <Card className={`p-6 `}>
-                    <h3 className={`mb-4 `}>
-                        Transcription
-                    </h3>
-                    <div
-                        className={`p-4 rounded-lg border mb-4 bg-gray-50 border-gray-200`}
-                    >
-                        <p className={`text-sm mb-2 text-gray-700`}>
-                            <strong>Sarah Chen:</strong> Good morning everyone! Let&#39;s start with our standup...
-                        </p>
-                        <p className={`text-sm text-gray-700`}>
-                            <strong>Michael Ross:</strong> Sure, I finished the client dashboard yesterday and...
-                        </p>
-                    </div>
-                    <Button className="w-full" onClick={onViewTranscription}>
-                        View Full Transcription
-                    </Button>
-                </Card>
-
-                {/* Meeting Stats */}
-                <Card className={`p-6 `}>
-                    <h3 className={`mb-4 `}>
-                        Meeting Stats
-                    </h3>
-                    <div className="space-y-3">
-                        <div className="flex justify-between">
-              <span className="text-gray-600">
-                Duration
-              </span>
-                            <span className="text-gray-900">
-                {meeting.duration}
-              </span>
-                        </div>
-                        <div className="flex justify-between">
-              <span className="text-gray-600">
-                Participants
-              </span>
-                            <span className="text-gray-900">
-                {meeting?.attendees?.length}
-              </span>
-                        </div>
-                        <div className="flex justify-between">
-              <span className="text-gray-600">
-                Recording Size
-              </span>
-                            <span className="text-gray-900">
-                124 MB
-              </span>
-                        </div>
-                    </div>
-                </Card>
-
-                {/* Quick Actions */}
-                <Card className={`p-6 `}>
-                    <h3 className={`mb-4 `}>
-                        Quick Actions
-                    </h3>
-                    <div className="space-y-2">
-                        <Button variant="outline" className="w-full justify-start">
-                            <Link2 className="h-4 w-4 mr-2" />
-                            Share Recording Link
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                            <Copy className="h-4 w-4 mr-2" />
-                            Copy Transcription
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            Schedule Follow-up
-                        </Button>
-                    </div>
-                </Card>
-            </div>
-        </div>
-    );
-}
+type TranscribedChunk = {
+    speaker: string;
+    time: string;
+    text: string;
+    startTime: number;
+};
 
 // Transcription View Component
 function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () => void }) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
+    const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [currentChunkIndex, setCurrentChunkIndex] = useState<number | null | string>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    const transcript = [
-        { speaker: "Sarah Chen", time: "00:00", text: "Good morning everyone! Let's start with our standup. Michael, would you like to go first?" },
-        { speaker: "Michael Ross", time: "00:08", text: "Sure, thanks Sarah. Yesterday I completed the client dashboard redesign. The new layout is much cleaner and the performance has improved significantly." },
-        { speaker: "Emma Wilson", time: "00:25", text: "That's great Michael! I reviewed the pull request this morning and it looks really good. Just left a few minor comments about the mobile responsive behavior." },
-        { speaker: "Michael Ross", time: "00:35", text: "Thanks Emma, I'll address those today. My plan for today is to implement the feedback and then start working on the analytics integration." },
-        { speaker: "Sarah Chen", time: "00:45", text: "Perfect. Emma, what about you?" },
-        { speaker: "Emma Wilson", time: "00:48", text: "Yesterday I finished the API documentation for the v2 endpoints. Today I'm planning to work on the authentication flow improvements we discussed last week." },
-    ];
+    function formatTime(seconds: number): string {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+
+    useEffect(() => {
+        if (typeof currentChunkIndex !== "number") return;
+
+        const container = containerRef.current;
+        if (!container) return;
+
+        const children = Array.from(container.children) as HTMLElement[];
+        const activeElem = children[currentChunkIndex];
+
+        if (activeElem) {
+            activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [currentChunkIndex]);
+
+    useEffect(() => {
+        const fn = async () => {
+            const res = await axios.post(`/api/transcript`, {
+                meetingName: meeting.title,
+            });
+
+            const formatted = res.data[0].map((item: RawChunk) => ({
+                speaker: item.speaker,
+                time: formatTime((item.start_time)),
+                text: item.chunk_text,
+                startTime: item.start_time,
+            }));
+            console.log(formatted);
+            setFormattedData(formatted);
+        }
+        fn();
+    }, [meeting.title]);
+
+    // Fetch signed URLs from API
+    useEffect(() => {
+        const fetchRecording = async () => {
+            try {
+                const res = await axios.post(`/api/recording`, {
+                    meetingId: meeting.title
+                });
+                setVideoUrl(res.data.videoUrl || null);
+                setAudioUrl(res.data.audioUrl || null);
+            } catch (err) {
+                console.error("Failed to fetch recording:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRecording();
+    }, [meeting.title]);
+
+    // Sync video and audio playback
+    useEffect(() => {
+        const video = videoRef.current;
+        const audio = audioRef.current;
+        if (!video || !audio) return;
+
+        // When video plays, start audio
+        const handlePlay = () => {
+            audio.currentTime = video.currentTime;
+            audio.play();
+        };
+
+        // When video pauses, pause audio
+        const handlePause = () => {
+            audio.pause();
+        };
+
+        // Keep audio time in sync with video
+        const handleTimeUpdate = () => {
+            if (Math.abs(video.currentTime - audio.currentTime) > 0.3) {
+                audio.currentTime = video.currentTime;
+            }
+        };
+
+        video.addEventListener("play", handlePlay);
+        video.addEventListener("pause", handlePause);
+        video.addEventListener("timeupdate", handleTimeUpdate);
+
+        return () => {
+            video.removeEventListener("play", handlePlay);
+            video.removeEventListener("pause", handlePause);
+            video.removeEventListener("timeupdate", handleTimeUpdate);
+        };
+    }, [videoUrl, audioUrl]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const onTimeUpdate = () => {
+            setCurrentTime(video.currentTime);
+        };
+
+        const onLoadedMetadata = () => {
+            if (!isNaN(video.duration)) {
+                setDuration(video.duration);
+            }
+        };
+
+        video.addEventListener("timeupdate", onTimeUpdate);
+        video.addEventListener("loadedmetadata", onLoadedMetadata);
+
+        return () => {
+            video.removeEventListener("timeupdate", onTimeUpdate);
+            video.removeEventListener("loadedmetadata", onLoadedMetadata);
+        };
+    }, [videoUrl]);
+
+    useEffect(() => {
+        if (!formattedData.length) return;
+
+        const index = formattedData.findIndex(
+            (chunk, i) =>
+                currentTime >= chunk.startTime && // numeric seconds
+                (i === formattedData.length - 1 || currentTime < formattedData[i + 1].startTime)
+        );
+
+        setCurrentChunkIndex(index !== -1 ? index : null);
+    }, [currentTime, formattedData]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const onEnded = () => setIsPlaying(false);
+
+        video.addEventListener("ended", onEnded);
+        return () => video.removeEventListener("ended", onEnded);
+    }, []);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const onPlay = () => setIsPlaying(true);
+        const onPause = () => setIsPlaying(false);
+
+        video.addEventListener("play", onPlay);
+        video.addEventListener("pause", onPause);
+
+        return () => {
+            video.removeEventListener("play", onPlay);
+            video.removeEventListener("pause", onPause);
+        };
+    }, [videoUrl]);
+
+    const togglePlay = () => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (video.paused) {
+            video.play();
+            setIsPlaying(true);
+        } else {
+            video.pause();
+            setIsPlaying(false);
+        }
+    };
+
+    const formatClock = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${String(s).padStart(2, "0")}`;
+    };
+
+    const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+        const bar = e.currentTarget;
+        const rect = bar.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percent = clickX / rect.width;
+        const newTime = percent * duration;
+
+        if (videoRef.current) {
+            videoRef.current.currentTime = newTime;
+        }
+        if (audioRef.current) {
+            audioRef.current.currentTime = newTime;
+        }
+
+        setCurrentTime(newTime);
+    };
+
+    if (loading) return <p>Loading recording...</p>;
 
     return (
-        <div className={`p-6`}>
+        <div className="h-full min-h-0 flex flex-col p-6 bg-white overflow-hidden">
             <div className="flex items-center space-x-4 mb-6">
                 <Button variant="ghost" onClick={onBack}>
                     ← Back to Summary
@@ -517,73 +540,135 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             </div>
 
             <div>
-                <h1 className={`text-3xl `}>
+                <h1 className="text-3xl">
                     Meeting Transcription
                 </h1>
-                <p className={`mt-1 text-gray-600`}>
+                <p className="mt-1 text-gray-600">
                     {meeting.title} • {meeting.date}
                 </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3 mt-6">
-                {/* Video Player */}
-                <div className="lg:col-span-2">
-                    <Card className={`p-6 `}>
-                        <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                            <PlayCircle className="h-16 w-16 text-white/50" />
+            <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
+                {/* LEFT COLUMN: Video + Stats */}
+                <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
+
+                    {/* Video Card */}
+                    <Card className="p-6 flex flex-col min-h-0 shadow-sm">
+                        <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative mb-4">
+                            {videoUrl ? (
+                                <video
+                                    ref={videoRef}
+                                    src={videoUrl}
+                                    className="w-full h-full object-contain"
+                                    muted
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-white">
+                                    No video found
+                                </div>
+                            )}
+                            {audioUrl && <audio ref={audioRef} src={audioUrl} />}
                         </div>
+
+                        {/* Video Controls */}
                         <div className="flex items-center space-x-4">
-                            <Button size="sm">
-                                <PlayCircle className="h-4 w-4 mr-2" />
-                                Play
+                            <Button size="sm" onClick={togglePlay} className="shrink-0">
+                                {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <PlayCircle className="h-4 w-4 mr-2" />}
+                                {isPlaying ? "Pause" : "Play"}
                             </Button>
                             <div className="flex-1">
-                                <div className={`h-2 rounded-full bg-gray-200`}>
-                                    <div className="h-2 bg-blue-600 rounded-full" style={{ width: "35%" }}></div>
+                                <div className="h-2 rounded-full bg-gray-100 cursor-pointer" onClick={onSeek}>
+                                    <div
+                                        className="h-2 bg-blue-600 rounded-full transition-all"
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
                                 </div>
                             </div>
-                            <span className={`text-sm text-gray-600`}>
-                15:30 / 45:00
-              </span>
+                            <span className="text-sm font-mono text-gray-500 tabular-nums">
+                                {formatClock(currentTime)} / {formatClock(duration)}
+                            </span>
                         </div>
                     </Card>
+
+                    {/* Stats & Actions Row */}
+                    <div className="grid grid-cols-2 gap-6">
+                        <Card className="p-5 shadow-sm">
+                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Stats</h3>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Duration</span>
+                                    <span className="font-medium">{meeting.duration}m</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Participants</span>
+                                    <span className="font-medium">{meeting?.attendees?.length}</span>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="p-5 shadow-sm">
+                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Actions</h3>
+                            <div className="flex flex-col gap-2">
+                                <Button variant="outline" size="sm" className="justify-start">
+                                    <Link2 className="h-4 w-4 mr-2" /> Share
+                                </Button>
+                                <Button variant="outline" size="sm" className="justify-start">
+                                    <Copy className="h-4 w-4 mr-2" /> Copy Transcript
+                                </Button>
+                            </div>
+                        </Card>
+                    </div>
                 </div>
 
-                {/* Transcription Panel */}
-                <div className="lg:col-span-1">
-                    <Card className={`p-6  h-[calc(100vh-250px)]`}>
-                        <div className="mb-4">
-                            <Input
-                                placeholder="Search transcript..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="space-y-4 overflow-y-auto h-[calc(100%-60px)]">
-                            {transcript.map((entry, index) => (
-                                <div
-                                    key={index}
-                                    className={`p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50`}
-                                >
-                                    <div className="flex items-start space-x-3">
-                    <span className={`text-xs text-gray-400 mt-1`}>
-                      {entry.time}
-                    </span>
-                                        <div className="flex-1">
-                                            <p className={`text-sm mb-1 "text-blue-600`}>
-                                                {entry.speaker}
-                                            </p>
-                                            <p className={`text-sm text-gray-700`}>
-                                                {entry.text}
-                                            </p>
+                {/* RIGHT COLUMN: Transcription (Scrolls independently) */}
+                <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
+                    <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                    <div className="p-4 border-b bg-gray-50/50">
+                        <Input
+                            placeholder="Search transcript..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-white"
+                        />
+                    </div>
+
+                    <div
+                        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+                        ref={containerRef}
+                    >
+                        {formattedData.length > 0 ? (
+                            formattedData.map((entry, index) => {
+                                const isActive = index === currentChunkIndex;
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`p-3 rounded-xl transition-all duration-200 border border-transparent 
+                                            ${isActive ? 'bg-blue-50 border-blue-100 shadow-sm' : 'hover:bg-gray-50'}`}
+                                    >
+                                        <div className="flex gap-3">
+                                            <span className="text-[10px] font-mono text-gray-400 mt-1 tabular-nums">
+                                                {entry.time}
+                                            </span>
+                                            <div>
+                                                <p className={`text-xs font-bold mb-0.5 ${isActive ? 'text-blue-600' : 'text-gray-900'}`}>
+                                                    {entry.speaker}
+                                                </p>
+                                                <p className="text-sm text-gray-600 leading-relaxed">
+                                                    {entry.text}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-                </div>
+                                );
+                            })
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">
+                                Loading transcript segments...
+                            </div>
+                        )}
+                    </div>
+                        </CardContent>
+                </Card>
             </div>
         </div>
     );

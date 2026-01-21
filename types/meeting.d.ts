@@ -9,7 +9,7 @@ export interface MeetingType {
     maxPerDay?: number;
 }
 
-export type MeetingStatus = "scheduled" | "rescheduled" | "conflict" | "completed";
+export type MeetingStatus = "scheduled" | "rescheduled" | "conflict" | "completed" | "cancelled" | "ended" | "upcoming";
 
 export interface Attendee {
     name: string;
@@ -43,7 +43,7 @@ export interface NewMeetingInput {
     duration: number;
     type: string;
     attendees?: Attendee[];
-    status: Extract<MeetingStatus, "scheduled" | "rescheduled" | "conflict" | "completed">;
+    status: MeetingStatus;
     hasNotes?: boolean;
     hasTranscript?: boolean;
     autoRescheduled?: boolean;

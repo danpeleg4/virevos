@@ -98,29 +98,10 @@ export function BookMeetingDialog({
                         />
                     </div>
 
-                    {/* Meeting Type */}
-                    <div>
-                        <Label>Meeting Type</Label>
-                        <Select
-                            value={meetingType}
-                            onValueChange={(v) => setMeetingType(v)}
-                        >
-                            <SelectTrigger className="mt-2">
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {getMeetingTypes?.data?.map((type) => (
-                                    <SelectItem value={type.name} key={type.id}>
-                                        {type.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                     {/* DATE + TIME + DURATION */}
-                    <div className="grid grid-cols-3 gap-4">
-                        {/* Date */}
+                    <div
+                        className={`grid grid-cols-3 gap-4 transition-all duration-200`}
+                    >
                         <div>
                             <Label>Date</Label>
                             <Input
@@ -131,7 +112,6 @@ export function BookMeetingDialog({
                             />
                         </div>
 
-                        {/* Time */}
                         <div>
                             <Label>Time</Label>
                             <Input
@@ -142,15 +122,11 @@ export function BookMeetingDialog({
                             />
                         </div>
 
-                        {/* Duration */}
                         <div>
                             <Label>Duration</Label>
-                            <Select
-                                value={duration}
-                                onValueChange={(e) => setDuration(e)}
-                            >
+                            <Select value={duration} onValueChange={setDuration}>
                                 <SelectTrigger className="mt-2">
-                                    <SelectValue placeholder="Select type" />
+                                    <SelectValue placeholder="Select duration" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="30">30 minutes</SelectItem>
@@ -174,20 +150,34 @@ export function BookMeetingDialog({
                         <Button
                             className="cursor-pointer"
                             onClick={() => {
-                                if (!meetingType || !date || !time) return;
-                                const payload: NewMeetingInput = {
-                                    id: Date.now(),
-                                    title,
-                                    description,
-                                    date,
-                                    time: convertTimeToLabel(time),
-                                    duration: Number(duration),
-                                    type: meetingType,
-                                    attendees: [],
-                                    status: "scheduled",
-                                };
-
-                                addMeeting(payload);
+                                if (meetingType) {
+                                    const payload: NewMeetingInput = {
+                                        id: Date.now(),
+                                        title,
+                                        description,
+                                        date,
+                                        time: convertTimeToLabel(time),
+                                        duration: Number(duration),
+                                        type: meetingType,
+                                        attendees: [],
+                                        status: "scheduled",
+                                    };
+                                    addMeeting(payload);
+                                } else {
+                                    if (!date || !time) return;
+                                    const payload: NewMeetingInput = {
+                                        id: Date.now(),
+                                        title,
+                                        description,
+                                        date,
+                                        time: convertTimeToLabel(time),
+                                        duration: Number(duration),
+                                        type: "custom",
+                                        attendees: [],
+                                        status: "scheduled",
+                                    };
+                                    addMeeting(payload);
+                                }
 
                                 // Reset form
                                 setDialogOpen(false);

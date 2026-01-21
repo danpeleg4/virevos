@@ -250,60 +250,6 @@ export function MeetingNotes() {
 
   return (
       <div className="space-y-6">
-        {/* Header with Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm text-gray-600`}>Total Notes</p>
-                  <p className={`text-2xl mt-1 text-gray-900`}>{mockNotes.length}</p>
-                </div>
-                <FileText className={`h-8 w-8 text-blue-500`} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm text-gray-600`}>With Transcripts</p>
-                  <p className={`text-2xl mt-1 text-gray-900`}>
-                    {mockNotes.filter((n) => n.transcriptAvailable).length}
-                  </p>
-                </div>
-                <Mic className={`h-8 w-8 text-purple-500`} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm text-gray-600`}>Action Items</p>
-                  <p className={`text-2xl mt-1 text-gray-900`}>
-                    {mockNotes.reduce((sum, n) => sum + n.actionItems.length, 0)}
-                  </p>
-                </div>
-                <CheckSquare className={`h-8 w-8 text-green-500`} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm text-gray-600`}>This Week</p>
-                  <p className={`text-2xl mt-1 text-gray-900`}>4</p>
-                </div>
-                <Calendar className={`h-8 w-8 text-orange-500`} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Search and Filters */}
         <Card>

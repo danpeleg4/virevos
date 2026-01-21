@@ -282,7 +282,7 @@ export function CalendarView() {
                                                         <div className="flex items-start justify-between mb-2">
                                                             <div className="flex items-center space-x-2">
                                                                 {getTypeIcon(meeting.type)}
-                                                                <span className="text-sm">{meeting.title}</span>
+                                                                <span className="text-sm">{decodeURIComponent(meeting.title)}</span>
                                                             </div>
 
                                                             <DropdownMenu>

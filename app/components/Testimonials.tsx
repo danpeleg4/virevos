@@ -83,7 +83,7 @@ export function Testimonials() {
                 transition={{ delay: 0.1 }}
                 className="text-4xl sm:text-5xl text-gray-900 mb-6"
             >
-              Loved by teams worldwide
+              Loved by individuals worldwide
             </motion.h2>
 
             <motion.p
@@ -93,7 +93,7 @@ export function Testimonials() {
                 transition={{ delay: 0.2 }}
                 className="text-xl text-gray-600"
             >
-              Join thousands of companies using Virevos to work smarter
+              Join thousands of people using Virevos to work smarter
             </motion.p>
           </div>
 

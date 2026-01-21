@@ -1,8 +1,10 @@
 "use server"
 
-import fetch from "node-fetch";
 import { AccessToken } from "livekit-server-sdk";
 import { Pinecone } from '@pinecone-database/pinecone'
+import {db} from "@/db/db";
+import {meetings} from "@/db/schema";
+import axios from "axios";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
@@ -28,34 +30,67 @@ export async function createRoom(roomName: string, userId?: string) {
     }
     const token = await createRoomCreateToken();
 
-    const res = await fetch(
+    const res = await axios.post(
         "https://virevos-sn3m4ofa.livekit.cloud/twirp/livekit.RoomService/CreateRoom",
         {
-            method: "POST",
+            name: roomName,
+            egress: {
+                tracks: {
+                    filepath: `recordings/${userId}/${roomName}/`,
+                    s3: {
+                        access_key: process.env.AWS_S3_ACCESS_KEY,
+                        secret: process.env.AWS_S3_SECRET_KEY,
+                        bucket: "virevos-recordings",
+                        region: "us-east-1",
+                    },
+                },
+            },
+        },
+        {
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                name: roomName,
-                egress: {
-                    tracks: {
-                        filepath: `recordings/${userId}/${roomName}/`,
-                            s3: {
-                                access_key: process.env.AWS_S3_ACCESS_KEY,
-                                secret: process.env.AWS_S3_SECRET_KEY,
-                                bucket: "virevos-recordings",
-                                region: "us-east-1",
-                            },
-                    },
-                },
-            }),
         }
     );
 
-    if (!res.ok && res.status !== 409) {
-        throw new Error(await res.text());
+    const data = res.data;
+    const time = new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    if (res.status !== 200 && res.status !== 409) {
+        throw new Error(res.statusText);
     }
+    await db
+        .insert(meetings)
+        .values({
+            id: data.sid,
+            title: roomName,
+            date: new Date().toISOString(),
+            origin: "app",
+            time: time,
+            duration: 60,
+            type: "In-App",
+            status: "active",
+            userId: userId
+        })
+        .onConflictDoUpdate({
+            target: meetings.id,
+            set: {
+                id: data.sid,
+                title: roomName,
+                date: new Date().toISOString(),
+                origin: "app",
+                time: time,
+                duration: 60,
+                type: "In-App",
+                status: "active",
+                userId: userId
+            },
+        });
     return "success"
 }
 

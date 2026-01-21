@@ -79,20 +79,6 @@ export const meetings = pgTable("meetings", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-export const meetingTypes = pgTable("meeting_types", {
-    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-    name: text("name").notNull(),
-    duration: integer("duration").notNull(),
-    description: text("description"),
-    color: text("color").notNull(),
-    maxBookings: integer("max_bookings"),
-    active: boolean("active").notNull().default(true),
-
-    userId: varchar("user_id")
-        .notNull()
-        .references(() => users.user_id, { onDelete: "cascade" }),
-})
-
 // NOTES
 export const notes = pgTable("notes", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
@@ -142,26 +128,11 @@ export const projectFiles = pgTable("project_files", {
 // MEETING ATTENDEES
 export const meetingAttendees = pgTable("meeting_attendees", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-
     meetingId: text("meeting_id")
         .notNull()
         .references(() => meetings.id, { onDelete: "cascade" }),
-
     name: text("name").notNull(),
     initials: text("initials").notNull(),
-});
-
-// ZOOM TOKENS
-export const zoomTokens = pgTable("zoom_tokens", {
-    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-    access_token: text("access_token").notNull(),
-    refresh_token: text("refresh_token").notNull(),
-    expires_in: integer("expires_in").notNull(),
-    connected: boolean("connected").default(false),
-
-    userId: varchar("user_id")
-        .notNull()
-        .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
 // GOOGLE TOKENS
@@ -184,7 +155,6 @@ export const usersRelations = relations(users, ({ many }) => ({
     projects: many(projects),
     tasks: many(tasks),
     meetings: many(meetings),
-    zoomTokens: many(zoomTokens),
     googleTokens: many(googleTokens),
 }));
 
@@ -245,13 +215,6 @@ export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) =
     meeting: one(meetings, {
         fields: [meetingAttendees.meetingId],
         references: [meetings.id],
-    }),
-}));
-
-export const zoomRelations = relations(zoomTokens, ({ one }) => ({
-    user: one(users, {
-        fields: [zoomTokens.userId],
-        references: [users.user_id],
     }),
 }));
 
