@@ -322,6 +322,7 @@ type TranscribedChunk = {
     speaker: string;
     time: string;
     text: string;
+    startTime: number;
 };
 
 // Transcription View Component
@@ -334,6 +335,18 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [currentChunkIndex, setCurrentChunkIndex] = useState<number | null | string>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (currentChunkIndex === null) return;
+        const container = containerRef.current;
+        if (!container) return;
+        const activeElem = container.children[currentChunkIndex] as HTMLElement;
+        if (activeElem) {
+            activeElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [currentChunkIndex]);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -354,6 +367,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 speaker: item.speaker,
                 time: formatTime((item.start_time)),
                 text: item.chunk_text,
+                startTime: item.start_time,
             }));
             console.log(formatted);
             setFormattedData(formatted);
@@ -437,6 +451,18 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             video.removeEventListener("loadedmetadata", onLoadedMetadata);
         };
     }, [videoUrl]);
+
+    useEffect(() => {
+        if (!formattedData.length) return;
+
+        const index = formattedData.findIndex(
+            (chunk, i) =>
+                currentTime >= chunk.startTime && // numeric seconds
+                (i === formattedData.length - 1 || currentTime < formattedData[i + 1].startTime)
+        );
+
+        setCurrentChunkIndex(index !== -1 ? index : null);
+    }, [currentTime, formattedData]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -523,13 +549,13 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             <div className="grid gap-6 lg:grid-cols-3 mt-6">
                 {/* Video Player */}
                 <div className="lg:col-span-2">
-                    <Card className={`p-6 `}>
+                    <Card className={`p-6 flex-1 flex flex-col`}>
                             {videoUrl ? (
-                                <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+                                <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4 flex-1">
                                     <video
                                         ref={videoRef}
                                         src={videoUrl}
-                                        className="w-full rounded-lg bg-black"
+                                        className="w-full h-full rounded-lg bg-black"
                                         controls={false}
                                         muted
                                     />
@@ -569,7 +595,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                         </div>
                     </Card>
 
-                 {/* Meeting Stats */}
+                 {/* Meeting Stats & Quick Actions */}
                  <div className="mt-6 grid gap-6 lg:grid-cols-2">
                     <div className="lg:col-span-1">
                         <Card className={`p-6 h-full min-h-[200px]`}>
@@ -631,8 +657,8 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 </div>
 
                 {/* Transcription Panel */}
-                <div className="lg:col-span-1 lg:row-span-2">
-                    <Card className={`p-6 h-full`}>
+                <div className="lg:col-span-1 lg:row-span-2 h-full">
+                    <Card className={`p-6 h-full flex flex-col`}>
                         <div className="mb-4">
                             <Input
                                 placeholder="Search transcript..."
@@ -641,22 +667,28 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                                 className="w-full"
                             />
                         </div>
-                        <div className="space-y-4 overflow-y-auto h-[calc(100%-60px)]">
+                        <div className="space-y-4 overflow-y-auto flex-1" ref={containerRef}>
                             {formattedData.length > 0 ? (
-                                formattedData.map((entry, index) => (
-                                    <div
-                                        key={index}
-                                        className="p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
-                                    >
-                                        <div className="flex items-start space-x-3">
-                                            <span className="text-xs text-gray-400 mt-1">{entry.time}</span>
-                                            <div className="flex-1">
-                                                <p className="text-sm mb-1 text-blue-600">{entry.speaker}</p>
-                                                <p className="text-sm text-gray-700">{entry.text}</p>
+                                formattedData.map((entry, index) => {
+                                    const isActive = index === currentChunkIndex;
+                                    return (
+                                        <div
+                                            key={index}
+                                            className={`
+                                            p-3 rounded-lg cursor-pointer transition-colors
+                                            ${isActive ? 'bg-blue-100' : 'hover:bg-gray-50'}
+                                            `}
+                                        >
+                                            <div className="flex items-start space-x-3">
+                                                <span className="text-xs text-gray-400 mt-1">{entry.time}</span>
+                                                <div className="flex-1">
+                                                    <p className="text-sm mb-1 text-blue-600">{entry.speaker}</p>
+                                                    <p className="text-sm text-gray-700">{entry.text}</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <p className="text-gray-400 text-sm">Loading transcript...</p>
                             )}
