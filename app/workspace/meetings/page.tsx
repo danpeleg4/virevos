@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -336,7 +336,15 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [currentChunkIndex, setCurrentChunkIndex] = useState<number | null | string>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    function formatTime(seconds: number): string {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
 
     useEffect(() => {
         if (currentChunkIndex === null) return;
@@ -347,15 +355,6 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             activeElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }, [currentChunkIndex]);
-
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const audioRef = useRef<HTMLAudioElement>(null);
-
-    function formatTime(seconds: number): string {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-    }
 
     useEffect(() => {
         const fn = async () => {
@@ -391,13 +390,12 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             }
         };
         fetchRecording();
-    }, [meeting.id]);
+    }, [meeting.title]);
 
     // Sync video and audio playback
     useEffect(() => {
         const video = videoRef.current;
         const audio = audioRef.current;
-
         if (!video || !audio) return;
 
         // When video plays, start audio
@@ -530,26 +528,26 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     if (loading) return <p>Loading recording...</p>;
 
     return (
-        <div className={`p-6`}>
-            <div className="flex items-center space-x-4 mb-6">
+        <div className="h-screen overflow-hidden flex flex-col p-6">
+        <div className="flex items-center space-x-4 mb-6">
                 <Button variant="ghost" onClick={onBack}>
                     ← Back to Summary
                 </Button>
             </div>
 
             <div>
-                <h1 className={`text-3xl `}>
+                <h1 className="text-3xl">
                     Meeting Transcription
                 </h1>
-                <p className={`mt-1 text-gray-600`}>
+                <p className="mt-1 text-gray-600">
                     {meeting.title} • {meeting.date}
                 </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3 mt-6">
-                {/* Video Player */}
+            <div className="grid gap-6 lg:grid-cols-3 mt-6 flex-1 min-h-0">
+            {/* Video Player */}
                 <div className="lg:col-span-2">
-                    <Card className={`p-6 flex-1 flex flex-col`}>
+                    <Card className="p-6 flex-1 flex flex-col">
                             {videoUrl ? (
                                 <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4 flex-1">
                                     <video
@@ -598,7 +596,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                  {/* Meeting Stats & Quick Actions */}
                  <div className="mt-6 grid gap-6 lg:grid-cols-2">
                     <div className="lg:col-span-1">
-                        <Card className={`p-6 h-full min-h-[200px]`}>
+                        <Card className={`p-6 h-full min-h-50`}>
                             <h3 className={`mb-4 `}>
                                 Meeting Stats
                             </h3>
@@ -633,7 +631,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
                     {/* Quick Actions */}
                     <div className="lg:col-span-1">
-                        <Card className={`p-6 h-full min-h-[200px]`}>
+                        <Card className={`p-6 h-full min-h-50`}>
                             <h3 className={`mb-4`}>
                                 Quick Actions
                             </h3>
@@ -657,9 +655,9 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 </div>
 
                 {/* Transcription Panel */}
-                <div className="lg:col-span-1 lg:row-span-2 h-full">
-                    <Card className={`p-6 h-full flex flex-col`}>
-                        <div className="mb-4">
+                <div className="lg:col-span-1 lg:row-span-2 min-h-0">
+                    <Card className="p-6 flex flex-col flex-1 min-h-0">
+                    <div className="mb-4">
                             <Input
                                 placeholder="Search transcript..."
                                 value={searchQuery}
@@ -667,30 +665,39 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                                 className="w-full"
                             />
                         </div>
-                        <div className="space-y-4 overflow-y-auto flex-1" ref={containerRef}>
+                        <div
+                            className="space-y-4 overflow-y-auto flex-1"
+                            ref={containerRef}
+                        >
                             {formattedData.length > 0 ? (
                                 formattedData.map((entry, index) => {
                                     const isActive = index === currentChunkIndex;
                                     return (
                                         <div
                                             key={index}
-                                            className={`
-                                            p-3 rounded-lg cursor-pointer transition-colors
-                                            ${isActive ? 'bg-blue-100' : 'hover:bg-gray-50'}
-                                            `}
+                                            className={`p-3 rounded-lg cursor-pointer transition-colors
+                                                ${isActive ? 'bg-blue-100' : 'hover:bg-gray-50'}`}
                                         >
                                             <div className="flex items-start space-x-3">
-                                                <span className="text-xs text-gray-400 mt-1">{entry.time}</span>
+                                                <span className="text-xs text-gray-400 mt-1">
+                                                    {entry.time}
+                                                </span>
                                                 <div className="flex-1">
-                                                    <p className="text-sm mb-1 text-blue-600">{entry.speaker}</p>
-                                                    <p className="text-sm text-gray-700">{entry.text}</p>
+                                                    <p className="text-sm mb-1 text-blue-600">
+                                                        {entry.speaker}
+                                                    </p>
+                                                    <p className="text-sm text-gray-700">
+                                                        {entry.text}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 })
                             ) : (
-                                <p className="text-gray-400 text-sm">Loading transcript...</p>
+                                <p className="text-gray-400 text-sm">
+                                    Loading transcript...
+                                </p>
                             )}
                         </div>
                     </Card>
