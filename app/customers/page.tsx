@@ -46,7 +46,7 @@ const caseStudies = [
 
 const stats = [
     { value: "2,000+", label: "Companies trust Virevos" },
-    { value: "50K+", label: "Active users worldwide" },
+    { value: "1000+", label: "Active users worldwide" },
     { value: "127%", label: "Average productivity increase" },
     { value: "4.9/5", label: "Customer satisfaction rating" },
 ];

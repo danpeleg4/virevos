@@ -153,7 +153,7 @@ export function Hero() {
                 className="mt-24 grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto"
             >
               {[
-                { number: "50K+", label: "Active users" },
+                { number: "1000+", label: "Active users" },
                 { number: "99.9%", label: "Uptime" },
                 { number: "2M+", label: "Tasks completed" },
                 { number: "150+", label: "Integrations" },
