@@ -213,7 +213,7 @@ export default function Meetings() {
                     <DialogHeader>
                         <DialogTitle>Start New Meeting</DialogTitle>
                         <DialogDescription>
-                            Configure your meeting settings before starting
+                            Configure your meeting name before starting
                         </DialogDescription>
                     </DialogHeader>
 

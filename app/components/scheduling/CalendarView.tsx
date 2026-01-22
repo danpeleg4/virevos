@@ -8,10 +8,7 @@ import { Avatar, AvatarFallback } from "../ui/avatar";
 import {
     ChevronLeft,
     ChevronRight,
-    Clock,
-    Video,
     AlertCircle,
-    CheckCircle,
     Calendar as CalendarIcon,
     MoreVertical,
 } from "lucide-react";
@@ -132,66 +129,10 @@ export function CalendarView() {
 
     return (
         <div className="flex flex-col gap-6 h-full min-h-0">
-        {/* === Stats Cards === */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Today&#39;s Meetings</p>
-                                <p className="text-2xl text-gray-900 mt-1">{dayMeetings?.length}</p>
-                            </div>
-                            <CalendarIcon className="h-8 w-8 text-blue-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Auto-Rescheduled</p>
-                                <p className="text-2xl text-gray-900 mt-1">
-                                    {dayMeetings?.filter((m) => m.autoRescheduled).length}
-                                </p>
-                            </div>
-                            <Clock className="h-8 w-8 text-yellow-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Conflicts Detected</p>
-                                <p className="text-2xl text-gray-900 mt-1">
-                                    {dayMeetings?.filter((m) => m.status === "conflict").length}
-                                </p>
-                            </div>
-                            <AlertCircle className="h-8 w-8 text-red-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Meeting Hours</p>
-                                <p className="text-2xl text-gray-900 mt-1">
-                                {((dayMeetings?.reduce((a, m) => a + (m.duration || 0), 0) ?? 0) / 60).toFixed(1)}h
-                                </p>
-                            </div>
-                            <CheckCircle className="h-8 w-8 text-green-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
 
             {/* === Controls === */}
             <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            <CardHeader className="flex-shrink-0">
+            <CardHeader className="shrink-0">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <Button className="cursor-pointer" variant="outline" size="sm" onClick={handlePrevDay}>
@@ -227,7 +168,7 @@ export function CalendarView() {
 
                                 return (
                                     <div key={hour} className="flex hover:bg-gray-50">
-                                        <div className="w-20 p-3 text-sm text-gray-500 border-r border-gray-100">
+                                        <div className="w-20 p-3 text-sm text-gray-500 border-r  border-gray-100">
                                             {timeLabel}
                                         </div>
 
@@ -241,7 +182,7 @@ export function CalendarView() {
                                                 >
                                                     <div
                                                         onClick={() => handleMeetingClick(meeting)}
-                                                        className={`p-3 rounded-lg border cursor-pointer hover:shadow-md`}
+                                                        className={`p-3 rounded-lg border cursor-pointer hover:shadow-md bg-blue-100 text-blue-700 border-blue-200`}
                                                     >
                                                         <div className="flex items-start justify-between mb-2">
                                                             <div className="flex items-center space-x-2">
