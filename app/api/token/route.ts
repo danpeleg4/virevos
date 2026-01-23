@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AccessToken } from "livekit-server-sdk";
-import { createRoom } from "@/lib/server_actions/meetings";
-import { currentUser } from "@clerk/nextjs/server";
 
 export async function POST(req: NextRequest) {
-    const user = await currentUser();
     const { roomId, name } = await req.json();
 
-    const participantName = name || `user-${Math.floor(Math.random() * 1000)}`;
+    const participantName = name;
     if (!participantName) {
         return NextResponse.json({ error: "identity (name) is required" }, { status: 400 });
-    }
-
-    if (user) {
-        const res = await createRoom(roomId, user?.id);
-        if (res !== "success") {
-            return NextResponse.json({ error: res})
-        }
     }
 
     // Create the token
@@ -28,11 +18,8 @@ export async function POST(req: NextRequest) {
             ttl: 600, // 10 minutes
         }
     );
-
     at.addGrant({ roomJoin: true, room: roomId });
-
     const token = await at.toJwt();
-
     //console.log("issuing token:", token, "for room:", roomId, "identity:", participantName);
 
     return NextResponse.json({

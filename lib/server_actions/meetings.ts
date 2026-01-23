@@ -1,10 +1,12 @@
 "use server"
 
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, EncodingOptionsPreset, SegmentedFileOutput, EgressClient} from "livekit-server-sdk";
 import { Pinecone } from '@pinecone-database/pinecone'
-import {db} from "@/db/db";
+import { db } from "@/db/db";
 import {meetings} from "@/db/schema";
 import axios from "axios";
+import {currentUser} from "@clerk/nextjs/server";
+import {NextResponse} from "next/server";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
@@ -24,9 +26,10 @@ async function createRoomCreateToken() {
     return await at.toJwt();
 }
 
-export async function createRoom(roomName: string, userId?: string) {
-    if (!userId) {
-        return "user is required"
+export async function createRoom(roomName: string) {
+    const user = await currentUser();
+    if (!user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const token = await createRoomCreateToken();
 
@@ -36,7 +39,7 @@ export async function createRoom(roomName: string, userId?: string) {
             name: roomName,
             egress: {
                 tracks: {
-                    filepath: `recordings/${userId}/${roomName}/`,
+                    filepath: `recordings/${user.id}/${roomName}/`,
                     s3: {
                         access_key: process.env.AWS_S3_ACCESS_KEY,
                         secret: process.env.AWS_S3_SECRET_KEY,
@@ -75,7 +78,7 @@ export async function createRoom(roomName: string, userId?: string) {
             duration: 60,
             type: "In-App",
             status: "active",
-            userId: userId
+            userId: user.id
         })
         .onConflictDoUpdate({
             target: meetings.id,
@@ -88,7 +91,7 @@ export async function createRoom(roomName: string, userId?: string) {
                 duration: 60,
                 type: "In-App",
                 status: "active",
-                userId: userId
+                userId: user.id
             },
         });
     return "success"

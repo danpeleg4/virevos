@@ -9,7 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "../../components/ui/dialog";
-import { Video, Users, Check, VideoOff, Mic, MicOff } from "lucide-react";
+import { Video, Users, Check, VideoOff, Mic, MicOff, TabletSmartphone } from "lucide-react";
 import {useParams, useRouter} from "next/navigation";
 import {
     createLocalTracks,
@@ -87,7 +87,6 @@ export default function InMeetingView() {
 
     const toggleMute = async () => {
         if (!roomRef.current) return;
-
         const next = !isMuted;
         await roomRef.current.localParticipant.setMicrophoneEnabled(!next);
         setIsMuted(next);
@@ -95,7 +94,6 @@ export default function InMeetingView() {
 
     const toggleCamera = async () => {
         if (!roomRef.current) return;
-
         const next = !isCameraOff;
         await roomRef.current.localParticipant.setCameraEnabled(!next);
         setIsCameraOff(next);
@@ -112,7 +110,6 @@ export default function InMeetingView() {
                     onChange={
                     (e) => {
                         setName(e.target.value)
-
                     }
                 }
                 />
@@ -185,7 +182,7 @@ export default function InMeetingView() {
                             isRecording ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
                         }`}
                     >
-                        <div className={`h-5 w-5 rounded ${isRecording ? "bg-white" : "bg-red-600"}`}></div>
+                        <div className={`h-5 w-5 rounded ${isRecording ? <TabletSmartphone /> : <TabletSmartphone />}`}></div>
                     </button>
 
                     <button

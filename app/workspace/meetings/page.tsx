@@ -26,9 +26,10 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import axios from "axios";
 import { Meeting } from "@/types/meeting";
+import {createRoom} from "@/lib/server_actions/meetings";
 
 export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
@@ -40,7 +41,9 @@ export default function Meetings() {
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const router = useRouter();
 
-    const meetingURL = `${meetingName}-${crypto.randomUUID()}`
+    const s = crypto.randomUUID()
+    const meetingURL = `${meetingName}-${s.slice(0, Math.floor(s.length / 2))}`
+    const nameOfMeeting = meetingURL.split("-")[0];
 
     const meetings = useQuery({
         queryKey: ["meetings"],
@@ -51,6 +54,13 @@ export default function Meetings() {
                 ...m,
                 attendees: m.attendees ?? [],
             }));
+        }
+    })
+
+    const createMeeting = useMutation({
+        mutationFn: async () => {
+            const res = await createRoom(nameOfMeeting);
+            return res
         }
     })
 
@@ -270,6 +280,7 @@ export default function Meetings() {
                                     className="w-full"
                                     onClick={() => {
                                         setStartModalOpen(false);
+                                        createMeeting.mutate()
                                         router.push(`/meet/${meetingURL}`);
                                     }}
                                 >
@@ -633,7 +644,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
     return (
         <div className="h-full min-h-0 flex flex-col p-6 bg-white overflow-hidden">
-            <div className="flex items-center space-x-4 mb-4">
+            <div className="flex items-center space-x-4 mb-2">
                 <Button variant="ghost" onClick={onBack}>
                     ← Back to Summary
                 </Button>
@@ -643,8 +654,8 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 <h1 className="text-3xl">
                     Meeting Transcription
                 </h1>
-                <p className="my-1 text-gray-600">
-                    {meeting.title} • {meeting.date}
+                <p className="mb-4 text-gray-600">
+                    {decodeURIComponent(meeting.title)} • {meeting.date}
                 </p>
             </div>
 
@@ -654,25 +665,28 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
                     {/* Video Card */}
                     <Card className="p-6 flex flex-col min-h-0 shadow-sm">
-                        <div className={`grid gap-4 bg-white rounded-lg overflow-hidden relative mb-4 p-2 ${
-                            videoUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'
-                        }`}>
-                            {videoUrls.length > 0 ? (
-                                videoUrls.map((video, idx) => (
-                                    <div key={video.key} className="aspect-video relative bg-black rounded overflow-hidden">
-                                        <video
-                                            ref={el => { videoRefs.current[idx] = el; }}
-                                            src={video.url}
-                                            className="w-full h-full object-contain"
-                                            muted
-                                        />
+                        <div className="aspect-video relative bg-black rounded-lg overflow-hidden mb-4">
+                            <div className={`grid h-full w-full ${
+                                videoUrls.length > 2 ? 'grid-cols-2 grid-rows-2' : 
+                                videoUrls.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+                            }`}>
+                                {videoUrls.length > 0 ? (
+                                    videoUrls.map((video, idx) => (
+                                        <div key={video.key} className={`relative bg-gray-900 overflow-hidden`}>
+                                            <video
+                                                ref={el => { videoRefs.current[idx] = el; }}
+                                                src={video.url}
+                                                className="w-full h-full object-contain"
+                                                muted
+                                            />
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex items-center justify-center h-full text-white">
+                                        No video found
                                     </div>
-                                ))
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-white min-h-[300px]">
-                                    No video found
-                                </div>
-                            )}
+                                )}
+                            </div>
                             {audioUrls.map((audio, idx) => (
                                 <audio key={audio.key} ref={el => { audioRefs.current[idx] = el; }} src={audio.url} />
                             ))}
