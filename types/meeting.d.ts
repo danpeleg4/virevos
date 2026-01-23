@@ -6,7 +6,7 @@ export interface Attendee {
 }
 
 export interface Meeting {
-    id: number;
+    id: string;
     title: string;
     description: string;
     link: string;

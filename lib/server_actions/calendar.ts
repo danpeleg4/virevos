@@ -4,20 +4,12 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
 import { meetings, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import {MeetingType, NewMeetingInput} from "@/types/meeting";
+import { NewMeetingInput } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
 import { parseDateTime } from "@/lib/date_utils";
 
 type MeetingUpdate = Partial<typeof meetings.$inferInsert>;
-
-type meetingData = {
-    name: string;
-    duration: number;
-    description: string;
-    color: string;
-    maxBookings?: number
-}
 
 export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     const user = await currentUser();

@@ -98,11 +98,6 @@ export function MeetingDetailsDialog({
                 </div>
                 <div className="flex items-center">
                   <Video className="h-4 w-4 mr-1" />
-                  {meeting.type === "zoom"
-                    ? "Zoom"
-                    : meeting.type === "google-meet"
-                      ? "Google Meet"
-                      : "In-Person"}
                 </div>
               </div>
             </div>

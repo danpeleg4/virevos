@@ -404,8 +404,10 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
         // When video plays, start audio
         const handlePlay = () => {
-            audio.currentTime = video.currentTime;
-            audio.play();
+            if (video.currentTime < (audio.duration || Infinity)) {
+                audio.currentTime = video.currentTime;
+                audio.play();
+            }
         };
 
         // When video pauses, pause audio
@@ -415,8 +417,10 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
         // Keep audio time in sync with video
         const handleTimeUpdate = () => {
-            if (Math.abs(video.currentTime - audio.currentTime) > 0.3) {
-                audio.currentTime = video.currentTime;
+            const currentVideoTime = video.currentTime;
+            // Only sync if video hasn't ended. If video ended, audio might still be playing.
+            if (!video.ended && Math.abs(currentVideoTime - audio.currentTime) > 0.3) {
+                audio.currentTime = currentVideoTime;
             }
         };
 
@@ -433,26 +437,51 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
     useEffect(() => {
         const video = videoRef.current;
+        const audio = audioRef.current;
         if (!video) return;
 
-        const onTimeUpdate = () => {
+        const onVideoTimeUpdate = () => {
             setCurrentTime(video.currentTime);
+        };
+
+        const onAudioTimeUpdate = () => {
+            // Only update currentTime from audio if video is not present or ended/stalled
+            // In our case, we mostly sync audio to video, but if audio is longer,
+            // we might want it to drive the clock when video ends.
+            if ((video.ended || video.paused) && audio) {
+                 setCurrentTime(audio.currentTime);
+            }
         };
 
         const onLoadedMetadata = () => {
             if (!isNaN(video.duration)) {
-                setDuration(video.duration);
+                setDuration(prev => Math.max(prev, video.duration));
             }
         };
 
-        video.addEventListener("timeupdate", onTimeUpdate);
+        video.addEventListener("timeupdate", onVideoTimeUpdate);
         video.addEventListener("loadedmetadata", onLoadedMetadata);
 
+        let audioOnLoadedMetadata: () => void;
+        if (audio) {
+            audioOnLoadedMetadata = () => {
+                if (!isNaN(audio.duration)) {
+                    setDuration(prev => Math.max(prev, audio.duration));
+                }
+            };
+            audio.addEventListener("loadedmetadata", audioOnLoadedMetadata);
+            audio.addEventListener("timeupdate", onAudioTimeUpdate);
+        }
+
         return () => {
-            video.removeEventListener("timeupdate", onTimeUpdate);
+            video.removeEventListener("timeupdate", onVideoTimeUpdate);
             video.removeEventListener("loadedmetadata", onLoadedMetadata);
+            if (audio) {
+                if (audioOnLoadedMetadata) audio.removeEventListener("loadedmetadata", audioOnLoadedMetadata);
+                audio.removeEventListener("timeupdate", onAudioTimeUpdate);
+            }
         };
-    }, [videoUrl]);
+    }, [videoUrl, audioUrl]);
 
     useEffect(() => {
         if (!formattedData.length) return;
@@ -468,16 +497,34 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
     useEffect(() => {
         const video = videoRef.current;
+        const audio = audioRef.current;
         if (!video) return;
 
-        const onEnded = () => setIsPlaying(false);
+        const onEnded = () => {
+             if (!audio || audio.ended || audio.paused) {
+                 setIsPlaying(false);
+             }
+        };
+
+        const onAudioEnded = () => {
+             if (video.ended || video.paused) {
+                 setIsPlaying(false);
+             }
+        }
 
         video.addEventListener("ended", onEnded);
-        return () => video.removeEventListener("ended", onEnded);
-    }, []);
+        if (audio) {
+            audio.addEventListener("ended", onAudioEnded);
+        }
+        return () => {
+            video.removeEventListener("ended", onEnded);
+            if (audio) audio.removeEventListener("ended", onAudioEnded);
+        };
+    }, [videoUrl, audioUrl]);
 
     useEffect(() => {
         const video = videoRef.current;
+        const audio = audioRef.current;
         if (!video) return;
 
         const onPlay = () => setIsPlaying(true);
@@ -486,21 +533,49 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
         video.addEventListener("play", onPlay);
         video.addEventListener("pause", onPause);
 
+        const onAudioPlay = () => {
+            if (video.ended) setIsPlaying(true);
+        }
+        const onAudioPause = () => {
+            if (video.ended) setIsPlaying(false);
+        }
+
+        if (audio) {
+            audio.addEventListener("play", onAudioPlay);
+            audio.addEventListener("pause", onAudioPause);
+        }
+
         return () => {
             video.removeEventListener("play", onPlay);
             video.removeEventListener("pause", onPause);
+            if (audio) {
+                audio.removeEventListener("play", onAudioPlay);
+                audio.removeEventListener("pause", onAudioPause);
+            }
         };
-    }, [videoUrl]);
+    }, [videoUrl, audioUrl]);
 
     const togglePlay = () => {
         const video = videoRef.current;
+        const audio = audioRef.current;
         if (!video) return;
 
-        if (video.paused) {
-            video.play();
-            setIsPlaying(true);
+        if (video.paused && (!audio || audio.paused)) {
+            if (video.ended) {
+                if (audio && !audio.ended) {
+                    audio.play();
+                    setIsPlaying(true);
+                }
+            } else {
+                video.play();
+                if (audio && video.currentTime < audio.duration) {
+                    audio.play();
+                }
+                setIsPlaying(true);
+            }
         } else {
             video.pause();
+            if (audio) audio.pause();
             setIsPlaying(false);
         }
     };
@@ -511,19 +586,23 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
         return `${m}:${String(s).padStart(2, "0")}`;
     };
 
-    const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const progressPercent = duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
     const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
         const bar = e.currentTarget;
         const rect = bar.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
-        const percent = clickX / rect.width;
+        const percent = Math.max(0, Math.min(clickX / rect.width, 1));
         const newTime = percent * duration;
 
         if (videoRef.current) {
-            videoRef.current.currentTime = newTime;
+            // If newTime is beyond video duration, cap it at video duration
+            // but keep updating currentTime for sync purposes if audio is longer
+            const videoDuration = videoRef.current.duration;
+            videoRef.current.currentTime = Math.min(newTime, videoDuration || newTime);
         }
         if (audioRef.current) {
-            audioRef.current.currentTime = newTime;
+            const audioDuration = audioRef.current.duration;
+            audioRef.current.currentTime = Math.min(newTime, audioDuration || newTime);
         }
 
         setCurrentTime(newTime);

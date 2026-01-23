@@ -3,20 +3,6 @@ import {db} from "@/db/db";
 import { meetingAttendees, meetings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-interface LiveKitRoom {
-    sid: string;
-    name: string;
-    empty_at: string;
-    creationTime: number;
-}
-
-interface LiveKitRoomFinishedEvent {
-    event: "room.finished";
-    version: string;
-    room: LiveKitRoom;
-    timestamp: string;
-}
-
 export async function POST(req: NextRequest) {
     // Parse JSON body
     const event = await req.json();
@@ -35,7 +21,6 @@ export async function POST(req: NextRequest) {
             }).where(eq(meetings.id, res[0].id));
         }
     }
-
     if (event.event === "participant_joined") {
         if (event.participant.kind === 'EGRESS') {
             return NextResponse.json({ status: "EGRESS OUT" });
