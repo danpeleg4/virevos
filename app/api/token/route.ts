@@ -12,9 +12,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "identity (name) is required" }, { status: 400 });
     }
 
-    const res = await createRoom(roomId, user?.id);
-    if (res !== "success") {
-        return NextResponse.json({ error: res})
+    if (user) {
+        const res = await createRoom(roomId, user?.id);
+        if (res !== "success") {
+            return NextResponse.json({ error: res})
+        }
     }
 
     // Create the token

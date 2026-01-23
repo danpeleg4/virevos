@@ -116,7 +116,7 @@ export function CTA() {
             >
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
                 {[
-                  { value: "50K+", label: "Active users" },
+                  { value: "1000+", label: "Active users" },
                   { value: "99.9%", label: "Uptime SLA" },
                   { value: "4.9/5", label: "Customer rating" },
                   { value: "24/7", label: "Support" },

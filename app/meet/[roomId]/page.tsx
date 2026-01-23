@@ -20,7 +20,6 @@ import {
     RoomEvent, Track
 } from "livekit-client";
 import axios from "axios";
-import { useQueryClient } from "@tanstack/react-query";
 
 export default function InMeetingView() {
     const params = useParams();
@@ -36,7 +35,6 @@ export default function InMeetingView() {
     const router = useRouter();
     const roomRef = useRef<Room | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
-    const queryClient = useQueryClient();
 
     const nameOfMeeting = roomId.split("-")[0];
     const joinRoom = async () => {
@@ -119,7 +117,7 @@ export default function InMeetingView() {
                 }
                 />
                 <button
-                    className="px-4 py-2 bg-blue-600 rounded"
+                    className="px-4 py-2 bg-blue-600 rounded cursor-pointer"
                     onClick={joinRoom}
                     disabled={!name}
                 >

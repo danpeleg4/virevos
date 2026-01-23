@@ -9,13 +9,13 @@ import {Footer} from "@/app/components/Footer";
 export default function Page() {
   return (
     <>
-        <Navigation />
+      <Navigation />
       <Hero />
       <Features />
       <Pricing />
       <Testimonials />
       <CTA />
-        <Footer />
+      <Footer />
     </>
   );
 }

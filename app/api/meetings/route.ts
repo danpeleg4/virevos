@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import { users, meetings } from "@/db/schema";
+import { meetings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { google } from "googleapis";
 import { getFreshGoogleAccessToken } from "@/lib/google_access";

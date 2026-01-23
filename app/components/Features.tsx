@@ -7,10 +7,9 @@ import {
     Calendar,
     Bot,
     BarChart3,
-    Lock,
     Sparkles,
     ArrowRight,
-    CheckCircle2, Play
+    CheckCircle2, Play, Video
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
@@ -28,7 +27,7 @@ const features = [
         title: "Client Collaboration",
         description: "Manage clients in one place with shared projects, messages, and task updates.",
         gradient: "from-blue-400 to-blue-600",
-        benefits: ["Shared workspaces", "Real-time messaging", "File & task sharing"],
+        benefits: ["Shared projects", "Client messaging", "File & task sharing"],
     },
     {
         icon: Calendar,
@@ -52,11 +51,15 @@ const features = [
         benefits: ["Revenue tracking", "Client insights", "Productivity reports"],
     },
     {
-        icon: Lock,
-        title: "Secure Client Data",
-        description: "Keep your projects and client information safe with enterprise-grade security and compliance.",
-        gradient: "from-gray-700 to-gray-900",
-        benefits: ["Data encryption", "GDPR & SOC 2 compliant", "Access control"],
+        icon: Video,
+        title: "Built-In Meetings",
+        description: "Run client meetings directly inside the app with notes, recordings, and action items automatically captured.",
+        gradient: "from-blue-500 to-emerald-600",
+        benefits: [
+            "In-app video meetings",
+            "Auto meeting notes & summaries",
+            "Action items & follow-ups"
+        ],
     },
 ];
 
