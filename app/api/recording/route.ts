@@ -38,38 +38,45 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No files found" }, { status: 404 });
         }
 
-        // Find video and audio by extension
-        const videoFile = listResponse.Contents.find((obj) => obj.Key?.endsWith(".webm"));
-        const audioFile = listResponse.Contents.find((obj) => obj.Key?.endsWith(".ogg"));
+        // Filter and categorize all recording files
+        const videos = listResponse.Contents.filter((obj) => obj.Key?.endsWith(".webm"));
+        const audios = listResponse.Contents.filter((obj) => obj.Key?.endsWith(".ogg"));
 
-        if (!videoFile && !audioFile) {
+        if (videos.length === 0 && audios.length === 0) {
             return NextResponse.json({ error: "No video or audio files found" }, { status: 404 });
         }
 
-        // Generate signed URLs
-        const videoUrl = videoFile
-            ? await getSignedUrl(
-                s3Client,
-                new GetObjectCommand({
-                    Bucket: process.env.AWS_BUCKET_NAME!,
-                    Key: videoFile.Key!,
-                }),
-                { expiresIn: 3600 }
-            )
-            : null;
+        // Generate signed URLs for all videos
+        const videoUrls = await Promise.all(
+            videos.map(async (file) => ({
+                url: await getSignedUrl(
+                    s3Client,
+                    new GetObjectCommand({
+                        Bucket: process.env.AWS_BUCKET_NAME!,
+                        Key: file.Key!,
+                    }),
+                    { expiresIn: 3600 }
+                ),
+                key: file.Key
+            }))
+        );
 
-        const audioUrl = audioFile
-            ? await getSignedUrl(
-                s3Client,
-                new GetObjectCommand({
-                    Bucket: process.env.AWS_BUCKET_NAME!,
-                    Key: audioFile.Key!,
-                }),
-                { expiresIn: 3600 }
-            )
-            : null;
+        // Generate signed URLs for all audios
+        const audioUrls = await Promise.all(
+            audios.map(async (file) => ({
+                url: await getSignedUrl(
+                    s3Client,
+                    new GetObjectCommand({
+                        Bucket: process.env.AWS_BUCKET_NAME!,
+                        Key: file.Key!,
+                    }),
+                    { expiresIn: 3600 }
+                ),
+                key: file.Key
+            }))
+        );
 
-        return NextResponse.json({ videoUrl, audioUrl });
+        return NextResponse.json({ videoUrls, audioUrls });
     } catch (err) {
         console.error("S3 error:", err);
         return NextResponse.json({ error: "Failed to fetch files" }, { status: 500 });

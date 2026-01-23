@@ -329,15 +329,15 @@ type TranscribedChunk = {
 function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () => void }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
-    const [videoUrl, setVideoUrl] = useState<string | null>(null);
-    const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [videoUrls, setVideoUrls] = useState<{url: string, key: string}[]>([]);
+    const [audioUrls, setAudioUrls] = useState<{url: string, key: string}[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [currentChunkIndex, setCurrentChunkIndex] = useState<number | null | string>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const audioRef = useRef<HTMLAudioElement>(null);
+    const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+    const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
 
     function formatTime(seconds: number): string {
@@ -385,8 +385,8 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 const res = await axios.post(`/api/recording`, {
                     meetingId: meeting.title
                 });
-                setVideoUrl(res.data.videoUrl || null);
-                setAudioUrl(res.data.audioUrl || null);
+                setVideoUrls(res.data.videoUrls || []);
+                setAudioUrls(res.data.audioUrls || []);
             } catch (err) {
                 console.error("Failed to fetch recording:", err);
             } finally {
@@ -398,90 +398,129 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
     // Sync video and audio playback
     useEffect(() => {
-        const video = videoRef.current;
-        const audio = audioRef.current;
-        if (!video || !audio) return;
+        const videos = videoRefs.current.filter(v => v !== null);
+        const audios = audioRefs.current.filter(a => a !== null);
+        if (videos.length === 0 && audios.length === 0) return;
 
-        // When video plays, start audio
-        const handlePlay = () => {
-            if (video.currentTime < (audio.duration || Infinity)) {
-                audio.currentTime = video.currentTime;
-                audio.play();
-            }
+        // When any video plays, start all others and all audios
+        const handlePlay = (e: Event) => {
+            const master = e.target as HTMLMediaElement;
+            const masterTime = master.currentTime;
+
+            videos.forEach(v => {
+                if (v !== master) {
+                    if (masterTime < (v.duration || Infinity)) {
+                        v.currentTime = masterTime;
+                        v.play();
+                    }
+                }
+            });
+            audios.forEach(a => {
+                if (a !== master) {
+                    if (masterTime < (a.duration || Infinity)) {
+                        a.currentTime = masterTime;
+                        a.play();
+                    }
+                }
+            });
         };
 
-        // When video pauses, pause audio
+        // When any video pauses, pause all others and all audios
         const handlePause = () => {
-            audio.pause();
+            videos.forEach(v => v.pause());
+            audios.forEach(a => a.pause());
         };
 
-        // Keep audio time in sync with video
-        const handleTimeUpdate = () => {
-            const currentVideoTime = video.currentTime;
-            // Only sync if video hasn't ended. If video ended, audio might still be playing.
-            if (!video.ended && Math.abs(currentVideoTime - audio.currentTime) > 0.3) {
-                audio.currentTime = currentVideoTime;
-            }
+        // Keep all in sync with the first video (if present) or first audio
+        const handleTimeUpdate = (e: Event) => {
+            const master = e.target as HTMLMediaElement;
+            // Only use the first video or first audio as the master for syncing others
+            const primaryMaster = videos[0] || audios[0];
+            if (master !== primaryMaster) return;
+
+            const masterTime = master.currentTime;
+
+            videos.forEach(v => {
+                if (v !== master && !v.ended && Math.abs(masterTime - v.currentTime) > 0.3) {
+                    v.currentTime = Math.min(masterTime, v.duration || masterTime);
+                }
+            });
+            audios.forEach(a => {
+                if (a !== master && !a.ended && Math.abs(masterTime - a.currentTime) > 0.3) {
+                    a.currentTime = Math.min(masterTime, a.duration || masterTime);
+                }
+            });
         };
 
-        video.addEventListener("play", handlePlay);
-        video.addEventListener("pause", handlePause);
-        video.addEventListener("timeupdate", handleTimeUpdate);
+        videos.forEach(v => {
+            v.addEventListener("play", handlePlay);
+            v.addEventListener("pause", handlePause);
+            v.addEventListener("timeupdate", handleTimeUpdate);
+        });
+
+        audios.forEach(a => {
+            a.addEventListener("play", handlePlay);
+            a.addEventListener("pause", handlePause);
+            a.addEventListener("timeupdate", handleTimeUpdate);
+        });
 
         return () => {
-            video.removeEventListener("play", handlePlay);
-            video.removeEventListener("pause", handlePause);
-            video.removeEventListener("timeupdate", handleTimeUpdate);
+            videos.forEach(v => {
+                v.removeEventListener("play", handlePlay);
+                v.removeEventListener("pause", handlePause);
+                v.removeEventListener("timeupdate", handleTimeUpdate);
+            });
+            audios.forEach(a => {
+                a.removeEventListener("play", handlePlay);
+                a.removeEventListener("pause", handlePause);
+                a.removeEventListener("timeupdate", handleTimeUpdate);
+            });
         };
-    }, [videoUrl, audioUrl]);
+    }, [videoUrls, audioUrls]);
 
     useEffect(() => {
-        const video = videoRef.current;
-        const audio = audioRef.current;
-        if (!video) return;
+        const videos = videoRefs.current.filter(v => v !== null);
+        const audios = audioRefs.current.filter(a => a !== null);
+        if (videos.length === 0 && audios.length === 0) return;
 
-        const onVideoTimeUpdate = () => {
-            setCurrentTime(video.currentTime);
-        };
-
-        const onAudioTimeUpdate = () => {
-            // Only update currentTime from audio if video is not present or ended/stalled
-            // In our case, we mostly sync audio to video, but if audio is longer,
-            // we might want it to drive the clock when video ends.
-            if ((video.ended || video.paused) && audio) {
-                 setCurrentTime(audio.currentTime);
+        const onTimeUpdate = (e: Event) => {
+            const master = e.target as HTMLMediaElement;
+            const primaryMaster = videos[0] || audios[0];
+            if (master === primaryMaster) {
+                setCurrentTime(master.currentTime);
+            } else if ((primaryMaster.ended || primaryMaster.paused) && master.currentTime > currentTime) {
+                // If primary master ended, let others update the clock
+                setCurrentTime(master.currentTime);
             }
         };
 
-        const onLoadedMetadata = () => {
-            if (!isNaN(video.duration)) {
-                setDuration(prev => Math.max(prev, video.duration));
+        const onLoadedMetadata = (e: Event) => {
+            const media = e.target as HTMLMediaElement;
+            if (!isNaN(media.duration)) {
+                setDuration(prev => Math.max(prev, media.duration));
             }
         };
 
-        video.addEventListener("timeupdate", onVideoTimeUpdate);
-        video.addEventListener("loadedmetadata", onLoadedMetadata);
-
-        let audioOnLoadedMetadata: () => void;
-        if (audio) {
-            audioOnLoadedMetadata = () => {
-                if (!isNaN(audio.duration)) {
-                    setDuration(prev => Math.max(prev, audio.duration));
-                }
-            };
-            audio.addEventListener("loadedmetadata", audioOnLoadedMetadata);
-            audio.addEventListener("timeupdate", onAudioTimeUpdate);
-        }
+        videos.forEach(v => {
+            v.addEventListener("timeupdate", onTimeUpdate);
+            v.addEventListener("loadedmetadata", onLoadedMetadata);
+        });
+        audios.forEach(a => {
+            a.addEventListener("timeupdate", onTimeUpdate);
+            a.addEventListener("loadedmetadata", onLoadedMetadata);
+        });
 
         return () => {
-            video.removeEventListener("timeupdate", onVideoTimeUpdate);
-            video.removeEventListener("loadedmetadata", onLoadedMetadata);
-            if (audio) {
-                if (audioOnLoadedMetadata) audio.removeEventListener("loadedmetadata", audioOnLoadedMetadata);
-                audio.removeEventListener("timeupdate", onAudioTimeUpdate);
-            }
+            videos.forEach(v => {
+                v.removeEventListener("timeupdate", onTimeUpdate);
+                v.removeEventListener("loadedmetadata", onLoadedMetadata);
+            });
+            audios.forEach(a => {
+                a.removeEventListener("timeupdate", onTimeUpdate);
+                a.removeEventListener("loadedmetadata", onLoadedMetadata);
+            });
         };
-    }, [videoUrl, audioUrl]);
+    }, [videoUrls, audioUrls, currentTime]);
 
     useEffect(() => {
         if (!formattedData.length) return;
@@ -496,86 +535,72 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     }, [currentTime, formattedData]);
 
     useEffect(() => {
-        const video = videoRef.current;
-        const audio = audioRef.current;
-        if (!video) return;
-
-        const onEnded = () => {
-             if (!audio || audio.ended || audio.paused) {
-                 setIsPlaying(false);
-             }
+        const videos = videoRefs.current.filter(v => v !== null);
+        const audios = audioRefs.current.filter(a => a !== null);
+        
+        const checkAllEnded = () => {
+            const allEnded = [...videos, ...audios].every(m => m.ended || m.paused);
+            if (allEnded) setIsPlaying(false);
         };
 
-        const onAudioEnded = () => {
-             if (video.ended || video.paused) {
-                 setIsPlaying(false);
-             }
-        }
+        videos.forEach(v => v.addEventListener("ended", checkAllEnded));
+        audios.forEach(a => a.addEventListener("ended", checkAllEnded));
 
-        video.addEventListener("ended", onEnded);
-        if (audio) {
-            audio.addEventListener("ended", onAudioEnded);
-        }
         return () => {
-            video.removeEventListener("ended", onEnded);
-            if (audio) audio.removeEventListener("ended", onAudioEnded);
+            videos.forEach(v => v.removeEventListener("ended", checkAllEnded));
+            audios.forEach(a => a.removeEventListener("ended", checkAllEnded));
         };
-    }, [videoUrl, audioUrl]);
+    }, [videoUrls, audioUrls]);
 
     useEffect(() => {
-        const video = videoRef.current;
-        const audio = audioRef.current;
-        if (!video) return;
+        const videos = videoRefs.current.filter(v => v !== null);
+        const audios = audioRefs.current.filter(a => a !== null);
 
         const onPlay = () => setIsPlaying(true);
-        const onPause = () => setIsPlaying(false);
-
-        video.addEventListener("play", onPlay);
-        video.addEventListener("pause", onPause);
-
-        const onAudioPlay = () => {
-            if (video.ended) setIsPlaying(true);
-        }
-        const onAudioPause = () => {
-            if (video.ended) setIsPlaying(false);
+        const onPause = () => {
+            const anyPlaying = [...videos, ...audios].some(m => !m.paused && !m.ended);
+            if (!anyPlaying) setIsPlaying(false);
         }
 
-        if (audio) {
-            audio.addEventListener("play", onAudioPlay);
-            audio.addEventListener("pause", onAudioPause);
-        }
+        videos.forEach(v => {
+            v.addEventListener("play", onPlay);
+            v.addEventListener("pause", onPause);
+        });
+        audios.forEach(a => {
+            a.addEventListener("play", onPlay);
+            a.addEventListener("pause", onPause);
+        });
 
         return () => {
-            video.removeEventListener("play", onPlay);
-            video.removeEventListener("pause", onPause);
-            if (audio) {
-                audio.removeEventListener("play", onAudioPlay);
-                audio.removeEventListener("pause", onAudioPause);
-            }
+            videos.forEach(v => {
+                v.removeEventListener("play", onPlay);
+                v.removeEventListener("pause", onPause);
+            });
+            audios.forEach(a => {
+                a.removeEventListener("play", onPlay);
+                a.removeEventListener("pause", onPause);
+            });
         };
-    }, [videoUrl, audioUrl]);
+    }, [videoUrls, audioUrls]);
 
     const togglePlay = () => {
-        const video = videoRef.current;
-        const audio = audioRef.current;
-        if (!video) return;
+        const videos = videoRefs.current.filter(v => v !== null);
+        const audios = audioRefs.current.filter(a => a !== null);
+        const allMedia = [...videos, ...audios];
+        
+        if (allMedia.length === 0) return;
 
-        if (video.paused && (!audio || audio.paused)) {
-            if (video.ended) {
-                if (audio && !audio.ended) {
-                    audio.play();
-                    setIsPlaying(true);
+        const isAnyPlaying = allMedia.some(m => !m.paused && !m.ended);
+
+        if (!isAnyPlaying) {
+            allMedia.forEach(m => {
+                if (currentTime < (m.duration || Infinity)) {
+                    m.play();
                 }
-            } else {
-                video.play();
-                if (audio && video.currentTime < audio.duration) {
-                    audio.play();
-                }
-                setIsPlaying(true);
-            }
+            });
+            setIsPlaying(true);
         } else {
-            video.pause();
-            if (audio) audio.pause();
+            allMedia.forEach(m => m.pause());
             setIsPlaying(false);
         }
     };
@@ -594,16 +619,12 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
         const percent = Math.max(0, Math.min(clickX / rect.width, 1));
         const newTime = percent * duration;
 
-        if (videoRef.current) {
-            // If newTime is beyond video duration, cap it at video duration
-            // but keep updating currentTime for sync purposes if audio is longer
-            const videoDuration = videoRef.current.duration;
-            videoRef.current.currentTime = Math.min(newTime, videoDuration || newTime);
-        }
-        if (audioRef.current) {
-            const audioDuration = audioRef.current.duration;
-            audioRef.current.currentTime = Math.min(newTime, audioDuration || newTime);
-        }
+        videoRefs.current.forEach(v => {
+            if (v) v.currentTime = Math.min(newTime, v.duration || newTime);
+        });
+        audioRefs.current.forEach(a => {
+            if (a) a.currentTime = Math.min(newTime, a.duration || newTime);
+        });
 
         setCurrentTime(newTime);
     };
@@ -612,7 +633,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
     return (
         <div className="h-full min-h-0 flex flex-col p-6 bg-white overflow-hidden">
-            <div className="flex items-center space-x-4 mb-6">
+            <div className="flex items-center space-x-4 mb-4">
                 <Button variant="ghost" onClick={onBack}>
                     ← Back to Summary
                 </Button>
@@ -622,7 +643,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                 <h1 className="text-3xl">
                     Meeting Transcription
                 </h1>
-                <p className="mt-1 text-gray-600">
+                <p className="my-1 text-gray-600">
                     {meeting.title} • {meeting.date}
                 </p>
             </div>
@@ -633,20 +654,28 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
 
                     {/* Video Card */}
                     <Card className="p-6 flex flex-col min-h-0 shadow-sm">
-                        <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative mb-4">
-                            {videoUrl ? (
-                                <video
-                                    ref={videoRef}
-                                    src={videoUrl}
-                                    className="w-full h-full object-contain"
-                                    muted
-                                />
+                        <div className={`grid gap-4 bg-white rounded-lg overflow-hidden relative mb-4 p-2 ${
+                            videoUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'
+                        }`}>
+                            {videoUrls.length > 0 ? (
+                                videoUrls.map((video, idx) => (
+                                    <div key={video.key} className="aspect-video relative bg-black rounded overflow-hidden">
+                                        <video
+                                            ref={el => { videoRefs.current[idx] = el; }}
+                                            src={video.url}
+                                            className="w-full h-full object-contain"
+                                            muted
+                                        />
+                                    </div>
+                                ))
                             ) : (
-                                <div className="flex items-center justify-center h-full text-white">
+                                <div className="flex items-center justify-center h-full text-white min-h-[300px]">
                                     No video found
                                 </div>
                             )}
-                            {audioUrl && <audio ref={audioRef} src={audioUrl} />}
+                            {audioUrls.map((audio, idx) => (
+                                <audio key={audio.key} ref={el => { audioRefs.current[idx] = el; }} src={audio.url} />
+                            ))}
                         </div>
 
                         {/* Video Controls */}
