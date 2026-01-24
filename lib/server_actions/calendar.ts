@@ -8,6 +8,7 @@ import { NewMeetingInput } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
 import { parseDateTime } from "@/lib/date_utils";
+import {createRoom} from "@/lib/server_actions/meetings";
 
 type MeetingUpdate = Partial<typeof events.$inferInsert>;
 
@@ -73,6 +74,10 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         }
     }
 
+    if (meeting.isMeeting){
+        await createRoom(meeting.title);
+    }
+
     // Determine meeting status
     const now = new Date();
     const status = startDate > now ? "upcoming" : "scheduled";
@@ -82,12 +87,12 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             id: meetingId,
             title: meeting.title,
             description: meeting.description,
-            link: `https://virevos.com/meet/${crypto.randomUUID()}`,
+            link: meeting.isMeeting ? `https://virevos.com/meet/${crypto.randomUUID()}` : null,
             origin: "app",
             date: meeting.date,
             time: meeting.time,
             duration: meeting.duration,
-            isMeeting: true,
+            isMeeting: meeting.isMeeting,
             status: status,
             hasNotes: meeting.hasNotes ?? false,
             hasTranscript: meeting.hasTranscript ?? false,

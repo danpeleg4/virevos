@@ -17,22 +17,6 @@ const livekitHost = 'https://virevos-sn3m4ofa.livekit.cloud';
 const roomService = new RoomServiceClient(livekitHost, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
-async function createRoomCreateToken() {
-    const at = new AccessToken(
-        process.env.LIVEKIT_API_KEY!,
-        process.env.LIVEKIT_API_SECRET!,
-        {
-            ttl: 60, // short-lived
-        }
-    );
-
-    at.addGrant({
-        roomCreate: true,
-    });
-
-    return await at.toJwt();
-}
-
 export async function createRoom(roomName: string) {
     const user = await currentUser();
     if (!user?.id) {

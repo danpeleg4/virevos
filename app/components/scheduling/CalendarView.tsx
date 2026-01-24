@@ -19,7 +19,7 @@ import {
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { motion } from "motion/react";
-import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
+import { EventDetailsDialog } from "./EventDetailsDialog";
 import { BookEventDialog } from "@/app/components/BookEventDialog";
 import type {Event, NewMeetingInput} from "@/types/meeting";
 import axios from "axios";
@@ -260,8 +260,8 @@ export function CalendarView() {
 
             {/* === Meeting Details Dialog === */}
             {selectedMeeting && (
-                <MeetingDetailsDialog
-                    meeting={selectedMeeting}
+                <EventDetailsDialog
+                    event={selectedMeeting}
                     open={showMeetingDetails}
                     onOpenChange={setShowMeetingDetails}
                 />
