@@ -28,8 +28,6 @@ export default function InMeetingView() {
     const [joined, setJoined] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isCameraOff, setIsCameraOff] = useState(false);
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordingTime, setRecordingTime] = useState(0);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [copied, setCopied] = useState(false);
     const router = useRouter();
@@ -126,19 +124,6 @@ export default function InMeetingView() {
 
     return (
         <div className="fixed inset-0 bg-gray-900 flex flex-col z-50">
-            {/* Recording Indicator */}
-            {isRecording && (
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-red-600 text-white px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                        <span className="text-sm">
-              Recording • {Math.floor(recordingTime / 60)}:
-                            {(recordingTime % 60).toString().padStart(2, "0")}
-            </span>
-                    </div>
-                </div>
-            )}
-
             {/* Meeting Name */}
             <div className="absolute top-4 left-4 z-10">
                 <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
@@ -174,15 +159,6 @@ export default function InMeetingView() {
                         }`}
                     >
                         {isCameraOff ? <VideoOff className="h-5 w-5 text-white" /> : <Video className="h-5 w-5 text-white" />}
-                    </button>
-
-                    <button
-                        onClick={() => setIsRecording(!isRecording)}
-                        className={`p-4 rounded-full transition-colors ${
-                            isRecording ? "bg-red-600 hover:bg-red-700" : "bg-gray-700 hover:bg-gray-600"
-                        }`}
-                    >
-                        <div className={`h-5 w-5 rounded ${isRecording ? <TabletSmartphone /> : <TabletSmartphone />}`}></div>
                     </button>
 
                     <button
