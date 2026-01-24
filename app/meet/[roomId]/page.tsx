@@ -216,6 +216,9 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
         if (!containerRef.current || !audioRef.current) return;
 
         const attachTrack = (track: RemoteTrack | Track) => {
+            if (track.kind === "audio" && participant.isLocal) {
+                return;
+            }
             const el = track.attach();
             if (!el) return;
             if (track.kind === "video") {

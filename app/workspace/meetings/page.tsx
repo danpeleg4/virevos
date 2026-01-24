@@ -372,7 +372,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     useEffect(() => {
         const fn = async () => {
             const res = await axios.post(`/api/transcript`, {
-                meetingName: meeting.id,
+                meetingId: meeting.title,
             });
 
             const formatted = res.data[0].map((item: RawChunk) => ({
@@ -392,7 +392,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
         const fetchRecording = async () => {
             try {
                 const res = await axios.post(`/api/recording`, {
-                    meetingId: meeting.id
+                    meetingId: meeting.title
                 });
                 setVideoUrls(res.data.videoUrls || []);
             } catch (err) {

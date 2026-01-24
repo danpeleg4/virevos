@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Meeting ID required" }, { status: 400 });
     }
 
-    const folderPrefix = `recordings/${user.id}/${meetingId}/`;
+    const folderPrefix = `recordings/${user.id}/${meetingId}`;
 
     try {
         // List all objects in the folder
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Filter and categorize all recording files
-        const videos = listResponse.Contents.filter((obj) => obj.Key?.endsWith(".mp4"));
+        const videos = listResponse.Contents.filter((obj) => obj.Key?.endsWith(`.mp4`));
 
         if (videos.length === 0) {
             return NextResponse.json({ error: "No video files found" }, { status: 404 });
