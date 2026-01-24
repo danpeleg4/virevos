@@ -495,7 +495,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
-                {/* LEFT COLUMN: Video + Stats */}
+                {/* LEFT COLUMN: Video */}
                 <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
 
                     {/* Video Card */}
@@ -535,40 +535,11 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                             </span>
                         </div>
                     </Card>
-
-                    {/* Stats & Actions Row */}
-                    <div className="grid grid-cols-2 gap-6">
-                        <Card className="p-5 shadow-sm">
-                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Stats</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Duration</span>
-                                    <span className="font-medium">{meeting.duration}m</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Participants</span>
-                                    <span className="font-medium">{meeting?.attendees?.length}</span>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Card className="p-5 shadow-sm">
-                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Actions</h3>
-                            <div className="flex flex-col gap-2">
-                                <Button variant="outline" size="sm" className="justify-start">
-                                    <Link2 className="h-4 w-4 mr-2" /> Share
-                                </Button>
-                                <Button variant="outline" size="sm" className="justify-start">
-                                    <Copy className="h-4 w-4 mr-2" /> Copy Transcript
-                                </Button>
-                            </div>
-                        </Card>
-                    </div>
                 </div>
 
                 {/* RIGHT COLUMN: Transcription (Scrolls independently) */}
                 <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
-                    <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                    <CardContent className="flex-1 min-h-0 p-0 overflow-y-auto">
                     <div className="p-4 border-b bg-gray-50/50">
                         <Input
                             placeholder="Search transcript..."
@@ -577,7 +548,6 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                             className="bg-white"
                         />
                     </div>
-
                     <div
                         className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
                         ref={containerRef}
@@ -613,7 +583,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                             </div>
                         )}
                     </div>
-                        </CardContent>
+                    </CardContent>
                 </Card>
             </div>
         </div>
