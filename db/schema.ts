@@ -54,24 +54,22 @@ export const projects = pgTable("projects", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// MEETINGS
-export const meetings = pgTable("meetings", {
+// EventS
+export const events = pgTable("events", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
     link: text("link"),
-
     date: date("date").notNull().default("2025-01-01"),
     time: text("time").notNull(),
     duration: integer("duration").notNull(),
-    type: text("type").notNull(),
-    status: text("status").notNull(),
-
+    isMeeting: boolean().default(false),
+    status: text("status"),
     hasNotes: boolean("has_notes").default(false),
     hasTranscript: boolean("has_transcript").default(false),
     autoRescheduled: boolean("auto_rescheduled").default(false),
     conflictReason: text("conflict_reason"),
-    origin: text("origin"),
+    origin: text("origin").default("app"),
     googleEventId: text("google_event_id"),
 
     userId: varchar("user_id")
@@ -130,7 +128,7 @@ export const meetingAttendees = pgTable("meeting_attendees", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
     meetingId: text("meeting_id")
         .notNull()
-        .references(() => meetings.id, { onDelete: "cascade" }),
+        .references(() => events.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     initials: text("initials").notNull(),
 });
@@ -154,7 +152,7 @@ export const usersRelations = relations(users, ({ many }) => ({
     clients: many(clients),
     projects: many(projects),
     tasks: many(tasks),
-    meetings: many(meetings),
+    meetings: many(events),
     googleTokens: many(googleTokens),
 }));
 
@@ -202,9 +200,9 @@ export const notesRelations = relations(notes, ({ one }) => ({
     })
 }));
 
-export const meetingsRelations = relations(meetings, ({ one, many }) => ({
+export const eventsRelations = relations(events, ({ one, many }) => ({
     user: one(users, {
-        fields: [meetings.userId],
+        fields: [events.userId],
         references: [users.user_id],
     }),
     attendees: many(meetingAttendees),
@@ -212,9 +210,9 @@ export const meetingsRelations = relations(meetings, ({ one, many }) => ({
 }));
 
 export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) => ({
-    meeting: one(meetings, {
+    meeting: one(events, {
         fields: [meetingAttendees.meetingId],
-        references: [meetings.id],
+        references: [events.id],
     }),
 }));
 

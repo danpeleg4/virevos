@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import { meetings } from "@/db/schema";
+import { events } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { google } from "googleapis";
 import { getFreshGoogleAccessToken } from "@/lib/google_access";
@@ -35,16 +35,16 @@ export async function GET() {
             orderBy: "startTime",
         });
 
-        const events = list.data.items ?? [];
+        const allEvents = list.data.items ?? [];
 
         // Existing DB meetings for this user
         const existingMeetings = await db
             .select()
-            .from(meetings)
-            .where(eq(meetings.userId, user.id));
+            .from(events)
+            .where(eq(events.userId, user.id));
 
         const existingMap = new Map(existingMeetings.map(m => [m.googleEventId || m.id, m]));
-        const googleEventIds = new Set(events.map(e => e.id).filter(Boolean) as string[]);
+        const googleEventIds = new Set(allEvents.map(e => e.id).filter(Boolean) as string[]);
 
         // 1. Delete meetings from DB if they were removed from Google Calendar
         // (Only for those that originated from Google OR have a googleEventId)
@@ -55,14 +55,14 @@ export async function GET() {
                 // Check if the meeting date is today (since we only listed today's events)
                 const startOfTodayStr = startOfToday.toISOString().slice(0, 10);
                 if (m.date === startOfTodayStr) {
-                    await db.delete(meetings).where(eq(meetings.id, m.id));
+                    await db.delete(events).where(eq(events.id, m.id));
                     existingMap.delete(googleId);
                 }
             }
         }
 
         const meetingsToInsert = [];
-        for (const e of events) {
+        for (const e of allEvents) {
             if (!e.id || !e.start) continue;
 
             // Skip events created by the app itself that haven't been processed yet
@@ -72,7 +72,7 @@ export async function GET() {
                 const appId = e.extendedProperties.private.appId;
                 const dbMeeting = existingMeetings.find(m => m.id === appId);
                 if (dbMeeting && !dbMeeting.googleEventId) {
-                    await db.update(meetings).set({ googleEventId: e.id }).where(eq(meetings.id, appId));
+                    await db.update(events).set({ googleEventId: e.id }).where(eq(events.id, appId));
                 }
                 continue;
             }
@@ -120,7 +120,7 @@ export async function GET() {
                     m.status !== status;
 
                 if (hasChanged) {
-                    await db.update(meetings)
+                    await db.update(events)
                         .set({
                             title,
                             description,
@@ -130,7 +130,7 @@ export async function GET() {
                             duration: durationMinutes,
                             status
                         })
-                        .where(eq(meetings.id, m.id));
+                        .where(eq(events.id, m.id));
                 }
                 continue;
             }
@@ -153,13 +153,13 @@ export async function GET() {
         }
 
         if (meetingsToInsert.length > 0) {
-            await db.insert(meetings).values(meetingsToInsert);
+            await db.insert(events).values(meetingsToInsert);
         }
     }
 
     // Return DB meetings
-    const rows = await db.query.meetings.findMany({
-        where: eq(meetings.userId, user.id),
+    const rows = await db.query.events.findMany({
+        where: eq(events.userId, user.id),
         with: {
             attendees: true,
         },

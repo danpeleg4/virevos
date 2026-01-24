@@ -2,14 +2,14 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import { meetings, users } from "@/db/schema";
+import { events, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { NewMeetingInput } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
 import { parseDateTime } from "@/lib/date_utils";
 
-type MeetingUpdate = Partial<typeof meetings.$inferInsert>;
+type MeetingUpdate = Partial<typeof events.$inferInsert>;
 
 export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     const user = await currentUser();
@@ -77,7 +77,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     const now = new Date();
     const status = startDate > now ? "upcoming" : "scheduled";
     const [inserted] = await db
-        .insert(meetings)
+        .insert(events)
         .values({
             id: meetingId,
             title: meeting.title,
@@ -87,7 +87,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             date: meeting.date,
             time: meeting.time,
             duration: meeting.duration,
-            type: meeting.type,
+            isMeeting: true,
             status: status,
             hasNotes: meeting.hasNotes ?? false,
             hasTranscript: meeting.hasTranscript ?? false,
@@ -109,8 +109,8 @@ export async function deleteEventFromCalendar(id: string) {
     // Get meeting from DB to check for googleEventId
     const meetingRow = await db
         .select()
-        .from(meetings)
-        .where(and(eq(meetings.id, id), eq(meetings.userId, user.id)))
+        .from(events)
+        .where(and(eq(events.id, id), eq(events.userId, user.id)))
         .limit(1);
 
     if (meetingRow.length === 0) {
@@ -137,7 +137,7 @@ export async function deleteEventFromCalendar(id: string) {
 
 
     // Delete from DB
-    await db.delete(meetings).where(and(eq(meetings.id, id), eq(meetings.userId, user.id)));
+    await db.delete(events).where(and(eq(events.id, id), eq(events.userId, user.id)));
     return { success: true };
 }
 
@@ -149,8 +149,8 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
 
     const meetingRow = await db
         .select()
-        .from(meetings)
-        .where(and(eq(meetings.id, id), eq(meetings.userId, user.id)))
+        .from(events)
+        .where(and(eq(events.id, id), eq(events.userId, user.id)))
         .limit(1);
 
     if (meetingRow.length === 0) {
@@ -164,7 +164,7 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
         date: updates.date,
         time: updates.time,
         duration: updates.duration,
-        type: updates.type,
+        isMeeting: false,
         status: updates.status,
         hasNotes: updates.hasNotes,
         hasTranscript: updates.hasTranscript,
@@ -173,9 +173,9 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
     };
 
     // Update in DB
-    await db.update(meetings)
+    await db.update(events)
         .set(dbUpdates)
-        .where(eq(meetings.id, id));
+        .where(eq(events.id, id));
 
     // Sync to Google Calendar if connected
     const googleToken = await getFreshGoogleAccessToken(user.id);

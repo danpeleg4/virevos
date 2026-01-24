@@ -6,7 +6,6 @@ import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
 import {
-    Video,
     Calendar,
     CheckCircle,
     ExternalLink,

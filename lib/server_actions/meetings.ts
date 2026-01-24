@@ -8,7 +8,7 @@ import {
 } from "livekit-server-sdk";
 import { Pinecone } from '@pinecone-database/pinecone'
 import { db } from "@/db/db";
-import {meetings} from "@/db/schema";
+import { events } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { Room, RoomServiceClient } from 'livekit-server-sdk';
@@ -79,7 +79,7 @@ export async function createRoom(roomName: string) {
     });
 
     await db
-        .insert(meetings)
+        .insert(events)
         .values({
             id: sid,
             title: roomName,
@@ -87,12 +87,12 @@ export async function createRoom(roomName: string) {
             origin: "app",
             time: time,
             duration: 60,
-            type: "In-App",
+            isMeeting: true,
             status: "active",
             userId: user.id
         })
         .onConflictDoUpdate({
-            target: meetings.id,
+            target: events.id,
             set: {
                 id: sid,
                 title: roomName,
@@ -100,7 +100,7 @@ export async function createRoom(roomName: string) {
                 origin: "app",
                 time: time,
                 duration: 60,
-                type: "In-App",
+                isMeeting: true,
                 status: "active",
                 userId: user.id
             },

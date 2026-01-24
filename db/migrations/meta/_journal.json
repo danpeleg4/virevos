@@ -36,6 +36,13 @@
       "when": 1769009668583,
       "tag": "0004_fuzzy_kree",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769270941444,
+      "tag": "0005_curly_sabretooth",
+      "breakpoints": true
     }
   ]
 }

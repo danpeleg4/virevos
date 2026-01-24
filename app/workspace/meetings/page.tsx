@@ -26,10 +26,10 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import {useMutation, useQuery} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Meeting } from "@/types/meeting";
-import {createRoom} from "@/lib/server_actions/meetings";
+import { Event } from "@/types/meeting";
+import { createRoom } from "@/lib/server_actions/meetings";
 
 export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
@@ -38,7 +38,7 @@ export default function Meetings() {
     const [meetingLink, setMeetingLink] = useState("");
     const [copied, setCopied] = useState(false);
     const [activeView, setActiveView] = useState<"home" | "in-meeting" | "summary" | "transcription">("home");
-    const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+    const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
     const router = useRouter();
 
     const s = crypto.randomUUID()
@@ -49,7 +49,7 @@ export default function Meetings() {
         queryKey: ["meetings"],
         queryFn: async () => {
             const res = await axios.get("/api/meetings");
-            const data: Meeting[] = res.data;
+            const data: Event[] = res.data;
             return data.map(m => ({
                 ...m,
                 attendees: m.attendees ?? [],
@@ -75,7 +75,7 @@ export default function Meetings() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleViewSummary = (meeting: Meeting) => {
+    const handleViewSummary = (meeting: Event) => {
         setSelectedMeeting(meeting);
         setActiveView("summary");
     };
@@ -84,7 +84,7 @@ export default function Meetings() {
         return <TranscriptionView meeting={selectedMeeting!} onBack={() => setActiveView("home")} />;
     }
 
-    const color = (meeting: Meeting) => {
+    const color = (meeting: Event) => {
         switch (meeting.status){
             case "active":
                 return "text-red-600"
@@ -95,7 +95,7 @@ export default function Meetings() {
         }
     }
 
-    const bgColor = (meeting: Meeting) => {
+    const bgColor = (meeting: Event) => {
         switch (meeting.status) {
             case "active":
                 return "bg-red-100"
@@ -337,7 +337,7 @@ type TranscribedChunk = {
 };
 
 // Transcription View Component
-function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () => void }) {
+function TranscriptionView({ meeting, onBack }: { meeting: Event; onBack: () => void }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
     const [videoUrls, setVideoUrls] = useState<{url: string, key: string}[]>([]);

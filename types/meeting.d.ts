@@ -5,21 +5,22 @@ export interface Attendee {
     initials: string;
 }
 
-export interface Meeting {
+export interface Event {
     id: string;
     title: string;
     description: string;
-    link: string;
+    link?: string;
     date: string;
     time: string;
     duration: number;
     attendees?: Attendee[];
-    status: MeetingStatus | string;
+    status?: MeetingStatus | string;
     conflictReason?: string | null | undefined;
     autoRescheduled?: boolean;
     hasNotes?: boolean;
     hasTranscript?: boolean;
     googleEventId?: string | null;
+    isMeeting: boolean;
 }
 
 export interface NewMeetingInput {
@@ -29,11 +30,11 @@ export interface NewMeetingInput {
     date: string;
     time: string;
     duration: number;
-    type: string;
     attendees?: Attendee[];
     status: MeetingStatus;
     hasNotes?: boolean;
     hasTranscript?: boolean;
     autoRescheduled?: boolean;
     conflictReason?: string | null;
+    isMeeting: boolean;
 }

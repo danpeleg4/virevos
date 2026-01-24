@@ -20,6 +20,7 @@ import { Button } from "./ui/button";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import type { NewMeetingInput } from "@/types/meeting";
+import { Switch } from "./ui/switch";
 
 interface BookMeetingDialogProps {
     dialogOpen: boolean;
@@ -27,14 +28,14 @@ interface BookMeetingDialogProps {
     addMeeting: (meeting: NewMeetingInput) => void;
 }
 
-export function BookMeetingDialog({
+export function BookEventDialog({
                                       dialogOpen,
                                       setDialogOpen,
                                       addMeeting,
                                   }: BookMeetingDialogProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [meetingType, setMeetingType] = useState<string>("");
+    const [isMeeting, setIsMeeting] = useState<boolean>(false);
     const [date, setDate] = useState("");
     const [time, setTime] = useState("");
     const [duration, setDuration] = useState("");
@@ -58,16 +59,16 @@ export function BookMeetingDialog({
 
             <DialogContent className="w-[16rem] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Schedule a Meeting</DialogTitle>
+                    <DialogTitle>Schedule an Event</DialogTitle>
                     <DialogDescription>
-                        Fill out the details to book a new meeting
+                        Fill out the details to create a new event
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 mt-4">
                     {/* Title */}
                     <div>
-                        <Label>Meeting Title</Label>
+                        <Label>Event Title</Label>
                         <Input
                             placeholder="Client Sync"
                             className="mt-2"
@@ -80,7 +81,7 @@ export function BookMeetingDialog({
                     <div>
                         <Label>Description</Label>
                         <Textarea
-                            placeholder="Meeting details..."
+                            placeholder="Event details..."
                             className="mt-2"
                             rows={3}
                             value={description}
@@ -127,6 +128,15 @@ export function BookMeetingDialog({
                         </div>
                     </div>
 
+                    <div className="flex items-center space-x-2 mt-4">
+                        <Label>Create a Event</Label>
+                        <Switch
+                            checked={isMeeting}
+                            onCheckedChange={(checked) => setIsMeeting(checked as boolean)}
+                        />
+                    </div>
+
+
                     {/* Buttons */}
                     <div className="flex justify-end space-x-3 pt-4">
                         <Button
@@ -140,7 +150,6 @@ export function BookMeetingDialog({
                         <Button
                             className="cursor-pointer"
                             onClick={() => {
-                                if (meetingType) {
                                     const payload: NewMeetingInput = {
                                         id: Date.now(),
                                         title,
@@ -148,32 +157,17 @@ export function BookMeetingDialog({
                                         date,
                                         time: convertTimeToLabel(time),
                                         duration: Number(duration),
-                                        type: meetingType,
+                                        isMeeting: isMeeting,
                                         attendees: [],
                                         status: "scheduled",
                                     };
                                     addMeeting(payload);
-                                } else {
-                                    if (!date || !time) return;
-                                    const payload: NewMeetingInput = {
-                                        id: Date.now(),
-                                        title,
-                                        description,
-                                        date,
-                                        time: convertTimeToLabel(time),
-                                        duration: Number(duration),
-                                        type: "custom",
-                                        attendees: [],
-                                        status: "scheduled",
-                                    };
-                                    addMeeting(payload);
-                                }
 
                                 // Reset form
                                 setDialogOpen(false);
+                                setIsMeeting(false);
                                 setTitle("");
                                 setDescription("");
-                                setMeetingType("");
                                 setDate("");
                                 setTime("");
                                 setDuration("");

@@ -20,10 +20,10 @@ import {
   Copy,
   Mic,
 } from "lucide-react";
-import type { Meeting } from "@/types/meeting";
+import type { Event } from "@/types/meeting";
 
 interface MeetingDetailsDialogProps {
-  meeting: Meeting;
+  meeting: Event;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
