@@ -28,13 +28,13 @@ async function streamToString(stream: Readable | undefined): Promise<string> {
 
 
 export async function POST(req: NextRequest) {
-    const { meetingName } = await req.json();
+    const { meetingId } = await req.json();
     const user = await currentUser();
     if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const folderPrefix = `${user.id}/${meetingName}/`;
+    const folderPrefix = `${user.id}/${meetingId}/`;
 
     try {
         const listResponse = await s3.send(

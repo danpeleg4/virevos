@@ -1,11 +1,20 @@
 "use server"
 
-import { AccessToken } from "livekit-server-sdk";
+import {
+    AccessToken,
+    EgressClient,
+    EncodedFileOutput,
+    EncodingOptionsPreset,
+} from "livekit-server-sdk";
 import { Pinecone } from '@pinecone-database/pinecone'
-import {db} from "@/db/db";
+import { db } from "@/db/db";
 import {meetings} from "@/db/schema";
-import axios from "axios";
+import { currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { Room, RoomServiceClient } from 'livekit-server-sdk';
 
+const livekitHost = 'https://virevos-sn3m4ofa.livekit.cloud';
+const roomService = new RoomServiceClient(livekitHost, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
 async function createRoomCreateToken() {
@@ -24,50 +33,55 @@ async function createRoomCreateToken() {
     return await at.toJwt();
 }
 
-export async function createRoom(roomName: string, userId?: string) {
-    if (!userId) {
-        return "user is required"
+export async function createRoom(roomName: string) {
+    const user = await currentUser();
+    if (!user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const token = await createRoomCreateToken();
 
-    const res = await axios.post(
-        "https://virevos-sn3m4ofa.livekit.cloud/twirp/livekit.RoomService/CreateRoom",
-        {
-            name: roomName,
-            egress: {
-                tracks: {
-                    filepath: `recordings/${userId}/${roomName}/`,
-                    s3: {
-                        access_key: process.env.AWS_S3_ACCESS_KEY,
-                        secret: process.env.AWS_S3_SECRET_KEY,
-                        bucket: "virevos-recordings",
-                        region: "us-east-1",
-                    },
+    let sid = ""
+    const opts = {
+        name: roomName,
+        emptyTimeout: 60,
+        maxParticipants: 20,
+    };
+    roomService.createRoom(opts).then((room: Room) => {
+        console.log('room created', room);
+        sid = room.sid;
+    });
+
+    const outputs = {
+        file: new EncodedFileOutput({
+            filepath: `recordings/${user.id}/${sid}/${roomName}.mp4`,
+            output: {
+                case: 's3',
+                value: {
+                    accessKey: process.env.AWS_S3_ACCESS_KEY,
+                    secret: process.env.AWS_S3_SECRET_KEY,
+                    bucket: "virevos-recordings",
+                    region: "us-east-1",
+                    forcePathStyle: true,
                 },
             },
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-        }
-    );
+        }),
+    };
+    const egressClient = new EgressClient(livekitHost);
+    await egressClient.startRoomCompositeEgress(roomName, outputs, {
+        layout: 'grid',
+        encodingOptions: EncodingOptionsPreset.H264_1080P_30,
+        audioOnly: false,
+    });
 
-    const data = res.data;
     const time = new Date().toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
     });
 
-    if (res.status !== 200 && res.status !== 409) {
-        throw new Error(res.statusText);
-    }
     await db
         .insert(meetings)
         .values({
-            id: data.sid,
+            id: sid,
             title: roomName,
             date: new Date().toISOString(),
             origin: "app",
@@ -75,12 +89,12 @@ export async function createRoom(roomName: string, userId?: string) {
             duration: 60,
             type: "In-App",
             status: "active",
-            userId: userId
+            userId: user.id
         })
         .onConflictDoUpdate({
             target: meetings.id,
             set: {
-                id: data.sid,
+                id: sid,
                 title: roomName,
                 date: new Date().toISOString(),
                 origin: "app",
@@ -88,7 +102,7 @@ export async function createRoom(roomName: string, userId?: string) {
                 duration: 60,
                 type: "In-App",
                 status: "active",
-                userId: userId
+                userId: user.id
             },
         });
     return "success"
