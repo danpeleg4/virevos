@@ -37,4 +37,5 @@ export interface NewMeetingInput {
     autoRescheduled?: boolean;
     conflictReason?: string | null;
     isMeeting: boolean;
+    utcISO: string;
 }

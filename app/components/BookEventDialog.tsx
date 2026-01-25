@@ -29,30 +29,83 @@ interface BookMeetingDialogProps {
 }
 
 export function BookEventDialog({
-                                      dialogOpen,
-                                      setDialogOpen,
-                                      addMeeting,
-                                  }: BookMeetingDialogProps) {
+                                    dialogOpen,
+                                    setDialogOpen,
+                                    addMeeting,
+                                }: BookMeetingDialogProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [isMeeting, setIsMeeting] = useState<boolean>(false);
-    const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
+    const [isMeeting, setIsMeeting] = useState(false);
+    const [date, setDate] = useState(""); // "YYYY-MM-DD"
+    const [time, setTime] = useState(""); // "HH:MM"
     const [duration, setDuration] = useState("");
 
-    function convertTimeToLabel(time24: string) {
-        if (!time24) return "";
-        const [h, m] = time24.split(":").map(Number);
-        const suffix = h >= 12 ? "PM" : "AM";
-        const hour = h % 12 === 0 ? 12 : h % 12;
-        return `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
+    function toUTC(dateStr: string, timeStr: string) {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        const [hours, minutes] = timeStr.split(":").map(Number);
+
+        // Local datetime → internally stored as UTC
+        const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+        return {
+            utcISO: date.toISOString(),
+            utcTime: `${date
+                .getUTCHours()
+                .toString()
+                .padStart(2, "0")}:${date
+                .getUTCMinutes()
+                .toString()
+                .padStart(2, "0")}`,
+        };
+    }
+
+    function formatUTCDateAndTime(
+        utcIsoDate: string,
+        utcTime: string
+    ) {
+        // Parse date (UTC)
+        const baseDate = new Date(utcIsoDate);
+
+        // Extract UTC Y-M-D from ISO date
+        const year = baseDate.getUTCFullYear();
+        const month = baseDate.getUTCMonth();
+        const day = baseDate.getUTCDate();
+
+        // Extract UTC time
+        const [hours, minutes] = utcTime.split(":").map(Number);
+
+        // Create a Date using UTC components
+        const utcDate = new Date(
+            Date.UTC(year, month, day, hours, minutes, 0, 0)
+        );
+
+        // Convert to LOCAL display
+        const localYear = utcDate.getFullYear();
+        const localMonth = utcDate.getMonth() + 1;
+        const localDay = utcDate.getDate();
+
+        let localHours = utcDate.getHours();
+        const localMinutes = utcDate.getMinutes();
+        const ampm = localHours >= 12 ? "PM" : "AM";
+
+        localHours = localHours % 12 || 12;
+
+        return {
+            dateUTC: `${localYear}-${String(localMonth).padStart(
+                2,
+                "0"
+            )}-${String(localDay).padStart(2, "0")}`,
+            timeUTC: `${localHours}:${String(
+                localMinutes
+            ).padStart(2, "0")} ${ampm}`
+        }
     }
 
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="cursor-pointer">
-                    <CalendarIcon className="h-4 w-4 mr-2 cursor-pointer" />
+                <Button size="sm">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
                     Add Event
                 </Button>
             </DialogTrigger>
@@ -70,7 +123,6 @@ export function BookEventDialog({
                     <div>
                         <Label>Event Title</Label>
                         <Input
-                            placeholder="Client Sync"
                             className="mt-2"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -81,7 +133,6 @@ export function BookEventDialog({
                     <div>
                         <Label>Description</Label>
                         <Textarea
-                            placeholder="Event details..."
                             className="mt-2"
                             rows={3}
                             value={description}
@@ -90,9 +141,7 @@ export function BookEventDialog({
                     </div>
 
                     {/* DATE + TIME + DURATION */}
-                    <div
-                        className={`grid grid-cols-3 gap-4 transition-all duration-200`}
-                    >
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <Label>Date</Label>
                             <Input
@@ -128,19 +177,15 @@ export function BookEventDialog({
                         </div>
                     </div>
 
+                    {/* Meeting switch */}
                     <div className="flex items-center space-x-2 mt-4">
-                        <Label>Create a Event</Label>
-                        <Switch
-                            checked={isMeeting}
-                            onCheckedChange={(checked) => setIsMeeting(checked as boolean)}
-                        />
+                        <Label>Create a Meeting</Label>
+                        <Switch checked={isMeeting} onCheckedChange={setIsMeeting} />
                     </div>
-
 
                     {/* Buttons */}
                     <div className="flex justify-end space-x-3 pt-4">
                         <Button
-                            className="cursor-pointer"
                             variant="outline"
                             onClick={() => setDialogOpen(false)}
                         >
@@ -148,29 +193,31 @@ export function BookEventDialog({
                         </Button>
 
                         <Button
-                            className="cursor-pointer"
                             onClick={() => {
-                                    const payload: NewMeetingInput = {
-                                        id: Date.now(),
-                                        title,
-                                        description,
-                                        date,
-                                        time: convertTimeToLabel(time),
-                                        duration: Number(duration),
-                                        isMeeting: isMeeting,
-                                        attendees: [],
-                                        status: "scheduled",
-                                    };
-                                    addMeeting(payload);
+                                const { utcISO, utcTime } = toUTC(date, time);
+                                const { dateUTC, timeUTC } = formatUTCDateAndTime(utcISO, utcTime);
+                                console.log(utcISO, utcTime);
+                                const payload: NewMeetingInput = {
+                                    id: Date.now(),
+                                    title,
+                                    description,
+                                    date: dateUTC,
+                                    time: timeUTC,
+                                    duration: Number(duration),
+                                    isMeeting,
+                                    attendees: [],
+                                    status: "scheduled",
+                                    utcISO: utcISO
+                                };
 
-                                // Reset form
+                                addMeeting(payload);
                                 setDialogOpen(false);
-                                setIsMeeting(false);
                                 setTitle("");
                                 setDescription("");
                                 setDate("");
                                 setTime("");
                                 setDuration("");
+                                setIsMeeting(false);
                             }}
                         >
                             Book
