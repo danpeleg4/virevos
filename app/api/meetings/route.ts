@@ -66,13 +66,13 @@ export async function GET() {
             if (!e.id || !e.start) continue;
 
             // Skip events created by the app itself that haven't been processed yet
-            // (They should have appId in extendedProperties)
-            if (e.extendedProperties?.private?.appId) {
+            // (They should have appMeetingId in extendedProperties)
+            if (e.extendedProperties?.private?.appMeetingId) {
                 // If it exists in DB, we might want to update googleEventId if not set
-                const appId = e.extendedProperties.private.appId;
-                const dbMeeting = existingMeetings.find(m => m.id === appId);
+                const appMeetingId = e.extendedProperties.private.appMeetingId;
+                const dbMeeting = existingMeetings.find(m => m.id === appMeetingId);
                 if (dbMeeting && !dbMeeting.googleEventId) {
-                    await db.update(events).set({ googleEventId: e.id }).where(eq(events.id, appId));
+                    await db.update(events).set({ googleEventId: e.id }).where(eq(events.id, appMeetingId));
                 }
                 continue;
             }
@@ -106,6 +106,7 @@ export async function GET() {
             const dateStr = start.toISOString().slice(0, 10);
             const timeStr = start.toTimeString().slice(0, 5);
             const status = e.status ?? "confirmed";
+            const isMeeting = !!e.hangoutLink || !!(e.conferenceData?.entryPoints?.some(ep => ep.entryPointType === 'video'));
 
             if (existingMap.has(e.id)) {
                 // 2. Update existing meeting if changed
@@ -117,7 +118,8 @@ export async function GET() {
                     m.date !== dateStr || 
                     m.time !== timeStr || 
                     m.duration !== durationMinutes ||
-                    m.status !== status;
+                    m.status !== status ||
+                    m.isMeeting !== isMeeting;
 
                 if (hasChanged) {
                     await db.update(events)
@@ -128,7 +130,8 @@ export async function GET() {
                             date: dateStr,
                             time: timeStr,
                             duration: durationMinutes,
-                            status
+                            status,
+                            isMeeting
                         })
                         .where(eq(events.id, m.id));
                 }
@@ -147,6 +150,7 @@ export async function GET() {
                 duration: durationMinutes,
                 origin: "google_calendar",
                 type: "in-person",
+                isMeeting,
                 status,
                 userId: user.id,
             });

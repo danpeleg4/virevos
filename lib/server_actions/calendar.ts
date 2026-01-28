@@ -8,37 +8,13 @@ import { NewMeetingInput } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
 import { parseDateTime } from "@/lib/date_utils";
-import {
-    SchedulerClient,
-    CreateScheduleCommand
-} from "@aws-sdk/client-scheduler";
 
 type MeetingUpdate = Partial<typeof events.$inferInsert>;
-
-const scheduler = new SchedulerClient({
-    region: process.env.AWS_REGION!,
-    credentials: {
-        accessKeyId: process.env.AWS_SCHEDULER_ACESS_KEY!,
-        secretAccessKey: process.env.AWS_SCHEDULER_SECRET_KEY!
-    }
-});
 
 export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
-    }
-
-    const formatForScheduler = (date: Date) => {
-        // Returns YYYY-MM-DDTHH:MM:SS
-        const pad = (n: number) => n.toString().padStart(2, "0");
-        const Y = date.getUTCFullYear();
-        const M = pad(date.getUTCMonth() + 1); // months are 0-indexed
-        const D = pad(date.getUTCDate());
-        const h = pad(date.getUTCHours());
-        const m = pad(date.getUTCMinutes());
-        const s = pad(date.getUTCSeconds());
-        return `${Y}-${M}-${D}T${h}:${m}:${s}`;
     }
 
     const dbUser = await db
@@ -103,7 +79,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         id: meetingId,
         title: meeting.title,
         description: meeting.description,
-        link: meeting.isMeeting ? `https://virevos.com/meet/${crypto.randomUUID()}` : null,
+        link: meeting.isMeeting ? `https://virevos.com/meet/${meetingId}` : null,
         origin: "app",
         date: meeting.date,
         time: meeting.time,
@@ -117,37 +93,13 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         userId: internalUserId,
         googleEventId,
     }
-    console.log("Scheduling payload:", payload);
-    console.log("ScheduleExpression:", `at(${formatForScheduler(new Date(meeting.utcISO))})`);
-
-    if (meeting.isMeeting){
-        try {
-        const scheduleName = `job-${Date.now()}`;
-        const command = new CreateScheduleCommand({
-            Name: scheduleName,
-            ScheduleExpression: `at(${formatForScheduler(new Date(meeting.utcISO))})`,
-            FlexibleTimeWindow: { Mode: "OFF" },
-            Target: {
-                Arn: process.env.TARGET_LAMBDA_ARN!,
-                RoleArn: process.env.SCHEDULE_ROLE_ARN!,
-                Input: JSON.stringify(payload ?? {})
-            }
-        });
-
-        await scheduler.send(command);
-        return {
-            success: true,
-            scheduleName
-        }
-    } catch (err) {
-        console.error(err);
-        return
-        }
-    }
 
     const [inserted] = await db
         .insert(events)
-        .values(payload)
+        .values({
+            ...payload,
+            isMeeting: meeting.isMeeting ?? false
+        })
         .returning();
     return inserted;
 }

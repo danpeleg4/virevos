@@ -1,75 +1,32 @@
 "use server"
 
-import {
-    AccessToken,
-    EgressClient,
-    EncodedFileOutput,
-    EncodingOptionsPreset,
-} from "livekit-server-sdk";
 import { Pinecone } from '@pinecone-database/pinecone'
 import { db } from "@/db/db";
 import { events } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import { Room, RoomServiceClient } from 'livekit-server-sdk';
-
-const livekitHost = 'https://virevos-sn3m4ofa.livekit.cloud';
-const roomService = new RoomServiceClient(livekitHost, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
-export async function createRoom(roomName: string) {
+export async function createInstantMeeting(title: string) {
     const user = await currentUser();
     if (!user?.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        throw new Error("Unauthorized");
     }
 
-    let sid = ""
-    const opts = {
-        name: roomName,
-        emptyTimeout: 60,
-        maxParticipants: 20,
-    };
-    roomService.createRoom(opts).then((room: Room) => {
-        console.log('room created', room);
-        sid = room.sid;
-    });
-
-    const outputs = {
-        file: new EncodedFileOutput({
-            filepath: `recordings/${user.id}/${sid}/${roomName}.mp4`,
-            output: {
-                case: 's3',
-                value: {
-                    accessKey: process.env.AWS_S3_ACCESS_KEY,
-                    secret: process.env.AWS_S3_SECRET_KEY,
-                    bucket: "virevos-recordings",
-                    region: "us-east-1",
-                    forcePathStyle: true,
-                },
-            },
-        }),
-    };
-    const egressClient = new EgressClient(livekitHost);
-    await egressClient.startRoomCompositeEgress(roomName, outputs, {
-        layout: 'grid',
-        encodingOptions: EncodingOptionsPreset.H264_1080P_30,
-        audioOnly: false,
-    });
-
-    const time = new Date().toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
+    const now = new Date();
+    const meetingId = crypto.randomUUID();
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
     await db
         .insert(events)
         .values({
-            id: sid,
-            title: roomName,
-            date: new Date().toISOString(),
+            id: meetingId,
+            title,
+            link: `https://virevos.com/meet/${meetingId}`,
+            date: dateStr,
             origin: "app",
-            time: time,
+            time: timeStr,
             duration: 60,
             isMeeting: true,
             status: "active",
@@ -78,18 +35,19 @@ export async function createRoom(roomName: string) {
         .onConflictDoUpdate({
             target: events.id,
             set: {
-                id: sid,
-                title: roomName,
-                date: new Date().toISOString(),
+                id: meetingId,
+                title,
+                link: `https://virevos.com/meet/${meetingId}`,
+                date: dateStr,
                 origin: "app",
-                time: time,
+                time: timeStr,
                 duration: 60,
                 isMeeting: true,
                 status: "active",
                 userId: user.id
             },
         });
-    return "success"
+    return { id: meetingId, link: `https://virevos.com/meet/${meetingId}` };
 }
 
 export async function getPastMeetingTranscript(

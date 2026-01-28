@@ -16,7 +16,6 @@ import { Label } from "../../components/ui/label";
 import {
     Video,
     Plus,
-    Link2,
     Calendar,
     Clock,
     Users,
@@ -29,7 +28,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Event } from "@/types/meeting";
-import { createRoom } from "@/lib/server_actions/meetings";
+import { createInstantMeeting } from "@/lib/server_actions/meetings";
 
 export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
@@ -39,35 +38,26 @@ export default function Meetings() {
     const [copied, setCopied] = useState(false);
     const [activeView, setActiveView] = useState<"home" | "in-meeting" | "summary" | "transcription">("home");
     const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
+    const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
     const router = useRouter();
-
-    const s = crypto.randomUUID()
-    const meetingURL = `${meetingName}-${s.slice(0, Math.floor(s.length / 2))}`
-    const nameOfMeeting = meetingURL.split("-")[0];
 
     const meetings = useQuery({
         queryKey: ["meetings"],
         queryFn: async () => {
             const res = await axios.get("/api/meetings");
             const data: Event[] = res.data;
-            return data.map(m => ({
-                ...m,
-                attendees: m.attendees ?? [],
-            }));
+            return data.filter(event => event.isMeeting);
         }
     })
 
     const createMeeting = useMutation({
-        mutationFn: async () => {
-            const res = await createRoom(nameOfMeeting);
-            return res
-        }
-    })
-
-    const handleStartMeeting = () => {
-        const link = `https://virevos.com/meet/${meetingURL}`;
-        setMeetingLink(link);
-    };
+        mutationFn: async () => createInstantMeeting(meetingName),
+        onSuccess: (data) => {
+            if (!data?.id || !data?.link) return;
+            setMeetingLink(data.link);
+            setCreatedMeetingId(data.id);
+        },
+    });
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(meetingLink);
@@ -78,6 +68,16 @@ export default function Meetings() {
     const handleViewSummary = (meeting: Event) => {
         setSelectedMeeting(meeting);
         setActiveView("summary");
+    };
+    
+    const handleJoinMeeting = (meeting: Event) => {
+        if (!meeting.link) return;
+        if (meeting.link.includes("/meet/")) {
+            const url = new URL(meeting.link);
+            router.push(url.pathname);
+            return;
+        }
+        window.open(meeting.link, "_blank", "noopener,noreferrer");
     };
 
     if (activeView === "summary") {
@@ -182,7 +182,7 @@ export default function Meetings() {
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     <Users className="h-3 w-3" />
-                                                    <span>{meeting.attendees.length} participants</span>
+                                                    <span>{meeting?.attendees?.length} participants</span>
                                                 </div>
                                                 {meeting.duration && (
                                                     <span>• Duration: {meeting.duration}m</span>
@@ -192,7 +192,7 @@ export default function Meetings() {
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         {meeting.status === "active" && (
-                                            <Button onClick={() => handleStartMeeting()}>
+                                            <Button onClick={() => handleJoinMeeting(meeting)}>
                                                 <Video className="h-4 w-4 mr-2" />
                                                 Join Now
                                             </Button>
@@ -241,8 +241,8 @@ export default function Meetings() {
                         {!meetingLink ? (
                             <Button
                                 className="w-full"
-                                onClick={handleStartMeeting}
-                                disabled={!meetingName}
+                                onClick={() => createMeeting.mutate()}
+                                disabled={!meetingName || createMeeting.isPending}
                             >
                                 Start Meeting
                             </Button>
@@ -280,8 +280,9 @@ export default function Meetings() {
                                     className="w-full"
                                     onClick={() => {
                                         setStartModalOpen(false);
-                                        createMeeting.mutate()
-                                        router.push(`/meet/${meetingURL}`);
+                                        if (createdMeetingId) {
+                                            router.push(`/meet/${createdMeetingId}`);
+                                        }
                                     }}
                                 >
                                     <Video className="h-4 w-4 mr-2" />
@@ -372,7 +373,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Event; onBack: () => 
     useEffect(() => {
         const fn = async () => {
             const res = await axios.post(`/api/transcript`, {
-                meetingId: meeting.title,
+                meetingId: meeting.id,
             });
 
             const formatted = res.data[0].map((item: RawChunk) => ({
@@ -385,14 +386,14 @@ function TranscriptionView({ meeting, onBack }: { meeting: Event; onBack: () => 
             setFormattedData(formatted);
         }
         fn();
-    }, [meeting.title]);
+    }, [meeting.id]);
 
     // Fetch signed URLs from API
     useEffect(() => {
         const fetchRecording = async () => {
             try {
                 const res = await axios.post(`/api/recording`, {
-                    meetingId: meeting.title
+                    meetingId: meeting.id
                 });
                 setVideoUrls(res.data.videoUrls || []);
             } catch (err) {
@@ -402,7 +403,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Event; onBack: () => 
             }
         };
         fetchRecording();
-    }, [meeting.title]);
+    }, [meeting.id]);
 
     // Sync video playback
     useEffect(() => {
