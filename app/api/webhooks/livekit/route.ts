@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
                 : res[0].duration;
             await db.update(events).set({
                 duration: durationInMinutes,
+                link: "Meeting ended.",
                 status: "ended"
             }).where(eq(events.id, res[0].id));
         }

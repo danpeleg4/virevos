@@ -30,20 +30,6 @@ export async function createInstantMeeting(title: string) {
             isMeeting: true,
             status: "active",
             userId: user.id
-        })
-        .onConflictDoUpdate({
-            target: events.id,
-            set: {
-                id: meetingId,
-                title,
-                link: `https://virevos.com/meet/${meetingId}`,
-                dateTime: now,
-                origin: "app",
-                duration: 60,
-                isMeeting: true,
-                status: "active",
-                userId: user.id
-            },
         });
     return { id: meetingId, link: `https://virevos.com/meet/${meetingId}` };
 }

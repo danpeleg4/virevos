@@ -33,16 +33,18 @@ export default function InMeetingView() {
     const router = useRouter();
     const roomRef = useRef<Room | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
+    const [meetingTitle, setMeetingTitle] = useState("");
 
     const joinRoom = async () => {
         const res = await axios.post(`/api/token`, {
             meetingId,
             name: name
         });
-        const { token, url } = res.data;
+        const { token, meetTitle, url } = res.data;
         const room = new Room();
         roomRef.current = room;
         await room.connect(url, token);
+        setMeetingTitle(meetTitle);
 
         // Publish local tracks
         const localTracks = await createLocalTracks({ audio: true, video: true });
@@ -126,7 +128,7 @@ export default function InMeetingView() {
             {/* Meeting Name */}
             <div className="absolute top-4 left-4 z-10">
                 <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
-                    <p className="text-sm">Meeting: {meetingId}</p>
+                    <p className="text-sm">Meeting: {meetingTitle}</p>
                 </div>
             </div>
 

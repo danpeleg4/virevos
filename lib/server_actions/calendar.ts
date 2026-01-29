@@ -7,8 +7,29 @@ import { eq, and } from "drizzle-orm";
 import { Event } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
+import {CreateScheduleCommand, SchedulerClient} from "@aws-sdk/client-scheduler";
 
 type MeetingUpdate = Partial<typeof events.$inferInsert>;
+
+const scheduler = new SchedulerClient({
+    region: process.env.AWS_REGION!,
+    credentials: {
+        accessKeyId: process.env.AWS_SCHEDULER_ACESS_KEY!,
+        secretAccessKey: process.env.AWS_SCHEDULER_SECRET_KEY!
+    }
+});
+
+const formatForScheduler = (date: Date) => {
+    // Returns YYYY-MM-DDTHH:MM:SS
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const Y = date.getUTCFullYear();
+    const M = pad(date.getUTCMonth() + 1); // months are 0-indexed
+    const D = pad(date.getUTCDate());
+    const h = pad(date.getUTCHours());
+    const m = pad(date.getUTCMinutes());
+    const s = pad(date.getUTCSeconds());
+    return `${Y}-${M}-${D}T${h}:${m}:${s}`;
+}
 
 export async function addMeetingToCalendar(meeting: Event) {
     const user = await currentUser();
@@ -90,6 +111,31 @@ export async function addMeetingToCalendar(meeting: Event) {
         conflictReason: meeting.conflictReason ?? null,
         userId: internalUserId,
         googleEventId,
+    }
+
+    if (meeting.isMeeting){
+        try {
+            const scheduleName = `job-${Date.now()}`;
+            const command = new CreateScheduleCommand({
+                Name: scheduleName,
+                ScheduleExpression: `at(${formatForScheduler(new Date(meeting.dateTime))})`,
+                FlexibleTimeWindow: { Mode: "OFF" },
+                Target: {
+                    Arn: process.env.TARGET_LAMBDA_ARN!,
+                    RoleArn: process.env.SCHEDULE_ROLE_ARN!,
+                    Input: JSON.stringify(payload ?? {})
+                }
+            });
+
+            await scheduler.send(command);
+            return {
+                success: true,
+                scheduleName
+            }
+        } catch (err) {
+            console.error(err);
+            return
+        }
     }
 
     const [inserted] = await db

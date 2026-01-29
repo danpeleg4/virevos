@@ -76,8 +76,8 @@ export async function POST(req: NextRequest) {
                     value: {
                         accessKey: process.env.AWS_S3_ACCESS_KEY,
                         secret: process.env.AWS_S3_SECRET_KEY,
-                        bucket: "virevos-recordings",
-                        region: "us-east-1",
+                        bucket: process.env.AWS_BUCKET_NAME,
+                        region: process.env.AWS_REGION,
                         forcePathStyle: true,
                     },
                 },
@@ -102,10 +102,14 @@ export async function POST(req: NextRequest) {
     );
     at.addGrant({ roomJoin: true, room: roomName });
     const token = await at.toJwt();
+    const [meetingTitle] = await db.select({
+        title: events.title,
+    }).from(events).where(eq(events.id, roomName))
     //console.log("issuing token:", token, "for room:", roomId, "identity:", participantName);
 
     return NextResponse.json({
         token,
+        meetingTitle: meetingTitle.title,
         url: process.env.NEXT_PUBLIC_LIVEKIT_URL,
     });
 }
