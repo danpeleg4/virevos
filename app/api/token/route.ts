@@ -10,7 +10,6 @@ import { events } from "@/db/schema";
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { parseDateTime } from "@/lib/date_utils";
 
 const livekitHost = "https://virevos-sn3m4ofa.livekit.cloud";
 const roomService = new RoomServiceClient(
@@ -41,8 +40,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "identity (name) is required" }, { status: 400 });
     }
 
-    const startTime = parseDateTime(meeting.date, meeting.time);
-    const endTime = new Date(startTime.getTime() + meeting.duration * 60000);
+    const startTime = new Date(meeting.dateTime);
+    const endTime = new Date(startTime.getTime() + (meeting.duration || 0) * 60000);
     const now = new Date();
     if (now < startTime) {
         return NextResponse.json({ error: "Meeting has not started yet" }, { status: 403 });

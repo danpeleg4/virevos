@@ -38,23 +38,23 @@ export async function GET() {
         const allEvents = list.data.items ?? [];
 
         // Existing DB meetings for this user
-        const existingMeetings = await db
+        const existingEvents = await db
             .select()
             .from(events)
             .where(eq(events.userId, user.id));
 
-        const existingMap = new Map(existingMeetings.map(m => [m.googleEventId || m.id, m]));
+        const existingMap = new Map(existingEvents.map(m => [m.googleEventId || m.id, m]));
         const googleEventIds = new Set(allEvents.map(e => e.id).filter(Boolean) as string[]);
 
         // 1. Delete meetings from DB if they were removed from Google Calendar
         // (Only for those that originated from Google OR have a googleEventId)
-        for (const m of existingMeetings) {
+        for (const m of existingEvents) {
             const googleId = m.googleEventId || m.id;
             // We only sync deletions for events that were either imported from Google or synced to Google
             if ((m.origin === "google_calendar" || m.googleEventId) && !googleEventIds.has(googleId)) {
                 // Check if the meeting date is today (since we only listed today's events)
-                const startOfTodayStr = startOfToday.toISOString().slice(0, 10);
-                if (m.date === startOfTodayStr) {
+                const mDate = new Date(m.dateTime);
+                if (mDate >= startOfToday && mDate <= endOfToday) {
                     await db.delete(events).where(eq(events.id, m.id));
                     existingMap.delete(googleId);
                 }
@@ -64,13 +64,12 @@ export async function GET() {
         const meetingsToInsert = [];
         for (const e of allEvents) {
             if (!e.id || !e.start) continue;
-
             // Skip events created by the app itself that haven't been processed yet
             // (They should have appMeetingId in extendedProperties)
             if (e.extendedProperties?.private?.appMeetingId) {
                 // If it exists in DB, we might want to update googleEventId if not set
                 const appMeetingId = e.extendedProperties.private.appMeetingId;
-                const dbMeeting = existingMeetings.find(m => m.id === appMeetingId);
+                const dbMeeting = existingEvents.find(m => m.id === appMeetingId);
                 if (dbMeeting && !dbMeeting.googleEventId) {
                     await db.update(events).set({ googleEventId: e.id }).where(eq(events.id, appMeetingId));
                 }
@@ -103,20 +102,17 @@ export async function GET() {
             const title = e.summary ?? "Untitled";
             const description = e.description ?? null;
             const link = e.hangoutLink ?? e.htmlLink ?? null;
-            const dateStr = start.toISOString().slice(0, 10);
-            const timeStr = start.toTimeString().slice(0, 5);
+            const dateTime = start;
             const status = e.status ?? "confirmed";
             const isMeeting = !!e.hangoutLink || !!(e.conferenceData?.entryPoints?.some(ep => ep.entryPointType === 'video'));
 
             if (existingMap.has(e.id)) {
-                // 2. Update existing meeting if changed
                 const m = existingMap.get(e.id)!;
                 const hasChanged = 
                     m.title !== title || 
                     m.description !== description || 
                     m.link !== link || 
-                    m.date !== dateStr || 
-                    m.time !== timeStr || 
+                    m.dateTime.getTime() !== dateTime.getTime() ||
                     m.duration !== durationMinutes ||
                     m.status !== status ||
                     m.isMeeting !== isMeeting;
@@ -127,8 +123,7 @@ export async function GET() {
                             title,
                             description,
                             link,
-                            date: dateStr,
-                            time: timeStr,
+                            dateTime: dateTime,
                             duration: durationMinutes,
                             status,
                             isMeeting
@@ -138,18 +133,15 @@ export async function GET() {
                 continue;
             }
 
-            // 3. Insert new meeting
             meetingsToInsert.push({
                 id: e.id,
                 googleEventId: e.id,
                 title,
                 description,
                 link,
-                date: dateStr,
-                time: timeStr,
+                dateTime: dateTime,
                 duration: durationMinutes,
                 origin: "google_calendar",
-                type: "in-person",
                 isMeeting,
                 status,
                 userId: user.id,

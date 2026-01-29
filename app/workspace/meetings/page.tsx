@@ -29,6 +29,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Event } from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/server_actions/meetings";
+import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
@@ -46,7 +47,7 @@ export default function Meetings() {
         queryFn: async () => {
             const res = await axios.get("/api/meetings");
             const data: Event[] = res.data;
-            return data.filter(event => event.isMeeting);
+            return data
         }
     })
 
@@ -83,6 +84,8 @@ export default function Meetings() {
     if (activeView === "summary") {
         return <TranscriptionView meeting={selectedMeeting!} onBack={() => setActiveView("home")} />;
     }
+
+    const filteredMeetings = meetings?.data?.filter(event => event.isMeeting);
 
     const color = (meeting: Event) => {
         switch (meeting.status){
@@ -132,7 +135,7 @@ export default function Meetings() {
                     Your Meetings
                 </h2>
                 <div className="space-y-3">
-                    {meetings?.data?.map((meeting) => (
+                    {filteredMeetings?.map((meeting) => (
                         <motion.div
                             key={meeting.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -174,11 +177,11 @@ export default function Meetings() {
                                             >
                                                 <div className="flex items-center space-x-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    <span>{meeting.date}</span>
+                                                    <span>{formatDateOnly(new Date(meeting.dateTime))}</span>
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     <Clock className="h-3 w-3" />
-                                                    <span>{meeting.time}</span>
+                                                    <span>{formatTimeOnly(new Date(meeting.dateTime))}</span>
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     <Users className="h-3 w-3" />
@@ -491,7 +494,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Event; onBack: () => 
                     Meeting Transcription
                 </h1>
                 <p className="mb-4 text-gray-600">
-                    {decodeURIComponent(meeting.title)} • {meeting.date}
+                    {decodeURIComponent(meeting.title)} • {new Date(meeting.dateTime).toLocaleString()}
                 </p>
             </div>
 

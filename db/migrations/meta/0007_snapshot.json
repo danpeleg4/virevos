@@ -1,6 +1,6 @@
 {
-  "id": "a2d19587-897a-4515-a460-0be92adf2bd3",
-  "prevId": "702faf29-b95f-4e8e-8b60-0af9fb538c37",
+  "id": "3d4d8831-d98f-44dc-8caa-c7f7df73c749",
+  "prevId": "a2d19587-897a-4515-a460-0be92adf2bd3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -133,16 +133,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "date": {
-          "name": "date",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'2025-01-01'"
-        },
-        "time": {
-          "name": "time",
-          "type": "text",
+        "date_time": {
+          "name": "date_time",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true
         },

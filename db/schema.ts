@@ -54,14 +54,13 @@ export const projects = pgTable("projects", {
         .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// EventS
+// Events
 export const events = pgTable("events", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
     link: text("link"),
-    date: date("date").notNull().default("2025-01-01"),
-    time: text("time").notNull(),
+    dateTime: timestamp("date_time").notNull(),
     duration: integer("duration").notNull(),
     isMeeting: boolean().default(false),
     status: text("status"),

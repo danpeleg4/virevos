@@ -4,14 +4,13 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
 import { events, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { NewMeetingInput } from "@/types/meeting";
+import { Event } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
-import { parseDateTime } from "@/lib/date_utils";
 
 type MeetingUpdate = Partial<typeof events.$inferInsert>;
 
-export async function addMeetingToCalendar(meeting: NewMeetingInput) {
+export async function addMeetingToCalendar(meeting: Event) {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
@@ -28,7 +27,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     }
 
     const internalUserId = dbUser[0].user_id;
-    const startDate = parseDateTime(meeting.date, meeting.time);
+    const startDate = new Date(meeting.dateTime);
     const meetingId = crypto.randomUUID();
 
     let googleEventId: string | null = null;
@@ -81,8 +80,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         description: meeting.description,
         link: meeting.isMeeting ? `https://virevos.com/meet/${meetingId}` : null,
         origin: "app",
-        date: meeting.date,
-        time: meeting.time,
+        dateTime: startDate,
         duration: meeting.duration,
         isMeeting: meeting.isMeeting,
         status: status,
@@ -101,6 +99,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
             isMeeting: meeting.isMeeting ?? false
         })
         .returning();
+    console.log("Inserted event:", inserted);
     return inserted;
 }
 
@@ -145,7 +144,7 @@ export async function deleteEventFromCalendar(id: string) {
     return { success: true };
 }
 
-export async function updateMeetingInCalendar(id: string, updates: Partial<NewMeetingInput>) {
+export async function updateMeetingInCalendar(id: string, updates: Partial<Event>) {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
@@ -165,8 +164,7 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
     const dbUpdates: MeetingUpdate = {
         title: updates.title,
         description: updates.description,
-        date: updates.date,
-        time: updates.time,
+        dateTime: updates.dateTime,
         duration: updates.duration,
         isMeeting: false,
         status: updates.status,
@@ -190,10 +188,7 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
         oauth2Client.setCredentials({ access_token: googleToken });
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
-        const startDate = updates.date && updates.time 
-            ? parseDateTime(updates.date, updates.time)
-            : parseDateTime(meeting.date, meeting.time);
-        
+        const startDate = updates.dateTime!
         const duration = updates.duration ?? meeting.duration;
 
         try {
@@ -204,7 +199,7 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
                     summary: updates.title ?? meeting.title,
                     description: (updates.description ?? meeting.description) + (meeting.link ? `\n\nMeeting Link: ${meeting.link}` : ""),
                     start: {
-                        dateTime: startDate.toISOString(),
+                        dateTime: startDate?.toISOString(),
                     },
                     end: {
                         dateTime: new Date(startDate.getTime() + duration * 60000).toISOString(),

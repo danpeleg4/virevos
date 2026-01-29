@@ -21,7 +21,7 @@ import {
 import { motion } from "motion/react";
 import { EventDetailsDialog } from "./EventDetailsDialog";
 import { BookEventDialog } from "@/app/components/BookEventDialog";
-import type {Event, NewMeetingInput} from "@/types/meeting";
+import type { Event } from "@/types/meeting";
 import axios from "axios";
 import { addMeetingToCalendar, deleteEventFromCalendar } from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,7 +56,7 @@ export function CalendarView() {
 
     //TODO ADD OPTIMISTIC UPDATES
     const mutation = useMutation({
-        mutationFn: async (meeting: NewMeetingInput) => {
+        mutationFn: async (meeting: Event) => {
             const res = await addMeetingToCalendar(meeting);
             return res;
         },
@@ -78,9 +78,8 @@ export function CalendarView() {
         },
     })
 
-
     const dayMeetings = meetings?.data?.filter(m => {
-        const meetingDate = parseLocalDate(m.date).toDateString();
+        const meetingDate = new Date(m.dateTime).toDateString();
         const selectedDate = currentDate.toDateString();
         return meetingDate === selectedDate;
     });
@@ -92,14 +91,7 @@ export function CalendarView() {
     });
 
     function parseHour(timeStr: string) {
-        const [timePart, modifier] = timeStr.split(" ");
-        const [h] = timePart.split(":");
-        let hour = parseInt(h);
-
-        if (modifier === "PM" && hour !== 12) hour += 12;
-        if (modifier === "AM" && hour === 12) hour = 0;
-
-        return hour;
+        return timeStr.split(" ")[1].split(":")[0];
     }
 
     const handlePrevDay = () => {
@@ -123,7 +115,7 @@ export function CalendarView() {
         setShowMeetingDetails(true);
     };
 
-    const addMeeting = async (meeting: NewMeetingInput) => {
+    const addMeeting = async (meeting: Event) => {
         mutation.mutate(meeting);
     };
 
@@ -164,7 +156,7 @@ export function CalendarView() {
                         <div className="divide-y divide-gray-100">
                             {hours.map((hour) => {
                                 const timeLabel = `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
-                                const meetingsAtTime = dayMeetings?.filter(m => parseHour(m.time) === hour);
+                                const meetingsAtTime = dayMeetings?.filter(m => new Date(m.dateTime).getHours() === hour);
 
                                 return (
                                     <div key={hour} className="flex hover:bg-gray-50">

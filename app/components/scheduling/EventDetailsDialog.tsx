@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import type { Event } from "@/types/meeting";
 
+import {formatDateOnly, formatTimeOnly} from "@/lib/date_utils";
+
 interface MeetingDetailsDialogProps {
   event: Event;
   open: boolean;
@@ -90,11 +92,11 @@ export function EventDetailsDialog({
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
-                  Today
+                  {formatDateOnly(new Date(event.dateTime))}
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
-                  {event.time} ({event.duration} min)
+                  {formatTimeOnly(new Date(event.dateTime))} ({event.duration} min)
                 </div>
                 <div className="flex items-center">
                   <Video className="h-4 w-4 mr-1" />

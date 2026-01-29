@@ -10,8 +10,7 @@ export interface Event {
     title: string;
     description: string;
     link?: string;
-    date: string;
-    time: string;
+    dateTime: Date;
     duration: number;
     attendees?: Attendee[];
     status?: MeetingStatus | string;
@@ -21,21 +20,4 @@ export interface Event {
     hasTranscript?: boolean;
     googleEventId?: string | null;
     isMeeting: boolean;
-}
-
-export interface NewMeetingInput {
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    time: string;
-    duration: number;
-    attendees?: Attendee[];
-    status: MeetingStatus;
-    hasNotes?: boolean;
-    hasTranscript?: boolean;
-    autoRescheduled?: boolean;
-    conflictReason?: string | null;
-    isMeeting: boolean;
-    utcISO: string;
 }

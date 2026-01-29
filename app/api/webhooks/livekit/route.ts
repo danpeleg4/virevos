@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ status: "missing room" }, { status: 400 });
     }
 
+    if (event.event === "room_started") {
+        await db.update(events).set({ status: "active" }).where(eq(events.id, roomName));
+    }
+
     if (event.event === "room_finished") {
         const res = await db.select().from(events).where(eq(events.id, roomName));
 

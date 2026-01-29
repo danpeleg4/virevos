@@ -19,13 +19,13 @@ import {
 import { Button } from "./ui/button";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
-import type { NewMeetingInput } from "@/types/meeting";
+import type { Event } from "@/types/meeting";
 import { Switch } from "./ui/switch";
 
 interface BookMeetingDialogProps {
     dialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
-    addMeeting: (meeting: NewMeetingInput) => void;
+    addMeeting: (meeting: Event) => void;
 }
 
 export function BookEventDialog({
@@ -45,60 +45,7 @@ export function BookEventDialog({
         const [hours, minutes] = timeStr.split(":").map(Number);
 
         // Local datetime → internally stored as UTC
-        const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
-
-        return {
-            utcISO: date.toISOString(),
-            utcTime: `${date
-                .getUTCHours()
-                .toString()
-                .padStart(2, "0")}:${date
-                .getUTCMinutes()
-                .toString()
-                .padStart(2, "0")}`,
-        };
-    }
-
-    function formatUTCDateAndTime(
-        utcIsoDate: string,
-        utcTime: string
-    ) {
-        // Parse date (UTC)
-        const baseDate = new Date(utcIsoDate);
-
-        // Extract UTC Y-M-D from ISO date
-        const year = baseDate.getUTCFullYear();
-        const month = baseDate.getUTCMonth();
-        const day = baseDate.getUTCDate();
-
-        // Extract UTC time
-        const [hours, minutes] = utcTime.split(":").map(Number);
-
-        // Create a Date using UTC components
-        const utcDate = new Date(
-            Date.UTC(year, month, day, hours, minutes, 0, 0)
-        );
-
-        // Convert to LOCAL display
-        const localYear = utcDate.getFullYear();
-        const localMonth = utcDate.getMonth() + 1;
-        const localDay = utcDate.getDate();
-
-        let localHours = utcDate.getHours();
-        const localMinutes = utcDate.getMinutes();
-        const ampm = localHours >= 12 ? "PM" : "AM";
-
-        localHours = localHours % 12 || 12;
-
-        return {
-            dateUTC: `${localYear}-${String(localMonth).padStart(
-                2,
-                "0"
-            )}-${String(localDay).padStart(2, "0")}`,
-            timeUTC: `${localHours}:${String(
-                localMinutes
-            ).padStart(2, "0")} ${ampm}`
-        }
+        return new Date(year, month - 1, day, hours, minutes, 0, 0);
     }
 
     return (
@@ -123,6 +70,7 @@ export function BookEventDialog({
                     <div>
                         <Label>Event Title</Label>
                         <Input
+                            placeholder="Meeting with team"
                             className="mt-2"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -133,6 +81,7 @@ export function BookEventDialog({
                     <div>
                         <Label>Description</Label>
                         <Textarea
+                            placeholder="Discuss the project plan"
                             className="mt-2"
                             rows={3}
                             value={description}
@@ -145,6 +94,7 @@ export function BookEventDialog({
                         <div>
                             <Label>Date</Label>
                             <Input
+                                placeholder="Select date"
                                 type="date"
                                 className="mt-2"
                                 value={date}
@@ -155,6 +105,7 @@ export function BookEventDialog({
                         <div>
                             <Label>Time</Label>
                             <Input
+                                placeholder="Select time"
                                 type="time"
                                 className="mt-2"
                                 value={time}
@@ -194,20 +145,15 @@ export function BookEventDialog({
 
                         <Button
                             onClick={() => {
-                                const { utcISO, utcTime } = toUTC(date, time);
-                                const { dateUTC, timeUTC } = formatUTCDateAndTime(utcISO, utcTime);
-                                console.log(utcISO, utcTime);
-                                const payload: NewMeetingInput = {
-                                    id: Date.now(),
+                                const payload: Event = {
+                                    id: crypto.randomUUID(),
                                     title,
                                     description,
-                                    date: dateUTC,
-                                    time: timeUTC,
+                                    dateTime: toUTC(date, time),
                                     duration: Number(duration),
                                     isMeeting,
                                     attendees: [],
                                     status: "scheduled",
-                                    utcISO: utcISO
                                 };
 
                                 addMeeting(payload);
