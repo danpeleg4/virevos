@@ -102,14 +102,13 @@ export async function POST(req: NextRequest) {
     );
     at.addGrant({ roomJoin: true, room: roomName });
     const token = await at.toJwt();
-    const [meetingTitle] = await db.select({
+    const meetingTitle = await db.select({
         title: events.title,
     }).from(events).where(eq(events.id, roomName))
-    //console.log("issuing token:", token, "for room:", roomId, "identity:", participantName);
 
     return NextResponse.json({
         token,
-        meetingTitle: meetingTitle.title,
+        meetingTitle: meetingTitle[0]?.title,
         url: process.env.NEXT_PUBLIC_LIVEKIT_URL,
     });
 }

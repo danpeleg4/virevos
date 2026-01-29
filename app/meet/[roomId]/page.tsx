@@ -40,11 +40,11 @@ export default function InMeetingView() {
             meetingId,
             name: name
         });
-        const { token, meetTitle, url } = res.data;
+        const { token, meetingTitle, url } = res.data;
+        setMeetingTitle(meetingTitle);
         const room = new Room();
         roomRef.current = room;
         await room.connect(url, token);
-        setMeetingTitle(meetTitle);
 
         // Publish local tracks
         const localTracks = await createLocalTracks({ audio: true, video: true });
@@ -128,7 +128,7 @@ export default function InMeetingView() {
             {/* Meeting Name */}
             <div className="absolute top-4 left-4 z-10">
                 <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
-                    <p className="text-sm">Meeting: {meetingTitle}</p>
+                    <p className="text-sm">Meeting {meetingTitle}</p>
                 </div>
             </div>
 
