@@ -19,7 +19,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install deps
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install lambda deps
         run: |
             cd lambda
             npm ci
