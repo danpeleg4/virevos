@@ -1,8 +1,6 @@
 name: deploy-lambda
 on:
   push:
-    branches:
-      - dev
     paths:
       - "lambda/**"
 
