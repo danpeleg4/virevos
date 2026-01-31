@@ -14,10 +14,6 @@ export async function createInstantMeeting(title: string) {
 
     const now = new Date();
     const meetingId = crypto.randomUUID();
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
     await db
         .insert(events)
         .values({

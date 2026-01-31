@@ -128,10 +128,6 @@ export async function addMeetingToCalendar(meeting: Event) {
             });
 
             await scheduler.send(command);
-            return {
-                success: true,
-                scheduleName
-            }
         } catch (err) {
             console.error(err);
             return
@@ -142,7 +138,6 @@ export async function addMeetingToCalendar(meeting: Event) {
         .insert(events)
         .values({
             ...payload,
-            isMeeting: meeting.isMeeting ?? false
         })
         .returning();
     console.log("Inserted event:", inserted);
