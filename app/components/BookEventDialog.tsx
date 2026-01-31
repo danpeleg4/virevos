@@ -19,57 +19,58 @@ import {
 import { Button } from "./ui/button";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
-import type { NewMeetingInput } from "@/types/meeting";
+import type { Event } from "@/types/meeting";
+import { Switch } from "./ui/switch";
 
 interface BookMeetingDialogProps {
     dialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
-    addMeeting: (meeting: NewMeetingInput) => void;
+    addMeeting: (meeting: Event) => void;
 }
 
-export function BookMeetingDialog({
-                                      dialogOpen,
-                                      setDialogOpen,
-                                      addMeeting,
-                                  }: BookMeetingDialogProps) {
+export function BookEventDialog({
+                                    dialogOpen,
+                                    setDialogOpen,
+                                    addMeeting,
+                                }: BookMeetingDialogProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [meetingType, setMeetingType] = useState<string>("");
-    const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
+    const [isMeeting, setIsMeeting] = useState(false);
+    const [date, setDate] = useState(""); // "YYYY-MM-DD"
+    const [time, setTime] = useState(""); // "HH:MM"
     const [duration, setDuration] = useState("");
 
-    function convertTimeToLabel(time24: string) {
-        if (!time24) return "";
-        const [h, m] = time24.split(":").map(Number);
-        const suffix = h >= 12 ? "PM" : "AM";
-        const hour = h % 12 === 0 ? 12 : h % 12;
-        return `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
+    function toUTC(dateStr: string, timeStr: string) {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        const [hours, minutes] = timeStr.split(":").map(Number);
+
+        // Local datetime → internally stored as UTC
+        return new Date(year, month - 1, day, hours, minutes, 0, 0);
     }
 
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="cursor-pointer">
-                    <CalendarIcon className="h-4 w-4 mr-2 cursor-pointer" />
+                <Button size="sm">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
                     Add Event
                 </Button>
             </DialogTrigger>
 
             <DialogContent className="w-[16rem] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Schedule a Meeting</DialogTitle>
+                    <DialogTitle>Schedule an Event</DialogTitle>
                     <DialogDescription>
-                        Fill out the details to book a new meeting
+                        Fill out the details to create a new event
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 mt-4">
                     {/* Title */}
                     <div>
-                        <Label>Meeting Title</Label>
+                        <Label>Event Title</Label>
                         <Input
-                            placeholder="Client Sync"
+                            placeholder="Meeting with team"
                             className="mt-2"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -80,7 +81,7 @@ export function BookMeetingDialog({
                     <div>
                         <Label>Description</Label>
                         <Textarea
-                            placeholder="Meeting details..."
+                            placeholder="Discuss the project plan"
                             className="mt-2"
                             rows={3}
                             value={description}
@@ -89,12 +90,11 @@ export function BookMeetingDialog({
                     </div>
 
                     {/* DATE + TIME + DURATION */}
-                    <div
-                        className={`grid grid-cols-3 gap-4 transition-all duration-200`}
-                    >
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <Label>Date</Label>
                             <Input
+                                placeholder="Select date"
                                 type="date"
                                 className="mt-2"
                                 value={date}
@@ -105,6 +105,7 @@ export function BookMeetingDialog({
                         <div>
                             <Label>Time</Label>
                             <Input
+                                placeholder="Select time"
                                 type="time"
                                 className="mt-2"
                                 value={time}
@@ -127,10 +128,15 @@ export function BookMeetingDialog({
                         </div>
                     </div>
 
+                    {/* Meeting switch */}
+                    <div className="flex items-center space-x-2 mt-4">
+                        <Label>Create a Meeting</Label>
+                        <Switch checked={isMeeting} onCheckedChange={setIsMeeting} />
+                    </div>
+
                     {/* Buttons */}
                     <div className="flex justify-end space-x-3 pt-4">
                         <Button
-                            className="cursor-pointer"
                             variant="outline"
                             onClick={() => setDialogOpen(false)}
                         >
@@ -138,45 +144,26 @@ export function BookMeetingDialog({
                         </Button>
 
                         <Button
-                            className="cursor-pointer"
                             onClick={() => {
-                                if (meetingType) {
-                                    const payload: NewMeetingInput = {
-                                        id: Date.now(),
-                                        title,
-                                        description,
-                                        date,
-                                        time: convertTimeToLabel(time),
-                                        duration: Number(duration),
-                                        type: meetingType,
-                                        attendees: [],
-                                        status: "scheduled",
-                                    };
-                                    addMeeting(payload);
-                                } else {
-                                    if (!date || !time) return;
-                                    const payload: NewMeetingInput = {
-                                        id: Date.now(),
-                                        title,
-                                        description,
-                                        date,
-                                        time: convertTimeToLabel(time),
-                                        duration: Number(duration),
-                                        type: "custom",
-                                        attendees: [],
-                                        status: "scheduled",
-                                    };
-                                    addMeeting(payload);
-                                }
+                                const payload: Event = {
+                                    id: crypto.randomUUID(),
+                                    title,
+                                    description,
+                                    dateTime: toUTC(date, time),
+                                    duration: Number(duration),
+                                    isMeeting,
+                                    attendees: [],
+                                    status: "scheduled",
+                                };
 
-                                // Reset form
+                                addMeeting(payload);
                                 setDialogOpen(false);
                                 setTitle("");
                                 setDescription("");
-                                setMeetingType("");
                                 setDate("");
                                 setTime("");
                                 setDuration("");
+                                setIsMeeting(false);
                             }}
                         >
                             Book

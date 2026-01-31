@@ -16,7 +16,6 @@ import { Label } from "../../components/ui/label";
 import {
     Video,
     Plus,
-    Link2,
     Calendar,
     Clock,
     Users,
@@ -26,10 +25,11 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import {useMutation, useQuery} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Meeting } from "@/types/meeting";
-import {createRoom} from "@/lib/server_actions/meetings";
+import { Event } from "@/types/meeting";
+import { createInstantMeeting } from "@/lib/server_actions/meetings";
+import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 export default function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
@@ -38,36 +38,27 @@ export default function Meetings() {
     const [meetingLink, setMeetingLink] = useState("");
     const [copied, setCopied] = useState(false);
     const [activeView, setActiveView] = useState<"home" | "in-meeting" | "summary" | "transcription">("home");
-    const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+    const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
+    const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
     const router = useRouter();
-
-    const s = crypto.randomUUID()
-    const meetingURL = `${meetingName}-${s.slice(0, Math.floor(s.length / 2))}`
-    const nameOfMeeting = meetingURL.split("-")[0];
 
     const meetings = useQuery({
         queryKey: ["meetings"],
         queryFn: async () => {
             const res = await axios.get("/api/meetings");
-            const data: Meeting[] = res.data;
-            return data.map(m => ({
-                ...m,
-                attendees: m.attendees ?? [],
-            }));
+            const data: Event[] = res.data;
+            return data
         }
     })
 
     const createMeeting = useMutation({
-        mutationFn: async () => {
-            const res = await createRoom(nameOfMeeting);
-            return res
-        }
-    })
-
-    const handleStartMeeting = () => {
-        const link = `https://virevos.com/meet/${meetingURL}`;
-        setMeetingLink(link);
-    };
+        mutationFn: async () => createInstantMeeting(meetingName),
+        onSuccess: (data) => {
+            if (!data?.id || !data?.link) return;
+            setMeetingLink(data.link);
+            setCreatedMeetingId(data.id);
+        },
+    });
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(meetingLink);
@@ -75,16 +66,28 @@ export default function Meetings() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleViewSummary = (meeting: Meeting) => {
+    const handleViewSummary = (meeting: Event) => {
         setSelectedMeeting(meeting);
         setActiveView("summary");
+    };
+    
+    const handleJoinMeeting = (meeting: Event) => {
+        if (!meeting.link) return;
+        if (meeting.link.includes("/meet/")) {
+            const url = new URL(meeting.link);
+            router.push(url.pathname);
+            return;
+        }
+        window.open(meeting.link, "_blank", "noopener,noreferrer");
     };
 
     if (activeView === "summary") {
         return <TranscriptionView meeting={selectedMeeting!} onBack={() => setActiveView("home")} />;
     }
 
-    const color = (meeting: Meeting) => {
+    const filteredMeetings = meetings?.data?.filter(event => event.isMeeting);
+
+    const color = (meeting: Event) => {
         switch (meeting.status){
             case "active":
                 return "text-red-600"
@@ -95,7 +98,7 @@ export default function Meetings() {
         }
     }
 
-    const bgColor = (meeting: Meeting) => {
+    const bgColor = (meeting: Event) => {
         switch (meeting.status) {
             case "active":
                 return "bg-red-100"
@@ -132,7 +135,7 @@ export default function Meetings() {
                     Your Meetings
                 </h2>
                 <div className="space-y-3">
-                    {meetings?.data?.map((meeting) => (
+                    {filteredMeetings?.map((meeting) => (
                         <motion.div
                             key={meeting.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -174,15 +177,15 @@ export default function Meetings() {
                                             >
                                                 <div className="flex items-center space-x-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    <span>{meeting.date}</span>
+                                                    <span>{formatDateOnly(new Date(meeting.dateTime))}</span>
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     <Clock className="h-3 w-3" />
-                                                    <span>{meeting.time}</span>
+                                                    <span>{formatTimeOnly(new Date(meeting.dateTime))}</span>
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     <Users className="h-3 w-3" />
-                                                    <span>{meeting.attendees.length} participants</span>
+                                                    <span>{meeting?.attendees?.length} participants</span>
                                                 </div>
                                                 {meeting.duration && (
                                                     <span>• Duration: {meeting.duration}m</span>
@@ -192,7 +195,7 @@ export default function Meetings() {
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         {meeting.status === "active" && (
-                                            <Button onClick={() => handleStartMeeting()}>
+                                            <Button onClick={() => handleJoinMeeting(meeting)}>
                                                 <Video className="h-4 w-4 mr-2" />
                                                 Join Now
                                             </Button>
@@ -241,8 +244,8 @@ export default function Meetings() {
                         {!meetingLink ? (
                             <Button
                                 className="w-full"
-                                onClick={handleStartMeeting}
-                                disabled={!meetingName}
+                                onClick={() => createMeeting.mutate()}
+                                disabled={!meetingName || createMeeting.isPending}
                             >
                                 Start Meeting
                             </Button>
@@ -280,8 +283,9 @@ export default function Meetings() {
                                     className="w-full"
                                     onClick={() => {
                                         setStartModalOpen(false);
-                                        createMeeting.mutate()
-                                        router.push(`/meet/${meetingURL}`);
+                                        if (createdMeetingId) {
+                                            router.push(`/meet/${createdMeetingId}`);
+                                        }
                                     }}
                                 >
                                     <Video className="h-4 w-4 mr-2" />
@@ -337,7 +341,7 @@ type TranscribedChunk = {
 };
 
 // Transcription View Component
-function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () => void }) {
+function TranscriptionView({ meeting, onBack }: { meeting: Event; onBack: () => void }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
     const [videoUrls, setVideoUrls] = useState<{url: string, key: string}[]>([]);
@@ -372,7 +376,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
     useEffect(() => {
         const fn = async () => {
             const res = await axios.post(`/api/transcript`, {
-                meetingId: meeting.title,
+                meetingId: meeting.id,
             });
 
             const formatted = res.data[0].map((item: RawChunk) => ({
@@ -385,14 +389,14 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             setFormattedData(formatted);
         }
         fn();
-    }, [meeting.title]);
+    }, [meeting.id]);
 
     // Fetch signed URLs from API
     useEffect(() => {
         const fetchRecording = async () => {
             try {
                 const res = await axios.post(`/api/recording`, {
-                    meetingId: meeting.title
+                    meetingId: meeting.id
                 });
                 setVideoUrls(res.data.videoUrls || []);
             } catch (err) {
@@ -402,7 +406,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
             }
         };
         fetchRecording();
-    }, [meeting.title]);
+    }, [meeting.id]);
 
     // Sync video playback
     useEffect(() => {
@@ -490,12 +494,12 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                     Meeting Transcription
                 </h1>
                 <p className="mb-4 text-gray-600">
-                    {decodeURIComponent(meeting.title)} • {meeting.date}
+                    {decodeURIComponent(meeting.title)} • {new Date(meeting.dateTime).toLocaleString()}
                 </p>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
-                {/* LEFT COLUMN: Video + Stats */}
+                {/* LEFT COLUMN: Video */}
                 <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
 
                     {/* Video Card */}
@@ -535,40 +539,11 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                             </span>
                         </div>
                     </Card>
-
-                    {/* Stats & Actions Row */}
-                    <div className="grid grid-cols-2 gap-6">
-                        <Card className="p-5 shadow-sm">
-                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Stats</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Duration</span>
-                                    <span className="font-medium">{meeting.duration}m</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Participants</span>
-                                    <span className="font-medium">{meeting?.attendees?.length}</span>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Card className="p-5 shadow-sm">
-                            <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider text-gray-500">Actions</h3>
-                            <div className="flex flex-col gap-2">
-                                <Button variant="outline" size="sm" className="justify-start">
-                                    <Link2 className="h-4 w-4 mr-2" /> Share
-                                </Button>
-                                <Button variant="outline" size="sm" className="justify-start">
-                                    <Copy className="h-4 w-4 mr-2" /> Copy Transcript
-                                </Button>
-                            </div>
-                        </Card>
-                    </div>
                 </div>
 
                 {/* RIGHT COLUMN: Transcription (Scrolls independently) */}
                 <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
-                    <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                    <CardContent className="flex-1 min-h-0 p-0 overflow-y-auto">
                     <div className="p-4 border-b bg-gray-50/50">
                         <Input
                             placeholder="Search transcript..."
@@ -577,7 +552,6 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                             className="bg-white"
                         />
                     </div>
-
                     <div
                         className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
                         ref={containerRef}
@@ -613,7 +587,7 @@ function TranscriptionView({ meeting, onBack }: { meeting: Meeting; onBack: () =
                             </div>
                         )}
                     </div>
-                        </CardContent>
+                    </CardContent>
                 </Card>
             </div>
         </div>

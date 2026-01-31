@@ -1,0 +1,41 @@
+name: deploy-lambda.yml
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "app/lambda/**"
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      - name: Build lambda
+        run: |
+          cd lambda
+          npm run build
+
+      - name: Zip lambda
+        run: |
+          cd lambda
+          zip -r function.zip dist node_modules
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Deploy Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name my-lambda \
+            --zip-file fileb://lambda/function.zip

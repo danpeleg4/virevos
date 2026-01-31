@@ -1,0 +1,1 @@
+ALTER TABLE "events" ALTER COLUMN "date_time" SET DATA TYPE datetime;

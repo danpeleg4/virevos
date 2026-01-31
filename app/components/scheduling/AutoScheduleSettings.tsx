@@ -21,10 +21,10 @@ import {
 } from "lucide-react";
 
 export function AutoScheduleSettings() {
-  const [autoReschedule, setAutoReschedule] = useState(true);
-  const [conflictDetection, setConflictDetection] = useState(true);
-  const [smartSuggestions, setSmartSuggestions] = useState(true);
-  const [notifyAttendees, setNotifyAttendees] = useState(true);
+  const [autoReschedule, setAutoReschedule] = useState(false);
+  const [conflictDetection, setConflictDetection] = useState(false);
+  const [smartSuggestions, setSmartSuggestions] = useState(false);
+  const [notifyAttendees, setNotifyAttendees] = useState(false);
   const [requireApproval, setRequireApproval] = useState(false);
   
   const [reschedulePriority, setReschedulePriority] = useState("workload");

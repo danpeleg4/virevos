@@ -2,16 +2,36 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db/db";
-import { meetings, users } from "@/db/schema";
+import { events, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { NewMeetingInput } from "@/types/meeting";
+import { Event } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
-import { parseDateTime } from "@/lib/date_utils";
+import {CreateScheduleCommand, SchedulerClient} from "@aws-sdk/client-scheduler";
 
-type MeetingUpdate = Partial<typeof meetings.$inferInsert>;
+type MeetingUpdate = Partial<typeof events.$inferInsert>;
 
-export async function addMeetingToCalendar(meeting: NewMeetingInput) {
+const scheduler = new SchedulerClient({
+    region: process.env.AWS_REGION!,
+    credentials: {
+        accessKeyId: process.env.AWS_SCHEDULER_ACESS_KEY!,
+        secretAccessKey: process.env.AWS_SCHEDULER_SECRET_KEY!
+    }
+});
+
+const formatForScheduler = (date: Date) => {
+    // Returns YYYY-MM-DDTHH:MM:SS
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const Y = date.getUTCFullYear();
+    const M = pad(date.getUTCMonth() + 1); // months are 0-indexed
+    const D = pad(date.getUTCDate());
+    const h = pad(date.getUTCHours());
+    const m = pad(date.getUTCMinutes());
+    const s = pad(date.getUTCSeconds());
+    return `${Y}-${M}-${D}T${h}:${m}:${s}`;
+}
+
+export async function addMeetingToCalendar(meeting: Event) {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
@@ -28,7 +48,7 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
     }
 
     const internalUserId = dbUser[0].user_id;
-    const startDate = parseDateTime(meeting.date, meeting.time);
+    const startDate = new Date(meeting.dateTime);
     const meetingId = crypto.randomUUID();
 
     let googleEventId: string | null = null;
@@ -73,30 +93,54 @@ export async function addMeetingToCalendar(meeting: NewMeetingInput) {
         }
     }
 
-    // Determine meeting status
     const now = new Date();
     const status = startDate > now ? "upcoming" : "scheduled";
+    const payload = {
+        id: meetingId,
+        title: meeting.title,
+        description: meeting.description,
+        link: meeting.isMeeting ? `https://virevos.com/meet/${meetingId}` : null,
+        origin: "app",
+        dateTime: startDate,
+        duration: meeting.duration,
+        isMeeting: meeting.isMeeting,
+        status: status,
+        hasNotes: meeting.hasNotes ?? false,
+        hasTranscript: meeting.hasTranscript ?? false,
+        autoRescheduled: meeting.autoRescheduled ?? false,
+        conflictReason: meeting.conflictReason ?? null,
+        userId: internalUserId,
+        googleEventId,
+    }
+
+    if (meeting.isMeeting){
+        try {
+            const scheduleName = `job-${Date.now()}`;
+            const command = new CreateScheduleCommand({
+                Name: scheduleName,
+                ScheduleExpression: `at(${formatForScheduler(new Date(meeting.dateTime))})`,
+                FlexibleTimeWindow: { Mode: "OFF" },
+                Target: {
+                    Arn: process.env.TARGET_LAMBDA_ARN!,
+                    RoleArn: process.env.SCHEDULE_ROLE_ARN!,
+                    Input: JSON.stringify(payload ?? {})
+                }
+            });
+
+            await scheduler.send(command);
+        } catch (err) {
+            console.error(err);
+            return
+        }
+    }
+
     const [inserted] = await db
-        .insert(meetings)
+        .insert(events)
         .values({
-            id: meetingId,
-            title: meeting.title,
-            description: meeting.description,
-            link: `https://virevos.com/meet/${crypto.randomUUID()}`,
-            origin: "app",
-            date: meeting.date,
-            time: meeting.time,
-            duration: meeting.duration,
-            type: meeting.type,
-            status: status,
-            hasNotes: meeting.hasNotes ?? false,
-            hasTranscript: meeting.hasTranscript ?? false,
-            autoRescheduled: meeting.autoRescheduled ?? false,
-            conflictReason: meeting.conflictReason ?? null,
-            userId: internalUserId,
-            googleEventId,
+            ...payload,
         })
         .returning();
+    console.log("Inserted event:", inserted);
     return inserted;
 }
 
@@ -109,8 +153,8 @@ export async function deleteEventFromCalendar(id: string) {
     // Get meeting from DB to check for googleEventId
     const meetingRow = await db
         .select()
-        .from(meetings)
-        .where(and(eq(meetings.id, id), eq(meetings.userId, user.id)))
+        .from(events)
+        .where(and(eq(events.id, id), eq(events.userId, user.id)))
         .limit(1);
 
     if (meetingRow.length === 0) {
@@ -137,11 +181,11 @@ export async function deleteEventFromCalendar(id: string) {
 
 
     // Delete from DB
-    await db.delete(meetings).where(and(eq(meetings.id, id), eq(meetings.userId, user.id)));
+    await db.delete(events).where(and(eq(events.id, id), eq(events.userId, user.id)));
     return { success: true };
 }
 
-export async function updateMeetingInCalendar(id: string, updates: Partial<NewMeetingInput>) {
+export async function updateMeetingInCalendar(id: string, updates: Partial<Event>) {
     const user = await currentUser();
     if (!user?.id) {
         throw new Error("Unauthorized");
@@ -149,8 +193,8 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
 
     const meetingRow = await db
         .select()
-        .from(meetings)
-        .where(and(eq(meetings.id, id), eq(meetings.userId, user.id)))
+        .from(events)
+        .where(and(eq(events.id, id), eq(events.userId, user.id)))
         .limit(1);
 
     if (meetingRow.length === 0) {
@@ -161,10 +205,9 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
     const dbUpdates: MeetingUpdate = {
         title: updates.title,
         description: updates.description,
-        date: updates.date,
-        time: updates.time,
+        dateTime: updates.dateTime,
         duration: updates.duration,
-        type: updates.type,
+        isMeeting: false,
         status: updates.status,
         hasNotes: updates.hasNotes,
         hasTranscript: updates.hasTranscript,
@@ -173,9 +216,9 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
     };
 
     // Update in DB
-    await db.update(meetings)
+    await db.update(events)
         .set(dbUpdates)
-        .where(eq(meetings.id, id));
+        .where(eq(events.id, id));
 
     // Sync to Google Calendar if connected
     const googleToken = await getFreshGoogleAccessToken(user.id);
@@ -186,10 +229,7 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
         oauth2Client.setCredentials({ access_token: googleToken });
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
-        const startDate = updates.date && updates.time 
-            ? parseDateTime(updates.date, updates.time)
-            : parseDateTime(meeting.date, meeting.time);
-        
+        const startDate = updates.dateTime!
         const duration = updates.duration ?? meeting.duration;
 
         try {
@@ -200,7 +240,7 @@ export async function updateMeetingInCalendar(id: string, updates: Partial<NewMe
                     summary: updates.title ?? meeting.title,
                     description: (updates.description ?? meeting.description) + (meeting.link ? `\n\nMeeting Link: ${meeting.link}` : ""),
                     start: {
-                        dateTime: startDate.toISOString(),
+                        dateTime: startDate?.toISOString(),
                     },
                     end: {
                         dateTime: new Date(startDate.getTime() + duration * 60000).toISOString(),

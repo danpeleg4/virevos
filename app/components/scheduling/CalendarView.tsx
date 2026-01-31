@@ -19,9 +19,9 @@ import {
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { motion } from "motion/react";
-import { MeetingDetailsDialog } from "./MeetingDetailsDialog";
-import { BookMeetingDialog } from "@/app/components/BookMeetingDialog";
-import type {Meeting, NewMeetingInput} from "@/types/meeting";
+import { EventDetailsDialog } from "./EventDetailsDialog";
+import { BookEventDialog } from "@/app/components/BookEventDialog";
+import type { Event } from "@/types/meeting";
 import axios from "axios";
 import { addMeetingToCalendar, deleteEventFromCalendar } from '@/lib/server_actions/calendar'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,7 +31,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
 export function CalendarView() {
     const queryClient = useQueryClient();
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+    const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
     const [showMeetingDetails, setShowMeetingDetails] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -44,7 +44,7 @@ export function CalendarView() {
         queryKey: ["meetings"],
         queryFn: async () => {
             const res = await axios.get("/api/meetings");
-            const data: Meeting[] = res.data;
+            const data: Event[] = res.data;
 
             // Ensure attendees array exists to avoid runtime crashes
             return data.map(m => ({
@@ -56,7 +56,7 @@ export function CalendarView() {
 
     //TODO ADD OPTIMISTIC UPDATES
     const mutation = useMutation({
-        mutationFn: async (meeting: NewMeetingInput) => {
+        mutationFn: async (meeting: Event) => {
             const res = await addMeetingToCalendar(meeting);
             return res;
         },
@@ -78,9 +78,8 @@ export function CalendarView() {
         },
     })
 
-
     const dayMeetings = meetings?.data?.filter(m => {
-        const meetingDate = parseLocalDate(m.date).toDateString();
+        const meetingDate = new Date(m.dateTime).toDateString();
         const selectedDate = currentDate.toDateString();
         return meetingDate === selectedDate;
     });
@@ -92,14 +91,7 @@ export function CalendarView() {
     });
 
     function parseHour(timeStr: string) {
-        const [timePart, modifier] = timeStr.split(" ");
-        const [h] = timePart.split(":");
-        let hour = parseInt(h);
-
-        if (modifier === "PM" && hour !== 12) hour += 12;
-        if (modifier === "AM" && hour === 12) hour = 0;
-
-        return hour;
+        return timeStr.split(" ")[1].split(":")[0];
     }
 
     const handlePrevDay = () => {
@@ -118,12 +110,12 @@ export function CalendarView() {
         setCurrentDate(new Date());
     };
 
-    const handleMeetingClick = (meeting: Meeting) => {
+    const handleMeetingClick = (meeting: Event) => {
         setSelectedMeeting(meeting);
         setShowMeetingDetails(true);
     };
 
-    const addMeeting = async (meeting: NewMeetingInput) => {
+    const addMeeting = async (meeting: Event) => {
         mutation.mutate(meeting);
     };
 
@@ -151,7 +143,7 @@ export function CalendarView() {
                         </div>
 
                         {/* ADD EVENT BUTTON */}
-                        <BookMeetingDialog
+                        <BookEventDialog
                             dialogOpen={dialogOpen}
                             setDialogOpen={setDialogOpen}
                             addMeeting={addMeeting}
@@ -164,7 +156,7 @@ export function CalendarView() {
                         <div className="divide-y divide-gray-100">
                             {hours.map((hour) => {
                                 const timeLabel = `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
-                                const meetingsAtTime = dayMeetings?.filter(m => parseHour(m.time) === hour);
+                                const meetingsAtTime = dayMeetings?.filter(m => new Date(m.dateTime).getHours() === hour);
 
                                 return (
                                     <div key={hour} className="flex hover:bg-gray-50">
@@ -260,8 +252,8 @@ export function CalendarView() {
 
             {/* === Meeting Details Dialog === */}
             {selectedMeeting && (
-                <MeetingDetailsDialog
-                    meeting={selectedMeeting}
+                <EventDetailsDialog
+                    event={selectedMeeting}
                     open={showMeetingDetails}
                     onOpenChange={setShowMeetingDetails}
                 />

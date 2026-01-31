@@ -9,8 +9,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "../../components/ui/dialog";
-import { Video, Users, Check, VideoOff, Mic, MicOff, TabletSmartphone } from "lucide-react";
-import {useParams, useRouter} from "next/navigation";
+import { Video, Users, Check, VideoOff, Mic, MicOff } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import {
     createLocalTracks,
     Room,
@@ -23,7 +23,7 @@ import axios from "axios";
 
 export default function InMeetingView() {
     const params = useParams();
-    const roomId = params.roomId as string;
+    const meetingId = params.roomId as string;
     const [name, setName] = useState("");
     const [joined, setJoined] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
@@ -33,14 +33,15 @@ export default function InMeetingView() {
     const router = useRouter();
     const roomRef = useRef<Room | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
+    const [meetingTitle, setMeetingTitle] = useState("");
 
-    const nameOfMeeting = roomId.split("-")[0];
     const joinRoom = async () => {
         const res = await axios.post(`/api/token`, {
-            roomId: nameOfMeeting,
+            meetingId,
             name: name
         });
-        const { token, url } = res.data;
+        const { token, meetingTitle, url } = res.data;
+        setMeetingTitle(meetingTitle);
         const room = new Room();
         roomRef.current = room;
         await room.connect(url, token);
@@ -127,7 +128,7 @@ export default function InMeetingView() {
             {/* Meeting Name */}
             <div className="absolute top-4 left-4 z-10">
                 <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
-                    <p className="text-sm">Meeting: {nameOfMeeting}</p>
+                    <p className="text-sm">Meeting {meetingTitle}</p>
                 </div>
             </div>
 

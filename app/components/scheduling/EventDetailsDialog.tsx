@@ -20,10 +20,12 @@ import {
   Copy,
   Mic,
 } from "lucide-react";
-import type { Meeting } from "@/types/meeting";
+import type { Event } from "@/types/meeting";
+
+import {formatDateOnly, formatTimeOnly} from "@/lib/date_utils";
 
 interface MeetingDetailsDialogProps {
-  meeting: Meeting;
+  event: Event;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -73,12 +75,12 @@ const mockNotes = {
   ],
 };
 
-export function MeetingDetailsDialog({
-  meeting,
+export function EventDetailsDialog({
+  event,
   open,
   onOpenChange,
 }: MeetingDetailsDialogProps) {
-  const hasAIContent = meeting.hasNotes || meeting.hasTranscript;
+  const hasAIContent = event.hasNotes || event.hasTranscript;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,15 +88,15 @@ export function MeetingDetailsDialog({
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle className="text-xl mb-2">{meeting.title}</DialogTitle>
+              <DialogTitle className="text-xl mb-2">{event.title}</DialogTitle>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
-                  Today
+                  {formatDateOnly(new Date(event.dateTime))}
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
-                  {meeting.time} ({meeting.duration} min)
+                  {formatTimeOnly(new Date(event.dateTime))} ({event.duration} min)
                 </div>
                 <div className="flex items-center">
                   <Video className="h-4 w-4 mr-1" />
@@ -102,9 +104,9 @@ export function MeetingDetailsDialog({
               </div>
             </div>
             <Badge
-              variant={meeting.status === "completed" ? "default" : "secondary"}
+              variant={event.status === "completed" ? "default" : "secondary"}
             >
-              {meeting.status}
+              {event.status}
             </Badge>
           </div>
         </DialogHeader>
@@ -112,7 +114,7 @@ export function MeetingDetailsDialog({
         <div className="space-y-6 mt-6">
           {/* Attendees */}
           <div>
-              {meeting.attendees && (
+              {(event.attendees && event.attendees.length > 0) && (
                   <div>
                       <h3 className="text-sm text-gray-700 mb-3 flex items-center">
                           <Users className="h-4 w-4 mr-2" />
@@ -120,7 +122,7 @@ export function MeetingDetailsDialog({
                       </h3>
 
                       <div className="flex flex-wrap gap-2">
-                          {meeting.attendees.map((attendee, i) => (
+                          {event.attendees.map((attendee, i) => (
                               <div
                                   key={i}
                                   className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2"
@@ -140,47 +142,51 @@ export function MeetingDetailsDialog({
           </div>
 
           {/* Meeting Link */}
-          <div>
-            <h3 className="text-sm text-gray-700 mb-3">Link</h3>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                readOnly
-                value={meeting.link || ""}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50"
-              />
-                <Button
-                    className="cursor-pointer"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                        navigator.clipboard.writeText(meeting.link || "");
-                    }}
-                >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                </Button>
-                <Button
-                    className="cursor-pointer"
-                    size="sm"
-                    onClick={() => {
-                        if (meeting.link) {
-                            window.open(meeting.link, "_blank");
-                        }
-                    }}
-                >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Join
-                </Button>
-            </div>
-          </div>
+          {
+            event.link ? (
+                <div>
+                  <h3 className="text-sm text-gray-700 mb-3">Link</h3>
+                  <div className="flex items-center space-x-2">
+                    <input
+                        type="text"
+                        readOnly
+                        value={event.link || ""}
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50"
+                    />
+                    <Button
+                        className="cursor-pointer"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(event.link || "");
+                        }}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </Button>
+                    <Button
+                        className="cursor-pointer"
+                        size="sm"
+                        onClick={() => {
+                          if (event.link) {
+                            window.open(event.link, "_blank");
+                          }
+                        }}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Join
+                    </Button>
+                  </div>
+                </div>
+            ) : null
+          }
 
           {hasAIContent && (
             <>
               <Separator />
 
               {/* AI-Generated Notes */}
-              {meeting.hasNotes && (
+              {event.hasNotes && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center text-lg">
@@ -259,7 +265,7 @@ export function MeetingDetailsDialog({
               )}
 
               {/* Transcript */}
-              {meeting.hasTranscript && (
+              {event.hasTranscript && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center text-lg">

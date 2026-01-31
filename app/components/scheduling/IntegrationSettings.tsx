@@ -6,7 +6,6 @@ import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
 import {
-    Video,
     Calendar,
     CheckCircle,
     ExternalLink,
@@ -119,7 +118,7 @@ export function IntegrationSettings() {
                     return (
                         <Card key={integration.id}>
                             <CardHeader>
-                                <div className="flex items-start justify-between">
+                                <div className="flex items-start justify-between mb-2">
                                     <div className="flex items-start space-x-4">
                                         <div className="p-3 bg-blue-50 rounded-lg">
                                             <Icon className="h-6 w-6 text-blue-600" />
@@ -275,7 +274,7 @@ export function IntegrationSettings() {
                         <ul className="space-y-1 text-sm text-blue-800">
                             <li className="flex items-start">
                                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                                <span>New meetings in virevos appear on your calendar</span>
+                                <span>New events in virevos appear on your calendar</span>
                             </li>
                             <li className="flex items-start">
                                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />

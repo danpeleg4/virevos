@@ -5,35 +5,19 @@ export interface Attendee {
     initials: string;
 }
 
-export interface Meeting {
+export interface Event {
     id: string;
     title: string;
     description: string;
-    link: string;
-    date: string;
-    time: string;
+    link?: string;
+    dateTime: Date;
     duration: number;
     attendees?: Attendee[];
-    status: MeetingStatus | string;
+    status?: MeetingStatus | string;
     conflictReason?: string | null | undefined;
     autoRescheduled?: boolean;
     hasNotes?: boolean;
     hasTranscript?: boolean;
     googleEventId?: string | null;
-}
-
-export interface NewMeetingInput {
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    time: string;
-    duration: number;
-    type: string;
-    attendees?: Attendee[];
-    status: MeetingStatus;
-    hasNotes?: boolean;
-    hasTranscript?: boolean;
-    autoRescheduled?: boolean;
-    conflictReason?: string | null;
+    isMeeting: boolean;
 }
