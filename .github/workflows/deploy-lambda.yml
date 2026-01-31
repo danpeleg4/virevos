@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - "lambda/**"
+      - ".github/workflows/deploy-lambda.yml"
 
 jobs:
   deploy:
@@ -30,8 +31,8 @@ jobs:
 
       - name: Zip lambda
         run: |
-          cd lambda
-          zip -r function.zip dist node_modules
+          cd lambda/dist
+          zip -r ../function.zip .
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
