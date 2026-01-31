@@ -5,13 +5,21 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js"
+    "build": "npx esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:pg-native"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "esbuild": "^0.27.2"
+    "esbuild": "^0.27.2",
+    "@types/aws-lambda": "^8.10.147",
+    "@types/node": "^20.19.27",
+    "@types/pg": "^8.11.11"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.7",
+    "pg": "^8.13.3"
   }
 }
