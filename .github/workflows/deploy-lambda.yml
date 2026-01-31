@@ -1,12 +1,17 @@
-name: deploy-lambda.yml
+name: deploy-lambda
 on:
   push:
-    branches: ["main"]
+    branches:
+      - dev
     paths:
-      - "app/lambda/**"
+      - "lambda/**"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +21,9 @@ jobs:
           node-version: 20
 
       - name: Install deps
-        run: npm install
+        run: |
+          cd lambda
+          npm install
 
       - name: Build lambda
         run: |
@@ -37,5 +44,5 @@ jobs:
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
-            --function-name my-lambda \
+            --function-name virevos-schedule-meeting \
             --zip-file fileb://lambda/function.zip
