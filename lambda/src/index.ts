@@ -1,6 +1,5 @@
 import {events, users} from "@/db/schema";
 import { db } from "@/db/db";
-import { eq } from "drizzle-orm";
 
 /*
 virevos-schedule-meeting lambda function
