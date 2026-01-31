@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx esbuild src/index.ts \\\n  --bundle \\\n  --platform=node \\\n  --target=node20 \\\n  --outfile=dist/index.js \\\n  --external:pg-native \\\n  --external:dotenv/config\n"
+    "build": "npx esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:pg-native --alias:@=.. --external:dotenv/config"
   },
   "keywords": [],
   "author": "",
