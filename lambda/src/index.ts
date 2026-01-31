@@ -12,7 +12,6 @@ export const handler = async (event: any) => {
         //await db.update(events).set({
         //    status: "active"
         //}).where(eq(events.userId, event.userId));
-        //
         await db.insert(users).values({
             user_id: event.userId,
             name: "John",
