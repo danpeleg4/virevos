@@ -18,8 +18,5 @@
     "@types/pg": "^8.11.11"
   },
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "drizzle-orm": "^0.44.7",
-    "pg": "^8.13.3"
   }
 }
