@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { CalendarView } from "../../components/scheduling/CalendarView";
 import { IntegrationSettings } from "../../components/scheduling/IntegrationSettings";
-import { AutoScheduleSettings } from "../../components/scheduling/AutoScheduleSettings";
 import { MeetingNotes } from "../../components/scheduling/MeetingNotes";
 
 export default function Calendar() {
@@ -27,7 +26,6 @@ export default function Calendar() {
             <TabsList className="mb-6 flex-shrink-0">
                     <TabsTrigger className="cursor-pointer" value="calendar">Calendar</TabsTrigger>
                     <TabsTrigger className="cursor-pointer" value="notes">Meeting Notes</TabsTrigger>
-                    <TabsTrigger className="cursor-pointer" value="auto-schedule">Auto-Schedule</TabsTrigger>
                     <TabsTrigger className="cursor-pointer" value="integrations">Integrations</TabsTrigger>
                 </TabsList>
 
@@ -40,10 +38,6 @@ export default function Calendar() {
 
                 <TabsContent value="notes" className="flex-1 min-h-0 overflow-y-auto">
                     <MeetingNotes />
-                </TabsContent>
-
-                <TabsContent value="auto-schedule" className="flex-1 min-h-0 overflow-y-auto">
-                    <AutoScheduleSettings />
                 </TabsContent>
 
                 <TabsContent value="integrations" className="flex-1 min-h-0 overflow-y-auto">

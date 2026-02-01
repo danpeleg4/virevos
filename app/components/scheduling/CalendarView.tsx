@@ -40,6 +40,10 @@ export function CalendarView() {
         return new Date(year, month - 1, day); // LOCAL date, not UTC
     }
 
+    function parseHour(timeStr: string) {
+        return timeStr.split(" ")[1].split(":")[0];
+    }
+
     const meetings = useQuery({
         queryKey: ["meetings"],
         queryFn: async () => {
@@ -89,10 +93,6 @@ export function CalendarView() {
         day: "numeric",
         year: "numeric",
     });
-
-    function parseHour(timeStr: string) {
-        return timeStr.split(" ")[1].split(":")[0];
-    }
 
     const handlePrevDay = () => {
         const newDate = new Date(currentDate);

@@ -1,6 +1,8 @@
 name: deploy-lambda
 on:
   push:
+    branches:
+      - main
     paths:
       - "lambda/**"
       - ".github/workflows/deploy-lambda.yml"
