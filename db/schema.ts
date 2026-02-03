@@ -5,7 +5,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-
 // USERS
 export const users = pgTable("users", {
     id: integer("id").generatedAlwaysAsIdentity().primaryKey(),

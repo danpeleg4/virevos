@@ -1,12 +1,18 @@
-name: deploy-lambda.yml
+name: deploy-lambda
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
     paths:
-      - "app/lambda/**"
+      - "lambda/**"
+      - ".github/workflows/deploy-lambda.yml"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +22,7 @@ jobs:
           node-version: 20
 
       - name: Install deps
-        run: npm install
+        run: npm ci
 
       - name: Build lambda
         run: |
@@ -25,8 +31,8 @@ jobs:
 
       - name: Zip lambda
         run: |
-          cd lambda
-          zip -r function.zip dist node_modules
+          cd lambda/dist
+          zip -r ../function.zip .
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -37,5 +43,5 @@ jobs:
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
-            --function-name my-lambda \
+            --function-name virevos-schedule-meeting \
             --zip-file fileb://lambda/function.zip

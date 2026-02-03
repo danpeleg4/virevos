@@ -1,5 +1,8 @@
-import 'dotenv/config';
 import { defineConfig } from "drizzle-kit";
+import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: path.resolve(__dirname, './.env') });
 
 const isProd = process.env.NODE_ENV === "production";
 
