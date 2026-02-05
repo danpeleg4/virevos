@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { convertToModelMessages, FlexibleSchema, stepCountIs, streamText, tool, UIMessage } from 'ai';
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

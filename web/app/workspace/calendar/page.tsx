@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { CalendarView } from "../../components/scheduling/CalendarView";
-import { IntegrationSettings } from "../../components/scheduling/IntegrationSettings";
-import { MeetingNotes } from "../../components/scheduling/MeetingNotes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { CalendarView } from "@/app/components/scheduling/CalendarView";
+import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSettings";
+import { MeetingNotes } from "@/app/components/scheduling/MeetingNotes";
 
 export default function Calendar() {
     const [activeTab, setActiveTab] = useState("calendar");

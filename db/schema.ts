@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import {
     pgTable, text, integer, boolean, timestamp,
     varchar, date, bigint
