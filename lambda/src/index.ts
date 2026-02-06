@@ -9,6 +9,7 @@ export const handler = async (event: any) => {
     console.log("User Id: ")
     console.log(event.userId);
     try {
+        const h = 1
         await db.update(events).set({
             status: "active"
         }).where(eq(events.id, event.id));
