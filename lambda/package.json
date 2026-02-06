@@ -10,7 +10,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "dependencies": {
+    "@repo/db": "workspace:*",
+    "drizzle-orm": "^0.45.1"
+  },
   "devDependencies": {
     "esbuild": "^0.27.2"
   }

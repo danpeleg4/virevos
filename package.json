@@ -17,20 +17,16 @@
   "author": "",
   "type": "module",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
-  },
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "drizzle-kit": "^0.31.8",
-    "drizzle-orm": "^0.45.1",
-    "pg": "^8.18.0"
+    "dotenv": "^17.2.3"
   },
   "workspaces": [
-    "web/*",
-    "lambda/*"
-  ]
+    "web",
+    "lambda",
+    "db"
+  ],
+  "devDependencies": {
+    "turbo": "^2.8.3"
+  },
+  "packageManager": "npm@11.8.0"
 }
