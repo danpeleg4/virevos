@@ -14,7 +14,12 @@
     "LIVEKIT_API_SECRET",
     "PINECONE_API_KEY",
     "OPENAI_API_KEY",
-    "AWS_S3_ACCESS_KEY"
+    "AWS_S3_ACCESS_KEY",
+    "AWS_BUCKET_NAME",
+    "AWS_S3_READER_SECRET_KEY",
+    "AWS_S3_READER_ACCESS_KEY",
+    "AWS_REGION",
+    "AWS_S3_SECRET_KEY"
   ],
   "tasks": {
     "build": {
