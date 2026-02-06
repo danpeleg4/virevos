@@ -26,12 +26,12 @@ jobs:
 
       - name: Build lambda
         run: |
-          cd lambda
+          cd virevos-schedule-meeting
           npm run build
 
       - name: Zip lambda
         run: |
-          cd lambda/dist
+          cd virevos-schedule-meeting/dist
           zip -r ../function.zip .
 
       - name: Configure AWS credentials
