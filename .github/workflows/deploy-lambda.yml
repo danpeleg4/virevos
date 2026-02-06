@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - "lambda/**"
+      - "virevos-schedule-meeting/**"
       - ".github/workflows/deploy-lambda.yml"
 
 jobs:
@@ -26,12 +26,12 @@ jobs:
 
       - name: Build lambda
         run: |
-            cd lambda
-            npm run build
+          cd virevos-schedule-meeting
+          npm run build
 
       - name: Zip lambda
         run: |
-          cd lambda/dist
+          cd virevos-schedule-meeting/dist
           zip -r ../function.zip .
 
       - name: Configure AWS credentials
@@ -44,4 +44,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name virevos-schedule-meeting \
-            --zip-file fileb://lambda/function.zip
+            --zip-file fileb://virevos-schedule-meeting/function.zip

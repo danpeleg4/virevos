@@ -1,1 +1,0 @@
-ALTER TABLE "events" ADD COLUMN "utc_time" timestamp with time zone DEFAULT now();

@@ -1,10 +1,8 @@
-import 'dotenv/config';
 import {
     pgTable, text, integer, boolean, timestamp,
     varchar, date, bigint
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-
 
 // USERS
 export const users = pgTable("users", {

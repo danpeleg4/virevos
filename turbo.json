@@ -1,0 +1,37 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "globalEnv": [
+    "CLERK_SECRET_KEY",
+    "DATABASE_URL",
+    "CLERK_WEBHOOK_SIGNING_SECRET",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "GOOGLE_REDIRECT_URI",
+    "AI_GATEWAY_API_KEY",
+    "LIVEKIT_API_KEY",
+    "LIVEKIT_API_SECRET",
+    "PINECONE_API_KEY",
+    "OPENAI_API_KEY",
+    "AWS_S3_ACCESS_KEY",
+    "AWS_BUCKET_NAME",
+    "AWS_S3_READER_SECRET_KEY",
+    "AWS_S3_READER_ACCESS_KEY",
+    "AWS_REGION",
+    "AWS_S3_SECRET_KEY"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "dev": {
+      "persistent": true,
+      "cache": false
+    }
+  }
+}
