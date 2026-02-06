@@ -2,12 +2,12 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { events, users } from "@repo/db/schema";
+import { events, users } from "@db/schema";
 import { eq, and } from "drizzle-orm";
 import { Event } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from '@/lib/google_access'
 import { google } from 'googleapis'
-import {CreateScheduleCommand, SchedulerClient} from "@aws-sdk/client-scheduler";
+import { CreateScheduleCommand, SchedulerClient } from "@aws-sdk/client-scheduler";
 
 type MeetingUpdate = Partial<typeof events.$inferInsert>;
 
