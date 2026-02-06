@@ -1,11 +1,14 @@
 {
-  "name": "lambda",
+  "name": "virevos-schedule-meeting",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outdir=dist"
+  },
+  "overrides": {
+    "esbuild": "^0.27.0"
   },
   "keywords": [],
   "author": "",

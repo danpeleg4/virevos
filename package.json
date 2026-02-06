@@ -22,7 +22,7 @@
   },
   "workspaces": [
     "web",
-    "lambda",
+    "virevos-schedule-meeting",
     "db"
   ],
   "devDependencies": {
