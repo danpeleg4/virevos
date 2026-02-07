@@ -2,94 +2,116 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
 import { Checkbox } from "../components/ui/checkbox";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import {
     Check,
-    ChevronRight,
     ChevronLeft,
     Zap,
     Calendar,
-    Upload,
+    Video,
     Sparkles,
     CreditCard,
     Users,
     Brain,
     FileSpreadsheet,
-    type LucideIcon,
+    ArrowRight,
+    CheckCircle2,
+    Shield,
+    Eye,
+    EyeOff,
 } from "lucide-react";
-import { integrations, plans } from "@/lib/mock_data";
 
-type BillingCycle = "monthly" | "yearly" | string;
-
-interface OnboardingFormData {
-    // Account
-    fullName: string;
-    email: string;
-    password: string;
-    companyName: string;
-
-    // Subscription
-    selectedPlan: string;
-    billingCycle: BillingCycle;
-
-    // Payment
-    cardNumber: string;
-    cardExpiry: string;
-    cardCVC: string;
-    billingAddress: string;
-
-    // Integrations
-    selectedIntegrations: string[];
-
-    // Import Data
-    importMethod: string;
-
-    // AI Personalization
-    industry: string;
-    teamSize: string;
-    mainGoals: string;
-    workStyle: string;
-    aiContext: string;
+interface OnboardingProps {
+    onComplete: () => void;
 }
 
-type UpdateFormData = <K extends keyof OnboardingFormData>(
-    field: K,
-    value: OnboardingFormData[K]
-) => void;
+const plans = [
+    {
+        id: "starter",
+        name: "Starter",
+        price: 0,
+        period: "month",
+        description: "Perfect for individuals getting started",
+        features: [
+            "Up to 5 team members",
+            "10 projects",
+            "Basic automation",
+            "1GB storage",
+        ],
+        highlighted: false,
+    },
+    {
+        id: "professional",
+        name: "Professional",
+        price: 29,
+        period: "month",
+        description: "For growing teams and agencies",
+        features: [
+            "Up to 50 team members",
+            "Unlimited projects",
+            "Advanced automation",
+            "100GB storage",
+            "AI assistant",
+        ],
+        highlighted: true,
+    },
+    {
+        id: "enterprise",
+        name: "Enterprise",
+        price: 99,
+        period: "month",
+        description: "For large organizations",
+        features: [
+            "Unlimited team members",
+            "Unlimited everything",
+            "SSO & SAML",
+            "SLA guarantee",
+        ],
+        highlighted: false,
+    },
+];
 
-export default function Onboarding() {
+const integrations = [
+    {
+        id: "google-calendar",
+        name: "Google Calendar",
+        icon: Calendar,
+        description: "Sync your schedule",
+        color: "bg-blue-500",
+        category: "calendar",
+    },
+    {
+        id: "zoom",
+        name: "Zoom",
+        icon: Video,
+        description: "Enable video meetings",
+        color: "bg-purple-500",
+        category: "video",
+    },
+];
+
+export default function Onboarding({ onComplete }: OnboardingProps) {
     const [currentStep, setCurrentStep] = useState(0);
-    const [formData, setFormData] = useState<OnboardingFormData>({
-        // Step 1: Account
+    const [showPassword, setShowPassword] = useState(false);
+    const [formData, setFormData] = useState({
         fullName: "",
         email: "",
         password: "",
         companyName: "",
-
-        // Step 2: Subscription
         selectedPlan: "professional",
         billingCycle: "monthly",
-
-        // Step 3: Payment
         cardNumber: "",
         cardExpiry: "",
         cardCVC: "",
         billingAddress: "",
-
-        // Step 4: Integrations
         selectedIntegrations: [] as string[],
-
-        // Step 5: Import Data
         importMethod: "",
-
-        // Step 6: AI Personalization
         industry: "",
         teamSize: "",
         mainGoals: "",
@@ -97,19 +119,17 @@ export default function Onboarding() {
         aiContext: "",
     });
 
-    const steps: { id: number; name: string; icon: LucideIcon }[] = [
-        { id: 0, name: "Welcome", icon: Sparkles },
-        { id: 1, name: "Account", icon: Users },
-        { id: 2, name: "Plan", icon: Zap },
-        { id: 3, name: "Payment", icon: CreditCard },
-        { id: 4, name: "Integrations", icon: Calendar },
-        { id: 5, name: "Import Data", icon: Upload },
-        { id: 6, name: "AI Setup", icon: Brain },
+    const steps = [
+        { id: 0, name: "Welcome", title: "Welcome to FlowTask", subtitle: "Let's get you set up in minutes." },
+        { id: 1, name: "Account", title: "Create Your Account", subtitle: "Enter your details to access your dashboard." },
+        { id: 2, name: "Plan", title: "Choose Your Plan", subtitle: "Select the best fit for your workflow." },
+        { id: 3, name: "Payment", title: "Secure Checkout", subtitle: "Safe and encrypted payment processing." },
+        { id: 4, name: "Connect", title: "Connect Tools", subtitle: "Integrate your existing calendar and video apps." },
+        { id: 5, name: "Import", title: "Import Data", subtitle: "Bring your clients and projects over easily." },
+        { id: 6, name: "Personalize", title: "Personalize AI", subtitle: "Help our AI understand how you work." },
     ];
 
-    const progress = ((currentStep + 1) / steps.length) * 100;
-
-    const updateFormData: UpdateFormData = (field, value) => {
+    const updateFormData = (field: string, value: any) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -125,6 +145,8 @@ export default function Onboarding() {
     const nextStep = () => {
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
+        } else {
+            onComplete();
         }
     };
 
@@ -139,7 +161,15 @@ export default function Onboarding() {
             case 0:
                 return <WelcomeStep onNext={nextStep} />;
             case 1:
-                return <AccountStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
+                return (
+                    <AccountStep
+                        formData={formData}
+                        updateFormData={updateFormData}
+                        onNext={nextStep}
+                        showPassword={showPassword}
+                        setShowPassword={setShowPassword}
+                    />
+                );
             case 2:
                 return <PlanStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
             case 3:
@@ -156,711 +186,445 @@ export default function Onboarding() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-            {/* Progress Bar */}
-            <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-                <div className="max-w-4xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <Sparkles className="h-4 w-4 text-white"/>
-                            </div>
-                            <span className="text-xl text-gray-900">Virevos</span>
-                        </div>
-                        <span className="text-sm text-gray-600">
-              Step {currentStep + 1} of {steps.length}
-            </span>
+        <div className="flex flex-col lg:flex-row min-h-screen bg-white font-sans overflow-hidden">
+            {/* Left Column: Form Content */}
+            <div className="w-full lg:w-1/2 p-6 sm:p-12 lg:p-16 xl:p-24 flex flex-col h-screen overflow-y-auto">
+                <div className="flex items-center space-x-3 mb-12 sm:mb-20">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-white" />
                     </div>
-                    <Progress value={progress} className="h-2" />
+                    <span className="text-xl font-bold text-gray-900 tracking-tight">FlowTask</span>
                 </div>
-            </div>
 
-            {/* Step Indicators */}
-            <div className="pt-24 pb-8">
-                <div className="max-w-4xl mx-auto px-6">
-                    <div className="flex items-center justify-between">
-                        {steps.map((step, index) => (
-                            <div key={step.id} className="flex items-center">
-                                <div className="flex flex-col items-center">
-                                    <div
-                                        className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                                            index <= currentStep
-                                                ? "bg-blue-600 border-blue-600 text-white"
-                                                : "bg-white border-gray-300 text-gray-400"
-                                        }`}
-                                    >
-                                        {index < currentStep ? (
-                                            <Check className="h-5 w-5" />
-                                        ) : (
-                                            <step.icon className="h-5 w-5" />
-                                        )}
-                                    </div>
-                                    <span
-                                        className={`text-xs mt-2 hidden md:block ${
-                                            index <= currentStep ? "text-gray-900" : "text-gray-400"
-                                        }`}
-                                    >
-                    {step.name}
-                  </span>
-                                </div>
-                                {index < steps.length - 1 && (
-                                    <div
-                                        className={`w-12 h-0.5 mx-2 ${
-                                            index < currentStep ? "bg-blue-600" : "bg-gray-300"
-                                        }`}
-                                    />
-                                )}
-                            </div>
-                        ))}
+                <div className="max-w-md mx-auto lg:mx-0 flex-1 flex flex-col justify-center">
+                    <div className="mb-10">
+                        {currentStep > 0 && (
+                            <button
+                                onClick={prevStep}
+                                className="flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6"
+                            >
+                                <ChevronLeft className="h-4 w-4 mr-1" />
+                                Back
+                            </button>
+                        )}
+                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight">
+                            {steps[currentStep].title}
+                        </h1>
+                        <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
+                            {steps[currentStep].subtitle}
+                        </p>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentStep}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {renderStep()}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+                <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-[12px] text-gray-400 font-medium">
+                    <p>Copyright © 2026 FlowTask Enterprises LTD.</p>
+                    <div className="flex space-x-6 mt-4 sm:mt-0">
+                        <button className="hover:text-gray-600">Privacy Policy</button>
+                        <button className="hover:text-gray-600">Terms of Service</button>
                     </div>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="max-w-4xl mx-auto px-6 pb-12">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={currentStep}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        {renderStep()}
-                    </motion.div>
-                </AnimatePresence>
+            {/* Right Column: Visual Side */}
+            <div className="hidden lg:flex lg:w-1/2 bg-[#3D4AE0] relative p-12 lg:p-20 flex-col items-center justify-center overflow-hidden">
+                {/* Abstract background shapes */}
+                <div className="absolute top-0 right-0 w-full h-full opacity-10">
+                    <div className="absolute top-[10%] right-[-10%] w-[500px] h-[500px] border-[60px] border-white rounded-full"></div>
+                    <div className="absolute bottom-[-20%] left-[-10%] w-[400px] h-[400px] border-[40px] border-white rounded-full"></div>
+                </div>
 
-                {/* Navigation */}
-                {currentStep > 0 && (
-                    <div className="flex justify-between mt-8">
-                        <Button variant="outline" onClick={prevStep}>
-                            <ChevronLeft className="h-4 w-4 mr-2" />
-                            Back
-                        </Button>
+                <div className="relative z-10 w-full max-w-2xl text-center lg:text-left">
+                    <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+                        Effortlessly manage your team and operations.
+                    </h2>
+                    <p className="text-blue-100 text-lg mb-12 max-w-lg leading-relaxed">
+                        Get organized with real-time insights, automated workflows, and high-performance communication tools.
+                    </p>
+
+                    <div className="relative group">
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
 }
 
-// Welcome Step
+// Welcome Step Component
 function WelcomeStep({ onNext }: { onNext: () => void }) {
     return (
-        <Card className="border-0 shadow-xl">
-            <CardContent className="p-12 text-center">
-                <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", duration: 0.6 }}
-                    className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6"
-                >
-                    <Sparkles className="h-10 w-10 text-white" />
-                </motion.div>
-                <h1 className="text-3xl text-gray-900 mb-4">
-                    Welcome to Virevos!
-                </h1>
-                <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-                    Let&#39;s get you set up in just a few minutes. We&#39;ll help you create your
-                    account, choose the perfect plan, and personalize Virevos to match your
-                    workflow.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="text-center">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Zap className="h-6 w-6 text-blue-600" />
+        <div className="space-y-8">
+            <div className="grid grid-cols-1 gap-4">
+                {[
+                    { icon: Zap, title: "Supercharged Workflows", desc: "Automate repetitive tasks with ease." },
+                    { icon: Brain, title: "AI Assistant", desc: "Smarter insights for your daily operations." },
+                    { icon: Users, title: "Team Synergy", desc: "Unified workspace for seamless collaboration." }
+                ].map((item, i) => (
+                    <div key={i} className="flex items-start space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors">
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                            <item.icon className="h-5 w-5 text-blue-600" />
                         </div>
-                        <h3 className="text-sm text-gray-900 mb-1">Quick Setup</h3>
-                        <p className="text-sm text-gray-600">5 minutes to get started</p>
-                    </div>
-                    <div className="text-center">
-                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Brain className="h-6 w-6 text-purple-600" />
+                        <div>
+                            <h4 className="text-[14px] font-bold text-gray-900 mb-1">{item.title}</h4>
+                            <p className="text-[13px] text-gray-500">{item.desc}</p>
                         </div>
-                        <h3 className="text-sm text-gray-900 mb-1">AI Powered</h3>
-                        <p className="text-sm text-gray-600">Personalized to your needs</p>
                     </div>
-                    <div className="text-center">
-                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Check className="h-6 w-6 text-green-600" />
-                        </div>
-                        <h3 className="text-sm text-gray-900 mb-1">Easy Import</h3>
-                        <p className="text-sm text-gray-600">Bring your existing data</p>
-                    </div>
-                </div>
-                <Button size="lg" onClick={onNext} className="px-8">
-                    Get Started
-                    <ChevronRight className="h-5 w-5 ml-2" />
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
-// Account Step
-interface StepWithFormProps {
-    formData: OnboardingFormData;
-    updateFormData: UpdateFormData;
-    onNext: () => void;
-}
-
-function AccountStep({ formData, updateFormData, onNext }: StepWithFormProps) {
-    return (
-        <Card className="border-0 shadow-xl">
-            <CardHeader>
-                <CardTitle className="text-2xl">Create Your Account</CardTitle>
-                <p className="text-gray-600">Let&#39;s start with your basic information</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <Label>Full Name *</Label>
-                        <Input
-                            placeholder="John Doe"
-                            value={formData.fullName}
-                            onChange={(e) => updateFormData("fullName", e.target.value)}
-                            className="mt-2"
-                        />
-                    </div>
-                    <div>
-                        <Label>Email Address *</Label>
-                        <Input
-                            type="email"
-                            placeholder="john@company.com"
-                            value={formData.email}
-                            onChange={(e) => updateFormData("email", e.target.value)}
-                            className="mt-2"
-                        />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <Label>Password *</Label>
-                        <Input
-                            type="password"
-                            placeholder="Create a strong password"
-                            value={formData.password}
-                            onChange={(e) => updateFormData("password", e.target.value)}
-                            className="mt-2"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            At least 8 characters with numbers and symbols
-                        </p>
-                    </div>
-                    <div>
-                        <Label>Company Name</Label>
-                        <Input
-                            placeholder="Your Company Inc."
-                            value={formData.companyName}
-                            onChange={(e) => updateFormData("companyName", e.target.value)}
-                            className="mt-2"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex items-start space-x-2 pt-4">
-                    <Checkbox id="terms" />
-                    <label htmlFor="terms" className="text-sm text-gray-600">
-                        I agree to the{" "}
-                        <a href="#" className="text-blue-600 hover:underline">
-                            Terms of Service
-                        </a>{" "}
-                        and{" "}
-                        <a href="#" className="text-blue-600 hover:underline">
-                            Privacy Policy
-                        </a>
-                    </label>
-                </div>
-
-                <Button onClick={onNext} className="w-full" size="lg">
-                    Continue
-                    <ChevronRight className="h-5 w-5 ml-2" />
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
-// Plan Step
-function PlanStep({ formData, updateFormData, onNext }: StepWithFormProps) {
-    return (
-        <div className="space-y-6">
-            <div className="text-center mb-8">
-                <h2 className="text-2xl text-gray-900 mb-2">Choose Your Plan</h2>
-                <p className="text-gray-600">
-                    Select the plan that best fits your needs. You can change anytime.
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {plans.map((plan) => (
-                    <motion.div
-                        key={plan.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <Card
-                            className={`cursor-pointer transition-all ${
-                                formData.selectedPlan === plan.id
-                                    ? "border-2 border-blue-600 shadow-lg"
-                                    : "border-2 border-transparent hover:border-gray-300"
-                            } ${plan.highlighted ? "ring-2 ring-blue-200" : ""}`}
-                            onClick={() => updateFormData("selectedPlan", plan.id)}
-                        >
-                            <CardContent className="p-6">
-                                {plan.highlighted && (
-                                    <Badge className="mb-4 bg-blue-600">Most Popular</Badge>
-                                )}
-                                <h3 className="text-xl text-gray-900 mb-2">{plan.name}</h3>
-                                <div className="mb-4">
-                                    <span className="text-4xl text-gray-900">${plan.price}</span>
-                                    <span className="text-gray-600">/{plan.period}</span>
-                                </div>
-                                <p className="text-sm text-gray-600 mb-6">{plan.description}</p>
-                                <ul className="space-y-3 mb-6">
-                                    {plan.features.map((feature, index) => (
-                                        <li key={index} className="flex items-start text-sm">
-                                            <Check className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                                            <span className="text-gray-700">{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                {formData.selectedPlan === plan.id && (
-                                    <div className="flex items-center justify-center p-2 bg-blue-50 rounded-lg">
-                                        <Check className="h-4 w-4 text-blue-600 mr-2" />
-                                        <span className="text-sm text-blue-600">Selected</span>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </motion.div>
                 ))}
             </div>
 
-            <Button onClick={onNext} className="w-full" size="lg">
+            <Button
+                onClick={onNext}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
+            >
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+
+            <p className="text-center text-[12px] text-gray-400">
+                Already have an account? <button className="text-blue-600 font-bold hover:underline">Log In Now.</button>
+            </p>
+        </div>
+    );
+}
+
+// Account Step Component
+function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPassword }: any) {
+    return (
+        <div className="space-y-6">
+            <div className="space-y-5">
+                <div>
+                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Full Name</Label>
+                    <Input
+                        placeholder="John Doe"
+                        value={formData.fullName}
+                        onChange={(e) => updateFormData("fullName", e.target.value)}
+                        className="h-11 bg-gray-50/50 border-gray-200 focus:ring-blue-600 rounded-xl px-4 text-[14px]"
+                    />
+                </div>
+                <div>
+                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Work Email</Label>
+                    <Input
+                        type="email"
+                        placeholder="sellostore@company.com"
+                        value={formData.email}
+                        onChange={(e) => updateFormData("email", e.target.value)}
+                        className="h-11 bg-gray-50/50 border-gray-200 focus:ring-blue-600 rounded-xl px-4 text-[14px]"
+                    />
+                </div>
+                <div>
+                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Password</Label>
+                    <div className="relative">
+                        <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={(e) => updateFormData("password", e.target.value)}
+                            className="h-11 bg-gray-50/50 border-gray-200 focus:ring-blue-600 rounded-xl px-4 text-[14px] pr-10"
+                        />
+                        <button
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center space-x-3">
+                <Checkbox id="remember" className="rounded-md border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                <label htmlFor="remember" className="text-[13px] text-gray-500 font-medium cursor-pointer">
+                    Remember Me
+                </label>
+                <button className="ml-auto text-[13px] text-blue-600 font-bold hover:underline">
+                    Forgot Your Password?
+                </button>
+            </div>
+
+            <Button
+                onClick={onNext}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
+            >
+                Continue
+            </Button>
+
+            <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-100"></span>
+                </div>
+                <div className="relative flex justify-center text-[12px] uppercase">
+                    <span className="bg-white px-3 text-gray-400 font-bold tracking-widest">Or Register With</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50">
+                    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    Google
+                </Button>
+                <Button variant="outline" className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50">
+                    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M17.05 20.28c-.96.95-2.04 1.44-3.23 1.47-1.15.02-2.24-.46-3.27-.46-1.04 0-2.25.48-3.32.44-1.18-.04-2.25-.53-3.22-1.47C2 18.25.96 15.11.96 12.03c0-3.08 1.04-6.22 3.08-8.25 1.03-1.03 2.22-1.57 3.56-1.57 1.25 0 2.44.47 3.2.47.75 0 2.05-.51 3.46-.51 1.34 0 2.45.5 3.3 1.42.45.48.86 1.03 1.15 1.63-2.6 1.07-4.24 3.42-4.24 6.22 0 2.92 1.83 5.43 4.58 6.57-.28.8-.7 1.5-1.25 2.05h-.04zM12.03 4.3c-.02-2.2 1.81-4.05 4.02-4.07.03 2.22-1.83 4.08-4.02 4.07z" />
+                    </svg>
+                    Apple
+                </Button>
+            </div>
+
+            <p className="text-center text-[12px] text-gray-400">
+                Already have an account? <button className="text-blue-600 font-bold hover:underline">Log In Now.</button>
+            </p>
+        </div>
+    );
+}
+
+// Plan Step Component
+function PlanStep({ formData, updateFormData, onNext }: any) {
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+                {plans.map((plan) => (
+                    <div
+                        key={plan.id}
+                        onClick={() => updateFormData("selectedPlan", plan.id)}
+                        className={`cursor-pointer p-4 rounded-xl border-2 transition-all relative ${
+                            formData.selectedPlan === plan.id
+                                ? "border-blue-600 bg-blue-50/30"
+                                : "border-gray-100 bg-white hover:border-gray-200"
+                        }`}
+                    >
+                        <div className="flex justify-between items-start mb-1">
+                            <h4 className="text-[14px] font-bold text-gray-900">{plan.name}</h4>
+                            <div className="text-right">
+                                <span className="text-[16px] font-bold text-gray-900">${plan.price}</span>
+                                <span className="text-[10px] text-gray-400 ml-1">/mo</span>
+                            </div>
+                        </div>
+                        <p className="text-[12px] text-gray-500 mb-3 leading-tight">{plan.description}</p>
+                        <div className="flex flex-wrap gap-2">
+                            {plan.features.slice(0, 3).map((f, i) => (
+                                <span key={i} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                  {f}
+                </span>
+                            ))}
+                        </div>
+                        {formData.selectedPlan === plan.id && (
+                            <div className="absolute top-[-8px] right-3">
+                                <Badge className="bg-blue-600 text-white text-[9px] px-2 py-0">Selected</Badge>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            <Button
+                onClick={onNext}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
+            >
                 Continue to Payment
-                <ChevronRight className="h-5 w-5 ml-2" />
             </Button>
         </div>
     );
 }
 
-// Payment Step
-function PaymentStep({ formData, updateFormData, onNext }: StepWithFormProps) {
-    const selectedPlan = plans.find((p) => p.id === formData.selectedPlan);
-
+// Payment Step Component
+function PaymentStep({ formData, updateFormData, onNext }: any) {
     return (
-        <Card className="border-0 shadow-xl">
-            <CardHeader>
-                <CardTitle className="text-2xl">Payment Information</CardTitle>
-                <p className="text-gray-600">
-                    Your subscription will start immediately after payment
-                </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                {/* Order Summary */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-sm text-gray-900 mb-4">Order Summary</h3>
-                    <div className="flex items-center justify-between mb-3">
-                        <span className="text-gray-700">{selectedPlan?.name} Plan</span>
-                        <span className="text-gray-900">${selectedPlan?.price}/month</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                        <span className="text-gray-900">Total</span>
-                        <span className="text-xl text-gray-900">
-              ${selectedPlan?.price}/month
-            </span>
-                    </div>
+        <div className="space-y-5">
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-[13px] text-gray-500">Selected Plan</span>
+                    <span className="text-[14px] font-bold text-gray-900">Professional</span>
                 </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-gray-500">Billed Monthly</span>
+                    <span className="text-[14px] font-bold text-gray-900">$29.00</span>
+                </div>
+            </div>
 
-                {/* Payment Form */}
+            <div className="space-y-4">
                 <div>
-                    <Label>Card Number *</Label>
-                    <Input
-                        placeholder="1234 5678 9012 3456"
-                        value={formData.cardNumber}
-                        onChange={(e) => updateFormData("cardNumber", e.target.value)}
-                        className="mt-2"
-                    />
+                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Card Number</Label>
+                    <div className="relative">
+                        <Input
+                            placeholder="0000 0000 0000 0000"
+                            value={formData.cardNumber}
+                            onChange={(e) => updateFormData("cardNumber", e.target.value)}
+                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex space-x-1 opacity-50">
+                            <CreditCard size={18} />
+                        </div>
+                    </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <Label>Expiry Date *</Label>
+                        <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Expiry</Label>
                         <Input
                             placeholder="MM/YY"
                             value={formData.cardExpiry}
                             onChange={(e) => updateFormData("cardExpiry", e.target.value)}
-                            className="mt-2"
+                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
                         />
                     </div>
                     <div>
-                        <Label>CVC *</Label>
+                        <Label className="text-[13px] font-bold text-gray-700 mb-2 block">CVC</Label>
                         <Input
                             placeholder="123"
                             value={formData.cardCVC}
                             onChange={(e) => updateFormData("cardCVC", e.target.value)}
-                            className="mt-2"
+                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
                         />
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <Label>Billing Address *</Label>
-                    <Input
-                        placeholder="123 Main St, City, Country"
-                        value={formData.billingAddress}
-                        onChange={(e) => updateFormData("billingAddress", e.target.value)}
-                        className="mt-2"
-                    />
-                </div>
+            <div className="flex items-center space-x-2 text-[12px] text-gray-400 justify-center">
+                <Shield size={14} className="text-green-500" />
+                <span>Payments are secure and encrypted.</span>
+            </div>
 
-                <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg">
-                    <Check className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm text-gray-700">
-            Your payment is secure and encrypted
-          </span>
-                </div>
-
-                <Button onClick={onNext} className="w-full" size="lg">
-                    Complete Payment
-                    <ChevronRight className="h-5 w-5 ml-2" />
-                </Button>
-
-                <p className="text-xs text-center text-gray-500">
-                    By completing payment, you agree to our subscription terms
-                </p>
-            </CardContent>
-        </Card>
+            <Button
+                onClick={onNext}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
+            >
+                Complete Checkout
+            </Button>
+        </div>
     );
 }
 
-// Integrations Step
-interface IntegrationsStepProps {
-    formData: OnboardingFormData;
-    toggleIntegration: (id: string) => void;
-    onNext: () => void;
-}
-
-function IntegrationsStep({ formData, toggleIntegration, onNext }: IntegrationsStepProps) {
-    const calendarIntegrations = integrations.filter((i) => i.category === "calendar");
-    const videoIntegrations = integrations.filter((i) => i.category === "video");
-
+// Integrations Step Component
+function IntegrationsStep({ formData, toggleIntegration, onNext }: any) {
     return (
-        <Card className="border-0 shadow-xl">
-            <CardHeader>
-                <CardTitle className="text-2xl">Connect Your Tools</CardTitle>
-                <p className="text-gray-600">
-                    Connect your calendar and video conferencing tools (optional)
-                </p>
-            </CardHeader>
-            <CardContent className="space-y-8">
-                {/* Calendar Integrations */}
-                <div>
-                    <h3 className="text-sm text-gray-900 mb-4">Calendar Integration</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {calendarIntegrations.map((integration) => (
-                            <motion.div
-                                key={integration.id}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <Card
-                                    className={`cursor-pointer transition-all ${
-                                        formData.selectedIntegrations.includes(integration.id)
-                                            ? "border-2 border-blue-600"
-                                            : "border-2 border-transparent hover:border-gray-300"
-                                    }`}
-                                    onClick={() => toggleIntegration(integration.id)}
-                                >
-                                    <CardContent className="p-6">
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div
-                                                className={`p-3 rounded-lg ${integration.color}`}
-                                            >
-                                                <integration.icon className="h-6 w-6" />
-                                            </div>
-                                            {formData.selectedIntegrations.includes(integration.id) && (
-                                                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                                                    <Check className="h-4 w-4 text-white" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <h4 className="text-sm text-gray-900 mb-1">
-                                            {integration.name}
-                                        </h4>
-                                        <p className="text-sm text-gray-600">
-                                            {integration.description}
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Video Integrations */}
-                <div>
-                    <h3 className="text-sm text-gray-900 mb-4">
-                        Video Conferencing
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {videoIntegrations.map((integration) => (
-                            <motion.div
-                                key={integration.id}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <Card
-                                    className={`cursor-pointer transition-all ${
-                                        formData.selectedIntegrations.includes(integration.id)
-                                            ? "border-2 border-blue-600"
-                                            : "border-2 border-transparent hover:border-gray-300"
-                                    }`}
-                                    onClick={() => toggleIntegration(integration.id)}
-                                >
-                                    <CardContent className="p-6">
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div
-                                                className={`p-3 rounded-lg ${integration.color}`}
-                                            >
-                                                <integration.icon className="h-6 w-6" />
-                                            </div>
-                                            {formData.selectedIntegrations.includes(integration.id) && (
-                                                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                                                    <Check className="h-4 w-4 text-white" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <h4 className="text-sm text-gray-900 mb-1">
-                                            {integration.name}
-                                        </h4>
-                                        <p className="text-sm text-gray-600">
-                                            {integration.description}
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-gray-600" />
-                    <span className="text-sm text-gray-700">
-            You can add more integrations later from settings
-          </span>
-                </div>
-
-                <Button onClick={onNext} className="w-full" size="lg">
-                    {formData.selectedIntegrations.length > 0 ? "Connect Selected" : "Skip for Now"}
-                    <ChevronRight className="h-5 w-5 ml-2" />
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
-// Import Data Step
-function ImportDataStep({ formData, updateFormData, onNext }: StepWithFormProps) {
-    const importOptions = [
-        {
-            id: "csv",
-            name: "CSV Import",
-            icon: FileSpreadsheet,
-            description: "Upload a CSV file with your client and project data",
-            color: "bg-green-100 text-green-600",
-        },
-        {
-            id: "manual",
-            name: "Manual Entry",
-            icon: Users,
-            description: "I'll add my clients and projects manually later",
-            color: "bg-blue-100 text-blue-600",
-        },
-        {
-            id: "skip",
-            name: "Skip for Now",
-            icon: ChevronRight,
-            description: "Start with a clean slate",
-            color: "bg-gray-100 text-gray-600",
-        },
-    ];
-
-    return (
-        <Card className="border-0 shadow-xl">
-            <CardHeader>
-                <CardTitle className="text-2xl">Import Your Data</CardTitle>
-                <p className="text-gray-600">
-                    Bring your existing clients and projects into Virevos
-                </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 gap-4">
-                    {importOptions.map((option) => (
-                        <motion.div
-                            key={option.id}
-                            whileHover={{ scale: 1.01 }}
-                            whileTap={{ scale: 0.99 }}
-                        >
-                            <Card
-                                className={`cursor-pointer transition-all ${
-                                    formData.importMethod === option.id
-                                        ? "border-2 border-blue-600"
-                                        : "border-2 border-transparent hover:border-gray-300"
-                                }`}
-                                onClick={() => updateFormData("importMethod", option.id)}
-                            >
-                                <CardContent className="p-6">
-                                    <div className="flex items-start space-x-4">
-                                        <div className={`p-3 rounded-lg ${option.color}`}>
-                                            <option.icon className="h-6 w-6" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="text-sm text-gray-900">{option.name}</h4>
-                                                {formData.importMethod === option.id && (
-                                                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                                                        <Check className="h-4 w-4 text-white" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-gray-600">{option.description}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {formData.importMethod === "csv" && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+                {integrations.map((int) => (
+                    <div
+                        key={int.id}
+                        onClick={() => toggleIntegration(int.id)}
+                        className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center space-x-4 ${
+                            formData.selectedIntegrations.includes(int.id)
+                                ? "border-blue-600 bg-blue-50/30"
+                                : "border-gray-100 bg-white hover:border-gray-200"
+                        }`}
                     >
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h4 className="text-sm text-gray-900 mb-2">Upload CSV File</h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                            Drag and drop your file here, or click to browse
-                        </p>
-                        <Button variant="outline">Choose File</Button>
-                        <p className="text-xs text-gray-500 mt-4">
-                            <a href="#" className="text-blue-600 hover:underline">
-                                Download sample CSV template
-                            </a>
-                        </p>
-                    </motion.div>
-                )}
-
-                <Button onClick={onNext} className="w-full" size="lg">
-                    Continue
-                    <ChevronRight className="h-5 w-5 ml-2" />
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
-// AI Personalization Step
-function AIPersonalizationStep({ formData, updateFormData, onNext }: StepWithFormProps) {
-    return (
-        <Card className="border-0 shadow-xl">
-            <CardHeader>
-                <div className="flex items-center space-x-3 mb-2">
-                    <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg">
-                        <Brain className="h-6 w-6 text-white" />
-                    </div>
-                    <CardTitle className="text-2xl">Teach Virevos About You</CardTitle>
-                </div>
-                <p className="text-gray-600">
-                    Help our AI assistant understand your work style and provide better
-                    suggestions
-                </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <Label>Industry / Field *</Label>
-                        <Input
-                            placeholder="e.g., Web Design, Consulting, Marketing"
-                            value={formData.industry}
-                            onChange={(e) => updateFormData("industry", e.target.value)}
-                            className="mt-2"
-                        />
-                    </div>
-                    <div>
-                        <Label>Team Size</Label>
-                        <Input
-                            placeholder="e.g., Solo, 2-5, 6-10"
-                            value={formData.teamSize}
-                            onChange={(e) => updateFormData("teamSize", e.target.value)}
-                            className="mt-2"
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <Label>What are your main goals with Virevos?</Label>
-                    <Textarea
-                        placeholder="e.g., Better client communication, automate invoicing, track project progress..."
-                        value={formData.mainGoals}
-                        onChange={(e) => updateFormData("mainGoals", e.target.value)}
-                        className="mt-2"
-                        rows={3}
-                    />
-                </div>
-
-                <div>
-                    <Label>Describe your typical work style</Label>
-                    <Textarea
-                        placeholder="e.g., I work with 3-5 clients at a time, usually on month-long projects. I prefer async communication and detailed project plans..."
-                        value={formData.workStyle}
-                        onChange={(e) => updateFormData("workStyle", e.target.value)}
-                        className="mt-2"
-                        rows={3}
-                    />
-                </div>
-
-                <div>
-                    <Label>Tell the AI anything else about you and your work</Label>
-                    <Textarea
-                        placeholder="Share anything that would help Virevos serve you better - your preferences, challenges, typical workflows, client types, etc."
-                        value={formData.aiContext}
-                        onChange={(e) => updateFormData("aiContext", e.target.value)}
-                        className="mt-2"
-                        rows={4}
-                    />
-                    <p className="text-xs text-gray-500 mt-2">
-                        This information helps our AI provide personalized automation suggestions,
-                        better task prioritization, and smarter scheduling
-                    </p>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-6">
-                    <div className="flex items-start space-x-3">
-                        <Sparkles className="h-5 w-5 text-purple-600 mt-0.5" />
-                        <div>
-                            <h4 className="text-sm text-gray-900 mb-2">
-                                AI Personalization Benefits
-                            </h4>
-                            <ul className="space-y-1 text-sm text-gray-700">
-                                <li>• Smart automation suggestions based on your workflow</li>
-                                <li>• Intelligent task prioritization</li>
-                                <li>• Personalized productivity insights</li>
-                                <li>• Context-aware communication drafts</li>
-                            </ul>
+                        <div className={`w-10 h-10 rounded-lg ${int.color} flex items-center justify-center text-white`}>
+                            <int.icon size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-[14px] font-bold text-gray-900">{int.name}</h4>
+                            <p className="text-[12px] text-gray-500">{int.description}</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            formData.selectedIntegrations.includes(int.id) ? "border-blue-600 bg-blue-600" : "border-gray-200"
+                        }`}>
+                            {formData.selectedIntegrations.includes(int.id) && <Check size={12} className="text-white" />}
                         </div>
                     </div>
-                </div>
+                ))}
+            </div>
 
-                <Button onClick={onNext} className="w-full" size="lg">
-                    Complete Setup
-                    <Check className="h-5 w-5 ml-2" />
-                </Button>
-            </CardContent>
-        </Card>
+            <Button
+                onClick={onNext}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
+            >
+                {formData.selectedIntegrations.length > 0 ? "Connect Selected" : "Skip Integrations"}
+            </Button>
+        </div>
+    );
+}
+
+// Import Data Step Component
+function ImportDataStep({ formData, updateFormData, onNext }: any) {
+    return (
+        <div className="space-y-4">
+            {[
+                { id: "csv", title: "CSV Spreadsheet", icon: FileSpreadsheet, desc: "Quick upload from Excel or Sheets." },
+                { id: "manual", title: "Manual Entry", icon: Users, desc: "Add details one by one later." }
+            ].map((opt) => (
+                <div
+                    key={opt.id}
+                    onClick={() => updateFormData("importMethod", opt.id)}
+                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center space-x-4 ${
+                        formData.importMethod === opt.id
+                            ? "border-blue-600 bg-blue-50/30"
+                            : "border-gray-100 bg-white hover:border-gray-200"
+                    }`}
+                >
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
+                        <opt.icon size={20} />
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="text-[14px] font-bold text-gray-900">{opt.title}</h4>
+                        <p className="text-[12px] text-gray-500">{opt.desc}</p>
+                    </div>
+                    {formData.importMethod === opt.id && <div className="w-2 h-2 rounded-full bg-blue-600"></div>}
+                </div>
+            ))}
+
+            <Button
+                onClick={onNext}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
+            >
+                Continue
+            </Button>
+        </div>
+    );
+}
+
+// AI Personalization Step Component
+function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
+    return (
+        <div className="space-y-5">
+            <div>
+                <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Industry</Label>
+                <Input
+                    placeholder="e.g. Agency, SaaS, Law"
+                    value={formData.industry}
+                    onChange={(e) => updateFormData("industry", e.target.value)}
+                    className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
+                />
+            </div>
+            <div>
+                <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Main Goal</Label>
+                <Textarea
+                    placeholder="What do you want to achieve?"
+                    value={formData.mainGoals}
+                    onChange={(e) => updateFormData("mainGoals", e.target.value)}
+                    className="bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px] min-h-[80px]"
+                />
+            </div>
+
+            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex items-start space-x-3">
+                <Sparkles size={16} className="text-purple-600 mt-0.5 flex-shrink-0" />
+                <p className="text-[12px] text-purple-700 leading-tight">
+                    Your input helps our AI generate smarter task suggestions and workflows specifically for your industry.
+                </p>
+            </div>
+
+            <Button
+                onClick={onNext}
+                className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg mt-2"
+            >
+                Complete Setup
+                <CheckCircle2 className="ml-2 h-4 w-4" />
+            </Button>
+        </div>
     );
 }
