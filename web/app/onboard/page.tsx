@@ -35,8 +35,8 @@ const plans = [
         period: "month",
         description: "Perfect for individuals getting started",
         features: [
-            "Up to 5 team members",
-            "10 projects",
+            "Up to 5 projects",
+            "10 AI credits per month",
             "Basic automation",
             "1GB storage",
         ],
@@ -49,25 +49,25 @@ const plans = [
         period: "month",
         description: "For growing teams and agencies",
         features: [
-            "Up to 50 team members",
-            "Unlimited projects",
+            "Up to 50 projects",
+            "50 AI credits per month",
             "Advanced automation",
             "100GB storage",
-            "AI assistant",
+            "Unlimited tasks",
         ],
         highlighted: true,
     },
     {
-        id: "enterprise",
-        name: "Enterprise",
-        price: 99,
+        id: "business",
+        name: "Business",
+        price: 79,
         period: "month",
-        description: "For large organizations",
+        description: "For business",
         features: [
-            "Unlimited team members",
-            "Unlimited everything",
-            "SSO & SAML",
-            "SLA guarantee",
+            "Unlimited projects",
+            "Unlimited tasks",
+            "Highest AI credits per month",
+            "Full app access",
         ],
         highlighted: false,
     },
@@ -83,12 +83,12 @@ const integrations = [
         category: "calendar",
     },
     {
-        id: "zoom",
-        name: "Zoom",
+        id: "outlook",
+        name: "Outlook",
         icon: Video,
-        description: "Enable video meetings",
+        description: "Outlook",
         color: "bg-purple-500",
-        category: "video",
+        category: "email",
     },
 ];
 
@@ -242,7 +242,7 @@ export default function Onboarding() {
 
                 <div className="relative z-10 w-full max-w-2xl text-center lg:text-left">
                     <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-                        Effortlessly manage your team and operations.
+                        Effortlessly manage your clients and operations.
                     </h2>
                     <p className="text-blue-100 text-lg mb-12 max-w-lg leading-relaxed">
                         Get organized with real-time insights, automated workflows, and high-performance communication tools.
@@ -331,7 +331,7 @@ function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPa
                         />
                         <button
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
