@@ -120,7 +120,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     });
 
     const steps = [
-        { id: 0, name: "Welcome", title: "Welcome to FlowTask", subtitle: "Let's get you set up in minutes." },
+        { id: 0, name: "Welcome", title: "Welcome to Virevos", subtitle: "Let's get you set up in minutes." },
         { id: 1, name: "Account", title: "Create Your Account", subtitle: "Enter your details to access your dashboard." },
         { id: 2, name: "Plan", title: "Choose Your Plan", subtitle: "Select the best fit for your workflow." },
         { id: 3, name: "Payment", title: "Secure Checkout", subtitle: "Safe and encrypted payment processing." },
@@ -193,7 +193,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                         <Sparkles className="h-5 w-5 text-white" />
                     </div>
-                    <span className="text-xl font-bold text-gray-900 tracking-tight">FlowTask</span>
+                    <span className="text-xl font-bold text-gray-900 tracking-tight">Virevos</span>
                 </div>
 
                 <div className="max-w-md mx-auto lg:mx-0 flex-1 flex flex-col justify-center">
@@ -229,7 +229,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
 
                 <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-[12px] text-gray-400 font-medium">
-                    <p>Copyright © 2026 FlowTask Enterprises LTD.</p>
+                    <p>Copyright © 2026 Virevos Enterprises LTD.</p>
                     <div className="flex space-x-6 mt-4 sm:mt-0">
                         <button className="hover:text-gray-600">Privacy Policy</button>
                         <button className="hover:text-gray-600">Terms of Service</button>
