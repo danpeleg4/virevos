@@ -131,14 +131,13 @@ export function Navigation() {
                   </>
               ) : (
                   <>
-                  <SignInButton>
                   <Button
+                      onClick={() => router.push("/login")}
                       variant="ghost"
                       className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
                   >
                     Login
                   </Button>
-                    </SignInButton>
                 <Button
                     onClick={() => router.push("/onboard")}
                     className="bg-gray-900 hover:bg-gray-800 text-sm px-4 rounded-lg text-white"

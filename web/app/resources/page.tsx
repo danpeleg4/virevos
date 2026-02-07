@@ -6,6 +6,7 @@ import { Button } from "../components/ui/button";
 import { BookOpen, FileText, Video, MessageCircle, ExternalLink, ArrowRight } from "lucide-react";
 import {Navigation} from "@/app/components/Navigation";
 import {Footer} from "@/app/components/Footer";
+import {useRouter} from "next/navigation";
 
 const resources = [
     {
@@ -93,6 +94,7 @@ const colorClasses = {
 };
 
 export default function Resources() {
+    const router = useRouter();
     return (
         <div className="min-h-screen bg-white">
             <Navigation />
@@ -291,7 +293,10 @@ export default function Resources() {
                         <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
                             Contact Support
                         </Button>
-                        <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-transparent text-white border-white hover:bg-white hover:text-blue-600">
+                        <Button
+                            size="lg"
+                            variant="outline"
+                            className="text-lg px-8 py-6 bg-transparent text-white border-white hover:bg-white hover:text-blue-600">
                             Watch Demo
                         </Button>
                     </div>

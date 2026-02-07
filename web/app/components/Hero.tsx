@@ -75,7 +75,6 @@ export function Hero() {
                     size="lg"
                     variant="outline"
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg rounded-xl group"
-                    onClick={() => router.push("/workspace/dashboard")}
                 >
                   <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                   Watch demo

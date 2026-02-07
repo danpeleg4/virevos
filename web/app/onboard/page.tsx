@@ -8,7 +8,6 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import {
     Check,
     ChevronLeft,
@@ -26,10 +25,7 @@ import {
     Eye,
     EyeOff,
 } from "lucide-react";
-
-interface OnboardingProps {
-    onComplete: () => void;
-}
+import { useRouter } from "next/navigation";
 
 const plans = [
     {
@@ -96,9 +92,10 @@ const integrations = [
     },
 ];
 
-export default function Onboarding({ onComplete }: OnboardingProps) {
+export default function Onboarding() {
     const [currentStep, setCurrentStep] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
+    const router = useRouter();
     const [formData, setFormData] = useState({
         fullName: "",
         email: "",
@@ -129,7 +126,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         { id: 6, name: "Personalize", title: "Personalize AI", subtitle: "Help our AI understand how you work." },
     ];
 
-    const updateFormData = (field: string, value: any) => {
+    const updateFormData = (field: string, value: never) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -145,8 +142,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     const nextStep = () => {
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
-        } else {
-            onComplete();
         }
     };
 
@@ -201,7 +196,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                         {currentStep > 0 && (
                             <button
                                 onClick={prevStep}
-                                className="flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6"
+                                className="cursor-pointer flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6"
                             >
                                 <ChevronLeft className="h-4 w-4 mr-1" />
                                 Back
@@ -231,8 +226,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-[12px] text-gray-400 font-medium">
                     <p>Copyright © 2026 Virevos Enterprises LTD.</p>
                     <div className="flex space-x-6 mt-4 sm:mt-0">
-                        <button className="hover:text-gray-600">Privacy Policy</button>
-                        <button className="hover:text-gray-600">Terms of Service</button>
+                        <button onClick={() => router.push("/privacy")} className="cursor-pointer hover:text-gray-600">Privacy Policy</button>
+                        <button onClick={() => router.push("/terms")} className="cursor-pointer  hover:text-gray-600">Terms of Service</button>
                     </div>
                 </div>
             </div>
@@ -263,6 +258,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
 // Welcome Step Component
 function WelcomeStep({ onNext }: { onNext: () => void }) {
+    const router = useRouter();
     return (
         <div className="space-y-8">
             <div className="grid grid-cols-1 gap-4">
@@ -292,7 +288,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             </Button>
 
             <p className="text-center text-[12px] text-gray-400">
-                Already have an account? <button className="text-blue-600 font-bold hover:underline">Log In Now.</button>
+                Already have an account? <button onClick={() => router.push("/login")} className="cursor-pointer text-blue-600 font-bold hover:underline">Log In Now.</button>
             </p>
         </div>
     );
@@ -300,6 +296,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 
 // Account Step Component
 function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPassword }: any) {
+    const router = useRouter();
     return (
         <div className="space-y-6">
             <div className="space-y-5">
@@ -313,7 +310,7 @@ function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPa
                     />
                 </div>
                 <div>
-                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Work Email</Label>
+                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Email</Label>
                     <Input
                         type="email"
                         placeholder="sellostore@company.com"
@@ -340,16 +337,6 @@ function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPa
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-                <Checkbox id="remember" className="rounded-md border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
-                <label htmlFor="remember" className="text-[13px] text-gray-500 font-medium cursor-pointer">
-                    Remember Me
-                </label>
-                <button className="ml-auto text-[13px] text-blue-600 font-bold hover:underline">
-                    Forgot Your Password?
-                </button>
             </div>
 
             <Button
@@ -387,7 +374,7 @@ function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPa
             </div>
 
             <p className="text-center text-[12px] text-gray-400">
-                Already have an account? <button className="text-blue-600 font-bold hover:underline">Log In Now.</button>
+                Already have an account? <button onClick={() => router.push("/login")} className="cursor-pointer text-blue-600 font-bold hover:underline">Log In Now.</button>
             </p>
         </div>
     );
