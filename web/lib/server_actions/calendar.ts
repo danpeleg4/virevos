@@ -46,7 +46,6 @@ export async function addMeetingToCalendar(meeting: Event) {
     if (dbUser.length === 0) {
         throw new Error("User not found in database");
     }
-    //
 
     const internalUserId = dbUser[0].user_id;
     const startDate = new Date(meeting.dateTime);
