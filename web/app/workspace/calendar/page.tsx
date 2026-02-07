@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { CalendarView } from "@/app/components/scheduling/CalendarView";
 import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSettings";
 import { MeetingNotes } from "@/app/components/scheduling/MeetingNotes";
+import {Meetings} from "@/app/components/scheduling/Meetings";
 
 export default function Calendar() {
     const [activeTab, setActiveTab] = useState("calendar");
@@ -25,6 +26,7 @@ export default function Calendar() {
             >
             <TabsList className="mb-6 shrink-0">
                     <TabsTrigger className="cursor-pointer" value="calendar">Calendar</TabsTrigger>
+                    <TabsTrigger className="cursor-pointer" value="meetings">Meetings</TabsTrigger>
                     <TabsTrigger className="cursor-pointer" value="notes">Meeting Notes</TabsTrigger>
                     <TabsTrigger className="cursor-pointer" value="integrations">Integrations</TabsTrigger>
                 </TabsList>
@@ -34,6 +36,10 @@ export default function Calendar() {
                     className="flex-1 min-h-0 overflow-hidden"
                 >
                     <CalendarView />
+                </TabsContent>
+
+                <TabsContent value="meetings" className="flex-1 min-h-0 overflow-y-auto">
+                    <Meetings></Meetings>
                 </TabsContent>
 
                 <TabsContent value="notes" className="flex-1 min-h-0 overflow-y-auto">

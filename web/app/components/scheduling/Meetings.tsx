@@ -1,8 +1,6 @@
-"use client"
-
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import {Card, CardContent} from "../../components/ui/card";
+import { Card, CardContent } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import {
@@ -31,7 +29,7 @@ import { Event } from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/server_actions/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
-export default function Meetings() {
+export function Meetings() {
     const [startModalOpen, setStartModalOpen] = useState(false);
     const [joinModalOpen, setJoinModalOpen] = useState(false);
     const [meetingName, setMeetingName] = useState("");
@@ -70,7 +68,7 @@ export default function Meetings() {
         setSelectedMeeting(meeting);
         setActiveView("summary");
     };
-    
+
     const handleJoinMeeting = (meeting: Event) => {
         if (!meeting.link) return;
         if (meeting.link.includes("/meet/")) {
@@ -544,49 +542,49 @@ function TranscriptionView({ meeting, onBack }: { meeting: Event; onBack: () => 
                 {/* RIGHT COLUMN: Transcription (Scrolls independently) */}
                 <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
                     <CardContent className="flex-1 min-h-0 p-0 overflow-y-auto">
-                    <div className="p-4 border-b bg-gray-50/50">
-                        <Input
-                            placeholder="Search transcript..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-white"
-                        />
-                    </div>
-                    <div
-                        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
-                        ref={containerRef}
-                    >
-                        {formattedData.length > 0 ? (
-                            formattedData.map((entry, index) => {
-                                const isActive = index === currentChunkIndex;
-                                return (
-                                    <div
-                                        key={index}
-                                        className={`p-3 rounded-xl transition-all duration-200 border border-transparent 
+                        <div className="p-4 border-b bg-gray-50/50">
+                            <Input
+                                placeholder="Search transcript..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="bg-white"
+                            />
+                        </div>
+                        <div
+                            className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+                            ref={containerRef}
+                        >
+                            {formattedData.length > 0 ? (
+                                formattedData.map((entry, index) => {
+                                    const isActive = index === currentChunkIndex;
+                                    return (
+                                        <div
+                                            key={index}
+                                            className={`p-3 rounded-xl transition-all duration-200 border border-transparent 
                                             ${isActive ? 'bg-blue-50 border-blue-100 shadow-sm' : 'hover:bg-gray-50'}`}
-                                    >
-                                        <div className="flex gap-3">
+                                        >
+                                            <div className="flex gap-3">
                                             <span className="text-[10px] font-mono text-gray-400 mt-1 tabular-nums">
                                                 {entry.time}
                                             </span>
-                                            <div>
-                                                <p className={`text-xs font-bold mb-0.5 ${isActive ? 'text-blue-600' : 'text-gray-900'}`}>
-                                                    {entry.speaker}
-                                                </p>
-                                                <p className="text-sm text-gray-600 leading-relaxed">
-                                                    {entry.text}
-                                                </p>
+                                                <div>
+                                                    <p className={`text-xs font-bold mb-0.5 ${isActive ? 'text-blue-600' : 'text-gray-900'}`}>
+                                                        {entry.speaker}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                                        {entry.text}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">
-                                Loading transcript segments...
-                            </div>
-                        )}
-                    </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">
+                                    Loading transcript segments...
+                                </div>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
