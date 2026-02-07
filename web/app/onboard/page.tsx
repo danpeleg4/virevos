@@ -120,10 +120,10 @@ export default function Onboarding() {
         { id: 0, name: "Welcome", title: "Welcome to Virevos", subtitle: "Let's get you set up in minutes." },
         { id: 1, name: "Account", title: "Create Your Account", subtitle: "Enter your details to access your dashboard." },
         { id: 2, name: "Plan", title: "Choose Your Plan", subtitle: "Select the best fit for your workflow." },
-        { id: 3, name: "Payment", title: "Secure Checkout", subtitle: "Safe and encrypted payment processing." },
-        { id: 4, name: "Connect", title: "Connect Tools", subtitle: "Integrate your existing calendar and video apps." },
-        { id: 5, name: "Import", title: "Import Data", subtitle: "Bring your clients and projects over easily." },
-        { id: 6, name: "Personalize", title: "Personalize AI", subtitle: "Help our AI understand how you work." },
+        { id: 3, name: "Connect", title: "Connect Tools", subtitle: "Integrate your existing calendar and video apps." },
+        { id: 4, name: "Import", title: "Import Data", subtitle: "Bring your clients and projects over easily." },
+        { id: 5, name: "Personalize", title: "Personalize AI", subtitle: "Help our AI understand how you work." },
+        { id: 6, name: "Payment", title: "Secure Checkout", subtitle: "Safe and encrypted payment processing." },
     ];
 
     const updateFormData = (field: string, value: never) => {
@@ -141,6 +141,15 @@ export default function Onboarding() {
 
     const nextStep = () => {
         if (currentStep < steps.length - 1) {
+            if (currentStep === 1) {
+                if (
+                    !formData.fullName ||
+                    !formData.email ||
+                    !formData.password
+                ) {
+                    return;
+                }
+            }
             setCurrentStep(currentStep + 1);
         }
     };
@@ -168,13 +177,13 @@ export default function Onboarding() {
             case 2:
                 return <PlanStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
             case 3:
-                return <PaymentStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
-            case 4:
                 return <IntegrationsStep formData={formData} toggleIntegration={toggleIntegration} onNext={nextStep} />;
-            case 5:
+            case 4:
                 return <ImportDataStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
-            case 6:
+            case 5:
                 return <AIPersonalizationStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
+            case 6:
+                return <PaymentStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
             default:
                 return null;
         }
@@ -297,6 +306,11 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 // Account Step Component
 function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPassword }: any) {
     const router = useRouter();
+    const canContinue =
+        formData.fullName.trim() !== "" &&
+        formData.email.trim() !== "" &&
+        formData.password.trim() !== "";
+
     return (
         <div className="space-y-6">
             <div className="space-y-5">
@@ -341,7 +355,13 @@ function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPa
 
             <Button
                 onClick={onNext}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
+                disabled={!canContinue}
+                className={`
+                    w-full h-12 rounded-xl text-[14px] font-bold shadow-lg
+                    ${canContinue
+                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"}
+                          `}
             >
                 Continue
             </Button>
@@ -424,73 +444,6 @@ function PlanStep({ formData, updateFormData, onNext }: any) {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
             >
                 Continue to Payment
-            </Button>
-        </div>
-    );
-}
-
-// Payment Step Component
-function PaymentStep({ formData, updateFormData, onNext }: any) {
-    return (
-        <div className="space-y-5">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-[13px] text-gray-500">Selected Plan</span>
-                    <span className="text-[14px] font-bold text-gray-900">Professional</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-[13px] text-gray-500">Billed Monthly</span>
-                    <span className="text-[14px] font-bold text-gray-900">$29.00</span>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                <div>
-                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Card Number</Label>
-                    <div className="relative">
-                        <Input
-                            placeholder="0000 0000 0000 0000"
-                            value={formData.cardNumber}
-                            onChange={(e) => updateFormData("cardNumber", e.target.value)}
-                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex space-x-1 opacity-50">
-                            <CreditCard size={18} />
-                        </div>
-                    </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Expiry</Label>
-                        <Input
-                            placeholder="MM/YY"
-                            value={formData.cardExpiry}
-                            onChange={(e) => updateFormData("cardExpiry", e.target.value)}
-                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-[13px] font-bold text-gray-700 mb-2 block">CVC</Label>
-                        <Input
-                            placeholder="123"
-                            value={formData.cardCVC}
-                            onChange={(e) => updateFormData("cardCVC", e.target.value)}
-                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex items-center space-x-2 text-[12px] text-gray-400 justify-center">
-                <Shield size={14} className="text-green-500" />
-                <span>Payments are secure and encrypted.</span>
-            </div>
-
-            <Button
-                onClick={onNext}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
-            >
-                Complete Checkout
             </Button>
         </div>
     );
@@ -611,6 +564,73 @@ function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
             >
                 Complete Setup
                 <CheckCircle2 className="ml-2 h-4 w-4" />
+            </Button>
+        </div>
+    );
+}
+
+// Payment Step Component
+function PaymentStep({ formData, updateFormData, onNext }: any) {
+    return (
+        <div className="space-y-5">
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-[13px] text-gray-500">Selected Plan</span>
+                    <span className="text-[14px] font-bold text-gray-900">Professional</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-gray-500">Billed Monthly</span>
+                    <span className="text-[14px] font-bold text-gray-900">$29.00</span>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div>
+                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Card Number</Label>
+                    <div className="relative">
+                        <Input
+                            placeholder="0000 0000 0000 0000"
+                            value={formData.cardNumber}
+                            onChange={(e) => updateFormData("cardNumber", e.target.value)}
+                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex space-x-1 opacity-50">
+                            <CreditCard size={18} />
+                        </div>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Expiry</Label>
+                        <Input
+                            placeholder="MM/YY"
+                            value={formData.cardExpiry}
+                            onChange={(e) => updateFormData("cardExpiry", e.target.value)}
+                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-[13px] font-bold text-gray-700 mb-2 block">CVC</Label>
+                        <Input
+                            placeholder="123"
+                            value={formData.cardCVC}
+                            onChange={(e) => updateFormData("cardCVC", e.target.value)}
+                            className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center space-x-2 text-[12px] text-gray-400 justify-center">
+                <Shield size={14} className="text-green-500" />
+                <span>Payments are secure and encrypted.</span>
+            </div>
+
+            <Button
+                onClick={onNext}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
+            >
+                Complete Checkout
             </Button>
         </div>
     );
