@@ -26,13 +26,6 @@ type OnboardingFormData = {
     aiContext: string;
 };
 
-type AccountFormData = {
-    fullName: string;
-    email: string;
-    password: string;
-    selectedPlan: string | null;
-};
-
 type AccountStepProps = {
     formData: Pick<OnboardingFormData, "fullName" | "email" | "password">;
     updateFormData: UpdateFormData;
@@ -92,7 +85,7 @@ type AIPersonalizationStepProps = {
 };
 
 type VerificationStepProps = {
-    formData: Pick<OnboardingFormData, "email">;
+    formData: Pick<OnboardingFormData, "password" | "email">;
     onNext: () => void;
 };
 

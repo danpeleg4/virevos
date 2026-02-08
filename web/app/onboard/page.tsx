@@ -34,7 +34,6 @@ import {
     IntegrationsStepProps, OnboardingFormData, PaymentStepProps,
     PlanStepProps, VerificationStepProps
 } from "@/types/onboard";
-import {ClerkAPIError} from "@clerk/types";
 
 const importOptions: ImportOption[] = [
     {
@@ -358,10 +357,33 @@ function AccountStep({
                          setShowPassword,
                      }: AccountStepProps) {
     const router = useRouter();
+    const { isLoaded, signUp, setActive } = useSignUp();
     const canContinue =
         formData.fullName.trim() !== "" &&
         formData.email.trim() !== "" &&
         formData.password.trim() !== "";
+
+    const completeSignUp = async () => {
+        if (!isLoaded) return;
+
+        try {
+            await signUp.create({
+                emailAddress: formData.email,
+                firstName: formData.fullName.trim().split(/\s+/)[0],
+                lastName: formData.fullName.trim().split(/\s+/)[1],
+                password: formData.password,
+            });
+
+            // Start email verification (OTP)
+            await signUp.prepareEmailAddressVerification({
+                strategy: "email_code",
+            });
+
+            onNext();
+        } catch (err: unknown) {
+            console.error("Sign up failed");
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -405,8 +427,10 @@ function AccountStep({
                 </div>
             </div>
 
+            <div id="clerk-captcha" />
+
             <Button
-                onClick={onNext}
+                onClick={completeSignUp}
                 disabled={!canContinue}
                 className={`
                     w-full h-12 rounded-xl text-[14px] font-bold shadow-lg
@@ -606,28 +630,6 @@ function AIPersonalizationStep({
                                    formData,
                                    updateFormData,
                                    onNext }: AIPersonalizationStepProps) {
-    const { isLoaded, signUp, setActive } = useSignUp()
-    const completeSignUp = async () => {
-        if (!isLoaded) return;
-
-        try {
-            const result = await signUp.create({
-                emailAddress: formData.email,
-                password: formData.password,
-            });
-
-            // Start email verification (OTP)
-            await signUp.prepareEmailAddressVerification({
-                strategy: "email_code",
-            });
-
-            // TODO Need to show an input for the code
-            // TODO and call attemptEmailAddressVerification later
-
-        } catch (err: unknown) {
-            console.error("Sign up failed");
-        }
-    };
 
     return (
         <div className="space-y-5">
@@ -739,7 +741,38 @@ function PaymentStep({
 
 // Verification Step Component
 function VerificationStep({ formData, onNext }: VerificationStepProps) {
-    const [code, setCode] = useState(["", "", "", ""]);
+    const { isLoaded, signUp, setActive } = useSignUp()
+    const [code, setCode] = useState(["", "", "", "", "", ""]);
+    const router = useRouter();
+
+    const verifyEmail = async () => {
+        if (!isLoaded) return;
+
+        try {
+            const result = await signUp.attemptEmailAddressVerification({
+                code: code.join(""),
+            });
+
+            if (result.status === "complete") {
+                await setActive({ session: result.createdSessionId });
+                router.push("/workspace/dashboard");
+            }
+        } catch (err) {
+            console.error("Verification failed", err);
+        }
+    };
+
+    const resendCode = async () => {
+        if (!isLoaded) return;
+
+        try {
+            await signUp.prepareEmailAddressVerification({
+                strategy: "email_code",
+            });
+        } catch (err) {
+            console.error("Resend failed", err);
+        }
+    };
 
     const handleChange = (index: number, value: string) => {
         if (value.length > 1) value = value.slice(-1);
@@ -750,7 +783,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
         setCode(newCode);
 
         // Auto-focus next input
-        if (value && index < 3) {
+        if (value && index < 6) {
             const nextInput = document.getElementById(`code-${index + 1}`);
             nextInput?.focus();
         }
@@ -786,13 +819,15 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
                 <p className="text-[13px] text-gray-500 mb-2">
                     Code sent to <span className="text-gray-900 font-bold">{formData.email || "your email"}</span>
                 </p>
-                <button className="cursor-pointer text-[13px] text-blue-600 font-bold hover:underline">
+                <button onClick={resendCode}
+                        className="cursor-pointer text-[13px] text-blue-600 font-bold hover:underline"
+                >
                     Resend Verification Code
                 </button>
             </div>
 
             <Button
-                onClick={onNext}
+                onClick={verifyEmail}
                 disabled={!isComplete}
                 className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
