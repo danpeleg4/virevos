@@ -86,8 +86,13 @@ type ImportDataStepProps = {
 };
 
 type AIPersonalizationStepProps = {
-    formData: Pick<OnboardingFormData, "industry" | "mainGoals">;
+    formData: Pick<OnboardingFormData, "password" | "email" | "industry" | "mainGoals" | "selectedPlan">;
     updateFormData: UpdateFormData;
+    onNext: () => void;
+};
+
+type VerificationStepProps = {
+    formData: Pick<OnboardingFormData, "email">;
     onNext: () => void;
 };
 

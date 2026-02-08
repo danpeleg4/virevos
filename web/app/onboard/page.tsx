@@ -25,14 +25,16 @@ import {
     EyeOff,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSignUp } from '@clerk/nextjs'
 import {
     AccountStepProps, AIPersonalizationStepProps,
     ImportDataStepProps,
     ImportOption,
     Integration,
     IntegrationsStepProps, OnboardingFormData, PaymentStepProps,
-    PlanStepProps
+    PlanStepProps, VerificationStepProps
 } from "@/types/onboard";
+import {ClerkAPIError} from "@clerk/types";
 
 const importOptions: ImportOption[] = [
     {
@@ -150,6 +152,7 @@ export default function Onboarding() {
         { id: 4, name: "Import", title: "Import Data", subtitle: "Bring your clients and projects over easily." },
         { id: 5, name: "Personalize", title: "Personalize AI", subtitle: "Help our AI understand how you work." },
         { id: 6, name: "Payment", title: "Secure Checkout", subtitle: "Safe and encrypted payment processing." },
+        { id: 7, name: "Verify", title: "Verify Email", subtitle: "We've sent a 4-digit code to your email." }
     ];
 
     const updateFormData = <K extends keyof OnboardingFormData>(
@@ -172,25 +175,34 @@ export default function Onboarding() {
     };
 
     const nextStep = () => {
-        if (currentStep < steps.length - 1) {
-            if (currentStep === 1) {
-                if (
-                    !formData.fullName ||
-                    !formData.email ||
-                    !formData.password
-                ) {
-                    return;
-                }
-            }
-            setCurrentStep(currentStep + 1);
+        if (currentStep >= steps.length - 1) return;
+
+        if (
+            currentStep === 1 &&
+            (!formData.fullName || !formData.email || !formData.password)
+        ) {
+            return;
         }
+
+        if (currentStep === 5 && formData.selectedPlan === "starter") {
+            setCurrentStep(7);
+            return;
+        }
+
+        setCurrentStep((prev) => prev + 1);
     };
 
+
     const prevStep = () => {
-        if (currentStep > 0) {
-            setCurrentStep(currentStep - 1);
+        if (currentStep <= 0) return;
+        if (currentStep === 7 && formData.selectedPlan === "starter") {
+            setCurrentStep(5);
+            return;
         }
+
+        setCurrentStep((prev) => prev - 1);
     };
+
 
     const renderStep = () => {
         switch (currentStep) {
@@ -216,6 +228,8 @@ export default function Onboarding() {
                 return <AIPersonalizationStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
             case 6:
                 return <PaymentStep formData={formData} updateFormData={updateFormData} onNext={nextStep} />;
+            case 7:
+                return <VerificationStep formData={formData} onNext={nextStep} />
             default:
                 return null;
         }
@@ -592,6 +606,29 @@ function AIPersonalizationStep({
                                    formData,
                                    updateFormData,
                                    onNext }: AIPersonalizationStepProps) {
+    const { isLoaded, signUp, setActive } = useSignUp()
+    const completeSignUp = async () => {
+        if (!isLoaded) return;
+
+        try {
+            const result = await signUp.create({
+                emailAddress: formData.email,
+                password: formData.password,
+            });
+
+            // Start email verification (OTP)
+            await signUp.prepareEmailAddressVerification({
+                strategy: "email_code",
+            });
+
+            // TODO Need to show an input for the code
+            // TODO and call attemptEmailAddressVerification later
+
+        } catch (err: unknown) {
+            console.error("Sign up failed");
+        }
+    };
+
     return (
         <div className="space-y-5">
             <div>
@@ -619,14 +656,13 @@ function AIPersonalizationStep({
                     Your input helps our AI generate smarter task suggestions and workflows specifically for your industry.
                 </p>
             </div>
-
-            <Button
-                onClick={onNext}
-                className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg mt-2"
-            >
-                Continue
-                <CheckCircle2 className="ml-2 h-4 w-4" />
-            </Button>
+                    <Button
+                        onClick={onNext}
+                        className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg mt-2"
+                    >
+                        Continue
+                        <CheckCircle2 className="ml-2 h-4 w-4" />
+                    </Button>
         </div>
     );
 }
@@ -696,6 +732,72 @@ function PaymentStep({
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
             >
                 Complete Checkout
+            </Button>
+        </div>
+    );
+}
+
+// Verification Step Component
+function VerificationStep({ formData, onNext }: VerificationStepProps) {
+    const [code, setCode] = useState(["", "", "", ""]);
+
+    const handleChange = (index: number, value: string) => {
+        if (value.length > 1) value = value.slice(-1);
+        if (!/^\d*$/.test(value)) return;
+
+        const newCode = [...code];
+        newCode[index] = value;
+        setCode(newCode);
+
+        // Auto-focus next input
+        if (value && index < 3) {
+            const nextInput = document.getElementById(`code-${index + 1}`);
+            nextInput?.focus();
+        }
+    };
+
+    const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+        if (e.key === "Backspace" && !code[index] && index > 0) {
+            const prevInput = document.getElementById(`code-${index - 1}`);
+            prevInput?.focus();
+        }
+    };
+
+    const isComplete = code.every(digit => digit !== "");
+
+    return (
+        <div className="space-y-8">
+            <div className="flex justify-center space-x-4">
+                {code.map((digit, i) => (
+                    <input
+                        key={i}
+                        id={`code-${i}`}
+                        type="text"
+                        inputMode="numeric"
+                        value={digit}
+                        onChange={(e) => handleChange(i, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(i, e)}
+                        className="w-14 h-16 text-center text-2xl font-bold bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-blue-600 focus:bg-white focus:outline-none transition-all"
+                    />
+                ))}
+            </div>
+
+            <div className="text-center">
+                <p className="text-[13px] text-gray-500 mb-2">
+                    Code sent to <span className="text-gray-900 font-bold">{formData.email || "your email"}</span>
+                </p>
+                <button className="cursor-pointer text-[13px] text-blue-600 font-bold hover:underline">
+                    Resend Verification Code
+                </button>
+            </div>
+
+            <Button
+                onClick={onNext}
+                disabled={!isComplete}
+                className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Verify & Complete
+                <CheckCircle2 className="ml-2 h-4 w-4" />
             </Button>
         </div>
     );
