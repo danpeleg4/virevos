@@ -7,7 +7,6 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
-import { Checkbox } from "../components/ui/checkbox";
 import {
     Check,
     ChevronLeft,
@@ -26,6 +25,29 @@ import {
     EyeOff,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+    AccountStepProps, AIPersonalizationStepProps,
+    ImportDataStepProps,
+    ImportOption,
+    Integration,
+    IntegrationsStepProps, OnboardingFormData, PaymentStepProps,
+    PlanStepProps
+} from "@/types/onboard";
+
+const importOptions: ImportOption[] = [
+    {
+        id: "csv",
+        title: "CSV Spreadsheet",
+        icon: FileSpreadsheet,
+        desc: "Quick upload from Excel or Sheets.",
+    },
+    {
+        id: "manual",
+        title: "Manual Entry",
+        icon: Users,
+        desc: "Add details one by one later.",
+    },
+];
 
 const plans = [
     {
@@ -96,19 +118,23 @@ export default function Onboarding() {
     const [currentStep, setCurrentStep] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<OnboardingFormData>({
         fullName: "",
         email: "",
         password: "",
         companyName: "",
+
         selectedPlan: "professional",
         billingCycle: "monthly",
+
         cardNumber: "",
         cardExpiry: "",
         cardCVC: "",
         billingAddress: "",
-        selectedIntegrations: [] as string[],
-        importMethod: "",
+
+        selectedIntegrations: [],
+        importMethod: null,
+
         industry: "",
         teamSize: "",
         mainGoals: "",
@@ -126,8 +152,14 @@ export default function Onboarding() {
         { id: 6, name: "Payment", title: "Secure Checkout", subtitle: "Safe and encrypted payment processing." },
     ];
 
-    const updateFormData = (field: string, value: never) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+    const updateFormData = <K extends keyof OnboardingFormData>(
+        field: K,
+        value: OnboardingFormData[K]
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
     };
 
     const toggleIntegration = (integrationId: string) => {
@@ -304,7 +336,13 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 }
 
 // Account Step Component
-function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPassword }: any) {
+function AccountStep({
+                         formData,
+                         updateFormData,
+                         onNext,
+                         showPassword,
+                         setShowPassword,
+                     }: AccountStepProps) {
     const router = useRouter();
     const canContinue =
         formData.fullName.trim() !== "" &&
@@ -401,7 +439,7 @@ function AccountStep({ formData, updateFormData, onNext, showPassword, setShowPa
 }
 
 // Plan Step Component
-function PlanStep({ formData, updateFormData, onNext }: any) {
+function PlanStep({ formData, updateFormData, onNext }: PlanStepProps) {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3">
@@ -450,11 +488,15 @@ function PlanStep({ formData, updateFormData, onNext }: any) {
 }
 
 // Integrations Step Component
-function IntegrationsStep({ formData, toggleIntegration, onNext }: any) {
+function IntegrationsStep({
+                              formData,
+                              toggleIntegration,
+                              onNext,
+                          }: IntegrationsStepProps) {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3">
-                {integrations.map((int) => (
+                {integrations.map((int: Integration) => (
                     <div
                         key={int.id}
                         onClick={() => toggleIntegration(int.id)}
@@ -464,17 +506,27 @@ function IntegrationsStep({ formData, toggleIntegration, onNext }: any) {
                                 : "border-gray-100 bg-white hover:border-gray-200"
                         }`}
                     >
-                        <div className={`w-10 h-10 rounded-lg ${int.color} flex items-center justify-center text-white`}>
+                        <div
+                            className={`w-10 h-10 rounded-lg ${int.color} flex items-center justify-center text-white`}
+                        >
                             <int.icon size={20} />
                         </div>
+
                         <div className="flex-1">
                             <h4 className="text-[14px] font-bold text-gray-900">{int.name}</h4>
                             <p className="text-[12px] text-gray-500">{int.description}</p>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            formData.selectedIntegrations.includes(int.id) ? "border-blue-600 bg-blue-600" : "border-gray-200"
-                        }`}>
-                            {formData.selectedIntegrations.includes(int.id) && <Check size={12} className="text-white" />}
+
+                        <div
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                formData.selectedIntegrations.includes(int.id)
+                                    ? "border-blue-600 bg-blue-600"
+                                    : "border-gray-200"
+                            }`}
+                        >
+                            {formData.selectedIntegrations.includes(int.id) && (
+                                <Check size={12} className="text-white" />
+                            )}
                         </div>
                     </div>
                 ))}
@@ -484,20 +536,23 @@ function IntegrationsStep({ formData, toggleIntegration, onNext }: any) {
                 onClick={onNext}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
             >
-                {formData.selectedIntegrations.length > 0 ? "Connect Selected" : "Skip Integrations"}
+                {formData.selectedIntegrations.length > 0
+                    ? "Connect Selected"
+                    : "Skip Integrations"}
             </Button>
         </div>
     );
 }
 
 // Import Data Step Component
-function ImportDataStep({ formData, updateFormData, onNext }: any) {
+function ImportDataStep({
+                            formData,
+                            updateFormData,
+                            onNext,
+                        }: ImportDataStepProps) {
     return (
         <div className="space-y-4">
-            {[
-                { id: "csv", title: "CSV Spreadsheet", icon: FileSpreadsheet, desc: "Quick upload from Excel or Sheets." },
-                { id: "manual", title: "Manual Entry", icon: Users, desc: "Add details one by one later." }
-            ].map((opt) => (
+            {importOptions.map((opt) => (
                 <div
                     key={opt.id}
                     onClick={() => updateFormData("importMethod", opt.id)}
@@ -510,11 +565,15 @@ function ImportDataStep({ formData, updateFormData, onNext }: any) {
                     <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
                         <opt.icon size={20} />
                     </div>
+
                     <div className="flex-1">
                         <h4 className="text-[14px] font-bold text-gray-900">{opt.title}</h4>
                         <p className="text-[12px] text-gray-500">{opt.desc}</p>
                     </div>
-                    {formData.importMethod === opt.id && <div className="w-2 h-2 rounded-full bg-blue-600"></div>}
+
+                    {formData.importMethod === opt.id && (
+                        <div className="w-2 h-2 rounded-full bg-blue-600" />
+                    )}
                 </div>
             ))}
 
@@ -529,7 +588,10 @@ function ImportDataStep({ formData, updateFormData, onNext }: any) {
 }
 
 // AI Personalization Step Component
-function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
+function AIPersonalizationStep({
+                                   formData,
+                                   updateFormData,
+                                   onNext }: AIPersonalizationStepProps) {
     return (
         <div className="space-y-5">
             <div>
@@ -562,7 +624,7 @@ function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
                 onClick={onNext}
                 className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg mt-2"
             >
-                Complete Setup
+                Continue
                 <CheckCircle2 className="ml-2 h-4 w-4" />
             </Button>
         </div>
@@ -570,7 +632,10 @@ function AIPersonalizationStep({ formData, updateFormData, onNext }: any) {
 }
 
 // Payment Step Component
-function PaymentStep({ formData, updateFormData, onNext }: any) {
+function PaymentStep({
+                         formData,
+                         updateFormData,
+                         onNext }: PaymentStepProps) {
     return (
         <div className="space-y-5">
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
