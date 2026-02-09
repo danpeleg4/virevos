@@ -149,7 +149,7 @@ export default function Login() {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-5">
                                 <div>
-                                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Work Email</Label>
+                                    <Label className="text-[13px] font-bold text-gray-700 mb-2 block">Email</Label>
                                     <Input
                                         type="email"
                                         placeholder="name@company.com"
@@ -188,13 +188,6 @@ export default function Login() {
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="flex items-center space-x-3">
-                                <Checkbox id="remember" className="cursor-pointer rounded-md border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
-                                <label htmlFor="remember" className="text-[13px] text-gray-500 font-medium cursor-pointer">
-                                    Keep me logged in
-                                </label>
                             </div>
 
                             <Button

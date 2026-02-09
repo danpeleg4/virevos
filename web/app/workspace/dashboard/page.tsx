@@ -20,37 +20,6 @@ import { task_percentage } from "@/lib/task_percentage";
 import {useQuery} from "@tanstack/react-query";
 import { Project } from '@/types/projects'
 
-const theStats = [
-    {
-        label: "Active Clients",
-        value: "24",
-        trend: "up",
-        icon: Users,
-        color: "blue",
-    },
-    {
-        label: "Active Projects",
-        value: "18",
-        trend: "up",
-        icon: FolderKanban,
-        color: "green",
-    },
-    {
-        label: "Tasks Completed",
-        value: "142",
-        trend: "up",
-        icon: CheckSquare,
-        color: "purple",
-    },
-    {
-        label: "Automations Run",
-        value: "89",
-        trend: "down",
-        icon: Zap,
-        color: "orange",
-    },
-];
-
 const recentAutomations = [
     {
         id: 1,
@@ -88,6 +57,49 @@ const fadeInUp = {
 };
 
 export default function Dashboard() {
+    const clientsNum = useQuery({
+        queryKey: ["clients"],
+        queryFn: async () => {
+            const res = await axios.get("/api/clients");
+            return res.data.length
+        }
+    })
+
+    const projectsNum = useQuery({
+        queryKey: ["projects"],
+        queryFn: async () => {
+            const res = await axios.get("/api/projects/get-projects");
+            return res.data.projects.length
+        }
+    })
+
+    const theStats = [
+        {
+            label: "Active Clients",
+            value: clientsNum.data,
+            icon: Users,
+            color: "blue",
+        },
+        {
+            label: "Active Projects",
+            value: projectsNum.data,
+            icon: FolderKanban,
+            color: "green",
+        },
+        {
+            label: "Tasks Completed",
+            value: "142",
+            icon: CheckSquare,
+            color: "purple",
+        },
+        {
+            label: "Automations Run",
+            value: "89",
+            icon: Zap,
+            color: "orange",
+        },
+    ];
+
     const allProjects = useQuery({
         queryKey: ["projects"],
         queryFn: async () => {

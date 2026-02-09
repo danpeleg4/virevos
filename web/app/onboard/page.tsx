@@ -365,7 +365,6 @@ function AccountStep({
 
     const completeSignUp = async () => {
         if (!isLoaded) return;
-
         try {
             await signUp.create({
                 emailAddress: formData.email,
