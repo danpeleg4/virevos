@@ -46,7 +46,7 @@ export function CalendarView() {
   const meetings = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => {
-      const res = await axios.get("/api/meetings");
+      const res = await axios.get("/api/events");
       const data: Event[] = res.data;
 
       // Ensure attendees array exists to avoid runtime crashes
