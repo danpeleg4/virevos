@@ -75,7 +75,8 @@ const mockScheduledMessages: ScheduledMessage[] = [
     initials: "AK",
     client: "DesignCo",
     subject: "Invoice Reminder",
-    content: "Hi Alex, This is a friendly reminder that invoice #1234 is due...",
+    content:
+      "Hi Alex, This is a friendly reminder that invoice #1234 is due...",
     scheduledFor: "Nov 15, 2025, 10:00 AM",
     scheduledDate: new Date("2025-11-15T10:00:00"),
     status: "scheduled",
@@ -83,7 +84,9 @@ const mockScheduledMessages: ScheduledMessage[] = [
 ];
 
 export function ScheduledMessages() {
-  const [messages, setMessages] = useState<ScheduledMessage[]>(mockScheduledMessages);
+  const [messages, setMessages] = useState<ScheduledMessage[]>(
+    mockScheduledMessages
+  );
   const [isCreating, setIsCreating] = useState(false);
 
   const getStatusBadge = (status: ScheduledMessage["status"]) => {
@@ -96,7 +99,9 @@ export function ScheduledMessages() {
           </Badge>
         );
       case "sending":
-        return <Badge className="bg-yellow-100 text-yellow-700">Sending...</Badge>;
+        return (
+          <Badge className="bg-yellow-100 text-yellow-700">Sending...</Badge>
+        );
       case "sent":
         return <Badge className="bg-green-100 text-green-700">Sent</Badge>;
       case "failed":
@@ -213,8 +218,12 @@ export function ScheduledMessages() {
                       <SelectValue placeholder="Select client..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Sarah Johnson (Acme Corp)</SelectItem>
-                      <SelectItem value="2">Mike Chen (TechStart Inc)</SelectItem>
+                      <SelectItem value="1">
+                        Sarah Johnson (Acme Corp)
+                      </SelectItem>
+                      <SelectItem value="2">
+                        Mike Chen (TechStart Inc)
+                      </SelectItem>
                       <SelectItem value="3">Alex Kim (DesignCo)</SelectItem>
                     </SelectContent>
                   </Select>
@@ -222,7 +231,9 @@ export function ScheduledMessages() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm text-gray-700">Subject (Email only)</label>
+                <label className="text-sm text-gray-700">
+                  Subject (Email only)
+                </label>
                 <Input placeholder="Email subject..." />
               </div>
 
@@ -239,10 +250,18 @@ export function ScheduledMessages() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1hour">In 1 hour</SelectItem>
-                    <SelectItem value="tomorrow-morning">Tomorrow morning (9 AM)</SelectItem>
-                    <SelectItem value="tomorrow-afternoon">Tomorrow afternoon (2 PM)</SelectItem>
-                    <SelectItem value="next-week">Next Monday (9 AM)</SelectItem>
-                    <SelectItem value="custom">Custom date & time...</SelectItem>
+                    <SelectItem value="tomorrow-morning">
+                      Tomorrow morning (9 AM)
+                    </SelectItem>
+                    <SelectItem value="tomorrow-afternoon">
+                      Tomorrow afternoon (2 PM)
+                    </SelectItem>
+                    <SelectItem value="next-week">
+                      Next Monday (9 AM)
+                    </SelectItem>
+                    <SelectItem value="custom">
+                      Custom date & time...
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -7,460 +7,487 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 import {
-    X,
-    Send,
-    Sparkles,
-    Lightbulb,
-    TrendingUp,
-    Calendar,
-    FileCode,
-    ChevronDown,
-    CheckCircle2,
-    Circle,
-    Loader2,
-    ChevronRight
+  X,
+  Send,
+  Sparkles,
+  Lightbulb,
+  TrendingUp,
+  Calendar,
+  FileCode,
+  ChevronDown,
+  CheckCircle2,
+  Circle,
+  Loader2,
+  ChevronRight,
 } from "lucide-react";
 import {
-    Reasoning,
-    ReasoningContent,
-    ReasoningTrigger,
-} from '@/app/components/ai-elements/reasoning';
-import {useQueryClient} from "@tanstack/react-query";
-import {clients, CreateClientInput} from "@/types/clients";
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/app/components/ai-elements/reasoning";
+import { useQueryClient } from "@tanstack/react-query";
+import { clients, CreateClientInput } from "@/types/clients";
 
 interface AIAssistantProps {
-    isOpen: boolean;
-    onClose: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 interface ThinkingStep {
-    id: string;
-    type: "planning" | "executing" | "analyzing" | "completed";
-    title: string;
-    description?: string;
-    status: "pending" | "active" | "completed";
-    details?: string[];
-    files?: { name: string; changes: string }[];
-    tools?: {
-        name: string;
-        input?: string
-        output?: string;
-    }[];
+  id: string;
+  type: "planning" | "executing" | "analyzing" | "completed";
+  title: string;
+  description?: string;
+  status: "pending" | "active" | "completed";
+  details?: string[];
+  files?: { name: string; changes: string }[];
+  tools?: {
+    name: string;
+    input?: string;
+    output?: string;
+  }[];
 }
 
 const initialMessages = [
-    {
-        id: "1",
-        role: "assistant",
-        content: "Hi! I'm your Virevos AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
-    },
+  {
+    id: "1",
+    role: "assistant",
+    content:
+      "Hi! I'm your Virevos AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
+  },
 ];
 
 const nextBestActions = [
-    {
-        icon: Lightbulb,
-        title: "Follow up with TechCorp",
-        description: "Project milestone due in 2 days - send status update",
-        priority: "high",
-    },
-    {
-        icon: Calendar,
-        title: "Schedule DesignCo kickoff",
-        description: "New client onboarding scheduled for tomorrow",
-        priority: "medium",
-    },
-    {
-        icon: TrendingUp,
-        title: "Review Q4 automation performance",
-        description: "3 automations completed today with 95% success rate",
-        priority: "low",
-    },
+  {
+    icon: Lightbulb,
+    title: "Follow up with TechCorp",
+    description: "Project milestone due in 2 days - send status update",
+    priority: "high",
+  },
+  {
+    icon: Calendar,
+    title: "Schedule DesignCo kickoff",
+    description: "New client onboarding scheduled for tomorrow",
+    priority: "medium",
+  },
+  {
+    icon: TrendingUp,
+    title: "Review Q4 automation performance",
+    description: "3 automations completed today with 95% success rate",
+    priority: "low",
+  },
 ];
 
 type AddClientToolOutput = {
-    kind: "clients_updated";
-    client: {
-        id: number;
-        name: string;
-        email: string;
-        phone: string;
-        //status: "pending" | "active" | "completed";
-        industry: string;
-        notes?: string;
-    };
-    message: string;
+  kind: "clients_updated";
+  client: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    //status: "pending" | "active" | "completed";
+    industry: string;
+    notes?: string;
+  };
+  message: string;
 };
 
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-    const [selectedModel, setSelectedModel] = useState("");
-    const {messages, sendMessage} = useChat();
-    const [input, setInput] = useState('');
-    const queryClient = useQueryClient();
-    const processedToolParts = useRef<Set<string>>(new Set());
+  const [selectedModel, setSelectedModel] = useState("");
+  const { messages, sendMessage } = useChat();
+  const [input, setInput] = useState("");
+  const queryClient = useQueryClient();
+  const processedToolParts = useRef<Set<string>>(new Set());
 
-    useEffect(() => {
-        messages.forEach(message => {
-            message.parts.forEach(part => {
-                if (part.type !== "tool-addClient") return;
-                if (!part.output) return;
+  useEffect(() => {
+    messages.forEach((message) => {
+      message.parts.forEach((part) => {
+        if (part.type !== "tool-addClient") return;
+        if (!part.output) return;
 
-                // run only once per tool call
-                if (processedToolParts.current.has(part.toolCallId)) return;
-                processedToolParts.current.add(part.toolCallId);
+        // run only once per tool call
+        if (processedToolParts.current.has(part.toolCallId)) return;
+        processedToolParts.current.add(part.toolCallId);
 
-                const clientData = part.output as AddClientToolOutput;
-                const newClient = clientData.client;
+        const clientData = part.output as AddClientToolOutput;
+        const newClient = clientData.client;
 
-                const optimisticClient = {
-                    ...newClient,
-                    status: "active",
-                    totalProjects: 0,
-                    activeProjects: 0,
-                    completedProjects: 0,
-                    avatar: newClient.name[0],
-                };
+        const optimisticClient = {
+          ...newClient,
+          status: "active",
+          totalProjects: 0,
+          activeProjects: 0,
+          completedProjects: 0,
+          avatar: newClient.name[0],
+        };
 
-                queryClient.setQueryData<clients[]>(["clients"], (old = []) => [
-                    ...old,
-                    optimisticClient,
-                ]);
-            });
-        });
-    }, [messages, queryClient]);
+        queryClient.setQueryData<clients[]>(["clients"], (old = []) => [
+          ...old,
+          optimisticClient,
+        ]);
+      });
+    });
+  }, [messages, queryClient]);
 
-    const handleSend = async () => {
-        if (!input.trim()) return;
-        setInput("");
-        await sendMessage({text: input})
-    };
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    setInput("");
+    await sendMessage({ text: input });
+  };
 
-    const handleSuggestionClick = (suggestion: string) => {
-        //append({
-        //    role: "user",
-        //    content: suggestion,
-        //});
-    };
+  const handleSuggestionClick = (suggestion: string) => {
+    //append({
+    //    role: "user",
+    //    content: suggestion,
+    //});
+  };
 
-    return (
-        <AnimatePresence>
-            {isOpen && (
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="ai-assistant-panel"
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ type: "spring", damping: 30, stiffness: 300 }}
+          className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
+        >
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-br from-purple-500 to-blue-600 p-2 rounded-lg">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-gray-900">Virevos AI</h3>
+                <p className="text-xs text-gray-500">Reasoning Mode</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Next Best Actions */}
+          <div className="p-4 border-b border-gray-200 bg-gray-50">
+            <h4 className="text-sm text-gray-700 mb-3">Next Best Actions</h4>
+            <div className="space-y-2">
+              {nextBestActions.map((action, index) => (
                 <motion.div
-                    key="ai-assistant-panel"
-                    initial={{ x: "100%" }}
-                    animate={{ x: 0 }}
-                    exit={{ x: "100%" }}
-                    transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                    className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                 >
-                    {/* Header */}
-                    <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                            <div className="bg-gradient-to-br from-purple-500 to-blue-600 p-2 rounded-lg">
-                                <Sparkles className="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-gray-900">Virevos AI</h3>
-                                <p className="text-xs text-gray-500">Reasoning Mode</p>
-                            </div>
+                  <Card className="p-3 transition-colors cursor-pointer bg-white border-gray-200 hover:bg-gray-100">
+                    <div className="flex items-start space-x-3">
+                      <div
+                        className={`p-2 rounded-lg ${
+                          action.priority === "high"
+                            ? "bg-red-50"
+                            : action.priority === "medium"
+                              ? "bg-yellow-50"
+                              : "bg-green-50"
+                        }`}
+                      >
+                        <action.icon
+                          className={`h-4 w-4 ${
+                            action.priority === "high"
+                              ? "text-red-600"
+                              : action.priority === "medium"
+                                ? "text-yellow-600"
+                                : "text-green-600"
+                          }`}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm text-gray-900">
+                            {action.title}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs border ${
+                              action.priority === "high"
+                                ? "border-red-200 text-red-700"
+                                : action.priority === "medium"
+                                  ? "border-yellow-200 text-yellow-700"
+                                  : "border-green-200 text-green-700"
+                            }`}
+                          >
+                            {action.priority}
+                          </Badge>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 hover:text-gray-900">
-                                <X className="h-5 w-5" />
-                            </Button>
-                        </div>
+                        <p className="text-xs text-gray-600">
+                          {action.description}
+                        </p>
+                      </div>
                     </div>
-
-                    {/* Next Best Actions */}
-                    <div className="p-4 border-b border-gray-200 bg-gray-50">
-                        <h4 className="text-sm text-gray-700 mb-3">Next Best Actions</h4>
-                        <div className="space-y-2">
-                            {nextBestActions.map((action, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                >
-                                    <Card
-                                        className="p-3 transition-colors cursor-pointer bg-white border-gray-200 hover:bg-gray-100"
-                                    >
-                                        <div className="flex items-start space-x-3">
-                                            <div className={`p-2 rounded-lg ${
-                                                action.priority === "high"
-                                                    ? "bg-red-50"
-                                                    : action.priority === "medium"
-                                                        ? "bg-yellow-50"
-                                                        : "bg-green-50"
-                                            }`}>
-                                                <action.icon className={`h-4 w-4 ${
-                                                    action.priority === "high"
-                                                        ? "text-red-600"
-                                                        : action.priority === "medium"
-                                                            ? "text-yellow-600"
-                                                            : "text-green-600"
-                                                }`} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <p className="text-sm text-gray-900">{action.title}</p>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={`text-xs border ${
-                                                            action.priority === "high"
-                                                                ? "border-red-200 text-red-700"
-                                                                : action.priority === "medium"
-                                                                    ? "border-yellow-200 text-yellow-700"
-                                                                    : "border-green-200 text-green-700"
-                                                        }`}
-                                                    >
-                                                        {action.priority}
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-xs text-gray-600">{action.description}</p>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
-                        {messages.map((message, msgIndex) => {
-                            return (
-                                <motion.div
-                                    key={message.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: msgIndex * 0.1 }}
-                                    className={`flex ${
-                                        message.role === "user" ? "justify-end" : "justify-start"
-                                    }`}
-                                >
-                                    <div className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}>
-                                        {message.role === "user" ? (
-                                            <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
-                                                {message.parts.map((part, i) => {
-                                                    if (part.type === "text") {
-                                                        return <p key={`${message.id}-${i}`}>{part.text}</p>;
-                                                    }
-                                                    return null;
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {/* Content */}
-                                                {message.parts && (
-                                                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                                                        <div className="prose prose-sm max-w-none text-sm text-gray-800">
-                                                            {message.parts?.map((part, i) => {
-                                                                if (part.type === "text") {
-                                                                    return  <ReactMarkdown key={i}>
-                                                                        {part.text}
-                                                                    </ReactMarkdown>;
-                                                                }
-                                                                if (part.type == "reasoning"){
-                                                                    return (
-                                                                        <Reasoning
-                                                                            key={`${message.id}-${i}`}
-                                                                            className="w-full"
-                                                                            isStreaming={status === 'streaming' && i === message.parts.length - 1 && message.id === messages.at(-1)?.id}
-                                                                        >
-                                                                            <ReasoningTrigger />
-                                                                            <ReasoningContent>{part.text}</ReasoningContent>
-                                                                        </Reasoning>
-                                                                    );
-                                                                }
-                                                                return null;
-                                                            })}
-
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Input */}
-                    <div className="p-4 border-t border-gray-200 bg-gray-50">
-                        <div className="flex space-x-2">
-                            <Input
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                                placeholder="Plan, search, build anything..."
-                                className="flex-1 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                            />
-                            <Button
-                                onClick={handleSend}
-                                size="icon"
-                                className="bg-blue-600 hover:bg-blue-700"
-                                disabled={!input.trim()}
-                            >
-                                <Send className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                            <p className="text-xs text-gray-500">
-                                <Sparkles className="h-3 w-3 inline mr-1" />
-                                Agent
-                            </p>
-                        </div>
-                    </div>
+                  </Card>
                 </motion.div>
-            )}
-        </AnimatePresence>
-    );
+              ))}
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
+            {messages.map((message, msgIndex) => {
+              return (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: msgIndex * 0.1 }}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}
+                  >
+                    {message.role === "user" ? (
+                      <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
+                        {message.parts.map((part, i) => {
+                          if (part.type === "text") {
+                            return (
+                              <p key={`${message.id}-${i}`}>{part.text}</p>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Content */}
+                        {message.parts && (
+                          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                            <div className="prose prose-sm max-w-none text-sm text-gray-800">
+                              {message.parts?.map((part, i) => {
+                                if (part.type === "text") {
+                                  return (
+                                    <ReactMarkdown key={i}>
+                                      {part.text}
+                                    </ReactMarkdown>
+                                  );
+                                }
+                                if (part.type == "reasoning") {
+                                  return (
+                                    <Reasoning
+                                      key={`${message.id}-${i}`}
+                                      className="w-full"
+                                      isStreaming={
+                                        status === "streaming" &&
+                                        i === message.parts.length - 1 &&
+                                        message.id === messages.at(-1)?.id
+                                      }
+                                    >
+                                      <ReasoningTrigger />
+                                      <ReasoningContent>
+                                        {part.text}
+                                      </ReasoningContent>
+                                    </Reasoning>
+                                  );
+                                }
+                                return null;
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Input */}
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex space-x-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Plan, search, build anything..."
+                className="flex-1 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
+              />
+              <Button
+                onClick={handleSend}
+                size="icon"
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={!input.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-gray-500">
+                <Sparkles className="h-3 w-3 inline mr-1" />
+                Agent
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
 
 // Thinking Step Component
 function ThinkingStepComponent({
-                                   step,
-                                   index,
-                                   isLast
-                               }: {
-    step: ThinkingStep;
-    index: number;
-    isLast: boolean;
+  step,
+  index,
+  isLast,
+}: {
+  step: ThinkingStep;
+  index: number;
+  isLast: boolean;
 }) {
-    const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.15 }}
-            className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-        >
-            <div
-                className="p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => setIsExpanded(!isExpanded)}
-            >
-                <div className="flex items-start space-x-3">
-                    <div className="mt-0.5">
-                        {step.status === "active" ? (
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                                <Loader2 className="h-4 w-4 text-blue-500" />
-                            </motion.div>
-                        ) : step.status === "completed" ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        ) : (
-                            <Circle className="h-4 w-4 text-gray-400" />
-                        )}
-                    </div>
-                    <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-900">{step.title}</p>
-                            {(step.details || step.files) && (
-                                <motion.div
-                                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                                </motion.div>
-                            )}
-                        </div>
-                        {step.description && (
-                            <p className="text-xs text-gray-600 mt-1">{step.description}</p>
-                        )}
-                    </div>
-                </div>
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.15 }}
+      className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+    >
+      <div
+        className="p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-start space-x-3">
+          <div className="mt-0.5">
+            {step.status === "active" ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <Loader2 className="h-4 w-4 text-blue-500" />
+              </motion.div>
+            ) : step.status === "completed" ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            ) : (
+              <Circle className="h-4 w-4 text-gray-400" />
+            )}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-900">{step.title}</p>
+              {(step.details || step.files) && (
+                <motion.div
+                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </motion.div>
+              )}
             </div>
+            {step.description && (
+              <p className="text-xs text-gray-600 mt-1">{step.description}</p>
+            )}
+          </div>
+        </div>
+      </div>
 
-            {/* Expanded Details */}
-            <AnimatePresence>
-                {isExpanded && (step.details || step.files) && (
+      {/* Expanded Details */}
+      <AnimatePresence>
+        {isExpanded && (step.details || step.files) && (
+          <motion.div
+            key="step-details"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-gray-200"
+          >
+            <div className="px-3 py-2 bg-gray-50">
+              {step.files && step.files.length > 0 && (
+                <div className="space-y-1.5 mb-2">
+                  {step.files.map((file, fileIndex) => (
                     <motion.div
-                        key="step-details"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden border-t border-gray-200"
+                      key={fileIndex}
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: fileIndex * 0.05 }}
+                      className="flex items-center justify-between p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors group"
                     >
-                        <div className="px-3 py-2 bg-gray-50">
-                            {step.files && step.files.length > 0 && (
-                                <div className="space-y-1.5 mb-2">
-                                    {step.files.map((file, fileIndex) => (
-                                        <motion.div
-                                            key={fileIndex}
-                                            initial={{ opacity: 0, y: -5 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: fileIndex * 0.05 }}
-                                            className="flex items-center justify-between p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors group"
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <FileCode className="h-3.5 w-3.5 text-blue-600" />
-                                                <span className="text-xs text-gray-700">{file.name}</span>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <span className="text-xs text-green-600">{file.changes}</span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    Open
-                                                </Button>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {step.tools && step.tools.length > 0 && (
-                                <div className="space-y-1.5 mb-2">
-                                    {step.tools.map((tool, i) => (
-                                        <div
-                                            key={i}
-                                            className="p-2 bg-gray-100 rounded text-xs text-gray-700"
-                                        >
-                                            <div className="font-medium">{tool.name}</div>
-                                            {tool.input && (
-                                                <pre className="mt-1 text-[11px] text-gray-600">
-                        Input: {JSON.stringify(tool.input, null, 2)}
-                    </pre>
-                                            )}
-                                            {tool.output && (
-                                                <pre className="mt-1 text-[11px] text-green-700">
-                        Output: {JSON.stringify(tool.output, null, 2)}
-                    </pre>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {step.details && step.details.length > 0 && (
-                                <ul className="space-y-1">
-                                    {step.details.map((detail, detailIndex) => (
-                                        <motion.li
-                                            key={detailIndex}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: detailIndex * 0.05 }}
-                                            className="text-xs text-gray-600 flex items-start space-x-2"
-                                        >
-                                            <ChevronRight className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
-                                            <span>{detail}</span>
-                                        </motion.li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        <FileCode className="h-3.5 w-3.5 text-blue-600" />
+                        <span className="text-xs text-gray-700">
+                          {file.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-green-600">
+                          {file.changes}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          Open
+                        </Button>
+                      </div>
                     </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.div>
-    );
+                  ))}
+                </div>
+              )}
+
+              {step.tools && step.tools.length > 0 && (
+                <div className="space-y-1.5 mb-2">
+                  {step.tools.map((tool, i) => (
+                    <div
+                      key={i}
+                      className="p-2 bg-gray-100 rounded text-xs text-gray-700"
+                    >
+                      <div className="font-medium">{tool.name}</div>
+                      {tool.input && (
+                        <pre className="mt-1 text-[11px] text-gray-600">
+                          Input: {JSON.stringify(tool.input, null, 2)}
+                        </pre>
+                      )}
+                      {tool.output && (
+                        <pre className="mt-1 text-[11px] text-green-700">
+                          Output: {JSON.stringify(tool.output, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {step.details && step.details.length > 0 && (
+                <ul className="space-y-1">
+                  {step.details.map((detail, detailIndex) => (
+                    <motion.li
+                      key={detailIndex}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: detailIndex * 0.05 }}
+                      className="text-xs text-gray-600 flex items-start space-x-2"
+                    >
+                      <ChevronRight className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
+                      <span>{detail}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 }

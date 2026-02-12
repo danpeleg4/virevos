@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -48,11 +54,14 @@ export function ClientPortal() {
                 Client Portal
               </CardTitle>
               <CardDescription className="mt-2">
-                White-labeled portal for your clients to track projects, communicate, and
-                access files
+                White-labeled portal for your clients to track projects,
+                communicate, and access files
               </CardDescription>
             </div>
-            <Switch checked={portalEnabled} onCheckedChange={setPortalEnabled} />
+            <Switch
+              checked={portalEnabled}
+              onCheckedChange={setPortalEnabled}
+            />
           </div>
         </CardHeader>
         {portalEnabled && (
@@ -66,16 +75,16 @@ export function ClientPortal() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => navigator.clipboard.writeText(`https://${portalUrl}`)}
+                    onClick={() =>
+                      navigator.clipboard.writeText(`https://${portalUrl}`)
+                    }
                   >
                     <Copy className="h-4 w-4 mr-2" />
                     Copy
                   </Button>
                   <Button size="sm" variant="outline">
                     <Eye className="h-4 w-4 mr-2" />
-                      <Link href="/workspace/portal">
-                          Preview
-                      </Link>
+                    <Link href="/workspace/portal">Preview</Link>
                   </Button>
                 </div>
               </div>
@@ -124,7 +133,9 @@ export function ClientPortal() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="custom-domain">Custom Domain (Optional)</Label>
+                  <Label htmlFor="custom-domain">
+                    Custom Domain (Optional)
+                  </Label>
                   <Input
                     id="custom-domain"
                     placeholder="portal.yourcompany.com"
@@ -213,7 +224,10 @@ export function ClientPortal() {
                       Allow clients to send messages directly through the portal
                     </p>
                   </div>
-                  <Switch checked={chatEnabled} onCheckedChange={setChatEnabled} />
+                  <Switch
+                    checked={chatEnabled}
+                    onCheckedChange={setChatEnabled}
+                  />
                 </div>
 
                 {chatEnabled && (
@@ -233,7 +247,10 @@ export function ClientPortal() {
                           AI answers common questions automatically
                         </p>
                       </div>
-                      <Switch checked={aiChatBot} onCheckedChange={setAiChatBot} />
+                      <Switch
+                        checked={aiChatBot}
+                        onCheckedChange={setAiChatBot}
+                      />
                     </div>
 
                     {aiChatBot && (
@@ -244,11 +261,17 @@ export function ClientPortal() {
                         <ul className="space-y-1 text-sm text-purple-800">
                           <li className="flex items-start">
                             <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>Instant answers to FAQs about projects and timelines</span>
+                            <span>
+                              Instant answers to FAQs about projects and
+                              timelines
+                            </span>
                           </li>
                           <li className="flex items-start">
                             <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>Automatic routing of complex questions to your team</span>
+                            <span>
+                              Automatic routing of complex questions to your
+                              team
+                            </span>
                           </li>
                           <li className="flex items-start">
                             <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
@@ -271,7 +294,10 @@ export function ClientPortal() {
                           Let clients upload and download files
                         </p>
                       </div>
-                      <Switch checked={fileSharing} onCheckedChange={setFileSharing} />
+                      <Switch
+                        checked={fileSharing}
+                        onCheckedChange={setFileSharing}
+                      />
                     </div>
 
                     <Separator />
@@ -283,7 +309,8 @@ export function ClientPortal() {
                         rows={2}
                       />
                       <p className="text-xs text-gray-500">
-                        Sent automatically when clients send a message outside business hours
+                        Sent automatically when clients send a message outside
+                        business hours
                       </p>
                     </div>
                   </>
@@ -343,15 +370,21 @@ export function ClientPortal() {
                   <Label>Access Control</Label>
                   <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Require email verification</span>
+                      <span className="text-sm text-gray-700">
+                        Require email verification
+                      </span>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Two-factor authentication</span>
+                      <span className="text-sm text-gray-700">
+                        Two-factor authentication
+                      </span>
                       <Switch />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Session timeout (hours)</span>
+                      <span className="text-sm text-gray-700">
+                        Session timeout (hours)
+                      </span>
                       <Input type="number" defaultValue="24" className="w-20" />
                     </div>
                   </div>
@@ -366,15 +399,27 @@ export function ClientPortal() {
                   </Label>
                   <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">End-to-end encryption</span>
-                      <Badge className="bg-green-100 text-green-700">Enabled</Badge>
+                      <span className="text-sm text-gray-700">
+                        End-to-end encryption
+                      </span>
+                      <Badge className="bg-green-100 text-green-700">
+                        Enabled
+                      </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Data retention (days)</span>
-                      <Input type="number" defaultValue="365" className="w-20" />
+                      <span className="text-sm text-gray-700">
+                        Data retention (days)
+                      </span>
+                      <Input
+                        type="number"
+                        defaultValue="365"
+                        className="w-20"
+                      />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">IP whitelist</span>
+                      <span className="text-sm text-gray-700">
+                        IP whitelist
+                      </span>
                       <Switch />
                     </div>
                   </div>
@@ -386,19 +431,27 @@ export function ClientPortal() {
                   <Label>Features</Label>
                   <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Project timeline view</span>
+                      <span className="text-sm text-gray-700">
+                        Project timeline view
+                      </span>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Invoice access</span>
+                      <span className="text-sm text-gray-700">
+                        Invoice access
+                      </span>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Document library</span>
+                      <span className="text-sm text-gray-700">
+                        Document library
+                      </span>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Feedback forms</span>
+                      <span className="text-sm text-gray-700">
+                        Feedback forms
+                      </span>
                       <Switch />
                     </div>
                   </div>

@@ -1,11 +1,21 @@
-"use client"
+"use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Progress } from "../../components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
@@ -79,14 +89,16 @@ export default function Page() {
     {
       id: 1,
       from: "Project Team",
-      message: "The latest designs are ready for your review. Please check the files section.",
+      message:
+        "The latest designs are ready for your review. Please check the files section.",
       timestamp: "2 hours ago",
       unread: true,
     },
     {
       id: 2,
       from: "John Doe",
-      message: "Great feedback on the mockups! We'll implement those changes by tomorrow.",
+      message:
+        "Great feedback on the mockups! We'll implement those changes by tomorrow.",
       timestamp: "Yesterday",
       unread: false,
     },
@@ -226,7 +238,9 @@ export default function Page() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Files Shared</p>
-                  <p className="text-2xl text-gray-900 mt-1">{recentFiles.length}</p>
+                  <p className="text-2xl text-gray-900 mt-1">
+                    {recentFiles.length}
+                  </p>
                 </div>
                 <Paperclip className="h-8 w-8 text-orange-500" />
               </div>
@@ -264,7 +278,9 @@ export default function Page() {
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h3 className="text-lg text-gray-900">{project.name}</h3>
+                            <h3 className="text-lg text-gray-900">
+                              {project.name}
+                            </h3>
                             <p className="text-sm text-gray-600 mt-1">
                               Due: {project.dueDate}
                             </p>
@@ -276,7 +292,9 @@ export default function Page() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Progress</span>
-                            <span className="text-gray-900">{project.progress}%</span>
+                            <span className="text-gray-900">
+                              {project.progress}%
+                            </span>
                           </div>
                           <Progress value={project.progress} />
                         </div>
@@ -407,7 +425,9 @@ export default function Page() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Next Milestone</span>
-                      <span className="text-gray-900">{project.nextMilestone}</span>
+                      <span className="text-gray-900">
+                        {project.nextMilestone}
+                      </span>
                     </div>
                     <Button className="w-full mt-4">View Details</Button>
                   </CardContent>
@@ -446,7 +466,9 @@ export default function Page() {
                           {msg.timestamp}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 ml-10">{msg.message}</p>
+                      <p className="text-sm text-gray-700 ml-10">
+                        {msg.message}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -532,7 +554,9 @@ export default function Page() {
                           <FileText className="h-6 w-6 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-gray-900">{invoice.number}</p>
+                          <p className="text-sm text-gray-900">
+                            {invoice.number}
+                          </p>
                           <p className="text-xs text-gray-500">
                             Due: {invoice.dueDate}
                           </p>
@@ -540,7 +564,9 @@ export default function Page() {
                       </div>
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
-                          <p className="text-lg text-gray-900">{invoice.amount}</p>
+                          <p className="text-lg text-gray-900">
+                            {invoice.amount}
+                          </p>
                           <Badge
                             className={
                               invoice.status === "Paid"

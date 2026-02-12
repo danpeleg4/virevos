@@ -58,7 +58,8 @@ const mockMessages: Message[] = [
     from: "Sarah Johnson",
     initials: "SJ",
     subject: "Q4 Project Timeline Question",
-    preview: "Hey team, I wanted to follow up on the timeline we discussed for the Q4 rollout...",
+    preview:
+      "Hey team, I wanted to follow up on the timeline we discussed for the Q4 rollout...",
     timestamp: "10 minutes ago",
     unread: true,
     starred: false,
@@ -83,7 +84,8 @@ const mockMessages: Message[] = [
     from: "Alex Kim",
     initials: "AK",
     subject: "Invoice #1234 Payment Confirmation",
-    preview: "Thank you for your service this month. Payment has been processed...",
+    preview:
+      "Thank you for your service this month. Payment has been processed...",
     timestamp: "3 hours ago",
     unread: true,
     starred: false,
@@ -108,7 +110,8 @@ const mockMessages: Message[] = [
     from: "Robert Wilson",
     initials: "RW",
     subject: "Meeting Notes Follow-up",
-    preview: "Following up on our call this morning. Here are the action items we discussed...",
+    preview:
+      "Following up on our call this morning. Here are the action items we discussed...",
     timestamp: "2 days ago",
     unread: false,
     starred: true,
@@ -122,7 +125,9 @@ export function UnifiedInbox() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "email" | "chat">("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "unread" | "starred">("all");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "unread" | "starred"
+  >("all");
   const [showAIComposer, setShowAIComposer] = useState(false);
 
   const filteredMessages = messages.filter((msg) => {
@@ -130,13 +135,13 @@ export function UnifiedInbox() {
       msg.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
       msg.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       msg.preview.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesType = filterType === "all" || msg.type === filterType;
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "unread" && msg.unread) ||
       (filterStatus === "starred" && msg.starred);
-    
+
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -150,9 +155,7 @@ export function UnifiedInbox() {
 
   const markAsRead = (id: string) => {
     setMessages(
-      messages.map((msg) =>
-        msg.id === id ? { ...msg, unread: false } : msg
-      )
+      messages.map((msg) => (msg.id === id ? { ...msg, unread: false } : msg))
     );
   };
 
@@ -180,7 +183,10 @@ export function UnifiedInbox() {
               </div>
 
               <div className="flex gap-2">
-                <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
+                <Select
+                  value={filterType}
+                  onValueChange={(v: any) => setFilterType(v)}
+                >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -201,7 +207,10 @@ export function UnifiedInbox() {
                   </SelectContent>
                 </Select>
 
-                <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
+                <Select
+                  value={filterStatus}
+                  onValueChange={(v: any) => setFilterStatus(v)}
+                >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -229,8 +238,8 @@ export function UnifiedInbox() {
                     selectedMessage?.id === message.id
                       ? "bg-blue-50 border-blue-200 border"
                       : message.unread
-                      ? "bg-gray-50 hover:bg-gray-100"
-                      : "hover:bg-gray-50"
+                        ? "bg-gray-50 hover:bg-gray-100"
+                        : "hover:bg-gray-50"
                   }`}
                 >
                   <div className="flex items-start space-x-3">
@@ -309,8 +318,12 @@ export function UnifiedInbox() {
                     <AvatarFallback>{selectedMessage.initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg text-gray-900">{selectedMessage.from}</h3>
-                    <p className="text-sm text-gray-600">{selectedMessage.client}</p>
+                    <h3 className="text-lg text-gray-900">
+                      {selectedMessage.from}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {selectedMessage.client}
+                    </p>
                     {selectedMessage.subject && (
                       <p className="text-sm text-gray-900 mt-2">
                         {selectedMessage.subject}
@@ -355,19 +368,23 @@ export function UnifiedInbox() {
 
               {/* Message Content */}
               <div className="prose prose-sm max-w-none">
-                <p className="text-gray-700">
-                  {selectedMessage.preview}
+                <p className="text-gray-700">{selectedMessage.preview}</p>
+                <p className="text-gray-700 mt-4">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                  laboris.
                 </p>
                 <p className="text-gray-700 mt-4">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-                  eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-                  ad minim veniam, quis nostrud exercitation ullamco laboris.
+                  I'm looking forward to hearing your thoughts on this. Please
+                  let me know if you have any questions or need any
+                  clarification.
                 </p>
                 <p className="text-gray-700 mt-4">
-                  I'm looking forward to hearing your thoughts on this. Please let me
-                  know if you have any questions or need any clarification.
+                  Best regards,
+                  <br />
+                  {selectedMessage.from}
                 </p>
-                <p className="text-gray-700 mt-4">Best regards,<br />{selectedMessage.from}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">

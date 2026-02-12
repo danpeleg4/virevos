@@ -17,7 +17,8 @@ export function Footer() {
           <div className="col-span-2">
             <h3 className="text-2xl text-white mb-4">Virevos</h3>
             <p className="text-gray-400 mb-6 max-w-sm">
-                The productivity platform that helps you accomplish more, effortlessly.
+              The productivity platform that helps you accomplish more,
+              effortlessly.
             </p>
             {/* Social Links */}
             <div className="flex space-x-4">
@@ -46,7 +47,10 @@ export function Footer() {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link}>
-                    <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                    <a
+                      href="#"
+                      className="text-gray-400 hover:text-white transition-colors text-sm"
+                    >
                       {link}
                     </a>
                   </li>
@@ -62,13 +66,22 @@ export function Footer() {
             © 2026 Virevos. All rights reserved.
           </p>
           <div className="flex space-x-6 text-sm">
-            <a href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+            <a
+              href="/privacy"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
               Privacy Policy
             </a>
-            <a href="/terms" className="text-gray-400 hover:text-white transition-colors">
+            <a
+              href="/terms"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
               Terms of Service
             </a>
-            <a href="#" className="text-gray-400 hover:text-white transition-colors">
+            <a
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
               Cookie Settings
             </a>
           </div>

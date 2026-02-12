@@ -1,9 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -22,7 +17,7 @@ import {
 } from "lucide-react";
 import type { Event } from "@/types/meeting";
 
-import {formatDateOnly, formatTimeOnly} from "@/lib/date_utils";
+import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 interface MeetingDetailsDialogProps {
   event: Event;
@@ -41,7 +36,8 @@ Mike Chen: Actually, before we dive in, can we make sure we have access to the A
 Sarah Johnson: Absolutely. I'll send that over right after this call. Let me add that as a follow-up task.`;
 
 const mockNotes = {
-  summary: "Initial onboarding session for Acme Corp. Covered platform overview, automation setup, and integration requirements.",
+  summary:
+    "Initial onboarding session for Acme Corp. Covered platform overview, automation setup, and integration requirements.",
   keyPoints: [
     "Client needs Slack integration for team notifications",
     "Planning to migrate 50+ active projects from current tool",
@@ -96,7 +92,8 @@ export function EventDetailsDialog({
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
-                  {formatTimeOnly(new Date(event.dateTime))} ({event.duration} min)
+                  {formatTimeOnly(new Date(event.dateTime))} ({event.duration}{" "}
+                  min)
                 </div>
                 <div className="flex items-center">
                   <Video className="h-4 w-4 mr-1" />
@@ -114,72 +111,71 @@ export function EventDetailsDialog({
         <div className="space-y-6 mt-6">
           {/* Attendees */}
           <div>
-              {(event.attendees && event.attendees.length > 0) && (
-                  <div>
-                      <h3 className="text-sm text-gray-700 mb-3 flex items-center">
-                          <Users className="h-4 w-4 mr-2" />
-                          Attendees
-                      </h3>
+            {event.attendees && event.attendees.length > 0 && (
+              <div>
+                <h3 className="text-sm text-gray-700 mb-3 flex items-center">
+                  <Users className="h-4 w-4 mr-2" />
+                  Attendees
+                </h3>
 
-                      <div className="flex flex-wrap gap-2">
-                          {event.attendees.map((attendee, i) => (
-                              <div
-                                  key={i}
-                                  className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2"
-                              >
-                                  <Avatar className="h-6 w-6">
-                                      <AvatarFallback className="text-xs">
-                                          {attendee.initials}
-                                      </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-sm text-gray-700">{attendee.name}</span>
-                              </div>
-                          ))}
-                      </div>
-                  </div>
-              )}
-
+                <div className="flex flex-wrap gap-2">
+                  {event.attendees.map((attendee, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2"
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">
+                          {attendee.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-gray-700">
+                        {attendee.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Meeting Link */}
-          {
-            event.link ? (
-                <div>
-                  <h3 className="text-sm text-gray-700 mb-3">Link</h3>
-                  <div className="flex items-center space-x-2">
-                    <input
-                        type="text"
-                        readOnly
-                        value={event.link || ""}
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50"
-                    />
-                    <Button
-                        className="cursor-pointer"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          navigator.clipboard.writeText(event.link || "");
-                        }}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy
-                    </Button>
-                    <Button
-                        className="cursor-pointer"
-                        size="sm"
-                        onClick={() => {
-                          if (event.link) {
-                            window.open(event.link, "_blank");
-                          }
-                        }}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Join
-                    </Button>
-                  </div>
-                </div>
-            ) : null
-          }
+          {event.link ? (
+            <div>
+              <h3 className="text-sm text-gray-700 mb-3">Link</h3>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={event.link || ""}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50"
+                />
+                <Button
+                  className="cursor-pointer"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(event.link || "");
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+                <Button
+                  className="cursor-pointer"
+                  size="sm"
+                  onClick={() => {
+                    if (event.link) {
+                      window.open(event.link, "_blank");
+                    }
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Join
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           {hasAIContent && (
             <>
@@ -200,14 +196,19 @@ export function EventDetailsDialog({
                   <CardContent className="space-y-4">
                     <div>
                       <h4 className="text-sm text-gray-700 mb-2">Summary</h4>
-                      <p className="text-sm text-gray-600">{mockNotes.summary}</p>
+                      <p className="text-sm text-gray-600">
+                        {mockNotes.summary}
+                      </p>
                     </div>
 
                     <div>
                       <h4 className="text-sm text-gray-700 mb-2">Key Points</h4>
                       <ul className="space-y-1">
                         {mockNotes.keyPoints.map((point, i) => (
-                          <li key={i} className="text-sm text-gray-600 flex items-start">
+                          <li
+                            key={i}
+                            className="text-sm text-gray-600 flex items-start"
+                          >
                             <span className="mr-2">•</span>
                             <span>{point}</span>
                           </li>
@@ -227,7 +228,9 @@ export function EventDetailsDialog({
                             className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
                           >
                             <div className="flex items-start justify-between mb-1">
-                              <p className="text-sm text-gray-900">{item.task}</p>
+                              <p className="text-sm text-gray-900">
+                                {item.task}
+                              </p>
                               <Badge
                                 variant="outline"
                                 className="text-xs bg-white"
@@ -253,7 +256,10 @@ export function EventDetailsDialog({
                       <h4 className="text-sm text-gray-700 mb-2">Follow-ups</h4>
                       <ul className="space-y-1">
                         {mockNotes.followUps.map((followUp, i) => (
-                          <li key={i} className="text-sm text-gray-600 flex items-start">
+                          <li
+                            key={i}
+                            className="text-sm text-gray-600 flex items-start"
+                          >
                             <span className="mr-2">•</span>
                             <span>{followUp}</span>
                           </li>

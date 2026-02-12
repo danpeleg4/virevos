@@ -1,19 +1,19 @@
-import nextJest from 'next/jest.js'
+import nextJest from "next/jest.js";
 
 const createJestConfig = nextJest({
-  dir: './',
-})
+  dir: "./",
+});
 
 const config = {
-  coverageProvider: 'v8',
-  testEnvironment: 'node',
+  coverageProvider: "v8",
+  testEnvironment: "node",
 
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-    '^@db/(.*)$': '<rootDir>/../db/$1',
+    "^@/(.*)$": "<rootDir>/$1",
+    "^@db/(.*)$": "<rootDir>/../db/$1",
   },
 
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-}
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+};
 
-export default createJestConfig(config)
+export default createJestConfig(config);

@@ -5,48 +5,44 @@ import { currentUser } from "@clerk/nextjs/server";
 import { eq, sql } from "drizzle-orm";
 
 export async function GET() {
-    try {
-        const user = await currentUser();
-        if (!user?.id) {
-            return new NextResponse("Unauthorized", { status: 401 });
-        }
+  try {
+    const user = await currentUser();
+    if (!user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
-        const result = await db
-            .select({
-                id: clients.id,
-                name: clients.name,
-                email: clients.email,
-                phone: clients.phone,
-                industry: clients.industry,
-                status: clients.status,
-                notes: clients.notes,
-                createdAt: clients.createdAt,
-                updatedAt: clients.updatedAt,
+    const result = await db
+      .select({
+        id: clients.id,
+        name: clients.name,
+        email: clients.email,
+        phone: clients.phone,
+        industry: clients.industry,
+        status: clients.status,
+        notes: clients.notes,
+        createdAt: clients.createdAt,
+        updatedAt: clients.updatedAt,
 
-
-                totalProjects: sql<number>`
+        totalProjects: sql<number>`
                     COUNT(${projects.id})
                 `,
 
-                completedProjects: sql<number>`
+        completedProjects: sql<number>`
       COUNT(CASE WHEN ${projects.status} = 'completed' THEN 1 END)
     `,
 
-                activeProjects: sql<number>`
+        activeProjects: sql<number>`
       COUNT(CASE WHEN ${projects.status} = 'in-progress' THEN 1 END)
     `,
-            })
-            .from(clients)
-            .leftJoin(
-                projects,
-                eq(projects.clientId, clients.id),
-            )
-            .where(eq(clients.userId, user.id))
-            .groupBy(clients.id);
+      })
+      .from(clients)
+      .leftJoin(projects, eq(projects.clientId, clients.id))
+      .where(eq(clients.userId, user.id))
+      .groupBy(clients.id);
 
-        return NextResponse.json(result);
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({ message: "Server error" }, { status: 500 });
-    }
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
+  }
 }
