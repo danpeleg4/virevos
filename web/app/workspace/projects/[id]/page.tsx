@@ -40,9 +40,11 @@ import {
   addFileMetadata,
   addNotes,
   deleteProject,
+} from "@/lib/server_actions/projects";
+import {
   deleteTask,
   updateTaskStatus,
-} from "@/lib/server_actions";
+} from "@/lib/server_actions/tasks"
 import { Project, ProjectFile, ProjectNote } from "@/types/projects";
 
 export default function ProjectPage({

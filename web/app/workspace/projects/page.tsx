@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from "@/types/projects";
 import { useRouter } from "next/navigation";
-import { changeProjectStatus } from "@/lib/server_actions";
+import { changeProjectStatus } from "@/lib/server_actions/projects";
 
 export default function ProjectsPage() {
   const [search, setSearch] = useState("");

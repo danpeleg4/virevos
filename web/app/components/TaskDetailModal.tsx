@@ -21,7 +21,7 @@ import {
   deleteTask,
   updateTaskDueDate,
   updateTaskStatus,
-} from "@/lib/server_actions";
+} from "@/lib/server_actions/tasks";
 
 export function TaskDetailModal({
   projectId,
