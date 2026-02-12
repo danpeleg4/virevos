@@ -60,7 +60,7 @@ export default function Clients() {
         }
     })
 
-    const filteredClients = getClients?.data?.filter((client) =>
+    const filteredClients = getClients.data?.filter((client) =>
         client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         client?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         client?.industry?.toLowerCase().includes(searchQuery.toLowerCase())

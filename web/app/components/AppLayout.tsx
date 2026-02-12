@@ -25,7 +25,7 @@ import {
 
 import { AIAssistant } from "./AIAssistant";
 import Link from "next/link";
-import {UserButton, useUser} from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
 
 const navItems = [
