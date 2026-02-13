@@ -31,13 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, priority, dueDate, project } = body as {
-      title?: string;
-      description?: string;
-      priority?: string;
-      dueDate?: string;
-      project?: string | number | null;
-    };
+    const { title, description, priority, dueDate, projectName } = body as Pick<Task, "title" | "description" | "dueDate" | "priority" | "projectName">
 
     if (!title || !title.trim()) {
       return new NextResponse("Missing title", { status: 400 });
@@ -47,11 +41,11 @@ export async function POST(req: NextRequest) {
     let projectId: number | null = null;
 
     if (
-      project !== undefined &&
-      project !== null &&
-      String(project).trim() !== ""
+        projectName !== undefined &&
+        projectName !== null &&
+      String(projectName).trim() !== ""
     ) {
-      const maybeId = Number(project);
+      const maybeId = Number(projectName);
       if (!Number.isNaN(maybeId)) {
         const byId = await db
           .select()
@@ -70,7 +64,7 @@ export async function POST(req: NextRequest) {
         const byName = await db
           .select()
           .from(projects)
-          .where(eq(projects.name, String(project)));
+          .where(eq(projects.name, String(projectName)));
 
         if (!byName.length) {
           return new NextResponse("Project not found", { status: 400 });
@@ -83,14 +77,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Build values, omitting dueDate if empty so DB default applies
-    const values: any = {
+    const values: Pick<Task, "title" | "description" | "priority" | "dueDate" | "projectId" | "userId" | "status" | "completed"> = {
+      dueDate: Date.now().toString(),
       title: title.trim(),
       description,
       priority,
       projectId,
       userId: user.id,
       status: "in-progress",
-      completed: false,
+      completed: false
     };
     if (dueDate && String(dueDate).trim() !== "") {
       values.dueDate = dueDate;
