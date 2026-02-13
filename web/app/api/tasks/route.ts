@@ -13,8 +13,8 @@ export async function GET() {
   // Fetch all tasks with project name
   const allTasks = await db
     .select({
-      tasks: tasks, // all task fields
-      projectName: projects.name, // add project name
+      tasks: tasks,
+      projectName: projects.name,
     })
     .from(tasks)
     .leftJoin(projects, eq(tasks.projectId, projects.id))

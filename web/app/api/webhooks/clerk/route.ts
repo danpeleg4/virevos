@@ -8,6 +8,9 @@ import { verifyWebhook } from "@clerk/backend/webhooks";
 
 export async function POST(req: Request) {
   const evt = await verifyWebhook(req);
+  if (!evt) {
+    return new Response("invalid webhook", { status: 400 });
+  }
   if (evt.type === "user.created") {
     const { id, email_addresses, first_name, last_name } = evt.data;
     await db.insert(users).values({

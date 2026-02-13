@@ -218,7 +218,7 @@ export default function Customers() {
                         <div className="pt-6 border-t border-gray-200">
                           <Quote className="h-8 w-8 text-blue-600 mb-4" />
                           <p className="text-lg text-gray-700 mb-4 italic">
-                            "{study.quote}"
+                            &#34;{study.quote}&#34;
                           </p>
                           <div>
                             <p className="text-gray-900">{study.author}</p>

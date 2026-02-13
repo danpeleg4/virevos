@@ -76,7 +76,6 @@ export async function POST(req: NextRequest) {
 
         // Convert Node stream to string
         const bodyString = await streamToString(response.Body as Readable);
-        //console.log("Got JSON file:", file.Key, bodyString);
         return JSON.parse(bodyString);
       })
     );

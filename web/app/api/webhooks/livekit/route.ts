@@ -4,9 +4,7 @@ import { meetingAttendees, events } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
-  // Parse JSON body
   const event = await req.json();
-  console.log("Received event:", event);
 
   const roomName = event?.room?.name ?? event?.room?.sid;
   if (!roomName) {
