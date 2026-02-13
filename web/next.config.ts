@@ -5,6 +5,9 @@ import dotenv from "dotenv";
 dotenv.config({ path: path.resolve(__dirname, "../.env"), quiet: true });
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname, "../"),
+  },
   experimental: {
     // Allow importing modules from directories outside of the Next.js app (monorepo workspaces)
     externalDir: true,

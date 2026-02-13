@@ -57,7 +57,7 @@ export default function ProjectsPage() {
 
   // Map for display only
   const projects: Project[] =
-    projectsQuery.data?.projects.map((p: Project) => {
+    projectsQuery.data?.projects?.map((p: Project) => {
       const isCompleted =
         p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
       return {
