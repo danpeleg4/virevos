@@ -4,6 +4,7 @@ import { db } from "@db/db";
 import { tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
+import {Task} from "@/types/tasks";
 
 export async function deleteTask(taskId: number) {
     const user = await currentUser();

@@ -46,6 +46,7 @@ import {
   updateTaskStatus,
 } from "@/lib/server_actions/tasks"
 import { Project, ProjectFile, ProjectNote } from "@/types/projects";
+import {Task} from "@/types/tasks";
 
 export default function ProjectPage({
   params,

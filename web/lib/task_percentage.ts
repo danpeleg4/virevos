@@ -1,3 +1,5 @@
+import {Task} from "@/types/tasks";
+
 export function task_percentage(
   input: Task[] | { completed: number; total: number }
 ): number {
