@@ -20,7 +20,7 @@ import axios from "axios";
 import { task_percentage } from "@/lib/task_percentage";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@/types/projects";
-import { Task } from "@/types/tasks"
+import { Task } from "@/types/tasks";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },

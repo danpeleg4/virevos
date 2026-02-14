@@ -1,4 +1,4 @@
-interface Task {
+export interface Task {
   id: number;
   userId: string;
   title: string;
@@ -13,7 +13,7 @@ interface Task {
   updatedAt: Date | null;
 }
 
-interface TaskDetailModalProps {
+export interface TaskDetailModalProps {
   task: Task;
   open: boolean;
   onOpenChange: (open: boolean) => void;

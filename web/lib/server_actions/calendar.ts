@@ -143,7 +143,6 @@ export async function addMeetingToCalendar(meeting: Event) {
       ...payload,
     })
     .returning();
-  console.log("Inserted event:", inserted);
   return inserted;
 }
 

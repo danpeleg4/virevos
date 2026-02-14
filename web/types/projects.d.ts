@@ -1,4 +1,4 @@
-interface ProjectFile {
+export interface ProjectFile {
   id: number;
   name: string;
   size: string;
@@ -7,13 +7,13 @@ interface ProjectFile {
   downloadUrl: string;
 }
 
-interface ProjectStats {
+export interface ProjectStats {
   totalTasks: number;
   completedTasks: number;
   percentage: number;
 }
 
-interface Project {
+export interface Project {
   clientName?: string;
   id: number;
   name;
@@ -25,7 +25,7 @@ interface Project {
   health;
 }
 
-interface ProjectNote {
+export interface ProjectNote {
   id: number;
   content: string;
   createdAt: Date | string | null;

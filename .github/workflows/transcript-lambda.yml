@@ -1,11 +1,11 @@
-name: deploy-lambda
+name: transcript-lambda
 on:
   push:
     branches:
       - main
     paths:
-      - "virevos-schedule-meeting/**"
-      - ".github/workflows/deploy-lambda.yml"
+      - ".transcript-lambda/**"
+      - ".github/workflows/transcript-lambda.yml"
 
 jobs:
   deploy:
@@ -26,22 +26,22 @@ jobs:
 
       - name: Build lambda
         run: |
-          cd virevos-schedule-meeting
+          cd transcript-lambda
           npm run build
 
       - name: Zip lambda
         run: |
-          cd virevos-schedule-meeting/dist
+          cd transcript-lambda/dist
           zip -r ../function.zip .
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-east-1
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_TRANSCRIPT }}
 
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
-            --function-name virevos-schedule-meeting \
-            --zip-file fileb://virevos-schedule-meeting/function.zip
+            --function-name transcript-lambda \
+            --zip-file fileb://transcript-lambda/function.zip
