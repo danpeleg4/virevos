@@ -43,5 +43,5 @@ jobs:
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
-            --function-name transcript-lambda \
-            --zip-file fileb://transcript-lambda/function.zip
+            --function-name virevos-vector-embed \
+            --zip-file fileb://virevos-vector-embed/function.zip
