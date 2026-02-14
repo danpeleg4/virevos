@@ -3,6 +3,7 @@ import { db } from "@db/db";
 import { projects, tasks } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
+import {Task} from "@/types/tasks";
 
 export async function GET() {
   const user = await currentUser();

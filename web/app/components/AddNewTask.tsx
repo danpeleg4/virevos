@@ -25,6 +25,7 @@ import { addProjectTasksAction } from "@/lib/server_actions/tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from "@/types/projects";
+import {Task} from "@/types/tasks";
 
 export default function AddNewTask({ projectId }: { projectId?: number }) {
   const [dialogOpen, setDialogOpen] = useState(false);
