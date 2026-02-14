@@ -1,17 +1,16 @@
-import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { db } from "@db/db";
-import { events } from "@db/schema";
-import { eq } from "drizzle-orm";
-import { google } from "googleapis";
-import { getFreshGoogleAccessToken } from "@/lib/google_access";
+import {getFreshGoogleAccessToken} from "@/lib/google_access";
+import {google} from "googleapis";
+import {db} from "@db/db";
+import {events} from "@db/schema";
+import {eq} from "drizzle-orm";
+import {currentUser} from "@clerk/nextjs/server";
+import {NextResponse} from "next/server";
 
-export async function GET() {
+export async function POST() {
     const user = await currentUser();
     if (!user?.id) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
-
     // Google token
     const token = await getFreshGoogleAccessToken(user.id);
     if (token) {
@@ -43,15 +42,22 @@ export async function GET() {
             .from(events)
             .where(eq(events.userId, user.id));
 
-        const existingMap = new Map(existingEvents.map(m => [m.googleEventId || m.id, m]));
-        const googleEventIds = new Set(allEvents.map(e => e.id).filter(Boolean) as string[]);
+        const existingMap = new Map(
+            existingEvents.map((m) => [m.googleEventId || m.id, m])
+        );
+        const googleEventIds = new Set(
+            allEvents.map((e) => e.id).filter(Boolean) as string[]
+        );
 
         // 1. Delete meetings from DB if they were removed from Google Calendar
         // (Only for those that originated from Google OR have a googleEventId)
         for (const m of existingEvents) {
             const googleId = m.googleEventId || m.id;
             // We only sync deletions for events that were either imported from Google or synced to Google
-            if ((m.origin === "google_calendar" || m.googleEventId) && !googleEventIds.has(googleId)) {
+            if (
+                (m.origin === "google_calendar" || m.googleEventId) &&
+                !googleEventIds.has(googleId)
+            ) {
                 // Check if the meeting date is today (since we only listed today's events)
                 const mDate = new Date(m.dateTime);
                 if (mDate >= startOfToday && mDate <= endOfToday) {
@@ -69,9 +75,12 @@ export async function GET() {
             if (e.extendedProperties?.private?.appMeetingId) {
                 // If it exists in DB, we might want to update googleEventId if not set
                 const appMeetingId = e.extendedProperties.private.appMeetingId;
-                const dbMeeting = existingEvents.find(m => m.id === appMeetingId);
+                const dbMeeting = existingEvents.find((m) => m.id === appMeetingId);
                 if (dbMeeting && !dbMeeting.googleEventId) {
-                    await db.update(events).set({ googleEventId: e.id }).where(eq(events.id, appMeetingId));
+                    await db
+                        .update(events)
+                        .set({ googleEventId: e.id })
+                        .where(eq(events.id, appMeetingId));
                 }
                 continue;
             }
@@ -104,21 +113,26 @@ export async function GET() {
             const link = e.hangoutLink ?? e.htmlLink ?? null;
             const dateTime = start;
             const status = e.status ?? "confirmed";
-            const isMeeting = !!e.hangoutLink || !!(e.conferenceData?.entryPoints?.some(ep => ep.entryPointType === 'video'));
+            const isMeeting =
+                !!e.hangoutLink ||
+                !!e.conferenceData?.entryPoints?.some(
+                    (ep) => ep.entryPointType === "video"
+                );
 
             if (existingMap.has(e.id)) {
                 const m = existingMap.get(e.id)!;
-                const hasChanged = 
-                    m.title !== title || 
-                    m.description !== description || 
-                    m.link !== link || 
+                const hasChanged =
+                    m.title !== title ||
+                    m.description !== description ||
+                    m.link !== link ||
                     m.dateTime.getTime() !== dateTime.getTime() ||
                     m.duration !== durationMinutes ||
                     m.status !== status ||
                     m.isMeeting !== isMeeting;
 
                 if (hasChanged) {
-                    await db.update(events)
+                    await db
+                        .update(events)
                         .set({
                             title,
                             description,
@@ -126,7 +140,7 @@ export async function GET() {
                             dateTime: dateTime,
                             duration: durationMinutes,
                             status,
-                            isMeeting
+                            isMeeting,
                         })
                         .where(eq(events.id, m.id));
                 }
@@ -152,14 +166,4 @@ export async function GET() {
             await db.insert(events).values(meetingsToInsert);
         }
     }
-
-    // Return DB meetings
-    const rows = await db.query.events.findMany({
-        where: eq(events.userId, user.id),
-        with: {
-            attendees: true,
-        },
-    });
-
-    return NextResponse.json(rows);
 }

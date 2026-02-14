@@ -50,7 +50,12 @@ const mockSummaries: ConversationSummary[] = [
     chatCount: 9,
     summary:
       "Discussions primarily focused on Q4 project timeline and resource allocation. Client expressed satisfaction with progress but raised concerns about API integration complexity. Agreement reached on phased rollout approach. Weekly check-ins established.",
-    keyTopics: ["Q4 Timeline", "API Integration", "Resource Planning", "Weekly Updates"],
+    keyTopics: [
+      "Q4 Timeline",
+      "API Integration",
+      "Resource Planning",
+      "Weekly Updates",
+    ],
     sentiment: "positive",
     actionItems: 3,
     lastUpdated: "2 hours ago",
@@ -151,7 +156,9 @@ export function ConversationSummaries() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Clients</p>
-                <p className="text-2xl text-gray-900 mt-1">{summaries.length}</p>
+                <p className="text-2xl text-gray-900 mt-1">
+                  {summaries.length}
+                </p>
               </div>
               <FileText className="h-8 w-8 text-blue-500" />
             </div>
@@ -178,7 +185,10 @@ export function ConversationSummaries() {
               <div>
                 <p className="text-sm text-gray-600">Need Attention</p>
                 <p className="text-2xl text-gray-900 mt-1">
-                  {summaries.filter((s) => s.sentiment === "needs-attention").length}
+                  {
+                    summaries.filter((s) => s.sentiment === "needs-attention")
+                      .length
+                  }
                 </p>
               </div>
               <Badge className="h-8 w-8 bg-red-100 text-red-600 flex items-center justify-center">
@@ -249,7 +259,9 @@ export function ConversationSummaries() {
                     </Avatar>
                     <div>
                       <div className="flex items-center space-x-3 mb-2">
-                        <CardTitle className="text-lg">{summary.client}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {summary.client}
+                        </CardTitle>
                         {getSentimentBadge(summary.sentiment)}
                         <Badge className="bg-purple-100 text-purple-700">
                           <Sparkles className="h-3 w-3 mr-1" />
@@ -297,8 +309,8 @@ export function ConversationSummaries() {
                 {summary.actionItems > 0 && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-sm text-blue-900">
-                      <strong>{summary.actionItems}</strong> action items identified
-                      from these conversations
+                      <strong>{summary.actionItems}</strong> action items
+                      identified from these conversations
                     </p>
                   </div>
                 )}

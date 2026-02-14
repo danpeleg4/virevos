@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-        - "db/**"
-        - ".github/workflows/deploy-drizzle.yml"
+      - "db/**"
+      - ".github/workflows/deploy-drizzle.yml"
 
 jobs:
   migrate:

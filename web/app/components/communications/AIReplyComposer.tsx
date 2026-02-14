@@ -23,11 +23,27 @@ interface AIReplyComposerProps {
 }
 
 const tonePresets = [
-  { value: "professional", label: "Professional", description: "Formal and business-like" },
-  { value: "friendly", label: "Friendly", description: "Warm and approachable" },
+  {
+    value: "professional",
+    label: "Professional",
+    description: "Formal and business-like",
+  },
+  {
+    value: "friendly",
+    label: "Friendly",
+    description: "Warm and approachable",
+  },
   { value: "concise", label: "Concise", description: "Brief and to the point" },
-  { value: "detailed", label: "Detailed", description: "Thorough and comprehensive" },
-  { value: "empathetic", label: "Empathetic", description: "Understanding and supportive" },
+  {
+    value: "detailed",
+    label: "Detailed",
+    description: "Thorough and comprehensive",
+  },
+  {
+    value: "empathetic",
+    label: "Empathetic",
+    description: "Understanding and supportive",
+  },
 ];
 
 const mockDrafts: Record<string, string> = {
@@ -137,14 +153,18 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
   const handleGenerateDraft = () => {
     setIsGenerating(true);
     setTimeout(() => {
-      setDraft(mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional);
+      setDraft(
+        mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional
+      );
       setIsGenerating(false);
     }, 1500);
   };
 
   const handleToneChange = (newTone: string) => {
     setTone(newTone);
-    setDraft(mockDrafts[newTone as keyof typeof mockDrafts] || mockDrafts.professional);
+    setDraft(
+      mockDrafts[newTone as keyof typeof mockDrafts] || mockDrafts.professional
+    );
   };
 
   return (
@@ -168,11 +188,10 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-4">
           <p className="text-sm text-blue-900 mb-2">
-            <strong>Context:</strong> Replying to {message.from} from {message.client}
+            <strong>Context:</strong> Replying to {message.from} from{" "}
+            {message.client}
           </p>
-          <p className="text-xs text-blue-800 italic">
-            "{message.preview}"
-          </p>
+          <p className="text-xs text-blue-800 italic">"{message.preview}"</p>
         </CardContent>
       </Card>
 
@@ -188,7 +207,9 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
               <SelectItem key={preset.value} value={preset.value}>
                 <div>
                   <div className="font-medium text-left">{preset.label}</div>
-                  <div className="text-xs text-gray-500">{preset.description}</div>
+                  <div className="text-xs text-gray-500">
+                    {preset.description}
+                  </div>
                 </div>
               </SelectItem>
             ))}
