@@ -44,4 +44,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name virevos-vector-embed \
-            --zip-file fileb://virevos-vector-embed/function.zip
+            --zip-file fileb://transcript-lambda/function.zip
