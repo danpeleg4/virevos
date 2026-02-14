@@ -1,5 +1,5 @@
 {
-  "name": "virevos-schedule-meeting",
+  "name": "schedule-lambda",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -17,8 +17,5 @@
   "dependencies": {
     "@repo/db": "*",
     "drizzle-orm": "^0.45.1"
-  },
-  "devDependencies": {
-    "esbuild": "^0.27.2"
   }
 }
