@@ -38,11 +38,6 @@ export function CalendarView() {
   const [showMeetingDetails, setShowMeetingDetails] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  function parseLocalDate(dateStr: string) {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(year, month - 1, day); // LOCAL date, not UTC
-  }
-
   const meetings = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => {

@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Progress } from "../../components/ui/progress";
-import { Badge } from "../../components/ui/badge";
+import { Card } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Progress } from "@/app/components/ui/progress";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Users,
   FolderKanban,
@@ -20,14 +20,7 @@ import axios from "axios";
 import { task_percentage } from "@/lib/task_percentage";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@/types/projects";
-
-type Task = {
-  id: number;
-  title: string;
-  dueDate: string;
-  priority: string;
-  projectName: string;
-};
+import Task from "@/types/tasks";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
