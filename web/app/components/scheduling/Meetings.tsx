@@ -26,7 +26,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Event } from "@/types/meeting";
+import {Event, RawChunk, TranscribedChunk} from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/server_actions/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
@@ -316,22 +316,6 @@ export function Meetings() {
     </div>
   );
 }
-
-type RawChunk = {
-  id: string;
-  chunk_text: string;
-  speaker: string;
-  start_time: number;
-  end_time: number;
-  room: string;
-};
-
-type TranscribedChunk = {
-  speaker: string;
-  time: string;
-  text: string;
-  startTime: number;
-};
 
 // Transcription View Component
 function TranscriptionView({
