@@ -180,7 +180,7 @@ export const handler = async (event: any) => {
                             chunk_text: chunk.trim(),
                             speaker: i.participantName ?? "Participant",
                             start_time: seg.start,
-                            end_time: seg.end,
+                            end_time: seg.end ?? seg.start,
                             room: roomName,
                             startedAtEpoch: startedAtEpoch,
                             endedAtEpoch: endedAtEpoch
