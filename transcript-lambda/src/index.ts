@@ -180,7 +180,7 @@ export const handler = async (event: any) => {
                             chunk_text: chunk.trim(),
                             speaker: i.participantName ?? "Participant",
                             start_time: seg.start,
-                            end_time: seg.end,
+                            end_time: seg.end ?? seg.start,
                             room: roomName,
                             startedAtEpoch: startedAtEpoch,
                             endedAtEpoch: endedAtEpoch
@@ -198,14 +198,31 @@ export const handler = async (event: any) => {
                 return aStart - bStart;
             });
 
-            const normalized = sorted.map(r => ({
-                ...r,
-                start_time: (r.startedAtEpoch + r.start_time * 1000 - mainStartEpoch) / 1000,
-                end_time: (r.startedAtEpoch + r.end_time * 1000 - mainStartEpoch) / 1000
-            }))
+            // Ensure end_time is never null during mapping
+            const normalized = sorted.map(r => {
+                const startTime = (r.startedAtEpoch + r.start_time * 1000 - mainStartEpoch) / 1000;
+                const endTime = (r.startedAtEpoch + r.end_time * 1000 - mainStartEpoch) / 1000;
 
-            // Upsert into Pinecone
-            await index.upsertRecords(normalized);
+                return {
+                    ...r,
+                    start_time: startTime || 0, // Fallback to 0 if NaN/null
+                    end_time: (endTime !== null && !isNaN(endTime)) ? endTime : startTime
+                };
+            });
+
+            const sanitizeMetadata = (records: any[]) => {
+                return records.map(record => {
+                    const cleanRecord = { ...record };
+                    Object.keys(cleanRecord).forEach(key => {
+                        if (cleanRecord[key] === null || cleanRecord[key] === undefined) {
+                            delete cleanRecord[key];
+                        }
+                    });
+                    return cleanRecord;
+                });
+            };
+
+            await index.upsertRecords(sanitizeMetadata(normalized));
 
             // Upload JSON to S3
             const jsonKey = `${userId}/${roomName}/${path.basename(key)}.json`;
