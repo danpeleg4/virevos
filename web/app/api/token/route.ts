@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   if (shouldStartRecording && room) {
     const outputs = {
       file: new EncodedFileOutput({
-        filepath: `recordings/${meeting.userId}/${meeting.id}/${meeting.id}.mp4`,
+        filepath: `recordings/${meeting.userId}/${meeting.id}/main.mp4`,
         output: {
           case: "s3",
           value: {

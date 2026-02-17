@@ -56,9 +56,10 @@ export async function POST(req: NextRequest) {
 
       const [event] = await db.select().from(events).where(eq(events.id, roomName));
 
+      //TODO ADD UNIQUENESS TO FILE NAME IF THERE ARE TWO PEOPLE WITH SAME NAME NEED TO HAVE SOME UUID
       const outputs: EncodedOutputs = {
         file: new EncodedFileOutput({
-          filepath: `recordings/${event.userId}/${event.id}/${identity}-${crypto.randomUUID().slice(1,3)}.ogg`,
+          filepath: `recordings/${event.userId}/${event.id}/${identity}/${crypto.randomUUID().slice(0,5)}.mp4`,
           output: {
             case: "s3",
             value: {
