@@ -1,21 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "../../components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../../components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import { Video, Users, Check, VideoOff, Mic, MicOff } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
   createLocalTracks,
   Room,
   Participant,
-  RemoteTrackPublication,
   RemoteTrack,
   RoomEvent,
   Track,
@@ -68,12 +67,7 @@ export default function InMeetingView() {
 
     // TrackSubscribed fires when a participant adds a track
     room.on(
-      RoomEvent.TrackSubscribed,
-      (
-        track: RemoteTrack,
-        pub: RemoteTrackPublication,
-        participant: Participant
-      ) => {
+      RoomEvent.TrackSubscribed, () => {
         // Force re-render to attach the new track
         setParticipants((prev) => [...prev]);
       }

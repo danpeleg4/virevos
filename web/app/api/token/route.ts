@@ -11,13 +11,13 @@ import { db } from "@db/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
-const livekitHost = "https://virevos-sn3m4ofa.livekit.cloud";
+const livekitHost = process.env.LIVEKIT_HOST;
 const roomService = new RoomServiceClient(
-  livekitHost,
-  process.env.LIVEKIT_API_KEY,
-  process.env.LIVEKIT_API_SECRET
+    livekitHost!,
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_API_SECRET
 );
-const egressClient = new EgressClient(livekitHost);
+const egressClient = new EgressClient(livekitHost!);
 
 export async function POST(req: NextRequest) {
   const { meetingId, name } = await req.json();
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   if (shouldStartRecording && room) {
     const outputs = {
       file: new EncodedFileOutput({
-        filepath: `recordings/${meeting.userId}/${meeting.id}/${meeting.id}.mp4`,
+        filepath: `recordings/${meeting.userId}/${meeting.id}/main.mp4`,
         output: {
           case: "s3",
           value: {
