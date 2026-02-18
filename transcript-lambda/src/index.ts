@@ -61,9 +61,11 @@ async function getJsonFromS3(bucket: string, key: string) {
     // response.Body is a readable stream
     const jsonString = await streamToString(response.Body as any);
     const data = JSON.parse(jsonString);
-    for (let i in data){
-        console.log(i)
-    }
+
+    Object.entries(data).forEach(([key, value]) => {
+        console.log(key, value); // "a" 1, "b" 2
+    });
+
 
     return data;
 }
