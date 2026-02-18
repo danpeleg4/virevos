@@ -44,6 +44,7 @@ const s3 = new S3Client({ region: process.env.REGION! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
+// Helper functions
 export async function streamToString(stream: Readable) {
     return new Promise<string>((resolve, reject) => {
         const chunks: any[] = [];
@@ -81,6 +82,7 @@ async function waitForMainJson(bucket: string, prefix: string, retries = 5) {
     throw new Error("Main JSON not found");
 }
 
+// Lambda code
 export const handler = async (event: any) => {
     const indexName = 'vire-recording';
     const jsonBucket = 'vire-json';
@@ -97,12 +99,15 @@ export const handler = async (event: any) => {
             })
         );
 
+        // retry if no json file arrived yet to S3
         const mainJsonKey = await waitForMainJson(bucket, prefix);
+
         const json = await getJsonFromS3(bucket, mainJsonKey);
         const mainStartEpoch = json.start_time;
+        console.log(`JSON DATA: ${json}`);
+        console.log(mainStartEpoch)
 
         const folders = list.CommonPrefixes?.map(p => p.Prefix) ?? [];
-
         const participants: {
             participantName: string | undefined;
             mp4?: string;
@@ -111,7 +116,6 @@ export const handler = async (event: any) => {
 
         for (const folder of folders) {
             const folderName = folder?.replace(prefix, "").replace("/", ""); // "user1"
-
             const folderList = await s3.send(
                 new ListObjectsV2Command({
                     Bucket: bucket,
@@ -180,7 +184,7 @@ export const handler = async (event: any) => {
                             chunk_text: chunk.trim(),
                             speaker: i.participantName ?? "Participant",
                             start_time: seg.start,
-                            end_time: seg.end ?? seg.start,
+                            end_time: seg.end,
                             room: roomName,
                             startedAtEpoch: startedAtEpoch,
                             endedAtEpoch: endedAtEpoch
