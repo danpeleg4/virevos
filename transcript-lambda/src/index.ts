@@ -60,13 +60,7 @@ async function getJsonFromS3(bucket: string, key: string) {
 
     // response.Body is a readable stream
     const jsonString = await streamToString(response.Body as any);
-    const data = JSON.parse(jsonString);
-
-    Object.entries(data).forEach(([key, value]) => {
-        console.log(key, value); // "a" 1, "b" 2
-    });
-
-    return data;
+    return JSON.parse(jsonString);
 }
 
 async function waitForMainJson(bucket: string, prefix: string, retries = 5) {
@@ -110,11 +104,9 @@ export const handler = async (event: any) => {
         const mainJsonKey = await waitForMainJson(bucket, prefix);
         const json = await getJsonFromS3(bucket, mainJsonKey);
         const mainStartEpoch = json.started_at;
-        console.log(`JSON DATA: ${json}`);
-        console.log(`started_at: ${mainStartEpoch}`)
+        const mainEpochInSeconds = Math.trunc(Number(mainStartEpoch) / 1e9)
 
         const folders = list.CommonPrefixes?.map(p => p.Prefix) ?? [];
-        console.log(`folders: ${folders}`);
         const participants: {
             participantName: string | undefined;
             mp4?: string;
@@ -144,6 +136,7 @@ export const handler = async (event: any) => {
             });
         }
 
+        console.log(`Participants length: \n${participants.length}`);
         const parts = key.split("/");
         if (parts[0] !== "recordings") continue;
 
@@ -211,8 +204,8 @@ export const handler = async (event: any) => {
 
             // Ensure end_time is never null during mapping
             const normalized = sorted.map(r => {
-                const startTime = (r.startedAtEpoch + r.start_time * 1000 - mainStartEpoch) / 1000;
-                const endTime = (r.startedAtEpoch + r.end_time * 1000 - mainStartEpoch) / 1000;
+                const startTime = (r.startedAtEpoch + r.start_time * 1000 - mainEpochInSeconds) / 1000;
+                const endTime = (r.startedAtEpoch + r.end_time * 1000 - mainEpochInSeconds) / 1000;
 
                 return {
                     ...r,
@@ -221,19 +214,7 @@ export const handler = async (event: any) => {
                 };
             });
 
-            const sanitizeMetadata = (records: any[]) => {
-                return records.map(record => {
-                    const cleanRecord = { ...record };
-                    Object.keys(cleanRecord).forEach(key => {
-                        if (cleanRecord[key] === null || cleanRecord[key] === undefined) {
-                            delete cleanRecord[key];
-                        }
-                    });
-                    return cleanRecord;
-                });
-            };
-
-            await index.upsertRecords(sanitizeMetadata(normalized));
+            await index.upsertRecords(normalized);
 
             // Upload JSON to S3
             const jsonKey = `${userId}/${roomName}/${path.basename(key)}.json`;
