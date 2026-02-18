@@ -66,7 +66,6 @@ async function getJsonFromS3(bucket: string, key: string) {
         console.log(key, value); // "a" 1, "b" 2
     });
 
-
     return data;
 }
 
@@ -110,9 +109,9 @@ export const handler = async (event: any) => {
         // retry if no json file arrived yet to S3
         const mainJsonKey = await waitForMainJson(bucket, prefix);
         const json = await getJsonFromS3(bucket, mainJsonKey);
-        const mainStartEpoch = json.start_time;
+        const mainStartEpoch = json.started_at;
         console.log(`JSON DATA: ${json}`);
-        console.log(`start_time: ${mainStartEpoch}`)
+        console.log(`started_at: ${mainStartEpoch}`)
 
         const folders = list.CommonPrefixes?.map(p => p.Prefix) ?? [];
         console.log(`folders: ${folders}`);
