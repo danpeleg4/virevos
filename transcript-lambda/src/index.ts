@@ -73,9 +73,12 @@ async function waitForMainJson(bucket: string, prefix: string, retries = 5) {
 
         const jsonKey = (list.Contents ?? [])
             .map(o => o.Key!)
-            .find(k => k.endsWith(".json") && !k.slice(prefix.length).includes("/"));
+            .find(k => k.endsWith(".json"));
 
-        if (jsonKey) return jsonKey;
+        if (jsonKey) {
+            console.log(`\n${jsonKey}`);
+            return jsonKey;
+        }
         await new Promise(r => setTimeout(r, 3000)); // wait 3s
     }
 
@@ -105,9 +108,10 @@ export const handler = async (event: any) => {
         const json = await getJsonFromS3(bucket, mainJsonKey);
         const mainStartEpoch = json.start_time;
         console.log(`JSON DATA: ${json}`);
-        console.log(mainStartEpoch)
+        console.log(`start_time: ${mainStartEpoch}`)
 
         const folders = list.CommonPrefixes?.map(p => p.Prefix) ?? [];
+        console.log(`folders: ${folders}`);
         const participants: {
             participantName: string | undefined;
             mp4?: string;
