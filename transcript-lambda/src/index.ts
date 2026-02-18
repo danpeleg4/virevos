@@ -162,7 +162,9 @@ export const handler = async (event: any) => {
 
                 const jsonData = await getJsonFromS3(bucket, i.json!);
                 const startedAtEpoch = jsonData.started_at
+                const startedAtEpochInSeconds = Math.trunc(Number(startedAtEpoch) / 1e9)
                 const endedAtEpoch = jsonData.ended_at
+                const endedAtEpochInSeconds = Math.trunc(Number(endedAtEpoch) / 1e9)
 
                 // Transcribe audio with diarization
                 const transcription = await openai.audio.transcriptions.create({
@@ -186,8 +188,8 @@ export const handler = async (event: any) => {
                             start_time: seg.start,
                             end_time: seg.end,
                             room: roomName,
-                            startedAtEpoch: startedAtEpoch,
-                            endedAtEpoch: endedAtEpoch
+                            startedAtEpoch: startedAtEpochInSeconds,
+                            endedAtEpoch: endedAtEpochInSeconds
                         };
                         allRecords.push(record);
                     }
@@ -197,20 +199,23 @@ export const handler = async (event: any) => {
 
             const flattened = mainJson.flat();
             const sorted = flattened.sort((a, b) => {
-                const aStart = a.startedAtEpoch + a.start_time * 1000;
-                const bStart = b.startedAtEpoch + b.start_time * 1000;
+                const aStart = a.startedAtEpoch + a.start_time;
+                const bStart = b.startedAtEpoch + b.start_time;
                 return aStart - bStart;
             });
 
             // Ensure end_time is never null during mapping
             const normalized = sorted.map(r => {
-                const startTime = (r.startedAtEpoch + r.start_time * 1000 - mainEpochInSeconds) / 1000;
-                const endTime = (r.startedAtEpoch + r.end_time * 1000 - mainEpochInSeconds) / 1000;
+                const startTime =
+                    r.startedAtEpoch + r.start_time - mainEpochInSeconds;
+
+                const endTime =
+                    r.startedAtEpoch + r.end_time - mainEpochInSeconds;
 
                 return {
                     ...r,
-                    start_time: startTime || 0, // Fallback to 0 if NaN/null
-                    end_time: (endTime !== null && !isNaN(endTime)) ? endTime : startTime
+                    start_time: startTime >= 0 ? startTime : 0,
+                    end_time: endTime >= 0 && !isNaN(endTime) ? endTime : startTime,
                 };
             });
 
