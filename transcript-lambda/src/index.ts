@@ -61,6 +61,9 @@ async function getJsonFromS3(bucket: string, key: string) {
     // response.Body is a readable stream
     const jsonString = await streamToString(response.Body as any);
     const data = JSON.parse(jsonString);
+    for (let i in data){
+        console.log(i)
+    }
 
     return data;
 }
@@ -76,7 +79,7 @@ async function waitForMainJson(bucket: string, prefix: string, retries = 5) {
             .find(k => k.endsWith(".json"));
 
         if (jsonKey) {
-            console.log(`\n${jsonKey}`);
+            console.log(`Json Key: \n${jsonKey}`);
             return jsonKey;
         }
         await new Promise(r => setTimeout(r, 3000)); // wait 3s
@@ -104,7 +107,6 @@ export const handler = async (event: any) => {
 
         // retry if no json file arrived yet to S3
         const mainJsonKey = await waitForMainJson(bucket, prefix);
-
         const json = await getJsonFromS3(bucket, mainJsonKey);
         const mainStartEpoch = json.start_time;
         console.log(`JSON DATA: ${json}`);
