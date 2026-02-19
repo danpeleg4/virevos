@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { meetingAttendees, events } from "@db/schema";
 import { eq } from "drizzle-orm";
+import {FlexibleSchema, generateText, tool} from 'ai';
 import {EgressClient, EncodedFileOutput, EncodedOutputs} from "livekit-server-sdk";
+import {CreateClientInput} from "@/types/clients";
+import {addAClient} from "@/lib/server_actions/clients";
+import {getPastMeetingTranscript} from "@/lib/server_actions/meetings";
+import {z} from "zod";
 
 /*
 LiveKit webhook
@@ -41,6 +46,28 @@ export async function POST(req: NextRequest) {
         })
         .where(eq(events.id, res[0].id));
     }
+
+    const { text } = await generateText({
+      model: "openai/gpt-5.2-chat",
+      prompt: 'Invent a new holiday and describe its traditions.',
+      tools: {
+        getPastMeetingData: tool({
+          description:
+              "Get meeting transcript data and does semantic search to find relevant info",
+          inputSchema: z.object({
+            text: z.string().describe("Text to apply semantic search"),
+          }) as FlexibleSchema,
+          execute: async ({ text }: { text: string }) => {
+            const res = await getPastMeetingTranscript(text, userId);
+            const combinedText = res.join("\n");
+            return {
+              kind: "meeting_data",
+              message: combinedText,
+            };
+          },
+        }),
+      }
+    });
   }
   if (event.event === "participant_joined") {
     if (event.participant.kind === "EGRESS") {

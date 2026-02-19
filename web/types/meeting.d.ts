@@ -12,6 +12,29 @@ export interface Attendee {
   initials: string;
 }
 
+type ActionItem = {
+  task: string;
+  owner: string;
+  dueDate: string;
+  completed: boolean;
+};
+
+interface MeetingNote {
+  id: string;
+  title: string;
+  dateTime: string;
+  time: string;
+  duration: string;
+  attendees: { name: string; initials: string; }[];
+  ai_summary: string;
+  actionItems: ActionItem[];
+  key_points: string[];
+  transcript: { speaker: string; time: string; text: string }[];
+  tags: string[];
+  hasTranscript: boolean;
+  status: string;
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -27,6 +50,7 @@ export interface Event {
   hasTranscript?: boolean;
   googleEventId?: string | null;
   isMeeting: boolean;
+  ai_summary: string;
 }
 
 type RawChunk = {
