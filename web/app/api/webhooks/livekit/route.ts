@@ -9,11 +9,12 @@ LiveKit webhook
  */
 export async function POST(req: NextRequest) {
   const event = await req.json();
-  const egressClient = new EgressClient(process.env.LIVEKIT_HOST!);
   const roomName = event?.room?.name ?? event?.room?.sid;
   if (!roomName) {
     return NextResponse.json({ status: "missing room" }, { status: 400 });
   }
+
+  const egressClient = new EgressClient(process.env.LIVEKIT_HOST!);
 
   if (event.event === "room_started") {
     await db
@@ -56,7 +57,6 @@ export async function POST(req: NextRequest) {
 
       const [event] = await db.select().from(events).where(eq(events.id, roomName));
 
-      //TODO ADD UNIQUENESS TO FILE NAME IF THERE ARE TWO PEOPLE WITH SAME NAME NEED TO HAVE SOME UUID
       const outputs: EncodedOutputs = {
         file: new EncodedFileOutput({
           filepath: `recordings/${event.userId}/${event.id}/${identity}/${crypto.randomUUID().slice(0,5)}.mp4`,

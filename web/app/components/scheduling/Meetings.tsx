@@ -327,9 +327,7 @@ function TranscriptionView({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
-  const [videoUrls, setVideoUrls] = useState<{ url: string; key: string }[]>(
-    []
-  );
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -385,7 +383,7 @@ function TranscriptionView({
         const res = await axios.post(`/api/recording`, {
           meetingId: meeting.id,
         });
-        setVideoUrls(res.data.videoUrls || []);
+        setVideoUrl(res.data.url ?? null);
       } catch (err) {
         console.error("Failed to fetch recording:", err);
       } finally {
@@ -420,7 +418,7 @@ function TranscriptionView({
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [videoUrls]);
+  }, [videoUrl]);
 
   useEffect(() => {
     if (!formattedData.length) return;
@@ -493,16 +491,16 @@ function TranscriptionView({
           <Card className="p-6 flex flex-col min-h-0 shadow-sm">
             <div className="aspect-video relative bg-black rounded-lg overflow-hidden mb-4">
               <div className="h-full w-full">
-                {videoUrls.length > 0 ? (
-                  <video
-                    ref={videoRef}
-                    src={videoUrls[0].url}
-                    className="w-full h-full object-contain"
-                  />
+                {videoUrl ? (
+                    <video
+                        ref={videoRef}
+                        src={videoUrl}
+                        className="w-full h-full object-contain"
+                    />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-white">
-                    No video found
-                  </div>
+                    <div className="flex items-center justify-center h-full text-white">
+                      No video found
+                    </div>
                 )}
               </div>
             </div>
