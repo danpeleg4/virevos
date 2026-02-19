@@ -69,6 +69,7 @@ export const events = pgTable("events", {
   duration: integer("duration").notNull(),
   isMeeting: boolean().default(false),
   status: text("status"),
+  tags: text("tags"),
   hasNotes: boolean("has_notes").default(false),
   hasTranscript: boolean("has_transcript").default(false),
   autoRescheduled: boolean("auto_rescheduled").default(false),

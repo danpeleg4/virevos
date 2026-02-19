@@ -34,7 +34,7 @@ import {
   Check,
   ChevronRight,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface MeetingNote {
   id: string;
@@ -624,9 +624,6 @@ export function MeetingNotes() {
                           <p className={`text-sm text-gray-900`}>
                             {attendee.name}
                           </p>
-                          <p className={`text-xs text-gray-500`}>
-                            {attendee.email}
-                          </p>
                         </div>
                       </div>
                     ))}
@@ -677,31 +674,6 @@ export function MeetingNotes() {
                     ))}
                   </ul>
                 </div>
-
-                {/* Decisions */}
-                {selectedNote.decisions.length > 0 && (
-                  <div>
-                    <div className="flex items-center space-x-2 mb-3">
-                      <CheckSquare className="h-4 w-4 text-green-500" />
-                      <h3 className={`text-sm text-gray-700`}>
-                        Decisions Made
-                      </h3>
-                    </div>
-                    <ul className="space-y-2">
-                      {selectedNote.decisions.map((decision, index) => (
-                        <li
-                          key={index}
-                          className={`text-sm flex items-start text-gray-700`}
-                        >
-                          <CheckSquare
-                            className={`h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-green-500`}
-                          />
-                          <span className="flex-1">{decision}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
 
                 {/* Action Items */}
                 <div>
@@ -778,10 +750,6 @@ export function MeetingNotes() {
                 <div
                   className={`flex justify-end space-x-3 pt-4 border-t border-gray-200`}
                 >
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </Button>
                   <Button variant="outline">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Share

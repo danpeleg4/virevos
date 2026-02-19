@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
 
   if (event.event === "room_finished") {
     const res = await db.select().from(events).where(eq(events.id, roomName));
-
     if (res.length > 0) {
       const finishedAt = Number(event.createdAt);
       const createdAt = Number(event.room.creationTimeMs);
