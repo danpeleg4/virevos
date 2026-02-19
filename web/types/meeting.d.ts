@@ -35,6 +35,12 @@ interface MeetingNote {
   status: string;
 }
 
+type Transcript = {
+  speaker: string
+  time: string
+  text: string
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -50,7 +56,11 @@ export interface Event {
   hasTranscript?: boolean;
   googleEventId?: string | null;
   isMeeting: boolean;
-  ai_summary: string;
+  ai_summary?: string;
+  key_points?: string[];
+  actionItems?: ActionItem[];
+  tags?: string[];
+  transcript?: Transcript[];
 }
 
 type RawChunk = {

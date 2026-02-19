@@ -36,314 +36,12 @@ import {
 import { motion } from "framer-motion";
 import {useQuery} from "@tanstack/react-query";
 import axios from "axios";
-import type {Event, MeetingNote} from "@/types/meeting";
-
-const mockNotes: MeetingNote[] = [
-  {
-    id: "1",
-    title: "Client Onboarding - Acme Corp",
-    dateTime: "Jan 5, 2026",
-    time: "9:00 AM",
-    duration: "45 min",
-    attendees: [
-      { name: "Sarah Johnson", initials: "SJ" },
-      { name: "Mike Chen", initials: "MC" },
-      { name: "Emily Davis", initials: "ED" },
-    ],
-    ai_summary:
-      "Initial onboarding session for Acme Corp. Covered platform overview, automation setup, and integration requirements. Client expressed interest in advanced workflow automation and calendar integrations. Discussed timeline for implementation and training schedule.",
-    actionItems: [
-      {
-        task: "Send integration documentation to client",
-        owner: "Mike Chen",
-        dueDate: "Jan 7",
-        completed: true,
-      },
-      {
-        task: "Schedule follow-up training session",
-        owner: "Emily Davis",
-        dueDate: "Jan 10",
-        completed: false,
-      },
-      {
-        task: "Prepare custom automation templates",
-        owner: "Mike Chen",
-        dueDate: "Jan 12",
-        completed: false,
-      },
-    ],
-    key_points: [
-      "Client needs Salesforce integration by end of month",
-      "Team size will grow from 5 to 15 users in Q1",
-      "Focus on automation for sales workflows",
-      "Weekly check-ins scheduled for first month",
-    ],
-    transcript: [
-      {
-        speaker: "Sarah Johnson",
-        time: "00:00",
-        text: "Thanks for meeting with us today. We're excited to get started with virevos.",
-      },
-      {
-        speaker: "Mike Chen",
-        time: "00:05",
-        text: "Great to meet you Sarah! Let me give you a quick overview of what we'll cover today.",
-      },
-      {
-        speaker: "Mike Chen",
-        time: "00:12",
-        text: "First, I'll walk you through the core features, then we can dive into your specific automation needs.",
-      },
-      {
-        speaker: "Sarah Johnson",
-        time: "00:25",
-        text: "Perfect. We're particularly interested in the Salesforce integration. How does that work?",
-      },
-      {
-        speaker: "Emily Davis",
-        time: "00:32",
-        text: "Great question! Our Salesforce integration syncs bidirectionally, so any updates in virevos reflect in Salesforce and vice versa.",
-      },
-      {
-        speaker: "Sarah Johnson",
-        time: "00:45",
-        text: "That's exactly what we need. We currently have about 5 people who would use this initially.",
-      },
-      {
-        speaker: "Mike Chen",
-        time: "00:52",
-        text: "Perfect. We recommend starting with a pilot team like that. It helps everyone get comfortable with the platform.",
-      },
-      {
-        speaker: "Sarah Johnson",
-        time: "01:08",
-        text: "Makes sense. What about the timeline? We'd like to have this fully operational by end of month.",
-      },
-      {
-        speaker: "Emily Davis",
-        time: "01:15",
-        text: "That's definitely doable. I can send you our integration documentation today, and we'll schedule training for next week.",
-      },
-    ],
-    tags: ["Client Onboarding", "Enterprise", "Salesforce Integration"],
-    hasTranscript: true,
-    status: "completed",
-  },
-  {
-    id: "2",
-    title: "Sprint Planning - Q1 2026",
-    dateTime: "Jan 4, 2026",
-    time: "2:00 PM",
-    duration: "1h 30min",
-    attendees: [
-      { name: "Development Team", initials: "DT" },
-      { name: "John Doe", initials: "JD" },
-      { name: "Alex Kim", initials: "AK" },
-    ],
-    ai_summary:
-      "Planned Sprint 23 with focus on automation improvements and new scheduling features. Team committed to 45 story points. Discussed technical debt and performance optimizations.",
-    actionItems: [
-      {
-        task: "Complete API performance audit",
-        owner: "John Doe",
-        dueDate: "Jan 8",
-        completed: false,
-      },
-      {
-        task: "Design new automation builder UI",
-        owner: "Alex Kim",
-        dueDate: "Jan 10",
-        completed: false,
-      },
-      {
-        task: "Review backlog priorities",
-        owner: "Development Team",
-        dueDate: "Jan 6",
-        completed: true,
-      },
-      {
-        task: "Update documentation for new features",
-        owner: "John Doe",
-        dueDate: "Jan 15",
-        completed: false,
-      },
-      {
-        task: "Conduct load testing on staging",
-        owner: "Development Team",
-        dueDate: "Jan 12",
-        completed: false,
-      },
-    ],
-    key_points: [
-      "Sprint velocity increased by 15% from last sprint",
-      "New automation builder expected to reduce user setup time by 50%",
-      "Performance improvements are top priority",
-      "Need to allocate time for technical debt in next sprint",
-      "All critical bugs resolved from previous sprint",
-      "Team capacity at 100% for this sprint",
-    ],
-    transcript: [
-      {
-        speaker: "John Doe",
-        time: "00:00",
-        text: "Alright team, let's kick off Sprint 23 planning. We have some exciting features lined up.",
-      },
-      {
-        speaker: "Alex Kim",
-        time: "00:08",
-        text: "I've been working on the new automation builder designs. I think we can make it much more intuitive.",
-      },
-      {
-        speaker: "Development Team",
-        time: "00:18",
-        text: "The designs look great Alex. How much effort are we estimating for the implementation?",
-      },
-      {
-        speaker: "Alex Kim",
-        time: "00:25",
-        text: "I'd say about 21 story points, spread across frontend and backend work.",
-      },
-      {
-        speaker: "John Doe",
-        time: "00:35",
-        text: "That seems reasonable. Let's also make sure we allocate time for the performance work we discussed.",
-      },
-    ],
-    tags: ["Sprint Planning", "Development", "Automation"],
-    hasTranscript: true,
-    status: "completed",
-  },
-  {
-    id: "3",
-    title: "Design Review - Dashboard Redesign",
-    dateTime: "Jan 3, 2026",
-    time: "11:00 AM",
-    duration: "1h",
-    attendees: [
-      { name: "Alex Kim", initials: "AK" },
-      { name: "Design Team", initials: "DT" },
-    ],
-    ai_summary:
-      "Reviewed new dashboard designs and provided feedback on UX improvements. Focused on information hierarchy, data visualization, and mobile responsiveness.",
-    actionItems: [
-      {
-        task: "Update color palette for better accessibility",
-        owner: "Alex Kim",
-        dueDate: "Jan 8",
-        completed: false,
-      },
-      {
-        task: "Create mobile mockups",
-        owner: "Design Team",
-        dueDate: "Jan 9",
-        completed: false,
-      },
-    ],
-    key_points: [
-      "New card-based layout improves scanability",
-      "Need to ensure WCAG 2.1 AA compliance",
-      "Mobile-first approach for responsive design",
-    ],
-    transcript: [],
-    tags: ["Design", "UX", "Dashboard"],
-    hasTranscript: false,
-    status: "completed",
-  },
-  {
-    id: "4",
-    title: "Q1 Strategic Planning",
-    dateTime: "Jan 2, 2026",
-    time: "10:00 AM",
-    duration: "2h",
-    attendees: [
-      { name: "Emily Davis", initials: "ED" },
-      { name: "Robert Wilson", initials: "RW" },
-      {
-        name: "Leadership Team",
-        initials: "LT",
-      },
-    ],
-    ai_summary:
-      "Strategic planning for Q1 goals, resource allocation, and key initiatives. Discussed revenue targets, hiring plans, and product roadmap priorities.",
-    actionItems: [
-      {
-        task: "Finalize Q1 OKRs for each department",
-        owner: "Leadership Team",
-        dueDate: "Jan 8",
-        completed: false,
-      },
-      {
-        task: "Create hiring plan for engineering",
-        owner: "Robert Wilson",
-        dueDate: "Jan 10",
-        completed: false,
-      },
-      {
-        task: "Review and update product roadmap",
-        owner: "Emily Davis",
-        dueDate: "Jan 12",
-        completed: false,
-      },
-      {
-        task: "Schedule monthly all-hands meetings",
-        owner: "Leadership Team",
-        dueDate: "Jan 5",
-        completed: true,
-      },
-      {
-        task: "Prepare Q4 performance review",
-        owner: "Emily Davis",
-        dueDate: "Jan 15",
-        completed: false,
-      },
-    ],
-    key_points: [
-      "Target 40% revenue growth in Q1",
-      "Plan to hire 8 new engineers",
-      "Focus on enterprise customer acquisition",
-      "Expand to European market by Q2",
-      "Launch new AI features in March",
-      "Improve customer retention by 15%",
-      "Increase marketing budget by 25%",
-      "Partner with 3 major integration providers",
-    ],
-    transcript: [
-      {
-        speaker: "Emily Davis",
-        time: "00:00",
-        text: "Thanks everyone for joining. Let's dive into our Q1 strategic priorities.",
-      },
-      {
-        speaker: "Robert Wilson",
-        time: "00:08",
-        text: "I'd like to start with our hiring needs. Engineering is at capacity and we need to scale.",
-      },
-      {
-        speaker: "Leadership Team",
-        time: "00:18",
-        text: "Agreed. What's the timeline you're thinking for new hires?",
-      },
-      {
-        speaker: "Robert Wilson",
-        time: "00:25",
-        text: "Ideally we'd have offers out by end of January, with people starting in February and March.",
-      },
-      {
-        speaker: "Emily Davis",
-        time: "00:35",
-        text: "That aligns well with our product roadmap. The AI features will need that additional capacity.",
-      },
-    ],
-    tags: ["Strategy", "Planning", "Q1", "Leadership"],
-    hasTranscript: true,
-    status: "completed",
-  },
-];
+import type {Event} from "@/types/meeting";
 
 export function MeetingNotes() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedNote, setSelectedNote] = useState<MeetingNote | null>(null);
+  const [selectedNote, setSelectedNote] = useState<Event | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -362,20 +60,20 @@ export function MeetingNotes() {
   const filteredNotes = meetings?.data?.filter((note) => {
     const matchesSearch =
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.ai_summary.toLowerCase().includes(searchQuery.toLowerCase());
+      note?.ai_summary?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
       filterStatus === "all" ||
       (filterStatus === "with-transcript" && note.hasTranscript);
     return matchesSearch && matchesFilter;
   });
 
-  const handleViewDetails = (note: MeetingNote) => {
+  const handleViewDetails = (note: Event) => {
     setSelectedNote(note);
     setDetailsOpen(true);
   };
 
   const handleCopySummary = () => {
-    if (selectedNote) {
+    if (selectedNote && selectedNote.ai_summary) {
       navigator.clipboard.writeText(selectedNote.ai_summary);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -448,7 +146,7 @@ export function MeetingNotes() {
                     >
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
-                        {note.dateTime} at {note.time}
+                        {note.dateTime.toString()}
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
@@ -489,11 +187,11 @@ export function MeetingNotes() {
                   >
                     <div className="flex items-center">
                       <CheckSquare className={`h-4 w-4 mr-1 text-green-600`} />
-                      {note.actionItems.length} action items
+                      {note?.actionItems?.length} action items
                     </div>
                     <div className="flex items-center">
                       <FileText className={`h-4 w-4 mr-1 text-blue-600`} />
-                      {note.key_points.length} key points
+                      {note?.key_points?.length} key points
                     </div>
                   </div>
 
@@ -516,7 +214,7 @@ export function MeetingNotes() {
         ))}
       </div>
 
-      {filteredNotes.length === 0 && (
+      {filteredNotes?.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
             <FileText className={`h-12 w-12 mx-auto mb-4 text-gray-400`} />
@@ -544,7 +242,7 @@ export function MeetingNotes() {
                       <span className="flex flex-wrap items-center gap-3 text-sm">
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {selectedNote.dateTime} at {selectedNote.time}
+                          {selectedNote.dateTime.toString()}
                         </span>
                         <span className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
@@ -552,7 +250,7 @@ export function MeetingNotes() {
                         </span>
                         <span className="flex items-center">
                           <Users className="h-4 w-4 mr-1" />
-                          {selectedNote.attendees.length} participants
+                          {selectedNote?.attendees?.length} participants
                         </span>
                       </span>
                     </DialogDescription>
@@ -568,7 +266,7 @@ export function MeetingNotes() {
                     <h3 className={`text-sm text-gray-700`}>Tags</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {selectedNote.tags.map((tag, index) => (
+                    {selectedNote?.tags?.map((tag, index) => (
                       <Badge key={index} variant="outline">
                         {tag}
                       </Badge>
@@ -583,7 +281,7 @@ export function MeetingNotes() {
                     <h3 className={`text-sm text-gray-700`}>Attendees</h3>
                   </div>
                   <div className="space-y-2">
-                    {selectedNote.attendees.map((attendee, index) => (
+                    {selectedNote?.attendees?.map((attendee, index) => (
                       <div key={index} className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className={`text-sm`}>
@@ -631,7 +329,7 @@ export function MeetingNotes() {
                     <h3 className={`text-sm text-gray-700`}>Key Points</h3>
                   </div>
                   <ul className="space-y-2">
-                    {selectedNote.key_points.map((point, index) => (
+                    {selectedNote?.key_points?.map((point, index) => (
                       <li
                         key={index}
                         className={`text-sm flex items-start text-gray-700`}
@@ -652,7 +350,7 @@ export function MeetingNotes() {
                     <h3 className={`text-sm text-gray-700`}>Action Items</h3>
                   </div>
                   <div className="space-y-2">
-                    {selectedNote.actionItems.map((item, index) => (
+                    {selectedNote?.actionItems?.map((item, index) => (
                       <div
                         key={index}
                         className={`flex items-start space-x-3 p-3 rounded-lg border bg-gray-50 border-gray-200`}
@@ -682,8 +380,8 @@ export function MeetingNotes() {
                 </div>
 
                 {/* Transcript */}
-                {selectedNote.hasTranscript &&
-                  selectedNote.transcript.length > 0 && (
+                {(selectedNote.hasTranscript && selectedNote.transcript) &&
+                  selectedNote?.transcript?.length > 0 && (
                     <div>
                       <div className="flex items-center space-x-2 mb-3">
                         <Mic className="h-4 w-4 text-purple-500" />
@@ -693,7 +391,7 @@ export function MeetingNotes() {
                         className={`max-h-96 overflow-y-auto p-4 rounded-lg border bg-gray-50 border-gray-200`}
                       >
                         <div className="space-y-3">
-                          {selectedNote.transcript.map((entry, index) => (
+                          {selectedNote?.transcript?.map((entry, index) => (
                             <div
                               key={index}
                               className="flex items-start space-x-3"
