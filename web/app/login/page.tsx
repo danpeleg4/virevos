@@ -14,7 +14,7 @@ import type { ClerkAPIError } from "@clerk/types";
 type Step = "login" | "forgot" | "reset";
 
 export default function Login() {
-  const { signIn, isLoaded } = useSignIn();
+  const { signIn, isLoaded, setActive } = useSignIn();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -23,6 +23,8 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("login");
   const [code, setCode] = useState("");
+
+  if (!isLoaded || !signIn || !setActive) return;
 
   const getClerkErrorMessage = (err: unknown) => {
     const e = err as { errors?: ClerkAPIError[] };
@@ -39,7 +41,10 @@ export default function Login() {
         password,
       });
 
-      if (result?.status === "complete") {
+      if (!result) return
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
         router.push("/");
       }
     } catch (err: unknown) {
