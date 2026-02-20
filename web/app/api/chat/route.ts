@@ -1,10 +1,10 @@
-import { UIMessage } from "ai";
+import {createAgentUIStreamResponse, UIMessage} from "ai";
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { users } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";
-import { aiToolCall } from "@/lib/ai_tools";
+import {agent} from "@/lib/ai_tools";
 
 export async function POST(req: NextRequest) {
   const { messages }: { messages: UIMessage[] } = await req.json();
@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json("No AI Credits", { status: 401 });
   }
 
-  const result = await aiToolCall(user.id, messages);
-  return result
+  return createAgentUIStreamResponse({
+    agent: agent,
+    uiMessages: messages,
+  });
 }

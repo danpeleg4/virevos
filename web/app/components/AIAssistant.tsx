@@ -28,7 +28,7 @@ import {
   ReasoningTrigger,
 } from "@/app/components/ai-elements/reasoning";
 import { useQueryClient } from "@tanstack/react-query";
-import { clients, CreateClientInput } from "@/types/clients";
+import { clients } from "@/types/clients";
 
 interface AIAssistantProps {
   isOpen: boolean;
@@ -87,7 +87,6 @@ type AddClientToolOutput = {
     name: string;
     email: string;
     phone: string;
-    //status: "pending" | "active" | "completed";
     industry: string;
     notes?: string;
   };
@@ -95,7 +94,6 @@ type AddClientToolOutput = {
 };
 
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-  const [selectedModel, setSelectedModel] = useState("");
   const { messages, sendMessage } = useChat();
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();

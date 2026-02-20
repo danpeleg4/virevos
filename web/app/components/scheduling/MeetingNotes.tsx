@@ -246,7 +246,7 @@ export function MeetingNotes() {
                         </span>
                         <span className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
-                          {selectedNote.duration}
+                          {selectedNote.duration}m
                         </span>
                         <span className="flex items-center">
                           <Users className="h-4 w-4 mr-1" />

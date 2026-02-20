@@ -47,27 +47,6 @@ export async function POST(req: NextRequest) {
         .where(eq(events.id, res[0].id));
     }
 
-    const { text } = await generateText({
-      model: "openai/gpt-5.2-chat",
-      prompt: 'Invent a new holiday and describe its traditions.',
-      tools: {
-        getPastMeetingData: tool({
-          description:
-              "Get meeting transcript data and does semantic search to find relevant info",
-          inputSchema: z.object({
-            text: z.string().describe("Text to apply semantic search"),
-          }) as FlexibleSchema,
-          execute: async ({ text }: { text: string }) => {
-            const res = await getPastMeetingTranscript(text, userId);
-            const combinedText = res.join("\n");
-            return {
-              kind: "meeting_data",
-              message: combinedText,
-            };
-          },
-        }),
-      }
-    });
   }
   if (event.event === "participant_joined") {
     if (event.participant.kind === "EGRESS") {
