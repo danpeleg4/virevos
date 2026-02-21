@@ -304,7 +304,7 @@ export default function Clients() {
         <Card className="p-6">
           <p className="text-sm text-gray-600">Total Clients</p>
           <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients) ? getClients?.data?.length : []}
+            {Array.isArray(getClients.data) ? getClients?.data?.length : []}
           </p>
         </Card>
         <Card className="p-6">
@@ -320,7 +320,7 @@ export default function Clients() {
         <Card className="p-6">
           <p className="text-sm text-gray-600">Active Projects</p>
           <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients) ? getClients?.data?.reduce(
+            {Array.isArray(getClients.data) ? getClients?.data?.reduce(
               (sum, c) => sum + Number(c.activeProjects || 0),
               0
             ) : []}
@@ -329,7 +329,7 @@ export default function Clients() {
         <Card className="p-6">
           <p className="text-sm text-gray-600">Completed Projects</p>
           <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients) ? getClients?.data?.reduce(
+            {Array.isArray(getClients.data) ? getClients?.data?.reduce(
               (sum, c) => sum + Number(c.completedProjects || 0),
               0
             ) : []}
