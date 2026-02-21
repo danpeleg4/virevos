@@ -18,7 +18,7 @@
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.3.1"
   },
   "workspaces": [
     "web",
@@ -27,8 +27,9 @@
     "db"
   ],
   "devDependencies": {
+    "eslint": "^9.39.3",
     "prettier": "^3.8.1",
-    "turbo": "^2.8.3"
+    "turbo": "^2.8.10"
   },
-  "packageManager": "npm@11.8.0"
+  "packageManager": "npm@11.10.1"
 }

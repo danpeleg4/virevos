@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { meetingAttendees, events } from "@db/schema";
 import { eq } from "drizzle-orm";
-import {FlexibleSchema, generateText, tool} from 'ai';
 import {EgressClient, EncodedFileOutput, EncodedOutputs} from "livekit-server-sdk";
-import {CreateClientInput} from "@/types/clients";
-import {addAClient} from "@/lib/server_actions/clients";
-import {getPastMeetingTranscript} from "@/lib/server_actions/meetings";
-import {z} from "zod";
 
 /*
 LiveKit webhook
