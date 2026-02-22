@@ -116,7 +116,9 @@ export default function Login() {
     }
   };
 
-  const handleSocialLogin = async (strategy: "oauth_google" | "oauth_apple") => {
+  const handleSocialLogin = async (
+    strategy: "oauth_google" | "oauth_apple"
+  ) => {
     setError(null);
     try {
       await signIn.authenticateWithRedirect({
@@ -152,7 +154,7 @@ export default function Login() {
           </Callout.Root>
         </div>
       </div>
-          {/* Left Column: Login Form */}
+      {/* Left Column: Login Form */}
       <div className="w-full lg:w-1/2 p-6 sm:p-12 lg:p-16 xl:p-24 flex flex-col h-screen overflow-y-auto">
         <div className="flex items-center space-x-3 mb-12 sm:mb-20">
           <button className="flex items-center space-x-3 group">

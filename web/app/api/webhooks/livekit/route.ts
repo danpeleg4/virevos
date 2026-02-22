@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { meetingAttendees, events } from "@db/schema";
 import { eq } from "drizzle-orm";
-import {EgressClient, EncodedFileOutput, EncodedOutputs} from "livekit-server-sdk";
+import {
+  EgressClient,
+  EncodedFileOutput,
+  EncodedOutputs,
+} from "livekit-server-sdk";
 
 /*
 LiveKit webhook
@@ -41,7 +45,6 @@ export async function POST(req: NextRequest) {
         })
         .where(eq(events.id, res[0].id));
     }
-
   }
   if (event.event === "participant_joined") {
     if (event.participant.kind === "EGRESS") {
@@ -55,11 +58,14 @@ export async function POST(req: NextRequest) {
         initials: identity[0],
       });
 
-      const [event] = await db.select().from(events).where(eq(events.id, roomName));
+      const [event] = await db
+        .select()
+        .from(events)
+        .where(eq(events.id, roomName));
 
       const outputs: EncodedOutputs = {
         file: new EncodedFileOutput({
-          filepath: `recordings/${event.userId}/${event.id}/${identity}/${crypto.randomUUID().slice(0,5)}.mp4`,
+          filepath: `recordings/${event.userId}/${event.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
           output: {
             case: "s3",
             value: {
@@ -71,8 +77,8 @@ export async function POST(req: NextRequest) {
             },
           },
         }),
-      }
-      await egressClient.startParticipantEgress(roomName, identity, outputs)
+      };
+      await egressClient.startParticipantEgress(roomName, identity, outputs);
     }
   }
   return NextResponse.json({ status: "ok" });

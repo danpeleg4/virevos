@@ -13,9 +13,9 @@ import { notFound } from "next/navigation";
 
 const livekitHost = process.env.LIVEKIT_HOST;
 const roomService = new RoomServiceClient(
-    livekitHost!,
-    process.env.LIVEKIT_API_KEY,
-    process.env.LIVEKIT_API_SECRET
+  livekitHost!,
+  process.env.LIVEKIT_API_KEY,
+  process.env.LIVEKIT_API_SECRET
 );
 const egressClient = new EgressClient(livekitHost!);
 

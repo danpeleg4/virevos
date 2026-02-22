@@ -26,7 +26,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {Event, RawChunk, TranscribedChunk} from "@/types/meeting";
+import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/server_actions/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
@@ -492,15 +492,15 @@ function TranscriptionView({
             <div className="aspect-video relative bg-black rounded-lg overflow-hidden mb-4">
               <div className="h-full w-full">
                 {videoUrl ? (
-                    <video
-                        ref={videoRef}
-                        src={videoUrl}
-                        className="w-full h-full object-contain"
-                    />
+                  <video
+                    ref={videoRef}
+                    src={videoUrl}
+                    className="w-full h-full object-contain"
+                  />
                 ) : (
-                    <div className="flex items-center justify-center h-full text-white">
-                      No video found
-                    </div>
+                  <div className="flex items-center justify-center h-full text-white">
+                    No video found
+                  </div>
                 )}
               </div>
             </div>

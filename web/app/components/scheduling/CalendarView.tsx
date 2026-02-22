@@ -59,7 +59,7 @@ export function CalendarView() {
     },
     onMutate: async (newMeeting) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({queryKey: ["meetings"]});
+      await queryClient.cancelQueries({ queryKey: ["meetings"] });
 
       // Snapshot the previous value
       const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
@@ -74,10 +74,10 @@ export function CalendarView() {
         return [...old, optimisticMeeting];
       });
 
-      return {previousMeetings};
+      return { previousMeetings };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({queryKey: ["meetings"]});
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
     },
     onError: (err, newMeeting, context) => {
       console.error("Failed to save meeting:", err);
@@ -89,7 +89,7 @@ export function CalendarView() {
     },
     onSettled: () => {
       // Always refetch after error or success to ensure sync with server
-      queryClient.invalidateQueries({queryKey: ["meetings"]});
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
     },
   });
 

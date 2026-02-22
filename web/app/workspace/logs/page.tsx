@@ -291,98 +291,98 @@ export default function Logs() {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-            <TableRow>
-              <TableHead>Automation</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Retries</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredLogs.map((log) => (
-              <TableRow
-                key={log.id}
-                className="cursor-pointer hover:bg-gray-50"
-              >
-                <TableCell>
-                  <div>
-                    <p className="text-gray-900">{log.automation}</p>
-                    <p className="text-sm text-gray-500">{log.trigger}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    className={
-                      log.status === "success"
-                        ? "bg-green-100 text-green-700"
-                        : log.status === "failed"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-blue-100 text-blue-700"
-                    }
-                  >
-                    {log.status === "success" && (
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                    )}
-                    {log.status === "failed" && (
-                      <XCircle className="h-3 w-3 mr-1" />
-                    )}
-                    {log.status === "retrying" && (
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                    )}
-                    {log.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-gray-600">
-                  {log.timestamp}
-                </TableCell>
-                <TableCell className="text-sm text-gray-600">
-                  {log.duration}
-                </TableCell>
-                <TableCell>
-                  {log.retries > 0 ? (
+              <TableRow>
+                <TableHead>Automation</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Retries</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredLogs.map((log) => (
+                <TableRow
+                  key={log.id}
+                  className="cursor-pointer hover:bg-gray-50"
+                >
+                  <TableCell>
+                    <div>
+                      <p className="text-gray-900">{log.automation}</p>
+                      <p className="text-sm text-gray-500">{log.trigger}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <Badge
-                      variant="outline"
-                      className="border-orange-200 text-orange-700"
+                      className={
+                        log.status === "success"
+                          ? "bg-green-100 text-green-700"
+                          : log.status === "failed"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-blue-100 text-blue-700"
+                      }
                     >
-                      {log.retries} {log.retries === 1 ? "retry" : "retries"}
+                      {log.status === "success" && (
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                      )}
+                      {log.status === "failed" && (
+                        <XCircle className="h-3 w-3 mr-1" />
+                      )}
+                      {log.status === "retrying" && (
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                      )}
+                      {log.status}
                     </Badge>
-                  ) : (
-                    <span className="text-sm text-gray-400">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end space-x-2">
-                    {log.status === "failed" && (
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {log.timestamp}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {log.duration}
+                  </TableCell>
+                  <TableCell>
+                    {log.retries > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="border-orange-200 text-orange-700"
+                      >
+                        {log.retries} {log.retries === 1 ? "retry" : "retries"}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-gray-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end space-x-2">
+                      {log.status === "failed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRetry(log.id);
+                          }}
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Retry
+                        </Button>
+                      )}
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRetry(log.id);
-                        }}
+                        variant="ghost"
+                        onClick={() => handleViewDetails(log)}
                       >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Retry
+                        Details
+                        <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleViewDetails(log)}
-                    >
-                      Details
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </Card>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
 
       {/* Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

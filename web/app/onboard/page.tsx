@@ -521,7 +521,9 @@ function AccountStep({
     }
   };
 
-  const handleSocialLogin = async (strategy: "oauth_google" | "oauth_apple") => {
+  const handleSocialLogin = async (
+    strategy: "oauth_google" | "oauth_apple"
+  ) => {
     if (!isLoaded) return;
     setError(null);
     try {

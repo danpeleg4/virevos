@@ -69,15 +69,14 @@ export default function Clients() {
     },
   });
 
-  const filteredClients =
-      Array.isArray(getClients.data)
-          ? getClients.data.filter(
-              (client) =>
-                  client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  client?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  client?.industry?.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          : [];
+  const filteredClients = Array.isArray(getClients.data)
+    ? getClients.data.filter(
+        (client) =>
+          client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          client?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          client?.industry?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -310,29 +309,32 @@ export default function Clients() {
         <Card className="p-6">
           <p className="text-sm text-gray-600">Active Clients</p>
           <p className="text-3xl mt-2 text-gray-900">
-            {
-              Array.isArray(getClients.data) ?
-              getClients?.data?.filter((c: clients) => c.status === "active")
-                .length : []
-            }
+            {Array.isArray(getClients.data)
+              ? getClients?.data?.filter((c: clients) => c.status === "active")
+                  .length
+              : []}
           </p>
         </Card>
         <Card className="p-6">
           <p className="text-sm text-gray-600">Active Projects</p>
           <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients.data) ? getClients?.data?.reduce(
-              (sum, c) => sum + Number(c.activeProjects || 0),
-              0
-            ) : []}
+            {Array.isArray(getClients.data)
+              ? getClients?.data?.reduce(
+                  (sum, c) => sum + Number(c.activeProjects || 0),
+                  0
+                )
+              : []}
           </p>
         </Card>
         <Card className="p-6">
           <p className="text-sm text-gray-600">Completed Projects</p>
           <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients.data) ? getClients?.data?.reduce(
-              (sum, c) => sum + Number(c.completedProjects || 0),
-              0
-            ) : []}
+            {Array.isArray(getClients.data)
+              ? getClients?.data?.reduce(
+                  (sum, c) => sum + Number(c.completedProjects || 0),
+                  0
+                )
+              : []}
           </p>
         </Card>
       </div>

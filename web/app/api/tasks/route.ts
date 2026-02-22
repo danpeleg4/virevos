@@ -3,7 +3,7 @@ import { db } from "@db/db";
 import { projects, tasks } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
-import {Task} from "@/types/tasks";
+import { Task } from "@/types/tasks";
 
 export async function GET() {
   const user = await currentUser();
@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, priority, dueDate, projectName } = body as Pick<Task, "title" | "description" | "dueDate" | "priority" | "projectName">
+    const { title, description, priority, dueDate, projectName } = body as Pick<
+      Task,
+      "title" | "description" | "dueDate" | "priority" | "projectName"
+    >;
 
     if (!title || !title.trim()) {
       return new NextResponse("Missing title", { status: 400 });
@@ -42,8 +45,8 @@ export async function POST(req: NextRequest) {
     let projectId: number | null = null;
 
     if (
-        projectName !== undefined &&
-        projectName !== null &&
+      projectName !== undefined &&
+      projectName !== null &&
       String(projectName).trim() !== ""
     ) {
       const maybeId = Number(projectName);
@@ -78,7 +81,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Build values, omitting dueDate if empty so DB default applies
-    const values: Pick<Task, "title" | "description" | "priority" | "dueDate" | "projectId" | "userId" | "status" | "completed"> = {
+    const values: Pick<
+      Task,
+      | "title"
+      | "description"
+      | "priority"
+      | "dueDate"
+      | "projectId"
+      | "userId"
+      | "status"
+      | "completed"
+    > = {
       dueDate: Date.now().toString(),
       title: title.trim(),
       description,
@@ -86,7 +99,7 @@ export async function POST(req: NextRequest) {
       projectId,
       userId: user.id,
       status: "in-progress",
-      completed: false
+      completed: false,
     };
     if (dueDate && String(dueDate).trim() !== "") {
       values.dueDate = dueDate;

@@ -25,7 +25,7 @@ interface MeetingNote {
   dateTime: string;
   time: string;
   duration: string;
-  attendees: { name: string; initials: string; }[];
+  attendees: { name: string; initials: string }[];
   ai_summary: string;
   actionItems: ActionItem[];
   key_points: string[];
@@ -36,10 +36,10 @@ interface MeetingNote {
 }
 
 type Transcript = {
-  speaker: string
-  time: string
-  text: string
-}
+  speaker: string;
+  time: string;
+  text: string;
+};
 
 export interface Event {
   id: string;

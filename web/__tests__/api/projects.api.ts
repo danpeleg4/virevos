@@ -4,39 +4,38 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
 beforeAll(() => {
-    jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterAll(() => {
-    (console.error as jest.Mock).mockRestore();
+  (console.error as jest.Mock).mockRestore();
 });
-
 
 // ─────────────────────────────
 // Mocks
 // ─────────────────────────────
 
 jest.mock("@clerk/nextjs/server", () => ({
-    currentUser: jest.fn(),
+  currentUser: jest.fn(),
 }));
 
 jest.mock("@db/db", () => ({
-    db: {
-        select: jest.fn(),
-    },
+  db: {
+    select: jest.fn(),
+  },
 }));
 
 // Drizzle chain mock helper
 function mockDrizzleResult(result: unknown) {
-    (db.select as jest.Mock).mockReturnValue({
-        from: () => ({
-            leftJoin: () => ({
-                where: () => ({
-                    limit: () => result,
-                }),
-            }),
+  (db.select as jest.Mock).mockReturnValue({
+    from: () => ({
+      leftJoin: () => ({
+        where: () => ({
+          limit: () => result,
         }),
-    });
+      }),
+    }),
+  });
 }
 
 const mockRequest = {} as NextRequest;
@@ -46,82 +45,82 @@ const mockRequest = {} as NextRequest;
 // ─────────────────────────────
 
 describe("GET /api/projects/[id]", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns 401 if user is not authenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+
+    const res = await GET(mockRequest, {
+      params: Promise.resolve({ id: "1" }),
     });
 
-    it("returns 401 if user is not authenticated", async () => {
-        (currentUser as jest.Mock).mockResolvedValue(null);
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "Unauthorized" });
+  });
 
-        const res = await GET(mockRequest, {
-            params: Promise.resolve({ id: "1" }),
-        });
+  it("returns 400 if projectId is invalid", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
-        expect(res.status).toBe(401);
-        expect(await res.json()).toEqual({ error: "Unauthorized" });
+    const res = await GET(mockRequest, {
+      params: Promise.resolve({ id: "abc" }),
     });
 
-    it("returns 400 if projectId is invalid", async () => {
-        (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Invalid projectId" });
+  });
 
-        const res = await GET(mockRequest, {
-            params: Promise.resolve({ id: "abc" }),
-        });
+  it("returns 404 if project is not found", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    mockDrizzleResult([]);
 
-        expect(res.status).toBe(400);
-        expect(await res.json()).toEqual({ error: "Invalid projectId" });
+    const res = await GET(mockRequest, {
+      params: Promise.resolve({ id: "123" }),
     });
 
-    it("returns 404 if project is not found", async () => {
-        (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-        mockDrizzleResult([]);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "Project not found" });
+  });
 
-        const res = await GET(mockRequest, {
-            params: Promise.resolve({ id: "123" }),
-        });
+  it("returns project data when found", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
-        expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: "Project not found" });
+    mockDrizzleResult([
+      {
+        id: 1,
+        name: "Project A",
+        clientId: 10,
+        clientName: "Client X",
+      },
+    ]);
+
+    const res = await GET(mockRequest, {
+      params: Promise.resolve({ id: "1" }),
     });
 
-    it("returns project data when found", async () => {
-        (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      id: 1,
+      name: "Project A",
+      clientId: 10,
+      clientName: "Client X",
+    });
+  });
 
-        mockDrizzleResult([
-            {
-                id: 1,
-                name: "Project A",
-                clientId: 10,
-                clientName: "Client X",
-            },
-        ]);
-
-        const res = await GET(mockRequest, {
-            params: Promise.resolve({ id: "1" }),
-        });
-
-        expect(res.status).toBe(200);
-        expect(await res.json()).toEqual({
-            id: 1,
-            name: "Project A",
-            clientId: 10,
-            clientName: "Client X",
-        });
+  it("returns 500 on unexpected error", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as jest.Mock).mockImplementation(() => {
+      throw new Error("DB crashed");
     });
 
-    it("returns 500 on unexpected error", async () => {
-        (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-        (db.select as jest.Mock).mockImplementation(() => {
-            throw new Error("DB crashed");
-        });
-
-        const res = await GET(mockRequest, {
-            params: Promise.resolve({ id: "1" }),
-        });
-
-        expect(res.status).toBe(500);
-        expect(await res.json()).toEqual({
-            error: "Internal server error",
-        });
+    const res = await GET(mockRequest, {
+      params: Promise.resolve({ id: "1" }),
     });
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({
+      error: "Internal server error",
+    });
+  });
 });

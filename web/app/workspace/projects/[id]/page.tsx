@@ -41,12 +41,9 @@ import {
   addNotes,
   deleteProject,
 } from "@/lib/server_actions/projects";
-import {
-  deleteTask,
-  updateTaskStatus,
-} from "@/lib/server_actions/tasks"
+import { deleteTask, updateTaskStatus } from "@/lib/server_actions/tasks";
 import { Project, ProjectFile, ProjectNote } from "@/types/projects";
-import {Task} from "@/types/tasks";
+import { Task } from "@/types/tasks";
 
 export default function ProjectPage({
   params,
@@ -254,7 +251,9 @@ export function ProjectDetailView({
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl text-gray-900 truncate">{project.name}</h1>
+            <h1 className="text-xl sm:text-2xl text-gray-900 truncate">
+              {project.name}
+            </h1>
             <p className="text-gray-600 mt-1 truncate">{project.clientName}</p>
           </div>
         </div>

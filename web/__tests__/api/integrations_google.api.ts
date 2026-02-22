@@ -1,98 +1,93 @@
-import { POST } from '@/app/api/integrations/google/route'
-import { currentUser } from '@clerk/nextjs/server'
-import { db } from '@db/db'
+import { POST } from "@/app/api/integrations/google/route";
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@db/db";
 
-jest.mock('@clerk/nextjs/server', () => ({
-    currentUser: jest.fn(),
-}))
+jest.mock("@clerk/nextjs/server", () => ({
+  currentUser: jest.fn(),
+}));
 
-jest.mock('@db/db', () => ({
-    db: {
-        delete: jest.fn(),
-        select: jest.fn(),
-    },
-}))
+jest.mock("@db/db", () => ({
+  db: {
+    delete: jest.fn(),
+    select: jest.fn(),
+  },
+}));
 
 function makeRequest(body: unknown): Request {
-    return new Request('http://localhost/api/google/tokens', {
-        method: 'POST',
-        body: JSON.stringify(body),
-    })
+  return new Request("http://localhost/api/google/tokens", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
-describe('POST /api/google/tokens', () => {
-    beforeEach(() => {
-        jest.clearAllMocks()
-    })
+describe("POST /api/google/tokens", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    it('returns 401 if user is not authenticated', async () => {
-        ;(currentUser as jest.Mock).mockResolvedValue(null)
+  it("returns 401 if user is not authenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
 
-        const res = await POST(makeRequest({ action: 'status' }))
+    const res = await POST(makeRequest({ action: "status" }));
 
-        expect(res.status).toBe(401)
-        expect(await res.text()).toBe('Unauthorized')
-    })
+    expect(res.status).toBe(401);
+    expect(await res.text()).toBe("Unauthorized");
+  });
 
-    it('disconnects google account', async () => {
-        ;(currentUser as jest.Mock).mockResolvedValue({ id: 'user_1' })
+  it("disconnects google account", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
-        const whereMock = jest.fn()
-        ;(db.delete as jest.Mock).mockReturnValue({
-            where: whereMock,
-        })
+    const whereMock = jest.fn();
+    (db.delete as jest.Mock).mockReturnValue({
+      where: whereMock,
+    });
 
-        const res = await POST(makeRequest({ action: 'disconnect' }))
+    const res = await POST(makeRequest({ action: "disconnect" }));
 
-        expect(db.delete).toHaveBeenCalled()
-        expect(whereMock).toHaveBeenCalled()
-        expect(res.status).toBe(200)
-        expect(await res.json()).toEqual({ success: true })
-    })
+    expect(db.delete).toHaveBeenCalled();
+    expect(whereMock).toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true });
+  });
 
-    it('returns connected=true when token exists and is connected', async () => {
-        ;(currentUser as jest.Mock).mockResolvedValue({ id: 'user_1' })
+  it("returns connected=true when token exists and is connected", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as jest.Mock).mockReturnValue({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ connected: true }]),
+        }),
+      }),
+    });
 
-        ;(db.select as jest.Mock).mockReturnValue({
-            from: () => ({
-                where: () => ({
-                    limit: () =>
-                        Promise.resolve([
-                            { connected: true },
-                        ]),
-                }),
-            }),
-        })
+    const res = await POST(makeRequest({ action: "status" }));
 
-        const res = await POST(makeRequest({ action: 'status' }))
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ connected: true });
+  });
 
-        expect(res.status).toBe(200)
-        expect(await res.json()).toEqual({ connected: true })
-    })
+  it("returns connected=false when no token exists", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as jest.Mock).mockReturnValue({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([]),
+        }),
+      }),
+    });
 
-    it('returns connected=false when no token exists', async () => {
-        ;(currentUser as jest.Mock).mockResolvedValue({ id: 'user_1' })
+    const res = await POST(makeRequest({ action: "status" }));
 
-        ;(db.select as jest.Mock).mockReturnValue({
-            from: () => ({
-                where: () => ({
-                    limit: () => Promise.resolve([]),
-                }),
-            }),
-        })
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ connected: false });
+  });
 
-        const res = await POST(makeRequest({ action: 'status' }))
+  it("returns 405 for unsupported action", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
-        expect(res.status).toBe(200)
-        expect(await res.json()).toEqual({ connected: false })
-    })
+    const res = await POST(makeRequest({ action: "unknown" }));
 
-    it('returns 405 for unsupported action', async () => {
-        ;(currentUser as jest.Mock).mockResolvedValue({ id: 'user_1' })
-
-        const res = await POST(makeRequest({ action: 'unknown' }))
-
-        expect(res.status).toBe(405)
-        expect(await res.text()).toBe('Method not allowed')
-    })
-})
+    expect(res.status).toBe(405);
+    expect(await res.text()).toBe("Method not allowed");
+  });
+});
