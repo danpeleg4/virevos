@@ -29,19 +29,15 @@ export default function Settings() {
       <Tabs defaultValue="profile" className="space-y-6">
         <div className="overflow-x-auto pb-1">
           <TabsList className="min-w-max">
-            <TabsTrigger value="profile">
+            <TabsTrigger className="cursor-pointer" value="profile">
               <User className="h-4 w-4 mr-2" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="notifications">
+            <TabsTrigger className="cursor-pointer" value="notifications">
               <Bell className="h-4 w-4 mr-2" />
               Notifications
             </TabsTrigger>
-            <TabsTrigger value="security">
-              <Shield className="h-4 w-4 mr-2" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="preferences">
+            <TabsTrigger className="cursor-pointer" value="preferences">
               <Palette className="h-4 w-4 mr-2" />
               Preferences
             </TabsTrigger>
@@ -190,81 +186,6 @@ export default function Settings() {
 
               <div className="flex justify-end">
                 <Button>Save Preferences</Button>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* Security Tab */}
-        <TabsContent value="security">
-          <Card className="p-6">
-            <h2 className="text-xl text-gray-900 mb-6">Security Settings</h2>
-
-            <div className="space-y-6 max-w-2xl">
-              <div>
-                <h3 className="text-gray-900 mb-4">Change Password</h3>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Current Password</Label>
-                    <Input type="password" className="mt-2" />
-                  </div>
-                  <div>
-                    <Label>New Password</Label>
-                    <Input type="password" className="mt-2" />
-                  </div>
-                  <div>
-                    <Label>Confirm New Password</Label>
-                    <Input type="password" className="mt-2" />
-                  </div>
-                  <Button>Update Password</Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-gray-900 mb-4">
-                  Two-Factor Authentication
-                </h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-900">Enable 2FA</p>
-                    <p className="text-sm text-gray-600">
-                      Add an extra layer of security to your account
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-gray-900 mb-4">Active Sessions</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-gray-900">Chrome on MacOS</p>
-                      <p className="text-sm text-gray-600">
-                        San Francisco, CA • Active now
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Revoke
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-gray-900">Safari on iPhone</p>
-                      <p className="text-sm text-gray-600">
-                        San Francisco, CA • 2 hours ago
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Revoke
-                    </Button>
-                  </div>
-                </div>
               </div>
             </div>
           </Card>
