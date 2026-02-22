@@ -31,10 +31,13 @@ export default function Tasks() {
     queryKey: ["allTasks"],
     queryFn: async () => {
       const res = await axios.get(`/api/tasks`);
-      return res.data.map((t: { tasks: Task[]; projectName: string }) => ({
-        ...t.tasks,
-        projectName: t.projectName || "No Project",
-      }));
+      if (!Array.isArray(res.data)) return [];
+      return res.data.flatMap((t: { tasks: Task[]; projectName: string }) =>
+        t.tasks.map((task: Task) => ({
+          ...task,
+          projectName: t.projectName || "No Project",
+        }))
+      );
     },
   });
 
