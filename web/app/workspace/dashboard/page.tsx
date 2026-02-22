@@ -17,10 +17,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import { task_percentage } from "@/lib/task_percentage";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Project } from "@/types/projects";
 import { Task } from "@/types/tasks";
+import { updateTaskStatus } from "@/lib/server_actions/tasks";
+import { Checkbox } from "@/app/components/ui/checkbox";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -28,6 +31,9 @@ const fadeInUp = {
 };
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
   // Fetch clients count
   const clientsQuery = useQuery({
     queryKey: ["clients"],
@@ -78,6 +84,38 @@ export default function Dashboard() {
   });
 
   const tasks: Task[] = tasksQuery.data ?? [];
+
+  const changeTaskStatus = useMutation({
+    mutationFn: async ({
+      status,
+      taskId,
+    }: {
+      status: string;
+      taskId: number;
+    }) => {
+      await updateTaskStatus(status, taskId);
+    },
+
+    onMutate: async ({ status, taskId }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["allTasks"],
+      });
+
+      const previousTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
+
+      // Update ONLY the task, keep order
+      queryClient.setQueryData<Task[]>(["allTasks"], (old) =>
+        old?.map((task) => (task.id === taskId ? { ...task, status } : task))
+      );
+
+      return { previousTasks };
+    },
+
+    onError: (_err, _vars, context) => {
+      // rollback if API fails
+      queryClient.setQueryData(["allTasks"], context?.previousTasks);
+    },
+  });
 
   // Stats for dashboard cards
   const theStats = [
@@ -254,33 +292,47 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3">
-              {tasks.slice(0, 3).map((task) => (
-                  <Link key={task.id} href={`/workspace/tasks`} className="block">
-                    <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="h-5 w-5 rounded border-2 border-gray-300"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <p className="text-gray-900">{task.title ?? "Untitled"}</p>
-                          <Badge
-                              variant="outline"
-                              className={`text-xs ${
-                                  task.priority === "high"
-                                      ? "border-red-200 text-red-700"
-                                      : task.priority === "medium"
-                                          ? "border-yellow-200 text-yellow-700"
-                                          : "border-gray-200 text-gray-700"
-                              }`}
-                          >
-                            {task.priority ?? "none"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600">{task.projectName ?? "No Project"}</p>
-                        <p className="text-xs text-gray-500 mt-1">{task.dueDate ?? "No due date"}</p>
-                      </div>
+              {tasks
+                .filter((task) => task.status !== "completed")
+                .slice(0, 3)
+                .map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/workspace/tasks`)}
+                  >
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Checkbox
+                        checked={task.status === "completed"}
+                        onCheckedChange={(checked) =>
+                          changeTaskStatus.mutate({
+                            status: checked ? "completed" : "todo",
+                            taskId: task.id,
+                          })
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
                     </div>
-                  </Link>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <p className="text-gray-900">{task.title ?? "Untitled"}</p>
+                        <Badge
+                            variant="outline"
+                            className={`text-xs ${
+                                task.priority === "high"
+                                    ? "border-red-200 text-red-700"
+                                    : task.priority === "medium"
+                                        ? "border-yellow-200 text-yellow-700"
+                                        : "border-gray-200 text-gray-700"
+                            }`}
+                        >
+                          {task.priority ?? "none"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">{task.projectName ?? "No Project"}</p>
+                      <p className="text-xs text-gray-500 mt-1">{task.dueDate ?? "No due date"}</p>
+                    </div>
+                  </div>
               ))}
             </div>
           </Card>
