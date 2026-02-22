@@ -2,7 +2,8 @@ import { POST } from '@/app/api/chat/route'
 import { currentUser } from '@clerk/nextjs/server'
 import { db } from '@db/db'
 import { NextRequest } from 'next/server'
-import {streamText, UIMessage} from 'ai'
+import { createAgentUIStreamResponse, UIMessage } from 'ai'
+import { agent } from '@/lib/ai_tools'
 
 jest.mock('@clerk/nextjs/server', () => ({
     currentUser: jest.fn(),
@@ -16,10 +17,14 @@ jest.mock('@db/db', () => ({
 }))
 
 jest.mock('ai', () => ({
-    streamText: jest.fn(),
+    createAgentUIStreamResponse: jest.fn(),
     convertToModelMessages: jest.fn().mockResolvedValue([]),
     stepCountIs: jest.fn(),
     tool: jest.fn((t) => t),
+}))
+
+jest.mock('@/lib/ai_tools', () => ({
+    agent: {},
 }))
 
 jest.mock('@/lib/server_actions/clients', () => ({
@@ -65,7 +70,7 @@ describe('POST /api/chat', () => {
         expect(await res.json()).toBe('No AI Credits')
     })
 
-    it('decrements AI credits and calls streamText', async () => {
+    it('decrements AI credits and calls createAgentUIStreamResponse', async () => {
         ;(currentUser as jest.Mock).mockResolvedValue({ id: 'user_1' })
 
         ;(db.select as jest.Mock).mockReturnValue({
@@ -81,20 +86,16 @@ describe('POST /api/chat', () => {
             set: updateSet,
         })
 
-        const mockStreamResponse = {
-                toUIMessageStreamResponse: jest.fn().mockReturnValue(
-                    new Response('ok', { status: 200 }),
-                ),
-            }
+        const mockStreamResponse = new Response('ok', { status: 200 })
 
-        ;(streamText as jest.Mock).mockReturnValue(mockStreamResponse)
+        ;(createAgentUIStreamResponse as jest.Mock).mockReturnValue(mockStreamResponse)
 
         const res = await POST(mockRequest({ messages: [] }))
 
         expect(db.update).toHaveBeenCalled()
-        expect(streamText).toHaveBeenCalled()
-        expect(mockStreamResponse.toUIMessageStreamResponse).toHaveBeenCalledWith({
-            sendReasoning: true,
+        expect(createAgentUIStreamResponse).toHaveBeenCalledWith({
+            agent: agent,
+            uiMessages: [],
         })
 
         expect(res.status).toBe(200)
