@@ -94,7 +94,7 @@ type AddClientToolOutput = {
 };
 
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-  const { messages, sendMessage } = useChat();
+  const { messages, sendMessage, status } = useChat();
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();
   const processedToolParts = useRef<Set<string>>(new Set());

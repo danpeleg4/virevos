@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
           output: {
             case: "s3",
             value: {
-              accessKey: process.env.AWS_S3_ACCESS_KEY,
-              secret: process.env.AWS_S3_SECRET_KEY,
+              accessKey: process.env.AWS_LIVE_KIT_S3_ACCESS_KEY,
+              secret: process.env.AWS_LIVE_KIT_S3_SECRET_KEY,
               bucket: process.env.AWS_BUCKET_NAME,
               region: process.env.AWS_REGION,
               forcePathStyle: true,
