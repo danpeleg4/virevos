@@ -69,7 +69,7 @@ export default function ProjectPage({
   if (projectQuery.isError) return <p>Failed to load project</p>;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <ProjectDetailView
         project={projectQuery.data!}
         onBackAction={() => router.push("/workspace/projects")}
@@ -243,36 +243,36 @@ export function ProjectDetailView({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex items-start space-x-2 sm:space-x-4">
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer shrink-0"
             variant="ghost"
             size="icon"
             onClick={onBackFunction}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl text-gray-900">{project.name}</h1>
-            <p className="text-gray-600 mt-1">{project.clientName}</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl text-gray-900 truncate">{project.name}</h1>
+            <p className="text-gray-600 mt-1 truncate">{project.clientName}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 ml-10 sm:ml-0">
           <Badge
             variant="outline"
-            className={
+            className={`shrink-0 ${
               project.priority === "high"
                 ? "border-red-200 text-red-700"
                 : project.priority === "medium"
                   ? "border-yellow-200 text-yellow-700"
                   : "border-gray-200 text-gray-700"
-            }
+            }`}
           >
             {project.priority} priority
           </Badge>
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer shrink-0"
             variant="outline"
             size="sm"
             onClick={() => deleteSomeProject.mutate(project.id)}
@@ -283,7 +283,7 @@ export function ProjectDetailView({
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">

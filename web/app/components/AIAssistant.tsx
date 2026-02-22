@@ -147,11 +147,11 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
       {isOpen && (
         <motion.div
           key="ai-assistant-panel"
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
+          initial={{ x: "100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
+          className="fixed right-0 top-0 h-screen w-[min(100%,320px)] sm:w-96 bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
         >
           {/* Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">

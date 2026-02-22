@@ -105,14 +105,16 @@ export default function Dashboard() {
   ];
 
   return (
-      <div className="p-6 space-y-6">
-        {/* Header */}
+    <div className="p-4 sm:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">
             Welcome back! Here’s what’s happening today.
           </p>
         </div>
+      </div>
 
         {/* Stats */}
         <motion.div
@@ -121,7 +123,7 @@ export default function Dashboard() {
             variants={{
               visible: { transition: { staggerChildren: 0.1 } },
             }}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
         >
           {theStats.map((stat, index) => (
               <motion.div key={index} variants={fadeInUp}>
@@ -159,7 +161,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Recent Projects & Tasks */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           {/* Recent Projects */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">

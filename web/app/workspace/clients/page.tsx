@@ -203,11 +203,11 @@ export default function Clients() {
   });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl text-gray-900">Clients</h1>
+          <h1 className="text-2xl sm:text-3xl text-gray-900">Clients</h1>
           <p className="mt-1 text-gray-600">Manage your client relationships</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -300,7 +300,7 @@ export default function Clients() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-6 sm:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-6">
           <p className="text-sm text-gray-600">Total Clients</p>
           <p className="text-3xl mt-2 text-gray-900">

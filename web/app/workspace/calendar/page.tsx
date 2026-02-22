@@ -17,12 +17,14 @@ export default function Calendar() {
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto overflow-hidden">
-      <div className="mb-6 shrink-0">
-        <h1 className="text-gray-900 mb-2">Smart Scheduling</h1>
-        <p className="text-gray-600">
-          AI-powered scheduling that adapts to your workload and automatically
-          manages conflicts
-        </p>
+      <div className="mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">Smart Scheduling</h1>
+          <p className="text-gray-600">
+            AI-powered scheduling that adapts to your workload and automatically
+            manages conflicts
+          </p>
+        </div>
       </div>
 
       <Tabs
@@ -30,20 +32,22 @@ export default function Calendar() {
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col min-h-0 overflow-hidden"
       >
-        <TabsList className="mb-6 shrink-0">
-          <TabsTrigger className="cursor-pointer" value="calendar">
-            Calendar
-          </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="meetings">
-            Meetings
-          </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="notes">
-            Meeting Notes
-          </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="integrations">
-            Integrations
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1 shrink-0">
+          <TabsList className="mb-6 min-w-max">
+            <TabsTrigger className="cursor-pointer" value="calendar">
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="meetings">
+              Meetings
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="notes">
+              Meeting Notes
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="integrations">
+              Integrations
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent
           value="calendar"

@@ -58,21 +58,23 @@ export function ProjectList({ projects, onSelect }: ProjectListProps) {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger className="cursor-pointer" value="all">
-                All Projects ({projects.length})
-              </TabsTrigger>
+            <div className="overflow-x-auto pb-1">
+              <TabsList className="min-w-max">
+                <TabsTrigger className="cursor-pointer" value="all">
+                  All Projects ({projects.length})
+                </TabsTrigger>
 
-              <TabsTrigger className="cursor-pointer" value="active">
-                Active (
-                {projects.filter((p) => p.status !== "completed").length})
-              </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="active">
+                  Active (
+                  {projects.filter((p) => p.status !== "completed").length})
+                </TabsTrigger>
 
-              <TabsTrigger className="cursor-pointer" value="completed">
-                Completed (
-                {projects.filter((p) => p.status === "completed").length})
-              </TabsTrigger>
-            </TabsList>
+                <TabsTrigger className="cursor-pointer" value="completed">
+                  Completed (
+                  {projects.filter((p) => p.status === "completed").length})
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value={activeTab} className="mt-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
