@@ -97,14 +97,16 @@ export default function Tasks() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl text-gray-900">Tasks</h1>
+          <h1 className="text-2xl sm:text-3xl text-gray-900">Tasks</h1>
           <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
         </div>
-        <AddNewTask />
+        <div className="w-full sm:w-auto">
+          <AddNewTask />
+        </div>
       </div>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -118,20 +120,22 @@ export default function Tasks() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger className="cursor-pointer" value="all">
-            All ({taskCounts.all})
-          </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="todo">
-            To Do ({taskCounts.todo})
-          </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="in-progress">
-            In Progress ({taskCounts.inProgress})
-          </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="completed">
-            Completed ({taskCounts.completed})
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="min-w-max">
+            <TabsTrigger className="cursor-pointer" value="all">
+              All ({taskCounts.all})
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="todo">
+              To Do ({taskCounts.todo})
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="in-progress">
+              In Progress ({taskCounts.inProgress})
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="completed">
+              Completed ({taskCounts.completed})
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value={activeTab} className="mt-6">
           <Card className="divide-y">

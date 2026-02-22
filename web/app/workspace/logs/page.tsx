@@ -197,17 +197,19 @@ export default function Logs() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 text-gray-900">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl text-gray-900">Activity Logs</h1>
-        <p className="text-gray-600 mt-1">
-          View and manage automation execution history
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl text-gray-900">Activity Logs</h1>
+          <p className="text-gray-600 mt-1">
+            View and manage automation execution history
+          </p>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-6 sm:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-6">
           <div className="flex items-center space-x-3 mb-2">
             <div className="bg-green-100 p-2 rounded-lg">
@@ -285,9 +287,10 @@ export default function Logs() {
       </Card>
 
       {/* Logs Table */}
-      <Card>
-        <Table>
-          <TableHeader>
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
             <TableRow>
               <TableHead>Automation</TableHead>
               <TableHead>Status</TableHead>
@@ -378,7 +381,8 @@ export default function Logs() {
             ))}
           </TableBody>
         </Table>
-      </Card>
+      </div>
+    </Card>
 
       {/* Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

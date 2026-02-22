@@ -57,7 +57,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = (path: string) => router.push(path);
 
   return (
-    <div className="h-screen flex bg-gray-50">
+    <div className="h-screen flex bg-gray-50 overflow-hidden">
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r border-gray-200">
         <div className="p-6 border-b border-gray-200">
@@ -223,27 +223,31 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden shrink-0"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-5 w-5" />
             </Button>
 
-            <div className="flex-1" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold text-gray-900 truncate lg:hidden">
+                Virevos
+              </h1>
+            </div>
 
             <Button
               style={{ cursor: "pointer" }}
               variant="outline"
               size="sm"
               onClick={() => setAiOpen(!aiOpen)}
-              className="hidden sm:flex"
+              className="shrink-0"
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI Assistant
+              <Sparkles className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">AI Assistant</span>
             </Button>
           </div>
         </header>

@@ -8,6 +8,27 @@
       "when": 1770132823196,
       "tag": "0000_furry_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771529022727,
+      "tag": "0001_wandering_maggott",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771533408888,
+      "tag": "0002_handy_falcon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1771536136503,
+      "tag": "0003_cheerful_wendell_vaughn",
+      "breakpoints": true
     }
   ]
 }

@@ -28,10 +28,13 @@ export async function createInstantMeeting(title: string) {
   return { id: meetingId, link: `https://virevos.com/meet/${meetingId}` };
 }
 
-export async function getPastMeetingTranscript(text: string, userId: string) {
+export async function getPastMeetingTranscript(text: string) {
+  const user = await currentUser();
+  if (!user?.id) {
+    return ["Unauthorized"]
+  }
   const indexName = "vire-recording";
-  const index = pc.index(indexName).namespace(userId);
-
+  const index = pc.index(indexName).namespace(user.id);
   const results = await index.searchRecords({
     query: {
       topK: 10,

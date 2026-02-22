@@ -52,17 +52,44 @@ export function CalendarView() {
     },
   });
 
-  //TODO ADD OPTIMISTIC UPDATES
   const mutation = useMutation({
     mutationFn: async (meeting: Event) => {
       const res = await addMeetingToCalendar(meeting);
       return res;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+    onMutate: async (newMeeting) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({queryKey: ["meetings"]});
+
+      // Snapshot the previous value
+      const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<Event[]>(["meetings"], (old = []) => {
+        const optimisticMeeting: Event = {
+          ...newMeeting,
+          id: `temp-${Date.now()}`, // Temporary ID until server responds
+          attendees: newMeeting.attendees ?? [],
+        };
+        return [...old, optimisticMeeting];
+      });
+
+      return {previousMeetings};
     },
-    onError: (err) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ["meetings"]});
+    },
+    onError: (err, newMeeting, context) => {
       console.error("Failed to save meeting:", err);
+
+      // Rollback to the previous value on error
+      if (context?.previousMeetings) {
+        queryClient.setQueryData(["meetings"], context.previousMeetings);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure sync with server
+      queryClient.invalidateQueries({queryKey: ["meetings"]});
     },
   });
 

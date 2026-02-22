@@ -28,7 +28,7 @@ import {
   ReasoningTrigger,
 } from "@/app/components/ai-elements/reasoning";
 import { useQueryClient } from "@tanstack/react-query";
-import { clients, CreateClientInput } from "@/types/clients";
+import { clients } from "@/types/clients";
 
 interface AIAssistantProps {
   isOpen: boolean;
@@ -87,7 +87,6 @@ type AddClientToolOutput = {
     name: string;
     email: string;
     phone: string;
-    //status: "pending" | "active" | "completed";
     industry: string;
     notes?: string;
   };
@@ -95,8 +94,7 @@ type AddClientToolOutput = {
 };
 
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-  const [selectedModel, setSelectedModel] = useState("");
-  const { messages, sendMessage } = useChat();
+  const { messages, sendMessage, status } = useChat();
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();
   const processedToolParts = useRef<Set<string>>(new Set());
@@ -149,11 +147,11 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
       {isOpen && (
         <motion.div
           key="ai-assistant-panel"
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
+          initial={{ x: "100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
+          className="fixed right-0 top-0 h-screen w-[min(100%,320px)] sm:w-96 bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
         >
           {/* Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">

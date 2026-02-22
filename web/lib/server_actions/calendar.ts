@@ -124,8 +124,8 @@ export async function addMeetingToCalendar(meeting: Event) {
         ScheduleExpression: `at(${formatForScheduler(new Date(meeting.dateTime))})`,
         FlexibleTimeWindow: { Mode: "OFF" },
         Target: {
-          Arn: process.env.TARGET_LAMBDA_ARN!,
-          RoleArn: process.env.SCHEDULE_ROLE_ARN!,
+          Arn: process.env.AWS_TARGET_LAMBDA_ARN!,
+          RoleArn: process.env.AWS_SCHEDULE_ROLE_ARN!,
           Input: JSON.stringify(payload ?? {}),
         },
       });

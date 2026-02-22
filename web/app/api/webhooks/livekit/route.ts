@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
 
   if (event.event === "room_finished") {
     const res = await db.select().from(events).where(eq(events.id, roomName));
-
     if (res.length > 0) {
       const finishedAt = Number(event.createdAt);
       const createdAt = Number(event.room.creationTimeMs);
@@ -42,6 +41,7 @@ export async function POST(req: NextRequest) {
         })
         .where(eq(events.id, res[0].id));
     }
+
   }
   if (event.event === "participant_joined") {
     if (event.participant.kind === "EGRESS") {
@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
           output: {
             case: "s3",
             value: {
-              accessKey: process.env.AWS_S3_ACCESS_KEY,
-              secret: process.env.AWS_S3_SECRET_KEY,
+              accessKey: process.env.AWS_LIVE_KIT_S3_ACCESS_KEY,
+              secret: process.env.AWS_LIVE_KIT_S3_SECRET_KEY,
               bucket: process.env.AWS_BUCKET_NAME,
               region: process.env.AWS_REGION,
               forcePathStyle: true,
