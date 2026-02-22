@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
+import type { ClerkAPIError } from "@clerk/types";
 import {
   AccountStepProps,
   AIPersonalizationStepProps,
@@ -119,7 +121,14 @@ const integrations = [
   },
 ];
 
+const getClerkErrorMessage = (err: unknown) => {
+  const e = err as { errors?: ClerkAPIError[] };
+  console.error("Clerk error:", e);
+  return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
+};
+
 export default function Onboarding() {
+  const { isLoaded, signUp, setActive } = useSignUp();
   const [currentStep, setCurrentStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
@@ -146,6 +155,19 @@ export default function Onboarding() {
     workStyle: "",
     aiContext: "",
   });
+
+  if (!isLoaded || !signUp || !setActive) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   const steps = [
     {
@@ -300,7 +322,7 @@ export default function Onboarding() {
           />
         );
       case 7:
-        return <VerificationStep formData={formData} onNext={nextStep} />;
+        return <VerificationStep formData={formData} />;
       default:
         return null;
     }
@@ -464,7 +486,10 @@ function AccountStep({
   setShowPassword,
 }: AccountStepProps) {
   const router = useRouter();
-  const { isLoaded, signUp, setActive } = useSignUp();
+  const { isLoaded, signUp } = useSignUp();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
   const canContinue =
     formData.fullName.trim() !== "" &&
     formData.email.trim() !== "" &&
@@ -472,6 +497,9 @@ function AccountStep({
 
   const completeSignUp = async () => {
     if (!isLoaded) return;
+    setError(null);
+    setLoading(true);
+
     try {
       await signUp.create({
         emailAddress: formData.email,
@@ -487,12 +515,34 @@ function AccountStep({
 
       onNext();
     } catch (err: unknown) {
-      console.error("Sign up failed");
+      setError(getClerkErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (strategy: "oauth_google" | "oauth_apple") => {
+    if (!isLoaded) return;
+    setError(null);
+    try {
+      await signUp.authenticateWithRedirect({
+        strategy,
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/workspace/dashboard",
+      });
+    } catch (err: unknown) {
+      setError(getClerkErrorMessage(err));
     }
   };
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start space-x-3">
+          <InfoCircledIcon className="h-5 w-5 text-red-600 mt-0.5" />
+          <p className="text-sm text-red-600 font-medium">{error}</p>
+        </div>
+      )}
       <div className="space-y-5">
         <div>
           <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
@@ -543,17 +593,17 @@ function AccountStep({
 
       <Button
         onClick={completeSignUp}
-        disabled={!canContinue}
+        disabled={!canContinue || loading}
         className={`
                     w-full h-12 rounded-xl text-[14px] font-bold shadow-lg
                     ${
-                      canContinue
+                      canContinue && !loading
                         ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
                     }
                           `}
       >
-        Continue
+        {loading ? "Creating Account..." : "Continue"}
       </Button>
 
       <div className="relative py-2">
@@ -570,6 +620,7 @@ function AccountStep({
       <div className="grid grid-cols-2 gap-4">
         <Button
           variant="outline"
+          onClick={() => handleSocialLogin("oauth_google")}
           className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50"
         >
           <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -594,6 +645,7 @@ function AccountStep({
         </Button>
         <Button
           variant="outline"
+          onClick={() => handleSocialLogin("oauth_apple")}
           className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50"
         >
           <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -906,13 +958,23 @@ function PaymentStep({ formData, updateFormData, onNext }: PaymentStepProps) {
 }
 
 // Verification Step Component
-function VerificationStep({ formData, onNext }: VerificationStepProps) {
+function VerificationStep({ formData }: VerificationStepProps) {
   const { isLoaded, signUp, setActive } = useSignUp();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const getClerkErrorMessage = (err: unknown) => {
+    const e = err as { errors?: ClerkAPIError[] };
+    console.error("Clerk error:", e);
+    return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
+  };
 
   const verifyEmail = async () => {
     if (!isLoaded) return;
+    setError(null);
+    setLoading(true);
 
     try {
       const result = await signUp.attemptEmailAddressVerification({
@@ -924,19 +986,25 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
         router.push("/workspace/dashboard");
       }
     } catch (err) {
-      console.error("Verification failed", err);
+      setError(getClerkErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
   };
 
   const resendCode = async () => {
     if (!isLoaded) return;
+    setError(null);
+    setLoading(true);
 
     try {
       await signUp.prepareEmailAddressVerification({
         strategy: "email_code",
       });
     } catch (err) {
-      console.error("Resend failed", err);
+      setError(getClerkErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -949,7 +1017,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
     setCode(newCode);
 
     // Auto-focus next input
-    if (value && index < 6) {
+    if (value && index < 5) {
       const nextInput = document.getElementById(`code-${index + 1}`);
       nextInput?.focus();
     }
@@ -966,6 +1034,12 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
 
   return (
     <div className="space-y-8">
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start space-x-3">
+          <InfoCircledIcon className="h-5 w-5 text-red-600 mt-0.5" />
+          <p className="text-sm text-red-600 font-medium">{error}</p>
+        </div>
+      )}
       <div className="flex justify-center space-x-4">
         {code.map((digit, i) => (
           <input
@@ -998,11 +1072,11 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
 
       <Button
         onClick={verifyEmail}
-        disabled={!isComplete}
+        disabled={!isComplete || loading}
         className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Verify & Complete
-        <CheckCircle2 className="ml-2 h-4 w-4" />
+        {loading ? "Verifying..." : "Verify & Complete"}
+        {!loading && <CheckCircle2 className="ml-2 h-4 w-4" />}
       </Button>
     </div>
   );
