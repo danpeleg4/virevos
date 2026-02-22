@@ -74,12 +74,10 @@ export default function Dashboard() {
     queryFn: async () => {
       const res = await axios.get("/api/tasks");
       if (!Array.isArray(res.data)) return [];
-      return res.data.flatMap((t: { tasks: Task[]; projectName: string }) =>
-        t.tasks.map((task: Task) => ({
-          ...task,
-          projectName: t.projectName || "No Project",
-        }))
-      );
+      return res.data.map((t: { tasks: Task; projectName: string }) => ({
+        ...t.tasks,
+        projectName: t.projectName || "No Project",
+      }));
     },
   });
 

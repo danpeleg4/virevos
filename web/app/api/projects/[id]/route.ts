@@ -26,6 +26,10 @@ export async function GET(
                 name: projects.name,
                 clientId: projects.clientId,
                 clientName: clients.name,
+                dueDate: projects.dueDate,
+                priority: projects.priority,
+                status: projects.status,
+                health: projects.health,
             })
             .from(projects)
             .leftJoin(clients, eq(projects.clientId, clients.id))
