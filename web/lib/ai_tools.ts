@@ -9,7 +9,7 @@ import {getPastMeetingTranscript} from "@/lib/server_actions/meetings";
 import {z} from "zod";
 
 export const agent = new ToolLoopAgent({
-    model: "openai/gpt-5.2",
+    model: "openai/gpt-4o",
     stopWhen: stepCountIs(5),
     tools: {
         addClient: tool({

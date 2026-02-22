@@ -33,30 +33,34 @@ export default function Dashboard() {
     queryKey: ["clients"],
     queryFn: async () => {
       const res = await axios.get("/api/clients");
-      return Array.isArray(res.data) ? res.data.length : 0;
+      return res.data;
     },
   });
+
+  const clientsCount = Array.isArray(clientsQuery.data)
+    ? clientsQuery.data.length
+    : 0;
 
   // Fetch projects count and all projects
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
       const res = await axios.get("/api/projects/get-projects");
-      return res.data?.projects ?? [];
+      return res.data;
     },
   });
 
-  const allProjects: Project[] = Array.isArray(projectsQuery.data)
-      ? projectsQuery.data.map((p: Project) => {
+  const allProjects: Project[] = Array.isArray(projectsQuery.data?.projects)
+    ? projectsQuery.data.projects.map((p: Project) => {
         const isCompleted =
-            p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
+          p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
         return {
           ...p,
           status: isCompleted ? "completed" : "active",
           health: isCompleted ? "completed" : p.health,
         };
       })
-      : [];
+    : [];
 
   // Fetch tasks and flatten
   const tasksQuery = useQuery({
@@ -64,12 +68,11 @@ export default function Dashboard() {
     queryFn: async () => {
       const res = await axios.get("/api/tasks");
       if (!Array.isArray(res.data)) return [];
-      return res.data.flatMap(
-          (t: { tasks: Task[]; projectName: string }) =>
-              t.tasks.map((task: Task) => ({
-                ...task,
-                projectName: t.projectName || "No Project",
-              }))
+      return res.data.flatMap((t: { tasks: Task[]; projectName: string }) =>
+        t.tasks.map((task: Task) => ({
+          ...task,
+          projectName: t.projectName || "No Project",
+        }))
       );
     },
   });
@@ -80,7 +83,7 @@ export default function Dashboard() {
   const theStats = [
     {
       label: "Active Clients",
-      value: clientsQuery.data ?? 0,
+      value: clientsCount,
       icon: Users,
       color: "blue",
     },
