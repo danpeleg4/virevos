@@ -45,3 +45,4 @@ web/.clerk/
 /.idea/vcs.xml
 /.idea/workspace.xml
 .turbo
+web/.next/
