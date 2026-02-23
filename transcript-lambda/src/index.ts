@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import { exec } from "child_process";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
+import postgres from "postgres";
 
 /*
 This lambda will get triggered when virevos-recording bucket gets a file uploaded
@@ -220,6 +221,45 @@ export const handler = async (event: any) => {
             });
 
             await index.upsertRecords(normalized);
+
+            // AI meeting analysis
+            const fullTranscript = normalized
+                .map(r => `${r.speaker}: ${r.chunk_text}`)
+                .join('\n');
+
+            const aiResponse = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: `Analyze this meeting transcript. Respond with JSON:
+{
+  "summary": "2-3 sentence meeting summary",
+  "key_points": ["point 1", "point 2", ...],
+  "action_items": [
+    { "task": "...", "owner": "...", "dueDate": "TBD", "completed": false }
+  ]
+}`
+                    },
+                    { role: "user", content: fullTranscript }
+                ],
+                response_format: { type: "json_object" }
+            });
+            const analysis = JSON.parse(aiResponse.choices[0].message.content!);
+
+            const sql = postgres(process.env.DATABASE_URL!);
+            try {
+                await sql`
+                    UPDATE events
+                    SET
+                        ai_summary    = ${analysis.summary},
+                        key_points    = ${sql.array(analysis.key_points ?? [])},
+                        action_items  = ${sql.json(analysis.action_items ?? [])}
+                    WHERE id = ${roomName}
+                `;
+            } finally {
+                await sql.end();
+            }
 
             // Upload JSON to S3
             const jsonKey = `${userId}/${roomName}/${path.basename(key)}.json`;

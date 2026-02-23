@@ -36,6 +36,13 @@
       "when": 1771866065316,
       "tag": "0004_green_maverick",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771870171108,
+      "tag": "0005_rich_the_watchers",
+      "breakpoints": true
     }
   ]
 }
