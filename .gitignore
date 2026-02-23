@@ -46,3 +46,4 @@ web/.clerk/
 /.idea/workspace.xml
 .turbo
 web/.next/
+/.idea/compiler.xml

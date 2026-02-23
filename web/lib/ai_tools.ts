@@ -1,54 +1,68 @@
-import { FlexibleSchema, stepCountIs, tool, ToolLoopAgent } from "ai";
+import OpenAI from "openai";
 import { CreateClientInput } from "@/types/clients";
 import { addAClient } from "@/lib/server_actions/clients";
 import { getPastMeetingTranscript } from "@/lib/server_actions/meetings";
-import { z } from "zod";
 
-export const agent = new ToolLoopAgent({
-  model: "anthropic/claude-sonnet-4.5",
-  stopWhen: stepCountIs(5),
-  tools: {
-    addClient: tool({
-      description: "Create a new client",
-      inputSchema: z.object({
-        createClientInput: z.object({
-          name: z.string().describe("The name of the client"),
-          email: z.string().email().describe("The email of the client"),
-          phone: z.string().describe("The phone number of the client"),
-          industry: z.string().describe("The industry of the client"),
-          notes: z
-            .string()
-            .optional()
-            .describe("notes that can be added to the client"),
-        }),
-      }) as FlexibleSchema,
-      execute: async ({
-        createClientInput,
-      }: {
-        createClientInput: CreateClientInput;
-      }) => {
-        const res = await addAClient(createClientInput);
-        return {
-          kind: "clients_updated",
-          client: res,
-          message: "Client created successfully",
-        };
-      },
-    }),
-    getPastMeetingData: tool({
-      description:
-        "Get meeting transcript data and does semantic search to find relevant info",
-      inputSchema: z.object({
-        text: z.string().describe("Text to apply semantic search"),
-      }) as FlexibleSchema,
-      execute: async ({ text }: { text: string }) => {
-        const res = await getPastMeetingTranscript(text);
-        const combinedText = res.join("\n");
-        return {
-          kind: "meeting_data",
-          message: combinedText,
-        };
-      },
-    }),
-  },
+export const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
+
+export const MODEL = "gpt-4o";
+export const MAX_STEPS = 5;
+
+export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "addClient",
+      description: "Create a new client",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "The name of the client" },
+          email: { type: "string", description: "The email of the client" },
+          phone: { type: "string", description: "The phone number of the client" },
+          industry: { type: "string", description: "The industry of the client" },
+          notes: { type: "string", description: "Notes that can be added to the client" },
+        },
+        required: ["name", "email", "phone", "industry"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "getPastMeetingData",
+      description: "Get meeting transcript data and does semantic search to find relevant info",
+      parameters: {
+        type: "object",
+        properties: {
+          text: { type: "string", description: "Text to apply semantic search" },
+        },
+        required: ["text"],
+      },
+    },
+  },
+];
+
+export async function executeTool(
+  name: string,
+  args: Record<string, unknown>
+): Promise<unknown> {
+  if (name === "addClient") {
+    const res = await addAClient(args as unknown as CreateClientInput);
+    return {
+      kind: "clients_updated",
+      client: res,
+      message: "Client created successfully",
+    };
+  }
+  if (name === "getPastMeetingData") {
+    const res = await getPastMeetingTranscript(args.text as string);
+    return {
+      kind: "meeting_data",
+      message: res.join("\n"),
+    };
+  }
+  throw new Error(`Unknown tool: ${name}`);
+}

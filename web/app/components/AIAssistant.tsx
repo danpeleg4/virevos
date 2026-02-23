@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useChat } from "@ai-sdk/react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card } from "./ui/card";
@@ -22,11 +21,6 @@ import {
   Loader2,
   ChevronRight,
 } from "lucide-react";
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "@/app/components/ai-elements/reasoning";
 import { useQueryClient } from "@tanstack/react-query";
 import { clients } from "@/types/clients";
 
@@ -50,14 +44,30 @@ interface ThinkingStep {
   }[];
 }
 
-const initialMessages = [
-  {
-    id: "1",
-    role: "assistant",
-    content:
-      "Hi! I'm your Virevos AI assistant. I can help you manage tasks, suggest automations, and optimize your workflow. What would you like to do?",
-  },
-];
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
+
+type AddClientToolResult = {
+  kind: "clients_updated";
+  client: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    industry: string;
+    notes?: string;
+  };
+  message: string;
+};
+
+type StreamEvent =
+  | { type: "text_delta"; delta: string }
+  | { type: "tool_result"; id: string; name: string; result: unknown }
+  | { type: "done" }
+  | { type: "error"; message: string };
 
 const nextBestActions = [
   {
@@ -80,66 +90,123 @@ const nextBestActions = [
   },
 ];
 
-type AddClientToolOutput = {
-  kind: "clients_updated";
-  client: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    industry: string;
-    notes?: string;
-  };
-  message: string;
-};
-
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-  const { messages, sendMessage, status } = useChat();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [status, setStatus] = useState<"idle" | "streaming">("idle");
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();
-  const processedToolParts = useRef<Set<string>>(new Set());
+  const abortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    messages.forEach((message) => {
-      message.parts.forEach((part) => {
-        if (part.type !== "tool-addClient") return;
-        if (!part.output) return;
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || status === "streaming") return;
 
-        // run only once per tool call
-        if (processedToolParts.current.has(part.toolCallId)) return;
-        processedToolParts.current.add(part.toolCallId);
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: text,
+    };
 
-        const clientData = part.output as AddClientToolOutput;
-        const newClient = clientData.client;
+    const assistantId = `assistant-${Date.now() + 1}`;
 
-        const optimisticClient = {
-          ...newClient,
-          status: "active",
-          totalProjects: 0,
-          activeProjects: 0,
-          completedProjects: 0,
-          avatar: newClient.name[0],
-        };
+    const updatedMessages = [...messages, userMessage];
+    setMessages([...updatedMessages, { id: assistantId, role: "assistant", content: "" }]);
+    setStatus("streaming");
 
-        queryClient.setQueryData<clients[]>(["clients"], (old = []) => [
-          ...old,
-          optimisticClient,
-        ]);
+    abortRef.current = new AbortController();
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: abortRef.current.signal,
+        body: JSON.stringify({
+          messages: updatedMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
       });
-    });
-  }, [messages, queryClient]);
+
+      if (!response.ok || !response.body) {
+        throw new Error("Request failed");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event: StreamEvent = JSON.parse(line);
+
+            if (event.type === "text_delta") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: m.content + event.delta }
+                    : m
+                )
+              );
+            } else if (event.type === "tool_result" && event.name === "addClient") {
+              const data = event.result as AddClientToolResult;
+              if (data.kind === "clients_updated") {
+                const newClient = data.client;
+                queryClient.setQueryData<clients[]>(["clients"], (old = []) => [
+                  ...old,
+                  {
+                    ...newClient,
+                    status: "active",
+                    totalProjects: 0,
+                    activeProjects: 0,
+                    completedProjects: 0,
+                    avatar: newClient.name[0],
+                  },
+                ]);
+              }
+            } else if (event.type === "error") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: "Sorry, something went wrong. Please try again." }
+                    : m
+                )
+              );
+            }
+          } catch {
+            // ignore parse errors for malformed lines
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: "Sorry, something went wrong. Please try again." }
+              : m
+          )
+        );
+      }
+    } finally {
+      setStatus("idle");
+      abortRef.current = null;
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
+    const text = input;
     setInput("");
-    await sendMessage({ text: input });
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    //append({
-    //    role: "user",
-    //    content: suggestion,
-    //});
+    await sendMessage(text);
   };
 
   return (
@@ -161,7 +228,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
               </div>
               <div>
                 <h3 className="text-gray-900">Virevos AI</h3>
-                <p className="text-xs text-gray-500">Reasoning Mode</p>
+                <p className="text-xs text-gray-500">Powered by GPT-4o</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -210,9 +277,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm text-gray-900">
-                            {action.title}
-                          </p>
+                          <p className="text-sm text-gray-900">{action.title}</p>
                           <Badge
                             variant="outline"
                             className={`text-xs border ${
@@ -226,9 +291,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                             {action.priority}
                           </Badge>
                         </div>
-                        <p className="text-xs text-gray-600">
-                          {action.description}
-                        </p>
+                        <p className="text-xs text-gray-600">{action.description}</p>
                       </div>
                     </div>
                   </Card>
@@ -239,74 +302,37 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
-            {messages.map((message, msgIndex) => {
-              return (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: msgIndex * 0.1 }}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
+            {messages.map((message, msgIndex) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: msgIndex * 0.05 }}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}
                 >
-                  <div
-                    className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}
-                  >
-                    {message.role === "user" ? (
-                      <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
-                        {message.parts.map((part, i) => {
-                          if (part.type === "text") {
-                            return (
-                              <p key={`${message.id}-${i}`}>{part.text}</p>
-                            );
-                          }
-                          return null;
-                        })}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {/* Content */}
-                        {message.parts && (
-                          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                            <div className="prose prose-sm max-w-none text-sm text-gray-800">
-                              {message.parts?.map((part, i) => {
-                                if (part.type === "text") {
-                                  return (
-                                    <ReactMarkdown key={i}>
-                                      {part.text}
-                                    </ReactMarkdown>
-                                  );
-                                }
-                                if (part.type == "reasoning") {
-                                  return (
-                                    <Reasoning
-                                      key={`${message.id}-${i}`}
-                                      className="w-full"
-                                      isStreaming={
-                                        status === "streaming" &&
-                                        i === message.parts.length - 1 &&
-                                        message.id === messages.at(-1)?.id
-                                      }
-                                    >
-                                      <ReasoningTrigger />
-                                      <ReasoningContent>
-                                        {part.text}
-                                      </ReasoningContent>
-                                    </Reasoning>
-                                  );
-                                }
-                                return null;
-                              })}
-                            </div>
-                          </div>
+                  {message.role === "user" ? (
+                    <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
+                      <p>{message.content}</p>
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                      <div className="prose prose-sm max-w-none text-sm text-gray-800">
+                        {message.content ? (
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        ) : (
+                          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                         )}
                       </div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
           </div>
 
           {/* Input */}
@@ -318,14 +344,19 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 onKeyPress={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Plan, search, build anything..."
                 className="flex-1 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
+                disabled={status === "streaming"}
               />
               <Button
                 onClick={handleSend}
                 size="icon"
                 className="bg-blue-600 hover:bg-blue-700"
-                disabled={!input.trim()}
+                disabled={!input.trim() || status === "streaming"}
               >
-                <Send className="h-4 w-4" />
+                {status === "streaming" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
             <div className="flex items-center justify-between mt-2">
@@ -422,14 +453,10 @@ function ThinkingStepComponent({
                     >
                       <div className="flex items-center space-x-2">
                         <FileCode className="h-3.5 w-3.5 text-blue-600" />
-                        <span className="text-xs text-gray-700">
-                          {file.name}
-                        </span>
+                        <span className="text-xs text-gray-700">{file.name}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-green-600">
-                          {file.changes}
-                        </span>
+                        <span className="text-xs text-green-600">{file.changes}</span>
                         <Button
                           variant="ghost"
                           size="sm"
