@@ -2,8 +2,7 @@ import { POST } from "@/app/api/chat/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
-import { createAgentUIStreamResponse, UIMessage } from "ai";
-import { agent } from "@/lib/ai_tools";
+import { openai, tools, executeTool } from "@/lib/ai_tools";
 
 jest.mock("@clerk/nextjs/server", () => ({
   currentUser: jest.fn(),
@@ -16,15 +15,18 @@ jest.mock("@db/db", () => ({
   },
 }));
 
-jest.mock("ai", () => ({
-  createAgentUIStreamResponse: jest.fn(),
-  convertToModelMessages: jest.fn().mockResolvedValue([]),
-  stepCountIs: jest.fn(),
-  tool: jest.fn((t) => t),
-}));
-
 jest.mock("@/lib/ai_tools", () => ({
-  agent: {},
+  openai: {
+    chat: {
+      completions: {
+        create: jest.fn(),
+      },
+    },
+  },
+  tools: [],
+  executeTool: jest.fn(),
+  MODEL: "gpt-4o",
+  MAX_STEPS: 5,
 }));
 
 jest.mock("@/lib/server_actions/clients", () => ({
@@ -35,12 +37,17 @@ jest.mock("@/lib/server_actions/meetings", () => ({
   getPastMeetingTranscript: jest.fn(),
 }));
 
+async function* mockStreamChunks(content: string) {
+  yield { choices: [{ delta: { content }, finish_reason: null }] };
+  yield { choices: [{ delta: {}, finish_reason: "stop" }] };
+}
+
 describe("POST /api/chat", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  function mockRequest(body: { messages: UIMessage[] }) {
+  function mockRequest(body: { messages: { role: string; content: string }[] }) {
     return {
       json: jest.fn().mockResolvedValue(body),
     } as unknown as NextRequest;
@@ -69,7 +76,7 @@ describe("POST /api/chat", () => {
     expect(await res.json()).toBe("No AI Credits");
   });
 
-  it("decrements AI credits and calls createAgentUIStreamResponse", async () => {
+  it("decrements AI credits and streams a response", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     (db.select as jest.Mock).mockReturnValue({
       from: () => ({
@@ -79,25 +86,30 @@ describe("POST /api/chat", () => {
 
     const updateWhere = jest.fn();
     const updateSet = jest.fn(() => ({ where: updateWhere }));
+    (db.update as jest.Mock).mockReturnValue({ set: updateSet });
 
-    (db.update as jest.Mock).mockReturnValue({
-      set: updateSet,
-    });
-
-    const mockStreamResponse = new Response("ok", { status: 200 });
-
-    (createAgentUIStreamResponse as jest.Mock).mockReturnValue(
-      mockStreamResponse
+    (openai.chat.completions.create as jest.Mock).mockReturnValue(
+      mockStreamChunks("Hello!")
     );
 
     const res = await POST(mockRequest({ messages: [] }));
 
     expect(db.update).toHaveBeenCalled();
-    expect(createAgentUIStreamResponse).toHaveBeenCalledWith({
-      agent: agent,
-      uiMessages: [],
-    });
-
+    expect(openai.chat.completions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "gpt-4o",
+        tools,
+        stream: true,
+      })
+    );
     expect(res.status).toBe(200);
+
+    // Verify the streamed body contains text_delta and done events
+    const text = await res.text();
+    const lines = text.trim().split("\n").filter(Boolean);
+    const events = lines.map((l) => JSON.parse(l));
+
+    expect(events).toContainEqual({ type: "text_delta", delta: "Hello!" });
+    expect(events.at(-1)).toEqual({ type: "done" });
   });
 });
