@@ -5,7 +5,7 @@ import { getPastMeetingTranscript } from "@/lib/server_actions/meetings";
 import { z } from "zod";
 
 export const agent = new ToolLoopAgent({
-  model: "openai/gpt-4o",
+  model: "anthropic/claude-sonnet-4.5",
   stopWhen: stepCountIs(5),
   tools: {
     addClient: tool({
