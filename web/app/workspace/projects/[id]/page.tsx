@@ -538,14 +538,28 @@ export function ProjectDetailView({
                     <p className="text-sm  mb-2">{note.content}</p>
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <span>
-                        {new Date(note.createdAt!).toLocaleString("en-US", {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
+                        {(() => {
+                          const raw = note.createdAt;
+                          if (!raw) return "";
+                          const utcStr =
+                            raw instanceof Date
+                              ? raw.toISOString()
+                              : typeof raw === "string" &&
+                                  !raw.endsWith("Z") &&
+                                  !raw.includes("+")
+                                ? raw.replace(" ", "T") + "Z"
+                                : String(raw);
+                          return new Date(utcStr).toLocaleString("en-US", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                            timeZone:
+                              Intl.DateTimeFormat().resolvedOptions().timeZone,
+                          });
+                        })()}
                       </span>
                     </div>
                   </div>

@@ -88,8 +88,8 @@ export const events = pgTable("events", {
 export const notes = pgTable("notes", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 
   userId: varchar("user_id").references(() => users.user_id),
   projectId: integer("project_id").references(() => projects.id),
