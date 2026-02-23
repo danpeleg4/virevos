@@ -19,7 +19,9 @@ export default function Calendar() {
     <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto overflow-hidden">
       <div className="mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">Smart Scheduling</h1>
+          <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">
+            Smart Scheduling
+          </h1>
           <p className="text-gray-600">
             AI-powered scheduling that adapts to your workload and automatically
             manages conflicts

@@ -1,10 +1,10 @@
-import {createAgentUIStreamResponse, UIMessage} from "ai";
+import { createAgentUIStreamResponse, UIMessage } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { users } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";
-import {agent} from "@/lib/ai_tools";
+import { agent } from "@/lib/ai_tools";
 
 export async function POST(req: NextRequest) {
   const { messages }: { messages: UIMessage[] } = await req.json();

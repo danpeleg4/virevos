@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   );
 
   const { tokens } = await oauth2Client.getToken(code);
-  const expiresAt = tokens.expiry_date ?? Date.now() + 3600 * 1000
+  const expiresAt = tokens.expiry_date ?? Date.now() + 3600 * 1000;
 
   const existingToken = await db
     .select()

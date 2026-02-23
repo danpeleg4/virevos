@@ -66,12 +66,10 @@ export default function InMeetingView() {
     });
 
     // TrackSubscribed fires when a participant adds a track
-    room.on(
-      RoomEvent.TrackSubscribed, () => {
-        // Force re-render to attach the new track
-        setParticipants((prev) => [...prev]);
-      }
-    );
+    room.on(RoomEvent.TrackSubscribed, () => {
+      // Force re-render to attach the new track
+      setParticipants((prev) => [...prev]);
+    });
 
     // Enable local camera/mic
     await room.localParticipant.setCameraEnabled(true);

@@ -136,7 +136,9 @@ export default function Billing() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900">Billing & Subscription</h1>
+          <h1 className="text-2xl sm:text-3xl text-gray-900">
+            Billing & Subscription
+          </h1>
           <p className="text-gray-600 mt-1">
             Manage your subscription and billing information
           </p>

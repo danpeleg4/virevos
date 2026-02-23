@@ -23,9 +23,12 @@ export default function Communications() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">Communications</h1>
+          <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">
+            Communications
+          </h1>
           <p className="text-gray-600">
-            Unified inbox for all client communications with AI-powered assistance
+            Unified inbox for all client communications with AI-powered
+            assistance
           </p>
         </div>
       </div>

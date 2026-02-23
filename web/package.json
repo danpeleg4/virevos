@@ -13,7 +13,24 @@
   "overrides": {
     "esbuild": "^0.27.0",
     "eslint": "^9.39.3",
-    "fast-xml-parser": "^5.3.4"
+    "fast-xml-parser": "^5.3.4",
+    "minimatch": "10.2.2",
+    "glob": "13.0.6",
+    "test-exclude": {
+      "glob": "13.0.6"
+    },
+    "@jest/reporters": {
+      "glob": "13.0.6"
+    },
+    "jest-config": {
+      "glob": "13.0.6"
+    },
+    "jest-runtime": {
+      "glob": "13.0.6"
+    },
+    "rimraf": {
+      "glob": "13.0.6"
+    }
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.6",
@@ -54,7 +71,7 @@
     "@radix-ui/themes": "^3.3.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.90.12",
-    "ai": "^6.0.6",
+    "ai": "^6.0.97",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

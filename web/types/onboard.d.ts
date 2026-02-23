@@ -89,7 +89,6 @@ type AIPersonalizationStepProps = {
 
 type VerificationStepProps = {
   formData: Pick<OnboardingFormData, "password" | "email">;
-  onNext: () => void;
 };
 
 type PaymentStepProps = {

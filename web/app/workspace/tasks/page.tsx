@@ -17,7 +17,7 @@ import axios from "axios";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateTaskStatus } from "@/lib/server_actions/tasks";
-import {Task} from "@/types/tasks";
+import { Task } from "@/types/tasks";
 
 export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,12 +32,10 @@ export default function Tasks() {
     queryFn: async () => {
       const res = await axios.get(`/api/tasks`);
       if (!Array.isArray(res.data)) return [];
-      return res.data.flatMap((t: { tasks: Task[]; projectName: string }) =>
-        t.tasks.map((task: Task) => ({
-          ...task,
-          projectName: t.projectName || "No Project",
-        }))
-      );
+      return res.data.map((t: { tasks: Task; projectName: string }) => ({
+        ...t.tasks,
+        projectName: t.projectName || "No Project",
+      }));
     },
   });
 

@@ -23,18 +23,32 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("login");
   const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  if (!isLoaded || !signIn || !setActive) return;
+  if (!isLoaded || !signIn || !setActive) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   const getClerkErrorMessage = (err: unknown) => {
     const e = err as { errors?: ClerkAPIError[] };
-    return e.errors?.[0]?.message ?? "Something went wrong";
+    console.error("Clerk error:", e);
+    return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoaded) return;
     setError(null);
+    setLoading(true);
 
     try {
       const result = await signIn?.create({
@@ -42,7 +56,7 @@ export default function Login() {
         password,
       });
 
-      if (!result) return
+      if (!result) return;
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
@@ -50,6 +64,8 @@ export default function Login() {
       }
     } catch (err: unknown) {
       setError(getClerkErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,6 +77,7 @@ export default function Login() {
     }
 
     setError(null);
+    setLoading(true);
 
     try {
       await signIn?.create({
@@ -71,12 +88,15 @@ export default function Login() {
       setStep("reset");
     } catch (err: unknown) {
       setError(getClerkErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
     try {
       const result = await signIn?.attemptFirstFactor({
@@ -86,8 +106,26 @@ export default function Login() {
       });
 
       if (result?.status === "complete") {
+        await setActive({ session: result.createdSessionId });
         router.push("/");
       }
+    } catch (err: unknown) {
+      setError(getClerkErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (
+    strategy: "oauth_google" | "oauth_apple"
+  ) => {
+    setError(null);
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy,
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/",
+      });
     } catch (err: unknown) {
       setError(getClerkErrorMessage(err));
     }
@@ -116,7 +154,7 @@ export default function Login() {
           </Callout.Root>
         </div>
       </div>
-      {/* Left Column: aLogin Form */}
+      {/* Left Column: Login Form */}
       <div className="w-full lg:w-1/2 p-6 sm:p-12 lg:p-16 xl:p-24 flex flex-col h-screen overflow-y-auto">
         <div className="flex items-center space-x-3 mb-12 sm:mb-20">
           <button className="flex items-center space-x-3 group">
@@ -145,6 +183,13 @@ export default function Login() {
               Login to access your dashboard and manage your tasks.
             </p>
           </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start space-x-3">
+              <InfoCircledIcon className="h-5 w-5 text-red-600 mt-0.5" />
+              <p className="text-sm text-red-600 font-medium">{error}</p>
+            </div>
+          )}
 
           {step === "login" && (
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -197,10 +242,11 @@ export default function Login() {
 
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
               >
-                Sign In
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {loading ? "Signing In..." : "Sign In"}
+                {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
 
               <div className="relative py-2">
@@ -218,6 +264,7 @@ export default function Login() {
                 <Button
                   type="button"
                   variant="outline"
+                  onClick={() => handleSocialLogin("oauth_google")}
                   className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50"
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -243,6 +290,7 @@ export default function Login() {
                 <Button
                   type="button"
                   variant="outline"
+                  onClick={() => handleSocialLogin("oauth_apple")}
                   className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50"
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -275,25 +323,39 @@ export default function Login() {
                 <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
                   New Password
                 </Label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-xl"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 rounded-xl pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-blue-600 text-white h-12 rounded-xl font-bold"
               >
-                Reset Password
+                {loading ? "Resetting..." : "Reset Password"}
               </Button>
 
               <button
                 type="button"
-                onClick={() => setStep("login")}
+                onClick={() => {
+                  setStep("login");
+                  setError(null);
+                }}
                 className="text-sm text-gray-500 hover:underline"
               >
                 Back to login

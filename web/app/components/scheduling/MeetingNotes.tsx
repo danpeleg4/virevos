@@ -34,9 +34,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import {useQuery} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import type {Event} from "@/types/meeting";
+import type { Event } from "@/types/meeting";
 
 export function MeetingNotes() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,9 +127,7 @@ export function MeetingNotes() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <CardTitle className={`text-lg`}>
-                        {note.title}
-                      </CardTitle>
+                      <CardTitle className={`text-lg`}>{note.title}</CardTitle>
                       <Badge className="bg-purple-100 text-purple-700">
                         <Sparkles className="h-3 w-3 mr-1" />
                         AI Generated
@@ -380,7 +378,8 @@ export function MeetingNotes() {
                 </div>
 
                 {/* Transcript */}
-                {(selectedNote.hasTranscript && selectedNote.transcript) &&
+                {selectedNote.hasTranscript &&
+                  selectedNote.transcript &&
                   selectedNote?.transcript?.length > 0 && (
                     <div>
                       <div className="flex items-center space-x-2 mb-3">

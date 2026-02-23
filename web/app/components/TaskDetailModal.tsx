@@ -22,7 +22,7 @@ import {
   updateTaskDueDate,
   updateTaskStatus,
 } from "@/lib/server_actions/tasks";
-import {Task, TaskDetailModalProps} from "@/types/tasks";
+import { Task, TaskDetailModalProps } from "@/types/tasks";
 
 export function TaskDetailModal({
   projectId,

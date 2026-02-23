@@ -10,6 +10,23 @@
     "esbuild": "^0.27.0",
     "@esbuild-kit/core-utils": {
       "esbuild": "^0.27.0"
+    },
+    "minimatch": "10.2.2",
+    "glob": "13.0.6",
+    "test-exclude": {
+      "glob": "13.0.6"
+    },
+    "@jest/reporters": {
+      "glob": "13.0.6"
+    },
+    "jest-config": {
+      "glob": "13.0.6"
+    },
+    "jest-runtime": {
+      "glob": "13.0.6"
+    },
+    "rimraf": {
+      "glob": "13.0.6"
     }
   },
   "repository": {

@@ -31,7 +31,7 @@ export async function createInstantMeeting(title: string) {
 export async function getPastMeetingTranscript(text: string) {
   const user = await currentUser();
   if (!user?.id) {
-    return ["Unauthorized"]
+    return ["Unauthorized"];
   }
   const indexName = "vire-recording";
   const index = pc.index(indexName).namespace(user.id);
