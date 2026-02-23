@@ -253,7 +253,7 @@ export const handler = async (event: any) => {
                     UPDATE events
                     SET
                         ai_summary    = ${analysis.summary},
-                        key_points    = ${sql.array(analysis.key_points ?? [])},
+                        key_points    = ${sql.array(analysis.key_points ?? [])}::text[],
                         action_items  = ${sql.json(analysis.action_items ?? [])}
                     WHERE id = ${roomName}
                 `;
