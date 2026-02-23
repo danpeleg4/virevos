@@ -247,13 +247,20 @@ export const handler = async (event: any) => {
             });
             const analysis = JSON.parse(aiResponse.choices[0].message.content!);
 
+            const rawKeyPoints = analysis.key_points ?? [];
+            const keyPoints: string[] = Array.isArray(rawKeyPoints)
+                ? rawKeyPoints
+                : typeof rawKeyPoints === "string"
+                    ? rawKeyPoints.split(",").map((s: string) => s.trim()).filter(Boolean)
+                    : [];
+
             const sql = postgres(process.env.DATABASE_URL!);
             try {
                 await sql`
                     UPDATE events
                     SET
                         ai_summary    = ${analysis.summary},
-                        key_points    = ${sql.array(analysis.key_points ?? [])}::text[],
+                        key_points    = ${sql.array(keyPoints)}::text[],
                         action_items  = ${sql.json(analysis.action_items ?? [])}
                     WHERE id = ${roomName}
                 `;
