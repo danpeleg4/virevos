@@ -138,7 +138,7 @@ export default function Dashboard() {
     },
     {
       label: "Automations Run",
-      value: 89,
+      value: 0,
       icon: Zap,
       color: "orange",
     },

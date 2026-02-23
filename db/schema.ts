@@ -7,6 +7,7 @@ import {
   varchar,
   date,
   bigint,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -74,6 +75,7 @@ export const events = pgTable("events", {
   hasTranscript: boolean("has_transcript").default(false),
   ai_summary: text("ai_summary"),
   key_points: text("key_points").array(),
+  action_items: jsonb("action_items").$type<Array<{task: string; owner: string; dueDate: string; completed: boolean}>>(),
   autoRescheduled: boolean("auto_rescheduled").default(false),
   conflictReason: text("conflict_reason"),
   origin: text("origin").default("app"),
@@ -88,8 +90,8 @@ export const events = pgTable("events", {
 export const notes = pgTable("notes", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 
   userId: varchar("user_id").references(() => users.user_id),
   projectId: integer("project_id").references(() => projects.id),
