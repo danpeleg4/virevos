@@ -10,7 +10,9 @@ import { v4 as uuidv4 } from "uuid";
 import { exec } from "child_process";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
-import postgres from "postgres";
+import { db } from "@repo/db/db";
+import { events } from "@repo/db/schema";
+import { eq } from "drizzle-orm";
 
 /*
 This lambda will get triggered when virevos-recording bucket gets a file uploaded
@@ -247,25 +249,35 @@ export const handler = async (event: any) => {
             });
             const analysis = JSON.parse(aiResponse.choices[0].message.content!);
 
-            const rawKeyPoints = analysis.key_points ?? [];
-            const keyPoints: string[] = Array.isArray(rawKeyPoints)
-                ? rawKeyPoints
-                : typeof rawKeyPoints === "string"
-                    ? rawKeyPoints.split(",").map((s: string) => s.trim()).filter(Boolean)
-                    : [];
+          const rawKeyPoints = analysis.key_points ?? [];
 
-            const sql = postgres(process.env.DATABASE_URL!);
+          const keyPoints: string[] = Array.isArray(rawKeyPoints)
+            ? rawKeyPoints
+                .filter((v): v is string => typeof v === "string")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : typeof rawKeyPoints === "string"
+              ? rawKeyPoints
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              : [];
+
+          const actionItems = Array.isArray(analysis.action_items)
+            ? analysis.action_items
+            : [];
+
             try {
-                await sql`
-                    UPDATE events
-                    SET
-                        ai_summary    = ${analysis.summary},
-                        key_points    = ${sql.array(keyPoints)}::text[],
-                        action_items  = ${sql.json(analysis.action_items ?? [])}
-                    WHERE id = ${roomName}
-                `;
-            } finally {
-                await sql.end();
+              await db
+                .update(events)
+                .set({
+                  ai_summary: analysis.summary ?? "",
+                  key_points: keyPoints,
+                  action_items: actionItems,
+                })
+                .where(eq(events.id, roomName));
+            } catch (error) {
+              console.error(error)
             }
 
             // Upload JSON to S3
