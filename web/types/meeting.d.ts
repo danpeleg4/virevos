@@ -58,7 +58,7 @@ export interface Event {
   isMeeting: boolean;
   ai_summary?: string;
   key_points?: string[];
-  actionItems?: ActionItem[];
+  action_items?: ActionItem[];
   tags?: string[];
   transcript?: Transcript[];
 }
