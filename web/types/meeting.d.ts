@@ -19,22 +19,6 @@ type ActionItem = {
   completed: boolean;
 };
 
-interface MeetingNote {
-  id: string;
-  title: string;
-  dateTime: string;
-  time: string;
-  duration: string;
-  attendees: { name: string; initials: string }[];
-  ai_summary: string;
-  actionItems: ActionItem[];
-  key_points: string[];
-  transcript: { speaker: string; time: string; text: string }[];
-  tags: string[];
-  hasTranscript: boolean;
-  status: string;
-}
-
 type Transcript = {
   speaker: string;
   time: string;

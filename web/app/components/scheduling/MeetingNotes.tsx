@@ -25,7 +25,6 @@ import {
   Calendar,
   CheckSquare,
   Sparkles,
-  ExternalLink,
   Clock,
   Users,
   Tag,
@@ -240,7 +239,7 @@ export function MeetingNotes() {
                       <span className="flex flex-wrap items-center gap-3 text-sm">
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {selectedNote.dateTime.toString()}
+                          {new Date(selectedNote.dateTime).toLocaleDateString()}
                         </span>
                         <span className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
@@ -417,10 +416,6 @@ export function MeetingNotes() {
                 <div
                   className={`flex justify-end space-x-3 pt-4 border-t border-gray-200`}
                 >
-                  <Button variant="outline">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
                   <Button onClick={() => setDetailsOpen(false)}>Close</Button>
                 </div>
               </div>
