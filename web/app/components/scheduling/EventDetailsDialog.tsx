@@ -16,7 +16,6 @@ import {
   Mic,
 } from "lucide-react";
 import type { Event } from "@/types/meeting";
-
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 interface MeetingDetailsDialogProps {
@@ -26,50 +25,10 @@ interface MeetingDetailsDialogProps {
 }
 
 const mockTranscript = `Sarah Johnson: Good morning everyone! Thanks for joining this onboarding call for Acme Corp.
-
 Mike Chen: Happy to be here. We're excited to get started with Virevos.
-
 Sarah Johnson: Great! Let me walk you through the key features we discussed in our sales call. First, the automation capabilities...
-
 Mike Chen: Actually, before we dive in, can we make sure we have access to the API documentation?
-
 Sarah Johnson: Absolutely. I'll send that over right after this call. Let me add that as a follow-up task.`;
-
-const mockNotes = {
-  summary:
-    "Initial onboarding session for Acme Corp. Covered platform overview, automation setup, and integration requirements.",
-  keyPoints: [
-    "Client needs Slack integration for team notifications",
-    "Planning to migrate 50+ active projects from current tool",
-    "Interested in enterprise plan with custom automation templates",
-    "Weekly check-in calls scheduled for first month",
-  ],
-  actionItems: [
-    {
-      task: "Send API documentation to Mike Chen",
-      assignee: "Sarah Johnson",
-      dueDate: "Today",
-      status: "pending",
-    },
-    {
-      task: "Set up Slack integration for Acme Corp workspace",
-      assignee: "Tech Team",
-      dueDate: "Nov 13, 2025",
-      status: "pending",
-    },
-    {
-      task: "Schedule migration planning session",
-      assignee: "Sarah Johnson",
-      dueDate: "Nov 15, 2025",
-      status: "pending",
-    },
-  ],
-  followUps: [
-    "Review enterprise plan pricing and features",
-    "Prepare custom automation template examples",
-    "Connect with their IT team for security review",
-  ],
-};
 
 export function EventDetailsDialog({
   event,
@@ -77,7 +36,6 @@ export function EventDetailsDialog({
   onOpenChange,
 }: MeetingDetailsDialogProps) {
   const hasAIContent = event.hasNotes || event.hasTranscript;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -197,14 +155,14 @@ export function EventDetailsDialog({
                     <div>
                       <h4 className="text-sm text-gray-700 mb-2">Summary</h4>
                       <p className="text-sm text-gray-600">
-                        {mockNotes.summary}
+                        {event.ai_summary}
                       </p>
                     </div>
 
                     <div>
                       <h4 className="text-sm text-gray-700 mb-2">Key Points</h4>
                       <ul className="space-y-1">
-                        {mockNotes.keyPoints.map((point, i) => (
+                        {event?.key_points?.map((point, i) => (
                           <li
                             key={i}
                             className="text-sm text-gray-600 flex items-start"
@@ -219,10 +177,10 @@ export function EventDetailsDialog({
                     <div>
                       <h4 className="text-sm text-gray-700 mb-3 flex items-center">
                         <CheckSquare className="h-4 w-4 mr-2" />
-                        Action Items ({mockNotes.actionItems.length})
+                        Action Items ({event?.action_items?.length})
                       </h4>
                       <div className="space-y-2">
-                        {mockNotes.actionItems.map((item, i) => (
+                        {event?.action_items?.map((item, i) => (
                           <div
                             key={i}
                             className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
@@ -235,12 +193,10 @@ export function EventDetailsDialog({
                                 variant="outline"
                                 className="text-xs bg-white"
                               >
-                                {item.status}
+                                {"pending"}
                               </Badge>
                             </div>
                             <div className="flex items-center text-xs text-gray-600 space-x-3">
-                              <span>Assignee: {item.assignee}</span>
-                              <span>•</span>
                               <span>Due: {item.dueDate}</span>
                             </div>
                           </div>
@@ -250,21 +206,6 @@ export function EventDetailsDialog({
                         <CheckSquare className="h-4 w-4 mr-2" />
                         Add All to Tasks
                       </Button>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm text-gray-700 mb-2">Follow-ups</h4>
-                      <ul className="space-y-1">
-                        {mockNotes.followUps.map((followUp, i) => (
-                          <li
-                            key={i}
-                            className="text-sm text-gray-600 flex items-start"
-                          >
-                            <span className="mr-2">•</span>
-                            <span>{followUp}</span>
-                          </li>
-                        ))}
-                      </ul>
                     </div>
                   </CardContent>
                 </Card>

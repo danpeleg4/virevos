@@ -280,7 +280,8 @@ export const handler = async (event: any) => {
                   key_points: keyPoints,
                   action_items: actionItems,
                   tags: tags,
-                  hasTranscript: true
+                  hasTranscript: true,
+                  hasNotes: true
                 })
                 .where(eq(events.id, roomName));
             } catch (error) {
