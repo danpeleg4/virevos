@@ -251,6 +251,7 @@ export const handler = async (event: any) => {
 
           const rawKeyPoints = analysis.key_points ?? [];
 
+
           const keyPoints: string[] = Array.isArray(rawKeyPoints)
             ? rawKeyPoints
                 .filter((v): v is string => typeof v === "string")
