@@ -100,18 +100,14 @@ export const notes = pgTable("notes", {
 // TASKS
 export const tasks = pgTable("tasks", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
-
   title: text("title").notNull(),
   description: text("description"),
-
   projectId: integer("project_id").references(() => projects.id, {
     onDelete: "cascade",
   }),
-
   priority: text("priority").notNull().default("Low"),
   status: text("status").notNull().default("in-progress"),
   dueDate: date("due_date").notNull().default("2025-01-01"),
