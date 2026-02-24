@@ -185,7 +185,7 @@ export function MeetingNotes() {
                   >
                     <div className="flex items-center">
                       <CheckSquare className={`h-4 w-4 mr-1 text-green-600`} />
-                      {note?.actionItems?.length} action items
+                      {note?.action_items?.length} action items
                     </div>
                     <div className="flex items-center">
                       <FileText className={`h-4 w-4 mr-1 text-blue-600`} />
@@ -348,7 +348,7 @@ export function MeetingNotes() {
                     <h3 className={`text-sm text-gray-700`}>Action Items</h3>
                   </div>
                   <div className="space-y-2">
-                    {selectedNote?.actionItems?.map((item, index) => (
+                    {selectedNote?.action_items?.map((item, index) => (
                       <div
                         key={index}
                         className={`flex items-start space-x-3 p-3 rounded-lg border bg-gray-50 border-gray-200`}

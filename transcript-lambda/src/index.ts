@@ -230,27 +230,27 @@ export const handler = async (event: any) => {
                 .join('\n');
 
             const aiResponse = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: `Analyze this meeting transcript. Respond with JSON:
+              model: "gpt-4o",
+              messages: [
+                {
+                  role: "system",
+                  content: `Analyze this meeting transcript. Respond with JSON:
 {
   "summary": "2-3 sentence meeting summary",
   "key_points": ["point 1", "point 2", ...],
   "action_items": [
     { "task": "...", "owner": "...", "dueDate": "TBD", "completed": false }
-  ]
-}`
-                    },
-                    { role: "user", content: fullTranscript }
-                ],
-                response_format: { type: "json_object" }
+  ],
+  "tags": ["tag 1", "tag 2", ...],
+}`,
+                },
+                { role: "user", content: fullTranscript },
+              ],
+              response_format: { type: "json_object" },
             });
             const analysis = JSON.parse(aiResponse.choices[0].message.content!);
 
           const rawKeyPoints = analysis.key_points ?? [];
-
 
           const keyPoints: string[] = Array.isArray(rawKeyPoints)
             ? rawKeyPoints
@@ -268,6 +268,10 @@ export const handler = async (event: any) => {
             ? analysis.action_items
             : [];
 
+          const tags = Array.isArray(analysis.tags)
+            ? analysis.tags
+            : [];
+
             try {
               await db
                 .update(events)
@@ -275,6 +279,8 @@ export const handler = async (event: any) => {
                   ai_summary: analysis.summary ?? "",
                   key_points: keyPoints,
                   action_items: actionItems,
+                  tags: tags,
+                  hasTranscript: true
                 })
                 .where(eq(events.id, roomName));
             } catch (error) {
