@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -17,6 +20,7 @@ import {
 } from "lucide-react";
 import type { Event } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
+import { addProjectTasksAction } from "@/lib/server_actions/tasks";
 
 interface MeetingDetailsDialogProps {
   event: Event;
@@ -36,9 +40,44 @@ export function EventDetailsDialog({
   onOpenChange,
 }: MeetingDetailsDialogProps) {
   const hasAIContent = event.hasNotes || event.hasTranscript;
+  const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
+  const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
+
+  async function handleAddSingleTask(item: { task: string; dueDate: string; completed: boolean }, index: number) {
+    setAddingItems((prev) => new Set(prev).add(index));
+    try {
+      await addProjectTasksAction({
+        id: 0,
+        userId: "",
+        title: item.task,
+        description: null,
+        priority: "Medium",
+        status: "in-progress",
+        dueDate: item.dueDate || "2025-01-01",
+        completed: item.completed ?? false,
+        createdAt: null,
+        updatedAt: null,
+      });
+      setAddedItems((prev) => new Set(prev).add(index));
+    } finally {
+      setAddingItems((prev) => { const s = new Set(prev); s.delete(index); return s; });
+    }
+  }
+
+  const allAdded = (event.action_items?.length ?? 0) > 0 &&
+    event.action_items?.every((_, i) => addedItems.has(i));
+
+  async function handleAddAllToTasks() {
+    if (!event.action_items?.length) return;
+    await Promise.all(
+      event.action_items.map((item, i) =>
+        addedItems.has(i) ? Promise.resolve() : handleAddSingleTask(item, i)
+      )
+    );
+  }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -189,12 +228,15 @@ export function EventDetailsDialog({
                               <p className="text-sm text-gray-900">
                                 {item.task}
                               </p>
-                              <Badge
+                              <Button
+                                size="sm"
                                 variant="outline"
-                                className="text-xs bg-white"
+                                className="text-xs h-6 px-2 bg-white"
+                                onClick={() => handleAddSingleTask(item, i)}
+                                disabled={addingItems.has(i) || addedItems.has(i)}
                               >
-                                {"pending"}
-                              </Badge>
+                                {addingItems.has(i) ? "Adding..." : addedItems.has(i) ? "Added" : "Add"}
+                              </Button>
                             </div>
                             <div className="flex items-center text-xs text-gray-600 space-x-3">
                               <span>Due: {item.dueDate}</span>
@@ -202,9 +244,15 @@ export function EventDetailsDialog({
                           </div>
                         ))}
                       </div>
-                      <Button size="sm" className="mt-3" variant="outline">
+                      <Button
+                        size="sm"
+                        className="mt-3"
+                        variant="outline"
+                        onClick={handleAddAllToTasks}
+                        disabled={allAdded}
+                      >
                         <CheckSquare className="h-4 w-4 mr-2" />
-                        Add All to Tasks
+                        {allAdded ? "All Added" : "Add All to Tasks"}
                       </Button>
                     </div>
                   </CardContent>
