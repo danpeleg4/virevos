@@ -7,7 +7,7 @@ export interface Task {
   projectName?: string | null;
   priority: string;
   status: string;
-  dueDate: string;
+  dueDate: string | null;
   completed: boolean | null;
   createdAt: Date | null;
   updatedAt: Date | null;

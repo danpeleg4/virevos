@@ -57,7 +57,7 @@ export async function updateTaskDueDate(taskId: number, dueDate: string) {
 }
 
 export async function addProjectTasksAction(
-  task: { projectId?: number | null } & Task
+  task: Task
 ): Promise<Task> {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
@@ -70,7 +70,7 @@ export async function addProjectTasksAction(
     userId: user.id,
     status: "in-progress" as const,
     completed: false,
-    dueDate: dueDate || "2025-01-01",
+    dueDate: dueDate ?? null,
   };
 
   const newTask = await db.insert(tasks).values(values).returning();

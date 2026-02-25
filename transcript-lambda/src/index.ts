@@ -239,7 +239,7 @@ export const handler = async (event: any) => {
   "summary": "2-3 sentence meeting summary",
   "key_points": ["point 1", "point 2", ...],
   "action_items": [
-    { "task": "...", "owner": "...", "dueDate": "TBD", "completed": false }
+    { "task": "...", "owner": "...", "dueDate": "MM/DD/YY" or null, "completed": false }
   ],
   "tags": ["tag 1", "tag 2", ...],
 }`,

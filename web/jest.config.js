@@ -21,7 +21,7 @@ const config = {
     {
       displayName: "node",
       testEnvironment: "node",
-      testMatch: ["**/__tests__/api/**/*.ts"],
+      testMatch: ["**/__tests__/api/**/*.ts", "**/__tests__/lib/**/*.ts"],
       moduleNameMapper,
       transform,
     },
