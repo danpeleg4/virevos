@@ -110,7 +110,7 @@ export const tasks = pgTable("tasks", {
   }),
   priority: text("priority").notNull().default("Low"),
   status: text("status").notNull().default("in-progress"),
-  dueDate: date("due_date").notNull().default("2025-01-01"),
+  dueDate: date("due_date"),
   completed: boolean("completed").default(false),
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),

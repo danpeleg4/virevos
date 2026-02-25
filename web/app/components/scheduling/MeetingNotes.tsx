@@ -86,7 +86,7 @@ export function MeetingNotes() {
         description: null,
         priority: "Medium",
         status: "in-progress",
-        dueDate: item.dueDate || "2025-01-01",
+        dueDate: item.dueDate,
         completed: item.completed ?? false,
         createdAt: null,
         updatedAt: null,
