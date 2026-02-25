@@ -441,7 +441,7 @@ export default function Clients() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="text-sm text-gray-600">
             Showing {startIndex + 1} to{" "}
             {Math.min(startIndex + ITEMS_PER_PAGE, filteredClients.length)} of{" "}

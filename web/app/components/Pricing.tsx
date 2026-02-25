@@ -121,7 +121,7 @@ export function Pricing() {
               <div
                 className={`h-full bg-white rounded-2xl p-8 ${
                   plan.popular
-                    ? "border-2 border-blue-600 shadow-2xl scale-105"
+                    ? "border-2 border-blue-600 shadow-2xl lg:scale-105"
                     : "border border-gray-200 shadow-lg"
                 } hover:shadow-xl transition-all duration-300`}
               >

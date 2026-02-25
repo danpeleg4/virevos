@@ -191,7 +191,7 @@ export default function Billing() {
             </div>
           </div>
 
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-3">
             <Dialog open={changePlanOpen} onOpenChange={setChangePlanOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -395,6 +395,7 @@ export default function Billing() {
           </Button>
         </div>
 
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -433,6 +434,7 @@ export default function Billing() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </Card>
     </div>
   );

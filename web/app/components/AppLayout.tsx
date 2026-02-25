@@ -52,7 +52,15 @@ export function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const currentPath = usePathname();
 
-  if (!isLoaded) return <div>Loading...</div>;
+  if (!isLoaded)
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-gray-200 animate-pulse" />
+          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
+    );
 
   const navigate = (path: string) => router.push(path);
 
@@ -85,7 +93,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 href={item.path}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-gray-200 text-gray-900"
+                    ? "bg-gray-100 text-gray-900"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
@@ -176,7 +184,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                       }}
                       className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                         isActive
-                          ? "bg-blue-50 text-blue-600"
+                          ? "bg-gray-100 text-gray-900"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
