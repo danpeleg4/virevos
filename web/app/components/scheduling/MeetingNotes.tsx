@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { addProjectTasksAction } from "@/lib/server_actions/tasks";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,8 @@ export function MeetingNotes() {
   const [selectedNote, setSelectedNote] = useState<Event | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
+  const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
 
   const meetings = useQuery({
     queryKey: ["meetings"],
@@ -69,7 +72,42 @@ export function MeetingNotes() {
   const handleViewDetails = (note: Event) => {
     setSelectedNote(note);
     setDetailsOpen(true);
+    setAddingItems(new Set());
+    setAddedItems(new Set());
   };
+
+  async function handleAddSingleTask(item: { task: string; dueDate: string; completed: boolean }, index: number) {
+    setAddingItems((prev) => new Set(prev).add(index));
+    try {
+      await addProjectTasksAction({
+        id: 0,
+        userId: "",
+        title: item.task,
+        description: null,
+        priority: "Medium",
+        status: "in-progress",
+        dueDate: item.dueDate || "2025-01-01",
+        completed: item.completed ?? false,
+        createdAt: null,
+        updatedAt: null,
+      });
+      setAddedItems((prev) => new Set(prev).add(index));
+    } finally {
+      setAddingItems((prev) => { const s = new Set(prev); s.delete(index); return s; });
+    }
+  }
+
+  const allAdded = (selectedNote?.action_items?.length ?? 0) > 0 &&
+    selectedNote?.action_items?.every((_, i) => addedItems.has(i));
+
+  async function handleAddAllToTasks() {
+    if (!selectedNote?.action_items?.length) return;
+    await Promise.all(
+      selectedNote.action_items.map((item, i) =>
+        addedItems.has(i) ? Promise.resolve() : handleAddSingleTask(item, i)
+      )
+    );
+  }
 
   const handleCopySummary = () => {
     if (selectedNote && selectedNote.ai_summary) {
@@ -344,36 +382,42 @@ export function MeetingNotes() {
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
                     <CheckSquare className="h-4 w-4 text-orange-500" />
-                    <h3 className={`text-sm text-gray-700`}>Action Items</h3>
+                    <h3 className={`text-sm text-gray-700`}>Action Items ({selectedNote?.action_items?.length})</h3>
                   </div>
                   <div className="space-y-2">
                     {selectedNote?.action_items?.map((item, index) => (
                       <div
                         key={index}
-                        className={`flex items-start space-x-3 p-3 rounded-lg border bg-gray-50 border-gray-200`}
+                        className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
                       >
-                        <input
-                          type="checkbox"
-                          checked={item.completed}
-                          readOnly
-                          className="mt-1 h-4 w-4 rounded border-gray-300"
-                        />
-                        <div className="flex-1">
-                          <p
-                            className={`text-sm ${item.completed ? "line-through" : ""} text-gray-700`}
+                        <div className="flex items-start justify-between mb-1">
+                          <p className="text-sm text-gray-900">{item.task}</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-6 px-2 bg-white"
+                            onClick={() => handleAddSingleTask(item, index)}
+                            disabled={addingItems.has(index) || addedItems.has(index)}
                           >
-                            {item.task}
-                          </p>
-                          <div
-                            className={`flex items-center space-x-3 text-xs mt-1 text-gray-500`}
-                          >
-                            <span>👤 {item.owner}</span>
-                            <span>📅 Due {item.dueDate}</span>
-                          </div>
+                            {addingItems.has(index) ? "Adding..." : addedItems.has(index) ? "Added" : "Add"}
+                          </Button>
+                        </div>
+                        <div className="flex items-center text-xs text-gray-600 space-x-3">
+                          <span>Due: {item.dueDate}</span>
                         </div>
                       </div>
                     ))}
                   </div>
+                  <Button
+                    size="sm"
+                    className="mt-3"
+                    variant="outline"
+                    onClick={handleAddAllToTasks}
+                    disabled={allAdded}
+                  >
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    {allAdded ? "All Added" : "Add All to Tasks"}
+                  </Button>
                 </div>
 
                 {/* Transcript */}
