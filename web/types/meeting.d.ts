@@ -17,6 +17,7 @@ type ActionItem = {
   owner: string;
   dueDate: string | null;
   completed: boolean;
+  added?: boolean;
 };
 
 type Transcript = {

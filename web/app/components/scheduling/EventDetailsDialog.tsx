@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -21,6 +22,7 @@ import {
 import type { Event } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 import { addProjectTasksAction } from "@/lib/server_actions/tasks";
+import { markActionItemAdded } from "@/lib/server_actions/meetings";
 
 interface MeetingDetailsDialogProps {
   event: Event;
@@ -41,7 +43,10 @@ export function EventDetailsDialog({
 }: MeetingDetailsDialogProps) {
   const hasAIContent = event.hasNotes || event.hasTranscript;
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
-  const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
+  const [addedItems, setAddedItems] = useState<Set<number>>(
+    () => new Set<number>((event.action_items ?? []).flatMap((item, i) => (item.added ? [i] : [])))
+  );
+  const queryClient = useQueryClient();
 
   async function handleAddSingleTask(item: { task: string; dueDate: string | null; completed: boolean }, index: number) {
     setAddingItems((prev) => new Set(prev).add(index));
@@ -58,7 +63,9 @@ export function EventDetailsDialog({
         createdAt: null,
         updatedAt: null,
       });
+      await markActionItemAdded(event.id, index);
       setAddedItems((prev) => new Set(prev).add(index));
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {
       setAddingItems((prev) => { const s = new Set(prev); s.delete(index); return s; });
     }
