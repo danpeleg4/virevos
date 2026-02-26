@@ -76,7 +76,7 @@ export function MeetingNotes() {
     setAddedItems(new Set());
   };
 
-  async function handleAddSingleTask(item: { task: string; dueDate: string; completed: boolean }, index: number) {
+  async function handleAddSingleTask(item: { task: string; dueDate: string | null; completed: boolean }, index: number) {
     setAddingItems((prev) => new Set(prev).add(index));
     try {
       await addProjectTasksAction({
@@ -403,7 +403,7 @@ export function MeetingNotes() {
                           </Button>
                         </div>
                         <div className="flex items-center text-xs text-gray-600 space-x-3">
-                          <span>Due: {item.dueDate}</span>
+                          <span>Due: {item.dueDate ?? "No due date"}</span>
                         </div>
                       </div>
                     ))}

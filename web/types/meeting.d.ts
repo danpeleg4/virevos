@@ -15,7 +15,7 @@ export interface Attendee {
 type ActionItem = {
   task: string;
   owner: string;
-  dueDate: string;
+  dueDate: string | null;
   completed: boolean;
 };
 
