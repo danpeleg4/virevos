@@ -21,6 +21,8 @@ import {
   Check,
   PlayCircle,
   Pause,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -41,7 +43,9 @@ export function Meetings() {
   >("home");
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const router = useRouter();
+  const PAGE_SIZE = 4;
 
   const meetings = useQuery({
     queryKey: ["meetings"],
@@ -92,6 +96,8 @@ export function Meetings() {
   }
 
   const filteredMeetings = meetings?.data?.filter((event) => event.isMeeting);
+  const totalPages = Math.max(1, Math.ceil((filteredMeetings?.length ?? 0) / PAGE_SIZE));
+  const paginatedMeetings = filteredMeetings?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const color = (meeting: Event) => {
     switch (meeting.status) {
@@ -116,26 +122,18 @@ export function Meetings() {
   };
 
   return (
-    <div className={`p-6 space-y-6`}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className={`text-3xl`}>Meetings</h1>
-          <p className={`mt-1`}>Start or join video meetings instantly</p>
-        </div>
-        <div className="flex items-center space-x-3">
+    <div className={`px-6 pt-3 pb-6 space-y-4`}>
+      {/* Meetings List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl">Your Meetings</h2>
           <Button onClick={() => setStartModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Start New Meeting
           </Button>
         </div>
-      </div>
-
-      {/* Meetings List */}
-      <div className="space-y-4">
-        <h2 className={`text-xl `}>Your Meetings</h2>
         <div className="space-y-3">
-          {filteredMeetings?.map((meeting) => (
+          {paginatedMeetings?.map((meeting) => (
             <motion.div
               key={meeting.id}
               initial={{ opacity: 0, y: 20 }}
@@ -217,6 +215,29 @@ export function Meetings() {
             </motion.div>
           ))}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Start Meeting Modal */}

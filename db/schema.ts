@@ -60,7 +60,7 @@ export const projects = pgTable("projects", {
     .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// Events
+  // EVENTS
 export const events = pgTable("events", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),

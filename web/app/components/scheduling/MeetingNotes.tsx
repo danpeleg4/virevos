@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -32,6 +32,7 @@ import {
   Tag,
   Copy,
   Check,
+  ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -47,7 +48,9 @@ export function MeetingNotes() {
   const [copied, setCopied] = useState(false);
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
+  const PAGE_SIZE = 4;
 
   const meetings = useQuery({
     queryKey: ["meetings"],
@@ -61,6 +64,10 @@ export function MeetingNotes() {
     },
   });
 
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, filterStatus]);
+
   const filteredNotes = meetings?.data?.filter((note) => {
     const matchesSearch =
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -70,6 +77,8 @@ export function MeetingNotes() {
       (filterStatus === "with-transcript" && note.hasTranscript);
     return matchesSearch && matchesFilter;
   });
+  const totalPages = Math.max(1, Math.ceil((filteredNotes?.length ?? 0) / PAGE_SIZE));
+  const paginatedNotes = filteredNotes?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleViewDetails = (note: Event) => {
     setSelectedNote(note);
@@ -156,7 +165,7 @@ export function MeetingNotes() {
 
       {/* Notes List */}
       <div className="space-y-4">
-        {filteredNotes?.map((note, index) => (
+        {paginatedNotes?.map((note, index) => (
           <motion.div
             key={note.id}
             initial={{ opacity: 0, y: 20 }}
@@ -255,6 +264,30 @@ export function MeetingNotes() {
           </motion.div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {filteredNotes?.length === 0 && (
         <Card>
