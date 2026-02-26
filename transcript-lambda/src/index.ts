@@ -47,6 +47,22 @@ const s3 = new S3Client({ region: process.env.REGION! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
+// Returns a YYYY-MM-DD string if valid, otherwise null
+function normalizeDueDate(value: unknown): string | null {
+  if (!value || typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.toLowerCase() === "null") return null;
+  // Validate YYYY-MM-DD pattern before parsing to avoid timezone shifts
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const d = new Date(trimmed + "T00:00:00Z");
+    if (!isNaN(d.getTime())) return trimmed;
+  }
+  // Fallback: try generic parse and convert to ISO date
+  const d = new Date(trimmed);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().split("T")[0];
+}
+
 // Helper functions
 export async function streamToString(stream: Readable) {
     return new Promise<string>((resolve, reject) => {
@@ -239,10 +255,14 @@ export const handler = async (event: any) => {
   "summary": "2-3 sentence meeting summary",
   "key_points": ["point 1", "point 2", ...],
   "action_items": [
-    { "task": "...", "owner": "...", "dueDate": "MM/DD/YY" or null, "completed": false }
+    { "task": "...", "owner": "...", "dueDate": "YYYY-MM-DD", "completed": false }
   ],
   "tags": ["tag 1", "tag 2", ...],
-}`,
+}
+Rules for dueDate:
+- Use ISO 8601 format: "YYYY-MM-DD" (e.g., "2026-03-15")
+- Only set a date if explicitly mentioned in the transcript
+- If the date is unclear, relative without a clear anchor, or not mentioned, use null`,
                 },
                 { role: "user", content: fullTranscript },
               ],
@@ -265,7 +285,10 @@ export const handler = async (event: any) => {
               : [];
 
           const actionItems = Array.isArray(analysis.action_items)
-            ? analysis.action_items
+            ? analysis.action_items.map((item: any) => ({
+                ...item,
+                dueDate: normalizeDueDate(item.dueDate),
+              }))
             : [];
 
           const tags = Array.isArray(analysis.tags)
