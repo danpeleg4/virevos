@@ -197,11 +197,16 @@ export function MeetingNotes() {
                     >
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
-                        {note.dateTime.toString()}
+                        {new Date(note.dateTime).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
-                        {note.duration}
+                        {note.duration}m
                       </div>
                       <div className="flex -space-x-2">
                         {note.attendees.slice(0, 3).map((attendee, i) => (
@@ -317,7 +322,12 @@ export function MeetingNotes() {
                       <span className="flex flex-wrap items-center gap-3 text-sm">
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(selectedNote.dateTime).toLocaleDateString()}
+                          {new Date(selectedNote.dateTime).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </span>
                         <span className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
@@ -422,7 +432,9 @@ export function MeetingNotes() {
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
                     <CheckSquare className="h-4 w-4 text-orange-500" />
-                    <h3 className={`text-sm text-gray-700`}>Action Items ({selectedNote?.action_items?.length})</h3>
+                    <h3 className={`text-sm text-gray-700`}>
+                      Action Items ({selectedNote?.action_items?.length})
+                    </h3>
                   </div>
                   <div className="space-y-2">
                     {selectedNote?.action_items?.map((item, index) => (
@@ -437,9 +449,15 @@ export function MeetingNotes() {
                             variant="outline"
                             className="text-xs h-6 px-2 bg-white"
                             onClick={() => handleAddSingleTask(item, index)}
-                            disabled={addingItems.has(index) || addedItems.has(index)}
+                            disabled={
+                              addingItems.has(index) || addedItems.has(index)
+                            }
                           >
-                            {addingItems.has(index) ? "Adding..." : addedItems.has(index) ? "Added" : "Add"}
+                            {addingItems.has(index)
+                              ? "Adding..."
+                              : addedItems.has(index)
+                                ? "Added"
+                                : "Add"}
                           </Button>
                         </div>
                         <div className="flex items-center text-xs text-gray-600 space-x-3">
