@@ -5,6 +5,7 @@ import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { addProjectTasksAction } from "@/lib/server_actions/tasks";
+import { markActionItemAdded } from "@/lib/server_actions/meetings";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +35,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { Event } from "@/types/meeting";
 
@@ -46,6 +47,7 @@ export function MeetingNotes() {
   const [copied, setCopied] = useState(false);
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
+  const queryClient = useQueryClient();
 
   const meetings = useQuery({
     queryKey: ["meetings"],
@@ -73,7 +75,10 @@ export function MeetingNotes() {
     setSelectedNote(note);
     setDetailsOpen(true);
     setAddingItems(new Set());
-    setAddedItems(new Set());
+    const alreadyAdded = new Set<number>(
+      (note.action_items ?? []).flatMap((item, i) => (item.added ? [i] : []))
+    );
+    setAddedItems(alreadyAdded);
   };
 
   async function handleAddSingleTask(item: { task: string; dueDate: string | null; completed: boolean }, index: number) {
@@ -91,7 +96,9 @@ export function MeetingNotes() {
         createdAt: null,
         updatedAt: null,
       });
+      await markActionItemAdded(selectedNote!.id, index);
       setAddedItems((prev) => new Set(prev).add(index));
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {
       setAddingItems((prev) => { const s = new Set(prev); s.delete(index); return s; });
     }

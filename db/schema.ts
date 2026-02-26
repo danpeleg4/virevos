@@ -75,7 +75,7 @@ export const events = pgTable("events", {
   hasTranscript: boolean("has_transcript").default(false),
   ai_summary: text("ai_summary"),
   key_points: text("key_points").array(),
-  action_items: jsonb("action_items").$type<Array<{task: string; owner: string; dueDate: string; completed: boolean}>>(),
+  action_items: jsonb("action_items").$type<Array<{task: string; owner: string; dueDate: string | null; completed: boolean; added?: boolean}>>(),
   autoRescheduled: boolean("auto_rescheduled").default(false),
   conflictReason: text("conflict_reason"),
   origin: text("origin").default("app"),

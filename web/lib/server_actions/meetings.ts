@@ -4,6 +4,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { db } from "@db/db";
 import { events } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
+import { and, eq } from "drizzle-orm";
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
 export async function createInstantMeeting(title: string) {
@@ -26,6 +27,27 @@ export async function createInstantMeeting(title: string) {
     userId: user.id,
   });
   return { id: meetingId, link: `https://virevos.com/meet/${meetingId}` };
+}
+
+export async function markActionItemAdded(eventId: string, itemIndex: number) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const [event] = await db
+    .select({ action_items: events.action_items })
+    .from(events)
+    .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
+
+  if (!event?.action_items) return;
+
+  const updated = event.action_items.map((item, i) =>
+    i === itemIndex ? { ...item, added: true } : item
+  );
+
+  await db
+    .update(events)
+    .set({ action_items: updated })
+    .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
 }
 
 export async function getPastMeetingTranscript(text: string) {
