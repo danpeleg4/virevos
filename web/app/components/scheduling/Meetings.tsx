@@ -395,9 +395,7 @@ function TranscriptionView({
   useEffect(() => {
     const fetchRecording = async () => {
       try {
-        const res = await axios.post(`/api/recording`, {
-          meetingId: meeting.id,
-        });
+        const res = await axios.get(`/api/recording/${meeting.id}`);
         setVideoUrl(res.data.url ?? null);
       } catch (err) {
         console.error("Failed to fetch recording:", err);
