@@ -26,14 +26,21 @@ async function streamToString(stream: Readable | undefined): Promise<string> {
   });
 }
 
-export async function POST(req: NextRequest) {
-  const { meetingId } = await req.json();
+export async function GET(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   const user = await currentUser();
   if (!user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const folderPrefix = `${user.id}/${meetingId}/`;
+  const { id } = await ctx.params;
+  if (!id) {
+    return NextResponse.json({ error: "Invalid meetingId" }, { status: 400 });
+  }
+
+  const folderPrefix = `${user.id}/${id}/`;
 
   try {
     const listResponse = await s3.send(

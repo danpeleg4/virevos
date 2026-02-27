@@ -11,19 +11,21 @@ const s3Client = new S3Client({
   },
 });
 
-export async function POST(req: NextRequest) {
+export async function GET(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   const user = await currentUser();
   if (!user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const { meetingId } = await req.json();
-
-  if (!meetingId) {
-    return NextResponse.json({ error: "Meeting ID required" }, { status: 400 });
+  const { id } = await ctx.params;
+  if (!id) {
+    return NextResponse.json({ error: "Invalid meetingId" }, { status: 400 });
   }
 
-  const key = `recordings/${user.id}/${meetingId}/main.mp4`;
+  const key = `recordings/${user.id}/${id}/main.mp4`;
 
   try {
     const url = await getSignedUrl(

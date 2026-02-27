@@ -367,13 +367,11 @@ function TranscriptionView({
 
   useEffect(() => {
     if (typeof currentChunkIndex !== "number") return;
-
     const container = containerRef.current;
     if (!container) return;
 
     const children = Array.from(container.children) as HTMLElement[];
     const activeElem = children[currentChunkIndex];
-
     if (activeElem) {
       activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -381,10 +379,7 @@ function TranscriptionView({
 
   useEffect(() => {
     const fn = async () => {
-      const res = await axios.post(`/api/transcript`, {
-        meetingId: meeting.id,
-      });
-
+      const res = await axios.get(`/api/transcript/${meeting.id}`);
       const formatted = res.data[0].map((item: RawChunk) => ({
         speaker: item.speaker,
         time: formatTime(item.start_time),
@@ -400,9 +395,7 @@ function TranscriptionView({
   useEffect(() => {
     const fetchRecording = async () => {
       try {
-        const res = await axios.post(`/api/recording`, {
-          meetingId: meeting.id,
-        });
+        const res = await axios.get(`/api/recording/${meeting.id}`);
         setVideoUrl(res.data.url ?? null);
       } catch (err) {
         console.error("Failed to fetch recording:", err);
