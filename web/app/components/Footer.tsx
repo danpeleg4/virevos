@@ -1,10 +1,34 @@
 import { Facebook, Twitter, Linkedin, Instagram, Github } from "lucide-react";
 
-const footerLinks = {
-  Product: ["Features", "Pricing", "Security", "Roadmap", "Changelog"],
-  Company: ["About", "Blog", "Careers", "Press", "Partners"],
-  Resources: ["Documentation", "Help Center", "Community", "Contact", "Status"],
-  Legal: ["Privacy", "Terms", "Cookie Policy", "Licenses", "GDPR"],
+const footerLinks: Record<string, { label: string; href: string }[]> = {
+  Product: [
+    { label: "Features", href: "/features" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Security", href: "/security" },
+    { label: "Roadmap", href: "/roadmap" },
+    { label: "Changelog", href: "/changelog" },
+  ],
+  Company: [
+    { label: "About", href: "/about" },
+    { label: "Blog", href: "/blog" },
+    { label: "Careers", href: "/careers" },
+    { label: "Press", href: "/press" },
+    { label: "Partners", href: "/partners" },
+  ],
+  Resources: [
+    { label: "Documentation", href: "/learn" },
+    { label: "Help Center", href: "/resources" },
+    { label: "Community", href: "/community" },
+    { label: "Contact", href: "/contact" },
+    { label: "Status", href: "/status" },
+  ],
+  Legal: [
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+    { label: "Cookie Policy", href: "/cookie-policy" },
+    { label: "Licenses", href: "/licenses" },
+    { label: "GDPR", href: "/gdpr" },
+  ],
 };
 
 export function Footer() {
@@ -46,12 +70,12 @@ export function Footer() {
               <h4 className="text-white mb-4">{category}</h4>
               <ul className="space-y-3">
                 {links.map((link) => (
-                  <li key={link}>
+                  <li key={link.label}>
                     <a
-                      href="#"
+                      href={link.href}
                       className="text-gray-400 hover:text-white transition-colors text-sm"
                     >
-                      {link}
+                      {link.label}
                     </a>
                   </li>
                 ))}
@@ -77,12 +101,6 @@ export function Footer() {
               className="text-gray-400 hover:text-white transition-colors"
             >
               Terms of Service
-            </a>
-            <a
-              href="#"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Cookie Settings
             </a>
           </div>
         </div>
