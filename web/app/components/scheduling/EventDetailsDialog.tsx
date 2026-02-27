@@ -84,7 +84,7 @@ export function EventDetailsDialog({
     const fn = async () => {
       setTranscriptLoading(true);
       try {
-        const res = await axios.get(`/api/transcript/${selectedNote.id}`);
+        const res = await axios.get(`/api/transcript/${event.id}`);
         const formatted = res.data[0].map((item: RawChunk) => ({
           speaker: item.speaker,
           time: formatTime(item.start_time),
