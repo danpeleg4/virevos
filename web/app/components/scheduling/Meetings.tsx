@@ -391,7 +391,6 @@ function TranscriptionView({
         text: item.chunk_text,
         startTime: item.start_time,
       }));
-      console.log(formatted);
       setFormattedData(formatted);
     };
     fn();

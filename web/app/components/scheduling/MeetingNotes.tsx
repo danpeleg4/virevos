@@ -38,7 +38,7 @@ import {
 import { motion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import type { Event } from "@/types/meeting";
+import type { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 
 export function MeetingNotes() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,8 +49,17 @@ export function MeetingNotes() {
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(1);
+  const [transcriptData, setTranscriptData] = useState<TranscribedChunk[]>([]);
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [showFullTranscript, setShowFullTranscript] = useState(false);
   const queryClient = useQueryClient();
   const PAGE_SIZE = 4;
+
+  function formatTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
 
   const meetings = useQuery({
     queryKey: ["meetings"],
@@ -68,6 +77,29 @@ export function MeetingNotes() {
     setPage(1);
   }, [searchQuery, filterStatus]);
 
+  useEffect(() => {
+    if (!detailsOpen || !selectedNote?.hasTranscript) return;
+    const fn = async () => {
+      setTranscriptLoading(true);
+      setTranscriptData([]);
+      try {
+        const res = await axios.post(`/api/transcript`, {
+          meetingId: selectedNote.id,
+        });
+        const formatted = res.data[0].map((item: RawChunk) => ({
+          speaker: item.speaker,
+          time: formatTime(item.start_time),
+          text: item.chunk_text,
+          startTime: item.start_time,
+        }));
+        setTranscriptData(formatted);
+      } finally {
+        setTranscriptLoading(false);
+      }
+    };
+    fn();
+  }, [detailsOpen, selectedNote?.id]);
+
   const filteredNotes = meetings?.data?.filter((note) => {
     const matchesSearch =
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,6 +116,8 @@ export function MeetingNotes() {
     setSelectedNote(note);
     setDetailsOpen(true);
     setAddingItems(new Set());
+    setTranscriptData([]);
+    setShowFullTranscript(false);
     const alreadyAdded = new Set<number>(
       (note.action_items ?? []).flatMap((item, i) => (item.added ? [i] : []))
     );
@@ -197,11 +231,16 @@ export function MeetingNotes() {
                     >
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
-                        {note.dateTime.toString()}
+                        {new Date(note.dateTime).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
-                        {note.duration}
+                        {note.duration}m
                       </div>
                       <div className="flex -space-x-2">
                         {note.attendees.slice(0, 3).map((attendee, i) => (
@@ -317,7 +356,12 @@ export function MeetingNotes() {
                       <span className="flex flex-wrap items-center gap-3 text-sm">
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(selectedNote.dateTime).toLocaleDateString()}
+                          {new Date(selectedNote.dateTime).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </span>
                         <span className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
@@ -422,7 +466,9 @@ export function MeetingNotes() {
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
                     <CheckSquare className="h-4 w-4 text-orange-500" />
-                    <h3 className={`text-sm text-gray-700`}>Action Items ({selectedNote?.action_items?.length})</h3>
+                    <h3 className={`text-sm text-gray-700`}>
+                      Action Items ({selectedNote?.action_items?.length})
+                    </h3>
                   </div>
                   <div className="space-y-2">
                     {selectedNote?.action_items?.map((item, index) => (
@@ -437,9 +483,15 @@ export function MeetingNotes() {
                             variant="outline"
                             className="text-xs h-6 px-2 bg-white"
                             onClick={() => handleAddSingleTask(item, index)}
-                            disabled={addingItems.has(index) || addedItems.has(index)}
+                            disabled={
+                              addingItems.has(index) || addedItems.has(index)
+                            }
                           >
-                            {addingItems.has(index) ? "Adding..." : addedItems.has(index) ? "Added" : "Add"}
+                            {addingItems.has(index)
+                              ? "Adding..."
+                              : addedItems.has(index)
+                                ? "Added"
+                                : "Add"}
                           </Button>
                         </div>
                         <div className="flex items-center text-xs text-gray-600 space-x-3">
@@ -461,40 +513,44 @@ export function MeetingNotes() {
                 </div>
 
                 {/* Transcript */}
-                {selectedNote.hasTranscript &&
-                  selectedNote.transcript &&
-                  selectedNote?.transcript?.length > 0 && (
-                    <div>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <Mic className="h-4 w-4 text-purple-500" />
-                        <h3 className={`text-sm text-gray-700`}>Transcript</h3>
-                      </div>
-                      <div
-                        className={`max-h-96 overflow-y-auto p-4 rounded-lg border bg-gray-50 border-gray-200`}
-                      >
-                        <div className="space-y-3">
-                          {selectedNote?.transcript?.map((entry, index) => (
-                            <div
-                              key={index}
-                              className="flex items-start space-x-3"
-                            >
-                              <span className={`text-xs mt-1 text-gray-400`}>
-                                {entry.time}
-                              </span>
-                              <div className="flex-1">
-                                <p className={`text-sm mb-1 text-blue-600`}>
-                                  {entry.speaker}
-                                </p>
-                                <p className={`text-sm text-gray-700`}>
-                                  {entry.text}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                {selectedNote.hasTranscript && (
+                  <div>
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Mic className="h-4 w-4 text-purple-500" />
+                      <h3 className={`text-sm text-gray-700`}>Transcript</h3>
                     </div>
-                  )}
+                    {transcriptLoading ? (
+                      <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 text-sm text-gray-400">
+                        Loading transcript...
+                      </div>
+                    ) : transcriptData.length > 0 ? (
+                      <>
+                        <div className={`max-h-96 overflow-y-auto p-4 rounded-lg border bg-gray-50 border-gray-200`}>
+                          <div className="space-y-4">
+                            {(showFullTranscript ? transcriptData : transcriptData.slice(0, 3)).map((entry, index) => (
+                              <div key={index} className="flex items-start space-x-3">
+                                <span className={`text-xs mt-1 text-gray-400 shrink-0`}>{entry.time}</span>
+                                <div className="flex-1">
+                                  <p className={`text-sm font-medium mb-0.5 text-blue-600`}>{entry.speaker}</p>
+                                  <p className={`text-sm text-gray-700`}>{entry.text}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {transcriptData.length > 3 && (
+                          <button
+                            className="mt-3 text-sm text-blue-600 hover:underline flex items-center gap-1"
+                            onClick={() => setShowFullTranscript((v) => !v)}
+                          >
+                            <FileText className="h-4 w-4" />
+                            {showFullTranscript ? "Show Less" : "View Full Transcript"}
+                          </button>
+                        )}
+                      </>
+                    ) : null}
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div
