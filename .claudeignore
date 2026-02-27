@@ -1,8 +1,6 @@
 .DS_Store
 *.log
 *.tmp
-
-# or folders
 dist/
 build/
 out/

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
@@ -19,10 +19,11 @@ import {
   Copy,
   Mic,
 } from "lucide-react";
-import type { Event } from "@/types/meeting";
+import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 import { addProjectTasksAction } from "@/lib/server_actions/tasks";
 import { markActionItemAdded } from "@/lib/server_actions/meetings";
+import axios from "axios";
 
 interface MeetingDetailsDialogProps {
   event: Event;
@@ -30,18 +31,15 @@ interface MeetingDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const mockTranscript = `Sarah Johnson: Good morning everyone! Thanks for joining this onboarding call for Acme Corp.
-Mike Chen: Happy to be here. We're excited to get started with Virevos.
-Sarah Johnson: Great! Let me walk you through the key features we discussed in our sales call. First, the automation capabilities...
-Mike Chen: Actually, before we dive in, can we make sure we have access to the API documentation?
-Sarah Johnson: Absolutely. I'll send that over right after this call. Let me add that as a follow-up task.`;
-
 export function EventDetailsDialog({
   event,
   open,
   onOpenChange,
 }: MeetingDetailsDialogProps) {
   const hasAIContent = event.hasNotes || event.hasTranscript;
+  const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [showFullTranscript, setShowFullTranscript] = useState(false);
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [addedItems, setAddedItems] = useState<Set<number>>(
     () => new Set<number>((event.action_items ?? []).flatMap((item, i) => (item.added ? [i] : [])))
@@ -70,6 +68,38 @@ export function EventDetailsDialog({
       setAddingItems((prev) => { const s = new Set(prev); s.delete(index); return s; });
     }
   }
+
+  function formatTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+
+  useEffect(() => {
+    if (!open) {
+      setShowFullTranscript(false);
+      return;
+    }
+    if (!event.hasTranscript) return;
+    const fn = async () => {
+      setTranscriptLoading(true);
+      try {
+        const res = await axios.post(`/api/transcript`, {
+          meetingId: event.id,
+        });
+        const formatted = res.data[0].map((item: RawChunk) => ({
+          speaker: item.speaker,
+          time: formatTime(item.start_time),
+          text: item.chunk_text,
+          startTime: item.start_time,
+        }));
+        setFormattedData(formatted);
+      } finally {
+        setTranscriptLoading(false);
+      }
+    };
+    fn();
+  }, [event.id, open]);
 
   const allAdded = (event.action_items?.length ?? 0) > 0 &&
     event.action_items?.every((_, i) => addedItems.has(i));
@@ -276,24 +306,38 @@ export function EventDetailsDialog({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                      <div className="space-y-3 text-sm">
-                        {mockTranscript.split("\n\n").map((paragraph, i) => (
-                          <p key={i} className="text-gray-700">
-                            {paragraph}
-                          </p>
-                        ))}
+                    {transcriptLoading ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-400">
+                        Loading transcript...
                       </div>
-                    </div>
-                    <div className="mt-3 flex space-x-2">
-                      <Button size="sm" variant="outline">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Export Transcript
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        Search Transcript
-                      </Button>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                          <div className="space-y-4">
+                            {(showFullTranscript ? formattedData : formattedData.slice(0, 3)).map((chunk, i) => (
+                              <div key={i} className="flex items-start space-x-3">
+                                <span className="text-xs mt-1 text-gray-400 shrink-0">{chunk.time}</span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-blue-600 mb-0.5">{chunk.speaker}</p>
+                                  <p className="text-sm text-gray-700">{chunk.text}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {formattedData.length > 3 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-3"
+                            onClick={() => setShowFullTranscript((v) => !v)}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            {showFullTranscript ? "Show Less" : "View Full Transcript"}
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               )}
