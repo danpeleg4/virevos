@@ -169,13 +169,12 @@ export async function performFullSync(userId: string): Promise<void> {
   let syncToken: string | undefined;
   const allItems: calendar_v3.Schema$Event[] = [];
 
+  // Do NOT use timeMin/timeMax here: Google won't return nextSyncToken when
+  // time range filters are present. We filter to our display window locally.
   do {
     const res = await calendar.events.list({
       calendarId: "primary",
-      timeMin: timeMin.toISOString(),
-      timeMax: timeMax.toISOString(),
       singleEvents: true,
-      orderBy: "startTime",
       pageToken,
     });
 
@@ -186,7 +185,18 @@ export async function performFullSync(userId: string): Promise<void> {
     }
   } while (pageToken);
 
-  await applyGoogleEventsToDb(allItems, userId, timeMin, timeMax);
+  // Filter to the display window before applying to DB
+  const windowItems = allItems.filter((e) => {
+    if (!e.start) return false;
+    const start = e.start.dateTime
+      ? new Date(e.start.dateTime)
+      : e.start.date
+      ? new Date(e.start.date)
+      : null;
+    return start !== null && start >= timeMin && start <= timeMax;
+  });
+
+  await applyGoogleEventsToDb(windowItems, userId, timeMin, timeMax);
 
   await db
     .insert(googleSyncState)

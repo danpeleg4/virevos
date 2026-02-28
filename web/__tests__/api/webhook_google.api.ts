@@ -122,11 +122,12 @@ describe("POST /api/webhooks/google", () => {
     expect(performIncrementalSync).toHaveBeenCalledWith("user_1");
   });
 
-  it("returns 204 even if performIncrementalSync rejects (fire-and-forget)", async () => {
+  it("returns 500 if performIncrementalSync rejects", async () => {
     mockDbSelect([{ channelId: "channel-uuid", resourceId: "res-1" }]);
     (performIncrementalSync as jest.Mock).mockRejectedValueOnce(
       new Error("sync error")
     );
+    jest.spyOn(console, "error").mockImplementationOnce(() => {});
     const res = await POST(
       makeRequest({
         "X-Goog-Resource-State": "exists",
@@ -134,6 +135,6 @@ describe("POST /api/webhooks/google", () => {
         "X-Goog-Channel-Id": "channel-uuid",
       })
     );
-    expect(res.status).toBe(204);
+    expect(res.status).toBe(500);
   });
 });

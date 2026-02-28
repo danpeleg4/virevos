@@ -133,8 +133,6 @@ describe("performFullSync", () => {
       expect.objectContaining({
         calendarId: "primary",
         singleEvents: true,
-        timeMin: expect.any(String),
-        timeMax: expect.any(String),
       })
     );
     expect(db.insert).toHaveBeenCalled();
@@ -180,9 +178,12 @@ describe("performIncrementalSync", () => {
 
     await performIncrementalSync("user_1");
 
-    // Full sync uses timeMin/timeMax, not syncToken
+    // Full sync no longer uses timeMin/timeMax (to get nextSyncToken from Google)
     expect(mockEventsList).toHaveBeenCalledWith(
-      expect.objectContaining({ timeMin: expect.any(String) })
+      expect.objectContaining({ calendarId: "primary", singleEvents: true })
+    );
+    expect(mockEventsList).not.toHaveBeenCalledWith(
+      expect.objectContaining({ syncToken: expect.any(String) })
     );
   });
 
@@ -204,8 +205,12 @@ describe("performIncrementalSync", () => {
 
     await performIncrementalSync("user_1");
 
+    // Full sync no longer uses timeMin/timeMax (to get nextSyncToken from Google)
     expect(mockEventsList).toHaveBeenCalledWith(
-      expect.objectContaining({ timeMin: expect.any(String) })
+      expect.objectContaining({ calendarId: "primary", singleEvents: true })
+    );
+    expect(mockEventsList).not.toHaveBeenCalledWith(
+      expect.objectContaining({ syncToken: expect.any(String) })
     );
   });
 
@@ -233,6 +238,7 @@ describe("performIncrementalSync", () => {
   it("falls back to full sync on 410 Gone error", async () => {
     // First select: returns expired syncToken; subsequent: empty existing events (full sync fallback)
     mockSelectSequence([{ syncToken: "expired-token" }], []);
+    jest.spyOn(console, "log").mockImplementationOnce(() => {});
 
     const goneError = Object.assign(new Error("Gone"), { code: 410 });
     mockEventsList
@@ -273,7 +279,8 @@ describe("setupWatchChannel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue("mock-access-token");
-    process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
+    // Jest runs with NODE_ENV=test (non-production), so setupWatchChannel uses NEXT_PUBLIC_APP_URL_NGROK
+    process.env.NEXT_PUBLIC_APP_URL_NGROK = "https://example.ngrok.io";
   });
 
   it("calls events.watch with correct parameters and upserts sync state", async () => {
@@ -293,7 +300,7 @@ describe("setupWatchChannel", () => {
       requestBody: expect.objectContaining({
         type: "web_hook",
         token: "user_1",
-        address: "https://example.com/api/webhooks/google",
+        address: "https://example.ngrok.io/api/webhooks/google",
         expiration: expect.any(String),
       }),
     });
@@ -351,6 +358,7 @@ describe("stopWatchChannel", () => {
   it("still deletes sync state row even if channels.stop throws", async () => {
     mockSelect([{ channelId: "ch-uuid", resourceId: "res-uuid" }]);
     mockChannelsStop.mockRejectedValueOnce(new Error("Channel not found"));
+    jest.spyOn(console, "error").mockImplementationOnce(() => {});
     (db.delete as jest.Mock).mockReturnValue({
       where: jest.fn().mockResolvedValue(undefined),
     });
