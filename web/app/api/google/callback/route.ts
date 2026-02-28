@@ -5,6 +5,9 @@ import { db } from "@db/db";
 import { googleTokens } from "@db/schema";
 import { eq } from "drizzle-orm";
 
+/*
+Authorized Google redirect URIs
+ */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
