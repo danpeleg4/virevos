@@ -8,6 +8,7 @@ import {
   date,
   bigint,
   jsonb,
+  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -132,14 +133,20 @@ export const projectFiles = pgTable("project_files", {
 });
 
 // MEETING ATTENDEES
-export const meetingAttendees = pgTable("meeting_attendees", {
-  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-  meetingId: text("meeting_id")
-    .notNull()
-    .references(() => events.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  initials: text("initials").notNull(),
-});
+export const meetingAttendees = pgTable(
+  "meeting_attendees",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    meetingId: text("meeting_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    initials: text("initials").notNull(),
+  },
+  (t) => [
+    unique("meeting_attendees_meeting_id_name_unique").on(t.meetingId, t.name),
+  ]
+);
 
 // GOOGLE TOKENS
 export const googleTokens = pgTable("google_tokens", {

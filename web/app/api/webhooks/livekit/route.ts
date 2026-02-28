@@ -52,11 +52,16 @@ export async function POST(req: NextRequest) {
     }
     const identity = event.participant?.identity;
     if (identity) {
-      await db.insert(meetingAttendees).values({
-        meetingId: roomName,
-        name: identity,
-        initials: identity[0],
-      });
+      await db
+        .insert(meetingAttendees)
+        .values({
+          meetingId: roomName,
+          name: identity,
+          initials: identity[0],
+        })
+        .onConflictDoNothing({
+          target: [meetingAttendees.meetingId, meetingAttendees.name],
+        });
 
       const [event] = await db
         .select()

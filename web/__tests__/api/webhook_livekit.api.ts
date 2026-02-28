@@ -16,7 +16,9 @@ jest.mock("@db/db", () => ({
       })),
     })),
     insert: jest.fn(() => ({
-      values: jest.fn(),
+      values: jest.fn(() => ({
+        onConflictDoNothing: jest.fn(),
+      })),
     })),
   },
 }));
@@ -125,5 +127,43 @@ describe("POST /api/webhooks/livekit", () => {
       name: "Dan",
       initials: "D",
     });
+
+    const valuesCall = insertCall.values.mock.results[0].value;
+    expect(valuesCall.onConflictDoNothing).toHaveBeenCalled();
+  });
+
+  it("does not duplicate attendee on reconnect", async () => {
+    (db.select as jest.Mock)
+      .mockReturnValueOnce({
+        from: () => ({
+          where: () => [{ id: "room_123", userId: "user_1" }],
+        }),
+      })
+      .mockReturnValueOnce({
+        from: () => ({
+          where: () => [{ id: "room_123", userId: "user_1" }],
+        }),
+      });
+
+    const req = mockRequest({
+      event: "participant_joined",
+      room: { name: "room_123" },
+      participant: {
+        kind: "STANDARD",
+        identity: "Dan",
+      },
+    });
+
+    // First join
+    await POST(req);
+    // Second join (reconnect)
+    await POST(req);
+
+    expect(db.insert).toHaveBeenCalledTimes(2);
+
+    for (const result of (db.insert as jest.Mock).mock.results) {
+      const valuesCall = result.value.values.mock.results[0].value;
+      expect(valuesCall.onConflictDoNothing).toHaveBeenCalled();
+    }
   });
 });

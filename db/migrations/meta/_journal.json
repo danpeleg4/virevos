@@ -57,6 +57,13 @@
       "when": 1772249956435,
       "tag": "0007_equal_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1772308729556,
+      "tag": "0008_magical_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }
