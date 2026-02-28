@@ -12,7 +12,6 @@ import {
   FolderKanban,
   Users,
   CheckSquare,
-  ScrollText,
   CreditCard,
   Settings,
   Menu,
@@ -35,7 +34,6 @@ const navItems = [
   { icon: CheckSquare, label: "Tasks", path: "/workspace/tasks" },
   { icon: CalendarDays, label: "Calendar", path: "/workspace/calendar" },
   { icon: Inbox, label: "Communications", path: "/workspace/communications" },
-  { icon: ScrollText, label: "Activity Logs", path: "/workspace/logs" },
   { icon: CreditCard, label: "Billing", path: "/workspace/billing" },
   { icon: Settings, label: "Settings", path: "/workspace/settings" },
 ];
