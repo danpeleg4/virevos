@@ -154,13 +154,31 @@ export const googleTokens = pgTable("google_tokens", {
     .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
+// GOOGLE SYNC STATE
+export const googleSyncState = pgTable("google_sync_state", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  channelId: text("channel_id").notNull(),
+  resourceId: text("resource_id").notNull(),
+  syncToken: text("sync_token"),
+  channelExpiration: bigint("channel_expiration", { mode: "number" }),
+
+  userId: varchar("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+});
+
 // RELATIONS
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   clients: many(clients),
   projects: many(projects),
   tasks: many(tasks),
   meetings: many(events),
   googleTokens: many(googleTokens),
+  googleSyncState: one(googleSyncState, {
+    fields: [users.user_id],
+    references: [googleSyncState.userId],
+  }),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -229,6 +247,13 @@ export const meetingAttendeesRelations = relations(
 export const googleRelations = relations(googleTokens, ({ one }) => ({
   user: one(users, {
     fields: [googleTokens.userId],
+    references: [users.user_id],
+  }),
+}));
+
+export const googleSyncStateRelations = relations(googleSyncState, ({ one }) => ({
+  user: one(users, {
+    fields: [googleSyncState.userId],
     references: [users.user_id],
   }),
 }));
