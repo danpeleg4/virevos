@@ -1,4 +1,5 @@
 import { ComponentType, SVGProps, useState } from "react";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -20,7 +21,7 @@ interface Integration {
   id: string;
   name: string;
   description: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  icon: ComponentType<SVGProps<SVGSVGElement>> | string;
   connected: boolean;
   syncStatus: "synced" | "syncing" | "error" | "not-connected";
   lastSync?: string;
@@ -32,7 +33,7 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     id: "google-calendar",
     name: "Google Calendar",
     description: "Sync with your Google Calendar",
-    icon: Calendar,
+    icon: "/google-calendar.svg",
     connected: false,
     syncStatus: "synced",
     lastSync: "1 minute ago",
@@ -47,7 +48,7 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     id: "outlook",
     name: "Microsoft Outlook",
     description: "Sync with Outlook Calendar",
-    icon: Calendar,
+    icon: "/outlook.svg",
     connected: false,
     syncStatus: "not-connected",
     features: [
@@ -119,14 +120,25 @@ export function IntegrationSettings() {
       {/* Integration Cards */}
       <div className="grid grid-cols-1 gap-4">
         {integrations.map((integration) => {
-          const Icon = integration.icon;
           return (
             <Card key={integration.id}>
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-start space-x-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
-                      <Icon className="h-6 w-6 text-blue-600" />
+                      {typeof integration.icon === "string" ? (
+                        <Image
+                          src={integration.icon}
+                          alt={integration.name}
+                          width={24}
+                          height={24}
+                        />
+                      ) : (
+                        (() => {
+                          const Icon = integration.icon as ComponentType<SVGProps<SVGSVGElement>>;
+                          return <Icon className="h-6 w-6 text-blue-600" />;
+                        })()
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
