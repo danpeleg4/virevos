@@ -5,6 +5,9 @@ import { db } from "@db/db";
 import { googleTokens } from "@db/schema";
 import { eq } from "drizzle-orm";
 
+/*
+Authorized Google redirect URIs
+ */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
@@ -55,7 +58,7 @@ export async function GET(req: Request) {
 
   return NextResponse.redirect(
     new URL(
-      "/workspace/dashboard",
+      "/workspace/calendar?tab=integrations",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     )
   );

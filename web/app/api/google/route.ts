@@ -13,11 +13,11 @@ export async function GET() {
     prompt: "consent", // ensures refresh_token
     scope: [
       "https://www.googleapis.com/auth/calendar",
-      "https://www.googleapis.com/auth/calendar.events",
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile",
     ],
   });
 
   return NextResponse.redirect(url);
 }
+//       "https://www.googleapis.com/auth/calendar.events",
+//       "https://www.googleapis.com/auth/userinfo.email",
+//       "https://www.googleapis.com/auth/userinfo.profile",

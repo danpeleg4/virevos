@@ -34,7 +34,7 @@ export async function POST() {
       orderBy: "startTime",
     });
 
-    const allEvents = list.data.items ?? [];
+    const allGoogleEvents = list.data.items ?? [];
 
     // Existing DB meetings for this user
     const existingEvents = await db
@@ -46,14 +46,14 @@ export async function POST() {
       existingEvents.map((m) => [m.googleEventId || m.id, m])
     );
     const googleEventIds = new Set(
-      allEvents.map((e) => e.id).filter(Boolean) as string[]
+      allGoogleEvents.map((e) => e.id).filter(Boolean) as string[]
     );
 
     // 1. Delete meetings from DB if they were removed from Google Calendar
     // (Only for those that originated from Google OR have a googleEventId)
     for (const m of existingEvents) {
       const googleId = m.googleEventId || m.id;
-      // We only sync deletions for events that were either imported from Google or synced to Google
+      // Only sync deletions for events that were either imported from Google or synced to Google
       if (
         (m.origin === "google_calendar" || m.googleEventId) &&
         !googleEventIds.has(googleId)
@@ -68,7 +68,7 @@ export async function POST() {
     }
 
     const meetingsToInsert = [];
-    for (const e of allEvents) {
+    for (const e of allGoogleEvents) {
       if (!e.id || !e.start) continue;
       // Skip events created by the app itself that haven't been processed yet
       // (They should have appMeetingId in extendedProperties)
