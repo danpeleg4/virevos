@@ -4,6 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { googleTokens } from "@db/schema";
 import { eq } from "drizzle-orm";
+import { performFullSync, setupWatchChannel } from "@/lib/google_sync";
 
 /*
 Authorized Google redirect URIs
@@ -54,6 +55,19 @@ export async function GET(req: Request) {
       expires_in: expiresAt,
       connected: true,
     });
+  }
+
+  // Trigger initial full sync and register push notification channel
+  try {
+    await performFullSync(user.id);
+  } catch (err) {
+    console.error("[google/callback] Initial full sync failed:", err);
+  }
+
+  try {
+    await setupWatchChannel(user.id);
+  } catch (err) {
+    console.error("[google/callback] Watch channel setup failed:", err);
   }
 
   return NextResponse.redirect(
