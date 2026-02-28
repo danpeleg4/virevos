@@ -83,7 +83,7 @@ export function MeetingNotes() {
       setTranscriptLoading(true);
       setTranscriptData([]);
       try {
-        const res = await axios.get(`/api/transcript${selectedNote.id}`);
+        const res = await axios.get(`/api/transcript/${selectedNote.id}`);
         const formatted = res.data[0].map((item: RawChunk) => ({
           speaker: item.speaker,
           time: formatTime(item.start_time),
