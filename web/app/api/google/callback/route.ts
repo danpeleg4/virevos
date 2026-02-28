@@ -58,7 +58,7 @@ export async function GET(req: Request) {
 
   return NextResponse.redirect(
     new URL(
-      "/workspace/dashboard",
+      "/workspace/calendar?tab=integrations",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     )
   );

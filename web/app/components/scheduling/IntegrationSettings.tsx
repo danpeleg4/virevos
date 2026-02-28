@@ -61,12 +61,9 @@ const INITIAL_INTEGRATIONS: Integration[] = [
 
 export function IntegrationSettings() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [autoRecording, setAutoRecording] = useState(true);
   const [autoTranscription, setAutoTranscription] = useState(true);
-  const [twoWaySync, setTwoWaySync] = useState(true);
-  const [syncConflicts, setSyncConflicts] = useState(true);
-
-  const router = useRouter();
 
   const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
     queryKey: ["integrations"],
@@ -254,64 +251,6 @@ export function IntegrationSettings() {
               </ul>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Calendar Sync Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Calendar Sync Preferences</CardTitle>
-          <CardDescription>
-            Manage how virevos syncs with your calendars
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Two-Way Sync</Label>
-              <p className="text-sm text-gray-600">
-                Changes in virevos update your calendar and vice versa
-              </p>
-            </div>
-            <Switch checked={twoWaySync} onCheckedChange={setTwoWaySync} />
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Sync Conflict Detection</Label>
-              <p className="text-sm text-gray-600">
-                Monitor external calendars for conflicts
-              </p>
-            </div>
-            <Switch
-              checked={syncConflicts}
-              onCheckedChange={setSyncConflicts}
-            />
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="text-sm text-blue-900 mb-2">Sync Behavior:</h4>
-            <ul className="space-y-1 text-sm text-blue-800">
-              <li className="flex items-start">
-                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>New events in virevos appear on your calendar</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Calendar events are imported to virevos</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Cancellations sync automatically</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Availability is updated in real-time</span>
-              </li>
-            </ul>
-          </div>
         </CardContent>
       </Card>
     </div>

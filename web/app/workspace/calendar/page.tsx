@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Tabs,
   TabsContent,
@@ -12,8 +13,11 @@ import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSett
 import { MeetingNotes } from "@/app/components/scheduling/MeetingNotes";
 import { Meetings } from "@/app/components/scheduling/Meetings";
 
-export default function Calendar() {
-  const [activeTab, setActiveTab] = useState("calendar");
+function CalendarContent() {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("tab") ?? "calendar"
+  );
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto overflow-hidden">
@@ -77,5 +81,13 @@ export default function Calendar() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function Calendar() {
+  return (
+    <Suspense>
+      <CalendarContent />
+    </Suspense>
   );
 }
