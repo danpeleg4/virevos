@@ -34,10 +34,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  // Fire-and-forget: respond quickly to Google, sync in background
-  performIncrementalSync(channelToken).catch((err) => {
+  try {
+    await performIncrementalSync(channelToken);
+  } catch (err) {
     console.error("[webhook/google] Incremental sync failed:", err);
-  });
+    return new NextResponse("Sync error", { status: 500 });
+  }
 
   return new NextResponse(null, { status: 204 });
 }
