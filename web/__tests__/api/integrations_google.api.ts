@@ -36,6 +36,7 @@ describe("POST /api/google/tokens", () => {
 
   it("disconnects google account", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    jest.spyOn(console, "error").mockImplementationOnce(() => {});
 
     const whereMock = jest.fn();
     (db.delete as jest.Mock).mockReturnValue({
