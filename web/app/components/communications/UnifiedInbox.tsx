@@ -123,10 +123,8 @@ export function UnifiedInbox() {
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "email" | "chat">("all");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "unread" | "starred"
-  >("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showAIComposer, setShowAIComposer] = useState(false);
 
   const filteredMessages = messages.filter((msg) => {
