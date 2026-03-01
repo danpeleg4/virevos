@@ -30,7 +30,6 @@ import {
   Calendar,
   Users,
   Zap,
-  ArrowUpRight,
   TrendingUp,
 } from "lucide-react";
 

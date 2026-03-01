@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         maxParticipants: 20,
       });
       shouldStartRecording = true;
-    } catch (error) {
+    } catch {
       room = (await roomService.listRooms([roomName]))[0];
     }
   }

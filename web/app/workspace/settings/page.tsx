@@ -11,7 +11,7 @@ import {
 } from "../../components/ui/tabs";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { Separator } from "../../components/ui/separator";
-import { User, Bell, Shield, Palette, Zap } from "lucide-react";
+import { User, Bell, Palette, Zap } from "lucide-react";
 
 export default function Settings() {
   return (

@@ -2,7 +2,7 @@ import { POST } from "@/app/api/chat/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
-import { openai, tools, executeTool } from "@/lib/ai_tools";
+import { openai, tools } from "@/lib/ai_tools";
 
 jest.mock("@clerk/nextjs/server", () => ({
   currentUser: jest.fn(),

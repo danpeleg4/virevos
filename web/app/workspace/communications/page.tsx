@@ -17,7 +17,6 @@ export default function Communications() {
   const [activeTab, setActiveTab] = useState("inbox");
   const [unreadCount] = useState(8);
   const [scheduledCount] = useState(3);
-  const [healthIssues] = useState(2);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">

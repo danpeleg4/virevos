@@ -17,11 +17,9 @@ import {
   TabsTrigger,
 } from "../../components/ui/tabs";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
-import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import {
   Calendar,
-  CheckCircle,
   Clock,
   FileText,
   MessageSquare,
@@ -30,7 +28,6 @@ import {
   Paperclip,
   Bell,
   LogOut,
-  User,
 } from "lucide-react";
 import { motion } from "motion/react";
 

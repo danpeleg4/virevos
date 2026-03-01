@@ -12,7 +12,7 @@ import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
-import { Calendar, CheckCircle, ExternalLink, Settings } from "lucide-react";
+import { CheckCircle, ExternalLink, Settings } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

@@ -27,7 +27,7 @@ export default function CareersPage() {
         <div>
           <h2 className="text-xl font-medium mb-2">Open Positions</h2>
           <p className="text-gray-600">
-            We don't have any open roles right now, but we're always interested in connecting with
+            We don&apos;t have any open roles right now, but we&apos;re always interested in connecting with
             talented people. Send your resume to{" "}
             <a href="mailto:careers@virevos.com" className="text-blue-600 hover:underline">
               careers@virevos.com

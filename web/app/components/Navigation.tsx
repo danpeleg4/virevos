@@ -42,7 +42,7 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn } = useUser();
 
   const handleNavigation = (path: string) => {
     router.push(path);

@@ -10,7 +10,7 @@ export default function RoadmapPage() {
     <main className="mx-auto max-w-4xl px-6 py-16 text-gray-800">
       <h1 className="text-3xl font-semibold mb-6">Roadmap</h1>
       <p className="text-gray-500 mb-10">
-        Here's a look at what we're building and planning for Virevos.
+        Here&apos;s a look at what we&apos;re building and planning for Virevos.
       </p>
 
       <section className="space-y-8">

@@ -36,7 +36,7 @@ export default function BlogPage() {
           <p className="text-sm text-gray-400 mb-2">December 5, 2025</p>
           <h2 className="text-xl font-medium mb-2">Welcome to Virevos</h2>
           <p className="text-gray-600">
-            We're excited to announce the launch of Virevos — the productivity platform built for
+            We&apos;re excited to announce the launch of Virevos — the productivity platform built for
             the modern professional.
           </p>
         </div>

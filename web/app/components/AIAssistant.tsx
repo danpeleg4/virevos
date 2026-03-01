@@ -14,12 +14,7 @@ import {
   Lightbulb,
   TrendingUp,
   Calendar,
-  FileCode,
-  ChevronDown,
-  CheckCircle2,
-  Circle,
   Loader2,
-  ChevronRight,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { clients } from "@/types/clients";
@@ -29,20 +24,6 @@ interface AIAssistantProps {
   onClose: () => void;
 }
 
-interface ThinkingStep {
-  id: string;
-  type: "planning" | "executing" | "analyzing" | "completed";
-  title: string;
-  description?: string;
-  status: "pending" | "active" | "completed";
-  details?: string[];
-  files?: { name: string; changes: string }[];
-  tools?: {
-    name: string;
-    input?: string;
-    output?: string;
-  }[];
-}
 
 interface Message {
   id: string;
@@ -369,150 +350,5 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-// Thinking Step Component
-function ThinkingStepComponent({
-  step,
-  index,
-  isLast,
-}: {
-  step: ThinkingStep;
-  index: number;
-  isLast: boolean;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.15 }}
-      className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-    >
-      <div
-        className="p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-start space-x-3">
-          <div className="mt-0.5">
-            {step.status === "active" ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              >
-                <Loader2 className="h-4 w-4 text-blue-500" />
-              </motion.div>
-            ) : step.status === "completed" ? (
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            ) : (
-              <Circle className="h-4 w-4 text-gray-400" />
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-900">{step.title}</p>
-              {(step.details || step.files) && (
-                <motion.div
-                  animate={{ rotate: isExpanded ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </motion.div>
-              )}
-            </div>
-            {step.description && (
-              <p className="text-xs text-gray-600 mt-1">{step.description}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Expanded Details */}
-      <AnimatePresence>
-        {isExpanded && (step.details || step.files) && (
-          <motion.div
-            key="step-details"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-gray-200"
-          >
-            <div className="px-3 py-2 bg-gray-50">
-              {step.files && step.files.length > 0 && (
-                <div className="space-y-1.5 mb-2">
-                  {step.files.map((file, fileIndex) => (
-                    <motion.div
-                      key={fileIndex}
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: fileIndex * 0.05 }}
-                      className="flex items-center justify-between p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors group"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <FileCode className="h-3.5 w-3.5 text-blue-600" />
-                        <span className="text-xs text-gray-700">{file.name}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-green-600">{file.changes}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          Open
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-
-              {step.tools && step.tools.length > 0 && (
-                <div className="space-y-1.5 mb-2">
-                  {step.tools.map((tool, i) => (
-                    <div
-                      key={i}
-                      className="p-2 bg-gray-100 rounded text-xs text-gray-700"
-                    >
-                      <div className="font-medium">{tool.name}</div>
-                      {tool.input && (
-                        <pre className="mt-1 text-[11px] text-gray-600">
-                          Input: {JSON.stringify(tool.input, null, 2)}
-                        </pre>
-                      )}
-                      {tool.output && (
-                        <pre className="mt-1 text-[11px] text-green-700">
-                          Output: {JSON.stringify(tool.output, null, 2)}
-                        </pre>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {step.details && step.details.length > 0 && (
-                <ul className="space-y-1">
-                  {step.details.map((detail, detailIndex) => (
-                    <motion.li
-                      key={detailIndex}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: detailIndex * 0.05 }}
-                      className="text-xs text-gray-600 flex items-start space-x-2"
-                    >
-                      <ChevronRight className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
-                      <span>{detail}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
   );
 }

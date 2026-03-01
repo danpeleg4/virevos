@@ -16,7 +16,6 @@ import {
   Mail,
   MessageSquare,
   Search,
-  Filter,
   Star,
   Archive,
   Trash2,
@@ -185,7 +184,7 @@ export function UnifiedInbox() {
               <div className="flex gap-2">
                 <Select
                   value={filterType}
-                  onValueChange={(v: any) => setFilterType(v)}
+                  onValueChange={(v: string) => setFilterType(v)}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -209,7 +208,7 @@ export function UnifiedInbox() {
 
                 <Select
                   value={filterStatus}
-                  onValueChange={(v: any) => setFilterStatus(v)}
+                  onValueChange={(v: string) => setFilterStatus(v)}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -376,7 +375,7 @@ export function UnifiedInbox() {
                   laboris.
                 </p>
                 <p className="text-gray-700 mt-4">
-                  I'm looking forward to hearing your thoughts on this. Please
+                  I&apos;m looking forward to hearing your thoughts on this. Please
                   let me know if you have any questions or need any
                   clarification.
                 </p>
