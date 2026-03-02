@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
 
   if (event.event === "room_started") {
     await db
-      .update(events)
-      .set({ status: "active" })
-      .where(eq(events.id, roomName));
+        .update(events)
+        .set({ status: "active" })
+        .where(eq(events.id, roomName));
   }
 
   if (event.event === "room_finished") {
@@ -33,20 +33,19 @@ export async function POST(req: NextRequest) {
       const finishedAt = Number(event.createdAt);
       const createdAt = Number(event.room.creationTimeMs);
       const durationInMinutes =
-        Number.isFinite(finishedAt) && Number.isFinite(createdAt)
-          ? Math.max(1, Math.round((finishedAt - createdAt) / 60000))
-          : res[0].duration;
+          Number.isFinite(finishedAt) && Number.isFinite(createdAt)
+              ? Math.max(1, Math.round((finishedAt - createdAt) / 60000))
+              : res[0].duration;
       await db
-        .update(events)
-        .set({
-          duration: durationInMinutes,
-          link: "Meeting ended.",
-          status: "ended",
-        })
-        .where(eq(events.id, res[0].id));
+          .update(events)
+          .set({
+            duration: durationInMinutes,
+            link: "Meeting ended.",
+            status: "ended",
+          })
+          .where(eq(events.id, res[0].id));
     }
   }
-
   if (event.event === "participant_joined") {
     if (event.participant.kind === "EGRESS") {
       return NextResponse.json({ status: "EGRESS OUT" });
@@ -54,85 +53,29 @@ export async function POST(req: NextRequest) {
     const identity = event.participant?.identity;
     if (identity) {
       await db
-        .insert(meetingAttendees)
-        .values({
-          meetingId: roomName,
-          name: identity,
-          initials: identity[0],
-        })
-        .onConflictDoNothing({
-          target: [meetingAttendees.meetingId, meetingAttendees.name],
-        });
+          .insert(meetingAttendees)
+          .values({
+            meetingId: roomName,
+            name: identity,
+            initials: identity[0],
+          })
+          .onConflictDoNothing({
+            target: [meetingAttendees.meetingId, meetingAttendees.name],
+          });
 
-      const [meeting] = await db
-        .select()
-        .from(events)
-        .where(eq(events.id, roomName));
+      const [event] = await db
+          .select()
+          .from(events)
+          .where(eq(events.id, roomName));
 
-      const [userRecord] = await db
-        .select({ recordingStatus: users.recordingStatus })
-        .from(users)
-        .where(eq(users.user_id, meeting.userId));
 
-      // Only start full participant egress when recording is ON (video+audio)
-      // When recording is OFF, audio tracks are handled via track_published
-      if (!userRecord || userRecord.recordingStatus) {
-        const outputs: EncodedOutputs = {
-          file: new EncodedFileOutput({
-            filepath: `recordings/${meeting.userId}/${meeting.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
-            output: {
-              case: "s3",
-              value: {
-                accessKey: process.env.AWS_LIVE_KIT_S3_ACCESS_KEY,
-                secret: process.env.AWS_LIVE_KIT_S3_SECRET_KEY,
-                bucket: process.env.AWS_BUCKET_NAME,
-                region: process.env.AWS_REGION,
-                forcePathStyle: true,
-              },
-            },
-          }),
-        };
-        await egressClient.startParticipantEgress(roomName, identity, outputs);
-      }
-    }
-  }
+      const [userStatus] = await db.select({
+        recordingStatus: users.recordingStatus,
+      }).from(users).where(eq(users.user_id, event.userId));
 
-  if (event.event === "track_published") {
-    if (event.participant?.kind === "EGRESS") {
-      return NextResponse.json({ status: "EGRESS OUT" });
-    }
-
-    // Only handle audio tracks
-    const trackType = event.track?.type;
-    if (trackType !== "AUDIO" && trackType !== 0) {
-      return NextResponse.json({ status: "ok" });
-    }
-
-    const identity = event.participant?.identity;
-    const trackSid = event.track?.sid;
-    if (!identity || !trackSid) {
-      return NextResponse.json({ status: "ok" });
-    }
-
-    const [meeting] = await db
-      .select()
-      .from(events)
-      .where(eq(events.id, roomName));
-
-    if (!meeting) return NextResponse.json({ status: "ok" });
-
-    const [userRecord] = await db
-      .select({ recordingStatus: users.recordingStatus })
-      .from(users)
-      .where(eq(users.user_id, meeting.userId));
-
-    // Only record individual audio tracks when recording is OFF (audio-only mode).
-    // Uses startTrackCompositeEgress with only audioTrackId so that EncodedFileOutput
-    // produces a JSON sidecar with started_at/ended_at — same format the lambda expects.
-    if (userRecord && !userRecord.recordingStatus) {
       const outputs: EncodedOutputs = {
         file: new EncodedFileOutput({
-          filepath: `recordings/${meeting.userId}/${meeting.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
+          filepath: `recordings/${event.userId}/${event.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
           output: {
             case: "s3",
             value: {
@@ -145,11 +88,10 @@ export async function POST(req: NextRequest) {
           },
         }),
       };
-      await egressClient.startTrackCompositeEgress(roomName, outputs, {
-        audioTrackId: trackSid,
-      });
+      if (userStatus.recordingStatus) {
+        await egressClient.startParticipantEgress(roomName, identity, outputs);
+      }
     }
   }
-
   return NextResponse.json({ status: "ok" });
 }

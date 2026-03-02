@@ -241,21 +241,6 @@ export function IntegrationSettings() {
             />
           </div>
 
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Auto-Generate Transcripts</Label>
-              <p className="text-sm text-gray-600">
-                Automatically transcribe meeting recordings
-              </p>
-            </div>
-            <Switch
-              checked={autoTranscription}
-              onCheckedChange={setAutoTranscription}
-            />
-          </div>
-
           {autoTranscription && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <h4 className="text-sm text-purple-900 mb-2">

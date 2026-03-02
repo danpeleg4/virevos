@@ -49,18 +49,18 @@ const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
 // Returns a YYYY-MM-DD string if valid, otherwise null
 function normalizeDueDate(value: unknown): string | null {
-  if (!value || typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.toLowerCase() === "null") return null;
-  // Validate YYYY-MM-DD pattern before parsing to avoid timezone shifts
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const d = new Date(trimmed + "T00:00:00Z");
-    if (!isNaN(d.getTime())) return trimmed;
-  }
-  // Fallback: try generic parse and convert to ISO date
-  const d = new Date(trimmed);
-  if (isNaN(d.getTime())) return null;
-  return d.toISOString().split("T")[0];
+    if (!value || typeof value !== "string") return null;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "null") return null;
+    // Validate YYYY-MM-DD pattern before parsing to avoid timezone shifts
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const d = new Date(trimmed + "T00:00:00Z");
+        if (!isNaN(d.getTime())) return trimmed;
+    }
+    // Fallback: try generic parse and convert to ISO date
+    const d = new Date(trimmed);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split("T")[0];
 }
 
 // Helper functions
@@ -145,8 +145,7 @@ export const handler = async (event: any) => {
                 .map(o => o.Key!)
                 .filter(k => !k.endsWith("/")); // ignore pseudo-folder keys
 
-            // audio-only mode (recording OFF) produces .ogg via startTrackCompositeEgress
-            const mp4File = files.find(k => k.endsWith(".mp4")) ?? files.find(k => k.endsWith(".ogg"));
+            const mp4File = files.find(k => k.endsWith(".mp4"));
             const jsonFile = files.find(k => k.endsWith(".json"));
 
             participants.push({
@@ -247,11 +246,11 @@ export const handler = async (event: any) => {
                 .join('\n');
 
             const aiResponse = await openai.chat.completions.create({
-              model: "gpt-4o",
-              messages: [
-                {
-                  role: "system",
-                  content: `Analyze this meeting transcript. Respond with JSON:
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: `Analyze this meeting transcript. Respond with JSON:
 {
   "summary": "2-3 sentence meeting summary",
   "key_points": ["point 1", "point 2", ...],
@@ -264,52 +263,52 @@ Rules for dueDate:
 - Use ISO 8601 format: "YYYY-MM-DD" (e.g., "2026-03-15")
 - Only set a date if explicitly mentioned in the transcript
 - If the date is unclear, relative without a clear anchor, or not mentioned, use null`,
-                },
-                { role: "user", content: fullTranscript },
-              ],
-              response_format: { type: "json_object" },
+                    },
+                    { role: "user", content: fullTranscript },
+                ],
+                response_format: { type: "json_object" },
             });
             const analysis = JSON.parse(aiResponse.choices[0].message.content!);
 
-          const rawKeyPoints = analysis.key_points ?? [];
+            const rawKeyPoints = analysis.key_points ?? [];
 
-          const keyPoints: string[] = Array.isArray(rawKeyPoints)
-            ? rawKeyPoints
-                .filter((v): v is string => typeof v === "string")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : typeof rawKeyPoints === "string"
-              ? rawKeyPoints
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-              : [];
+            const keyPoints: string[] = Array.isArray(rawKeyPoints)
+                ? rawKeyPoints
+                    .filter((v): v is string => typeof v === "string")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                : typeof rawKeyPoints === "string"
+                    ? rawKeyPoints
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                    : [];
 
-          const actionItems = Array.isArray(analysis.action_items)
-            ? analysis.action_items.map((item: any) => ({
-                ...item,
-                dueDate: normalizeDueDate(item.dueDate),
-              }))
-            : [];
+            const actionItems = Array.isArray(analysis.action_items)
+                ? analysis.action_items.map((item: any) => ({
+                    ...item,
+                    dueDate: normalizeDueDate(item.dueDate),
+                }))
+                : [];
 
-          const tags = Array.isArray(analysis.tags)
-            ? analysis.tags
-            : [];
+            const tags = Array.isArray(analysis.tags)
+                ? analysis.tags
+                : [];
 
             try {
-              await db
-                .update(events)
-                .set({
-                  ai_summary: analysis.summary ?? "",
-                  key_points: keyPoints,
-                  action_items: actionItems,
-                  tags: tags,
-                  hasTranscript: true,
-                  hasNotes: true
-                })
-                .where(eq(events.id, roomName));
+                await db
+                    .update(events)
+                    .set({
+                        ai_summary: analysis.summary ?? "",
+                        key_points: keyPoints,
+                        action_items: actionItems,
+                        tags: tags,
+                        hasTranscript: true,
+                        hasNotes: true
+                    })
+                    .where(eq(events.id, roomName));
             } catch (error) {
-              console.error(error)
+                console.error(error)
             }
 
             // Upload JSON to S3
