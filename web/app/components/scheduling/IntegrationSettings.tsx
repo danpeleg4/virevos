@@ -84,6 +84,14 @@ export function IntegrationSettings() {
     },
   });
 
+  const { data: recordingStatus } = useQuery({
+    queryKey: ["recordingStatus"],
+    queryFn: async () => {
+      const res = await axios.get('/api/recording_status')
+      return res.data
+    }
+  })
+
   const mutation = useMutation({
     mutationFn: async ({
       id,
@@ -228,8 +236,8 @@ export function IntegrationSettings() {
               </p>
             </div>
             <Switch
-              checked={autoRecording}
-              onCheckedChange={setAutoRecording}
+              checked={recordingStatus}
+              onCheckedChange={() => changeRecordingStatusMutation.mutate()}
             />
           </div>
 
