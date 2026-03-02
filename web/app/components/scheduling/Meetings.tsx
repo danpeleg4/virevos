@@ -194,7 +194,7 @@ export function Meetings() {
                         Join Now
                       </Button>
                     )}
-                    {meeting.status === "ended" && (
+                    {(meeting.status === "ended" && meeting.hasTranscript) && (
                       <Button
                         variant="outline"
                         onClick={() => handleViewSummary(meeting)}

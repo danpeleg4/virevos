@@ -66,10 +66,13 @@ export function MeetingNotes() {
     queryFn: async () => {
       const res = await axios.get("/api/events");
       const data: Event[] = res.data;
-      return data.map((m) => ({
+      const meeting =  data.map((m) => ({
         ...m,
         attendees: m.attendees ?? [],
       }));
+      return meeting.filter(filter => {
+        return filter.hasNotes !== false;
+      })
     },
   });
 
@@ -511,7 +514,7 @@ export function MeetingNotes() {
                 </div>
 
                 {/* Transcript */}
-                {selectedNote.hasTranscript && (
+                {(selectedNote.hasTranscript) && (
                   <div>
                     <div className="flex items-center space-x-2 mb-3">
                       <Mic className="h-4 w-4 text-purple-500" />
