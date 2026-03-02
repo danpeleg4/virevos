@@ -145,7 +145,8 @@ export const handler = async (event: any) => {
                 .map(o => o.Key!)
                 .filter(k => !k.endsWith("/")); // ignore pseudo-folder keys
 
-            const mp4File = files.find(k => k.endsWith(".mp4"));
+            // audio-only mode (recording OFF) produces .ogg via startTrackCompositeEgress
+            const mp4File = files.find(k => k.endsWith(".mp4")) ?? files.find(k => k.endsWith(".ogg"));
             const jsonFile = files.find(k => k.endsWith(".json"));
 
             participants.push({

@@ -327,7 +327,7 @@ export function EventDetailsDialog({
                           <Button
                             size="sm"
                             variant="outline"
-                            className="mt-3"
+                            className="cursor-pointer mt-3"
                             onClick={() => setShowFullTranscript((v) => !v)}
                           >
                             <FileText className="h-4 w-4 mr-2" />
