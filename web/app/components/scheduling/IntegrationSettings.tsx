@@ -16,6 +16,7 @@ import { CheckCircle, ExternalLink, Settings } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {changeRecordingStatus} from "@/lib/server_actions/user";
 
 interface Integration {
   id: string;
@@ -101,6 +102,15 @@ export function IntegrationSettings() {
       queryClient.invalidateQueries({ queryKey: ["integrations"] });
     },
   });
+
+  const changeRecordingStatusMutation = useMutation({
+    mutationFn: async () => {
+      await changeRecordingStatus()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recordingStatus"] });
+    },
+  })
 
   const toggleConnection = (id: string) => {
     const integration = integrations.find((i) => i.id === id);

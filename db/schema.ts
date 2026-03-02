@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   image: text("image"),
   ai_credits: integer("ai_credits").notNull().default(10),
+  recordingStatus: boolean("recordingStatus").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
