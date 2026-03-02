@@ -191,7 +191,7 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
             <strong>Context:</strong> Replying to {message.from} from{" "}
             {message.client}
           </p>
-          <p className="text-xs text-blue-800 italic">"{message.preview}"</p>
+          <p className="text-xs text-blue-800 italic">&quot;{message.preview}&quot;</p>
         </CardContent>
       </Card>
 

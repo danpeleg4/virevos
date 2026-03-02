@@ -115,10 +115,6 @@ export function CalendarView() {
     year: "numeric",
   });
 
-  function parseHour(timeStr: string) {
-    return timeStr.split(" ")[1].split(":")[0];
-  }
-
   const handlePrevDay = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() - 1);

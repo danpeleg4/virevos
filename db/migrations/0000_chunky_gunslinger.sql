@@ -20,13 +20,27 @@ CREATE TABLE "events" (
 	"duration" integer NOT NULL,
 	"isMeeting" boolean DEFAULT false,
 	"status" text,
+	"tags" text[] DEFAULT '{}',
 	"has_notes" boolean DEFAULT false,
 	"has_transcript" boolean DEFAULT false,
+	"ai_summary" text,
+	"key_points" text[],
+	"action_items" jsonb,
 	"auto_rescheduled" boolean DEFAULT false,
 	"conflict_reason" text,
 	"origin" text DEFAULT 'app',
 	"google_event_id" text,
 	"user_id" varchar NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "google_sync_state" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "google_sync_state_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"channel_id" text NOT NULL,
+	"resource_id" text NOT NULL,
+	"sync_token" text,
+	"channel_expiration" bigint,
+	"user_id" varchar NOT NULL,
+	CONSTRAINT "google_sync_state_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "google_tokens" (
@@ -42,14 +56,15 @@ CREATE TABLE "meeting_attendees" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "meeting_attendees_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"meeting_id" text NOT NULL,
 	"name" text NOT NULL,
-	"initials" text NOT NULL
+	"initials" text NOT NULL,
+	CONSTRAINT "meeting_attendees_meeting_id_name_unique" UNIQUE("meeting_id","name")
 );
 --> statement-breakpoint
 CREATE TABLE "notes" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notes_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"content" text NOT NULL,
-	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp DEFAULT now(),
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
 	"user_id" varchar,
 	"project_id" integer
 );
@@ -85,7 +100,7 @@ CREATE TABLE "tasks" (
 	"project_id" integer,
 	"priority" text DEFAULT 'Low' NOT NULL,
 	"status" text DEFAULT 'in-progress' NOT NULL,
-	"due_date" date DEFAULT '2025-01-01' NOT NULL,
+	"due_date" date,
 	"completed" boolean DEFAULT false,
 	"created_at" timestamp with time zone DEFAULT now(),
 	"updated_at" timestamp with time zone DEFAULT now()
@@ -104,6 +119,7 @@ CREATE TABLE "users" (
 --> statement-breakpoint
 ALTER TABLE "clients" ADD CONSTRAINT "clients_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "google_sync_state" ADD CONSTRAINT "google_sync_state_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "google_tokens" ADD CONSTRAINT "google_tokens_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "meeting_attendees" ADD CONSTRAINT "meeting_attendees_meeting_id_events_id_fk" FOREIGN KEY ("meeting_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notes" ADD CONSTRAINT "notes_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

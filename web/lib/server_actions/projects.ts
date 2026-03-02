@@ -64,6 +64,7 @@ export async function createProject(project: Project): Promise<Project> {
     throw new Error("Unauthorized");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, ...rest } = project;
   // Insert project into DB
   const inserted = await db

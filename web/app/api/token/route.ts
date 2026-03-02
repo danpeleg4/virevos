@@ -6,7 +6,7 @@ import {
   EncodingOptionsPreset,
   RoomServiceClient,
 } from "livekit-server-sdk";
-import { events } from "@db/schema";
+import { events, users } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
     .select()
     .from(events)
     .where(eq(events.id, meetingId));
+
+  // Getting user recording boolean setting to know if audio only or also video
+  const [userStatus] = await db.select({
+    recordingStatus: users.recordingStatus,
+  }).from(users).where(eq(users.user_id, meeting.userId));
 
   const isAppMeeting = !meeting?.origin || meeting.origin === "app";
   if (!meeting || !meeting.isMeeting || !isAppMeeting) {
@@ -73,7 +78,7 @@ export async function POST(req: NextRequest) {
         maxParticipants: 20,
       });
       shouldStartRecording = true;
-    } catch (error) {
+    } catch {
       room = (await roomService.listRooms([roomName]))[0];
     }
   }
@@ -98,7 +103,7 @@ export async function POST(req: NextRequest) {
     await egressClient.startRoomCompositeEgress(roomName, outputs, {
       layout: "grid",
       encodingOptions: EncodingOptionsPreset.H264_1080P_30,
-      audioOnly: false,
+      audioOnly: !userStatus.recordingStatus,
     });
   }
 

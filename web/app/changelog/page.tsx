@@ -10,7 +10,7 @@ export default function ChangelogPage() {
     <main className="mx-auto max-w-4xl px-6 py-16 text-gray-800">
       <h1 className="text-3xl font-semibold mb-6">Changelog</h1>
       <p className="text-gray-500 mb-10">
-        Every update, fix, and improvement we've shipped.
+        Every update, fix, and improvement we&apos;ve shipped.
       </p>
 
       <section className="space-y-10">

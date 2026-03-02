@@ -10,8 +10,8 @@ import { useRouter } from "next/navigation";
 import { changeProjectStatus } from "@/lib/server_actions/projects";
 
 export default function ProjectsPage() {
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState("all");
+  const [search] = useState("");
+  const [tab] = useState("all");
   const router = useRouter();
   const queryClient = useQueryClient();
 

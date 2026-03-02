@@ -128,15 +128,6 @@ const integrations = [
   },
 ];
 
-const categories = [
-  "All",
-  "Communication",
-  "Calendar",
-  "Video",
-  "Development",
-  "Design",
-  "Storage",
-];
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },

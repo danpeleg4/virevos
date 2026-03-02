@@ -25,7 +25,7 @@ export default function GdprPage() {
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
             <li>Right to access your personal data</li>
             <li>Right to rectification of inaccurate data</li>
-            <li>Right to erasure ("right to be forgotten")</li>
+            <li>Right to erasure (&quot;right to be forgotten&quot;)</li>
             <li>Right to data portability</li>
             <li>Right to restrict processing</li>
             <li>Right to object to processing</li>

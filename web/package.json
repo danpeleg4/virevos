@@ -12,9 +12,7 @@
   },
   "overrides": {
     "esbuild": "^0.27.0",
-    "eslint": "^9.39.3",
-    "fast-xml-parser": "^5.3.4",
-    "minimatch": "10.2.2",
+"minimatch": ">=10.2.3",
     "glob": "13.0.6",
     "test-exclude": {
       "glob": "13.0.6"
@@ -78,7 +76,7 @@
     "drizzle-orm": "^0.45.1",
     "embla-carousel-react": "^8.6.0",
     "esbuild": "^0.27.0",
-    "eslint": "^9.39.3",
+    "fast-xml-parser": "^5.4.1",
     "googleapis": "^169.0.0",
     "livekit-client": "^2.16.1",
     "livekit-server-sdk": "^2.15.0",

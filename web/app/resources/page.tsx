@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import { Navigation } from "@/app/components/Navigation";
 import { Footer } from "@/app/components/Footer";
-import { useRouter } from "next/navigation";
-
 const resources = [
   {
     icon: BookOpen,
@@ -108,7 +106,6 @@ const colorClasses = {
 };
 
 export default function Resources() {
-  const router = useRouter();
   return (
     <div className="min-h-screen bg-white">
       <Navigation />

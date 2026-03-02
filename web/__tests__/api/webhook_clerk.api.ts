@@ -1,5 +1,3 @@
-import { currentUser } from "@clerk/nextjs/server";
-
 jest.mock("@clerk/backend/webhooks", () => ({
   verifyWebhook: jest.fn(),
 }));

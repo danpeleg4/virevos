@@ -19,7 +19,7 @@ const ShimmerComponent = ({
   duration = 2,
   spread = 2,
 }: TextShimmerProps) => {
-  // @ts-ignore
+  // @ts-expect-error: motion does not expose dynamic element keys in its type definitions
   const MotionComponent = motion[Component];
 
   const dynamicSpread = useMemo(

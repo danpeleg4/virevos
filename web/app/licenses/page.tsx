@@ -10,7 +10,7 @@ export default function LicensesPage() {
     <main className="mx-auto max-w-4xl px-6 py-16 text-gray-800">
       <h1 className="text-3xl font-semibold mb-6">Licenses</h1>
       <p className="text-gray-500 mb-10">
-        Virevos is built with open source software. We're grateful to the communities behind these
+        Virevos is built with open source software. We&apos;re grateful to the communities behind these
         projects.
       </p>
 

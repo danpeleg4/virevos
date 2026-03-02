@@ -10,7 +10,7 @@ export default function ContactPage() {
     <main className="mx-auto max-w-4xl px-6 py-16 text-gray-800">
       <h1 className="text-3xl font-semibold mb-6">Contact Us</h1>
       <p className="text-gray-500 mb-10">
-        We'd love to hear from you. Reach out and we'll get back to you as soon as possible.
+        We&apos;d love to hear from you. Reach out and we&apos;ll get back to you as soon as possible.
       </p>
 
       <section className="space-y-8 leading-relaxed">
