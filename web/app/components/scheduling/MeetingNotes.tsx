@@ -538,7 +538,7 @@ export function MeetingNotes() {
                         </div>
                         {transcriptData.length > 3 && (
                           <button
-                            className="mt-3 text-sm text-blue-600 hover:underline flex items-center gap-1"
+                            className="cursor-pointer mt-3 text-sm text-blue-600 hover:underline flex items-center gap-1"
                             onClick={() => setShowFullTranscript((v) => !v)}
                           >
                             <FileText className="h-4 w-4" />
