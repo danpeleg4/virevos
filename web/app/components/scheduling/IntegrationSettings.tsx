@@ -236,7 +236,7 @@ export function IntegrationSettings() {
               </p>
             </div>
             <Switch
-              checked={recordingStatus}
+              checked={recordingStatus?.recording_status ?? false}
               onCheckedChange={() => changeRecordingStatusMutation.mutate()}
             />
           </div>

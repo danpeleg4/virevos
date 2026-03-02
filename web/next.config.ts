@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   },
   // Ensure workspace packages are transpiled by Next.js (helps with TS/ESM in packages)
   transpilePackages: ["@repo/db"],
+  // Keep pg and drizzle's node-postgres adapter server-side only (they use Node.js built-ins like dns)
+  serverExternalPackages: ["pg", "drizzle-orm"],
 };
 
 export default nextConfig;
