@@ -33,14 +33,14 @@ export async function POST(req: NextRequest) {
       .from(events)
       .where(eq(events.id, meetingId));
 
-  const [userStatus] = await db.select({
-    recordingStatus: users.recordingStatus,
-  }).from(users).where(eq(users.user_id, meeting.userId));
-
   const isAppMeeting = !meeting?.origin || meeting.origin === "app";
   if (!meeting || !meeting.isMeeting || !isAppMeeting) {
     return notFound();
   }
+
+  const [userStatus] = await db.select({
+    recordingStatus: users.recordingStatus,
+  }).from(users).where(eq(users.user_id, meeting.userId));
 
   const participantName = name;
   if (!participantName) {
