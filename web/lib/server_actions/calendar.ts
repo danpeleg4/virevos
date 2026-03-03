@@ -12,7 +12,6 @@ import {
   SchedulerClient,
 } from "@aws-sdk/client-scheduler";
 
-type MeetingUpdate = Partial<typeof events.$inferInsert>;
 
 const scheduler = new SchedulerClient({
   region: process.env.AWS_REGION!,
@@ -185,82 +184,5 @@ export async function deleteEventFromCalendar(id: string) {
   await db
     .delete(events)
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
-  return { success: true };
-}
-
-export async function updateMeetingInCalendar(
-  id: string,
-  updates: Partial<Event>
-) {
-  const user = await currentUser();
-  if (!user?.id) {
-    throw new Error("Unauthorized");
-  }
-
-  const meetingRow = await db
-    .select()
-    .from(events)
-    .where(and(eq(events.id, id), eq(events.userId, user.id)))
-    .limit(1);
-
-  if (meetingRow.length === 0) {
-    throw new Error("Meeting not found");
-  }
-
-  const meeting = meetingRow[0];
-  const dbUpdates: MeetingUpdate = {
-    title: updates.title,
-    description: updates.description,
-    dateTime: updates.dateTime,
-    duration: updates.duration,
-    isMeeting: false,
-    status: updates.status,
-    hasNotes: updates.hasNotes,
-    hasTranscript: updates.hasTranscript,
-    autoRescheduled: updates.autoRescheduled,
-    conflictReason: updates.conflictReason,
-  };
-
-  // Update in DB
-  await db.update(events).set(dbUpdates).where(eq(events.id, id));
-
-  // Sync to Google Calendar if connected
-  const googleToken = await getFreshGoogleAccessToken(user.id);
-  const googleId =
-    meeting.googleEventId ||
-    (meeting.origin === "google_calendar" ? meeting.id : null);
-
-  if (googleToken && googleId) {
-    const oauth2Client = new google.auth.OAuth2();
-    oauth2Client.setCredentials({ access_token: googleToken });
-    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-
-    const startDate = updates.dateTime!;
-    const duration = updates.duration ?? meeting.duration;
-
-    try {
-      await calendar.events.patch({
-        calendarId: "primary",
-        eventId: googleId,
-        requestBody: {
-          summary: updates.title ?? meeting.title,
-          description:
-            (updates.description ?? meeting.description) +
-            (meeting.link ? `\n\nMeeting Link: ${meeting.link}` : ""),
-          start: {
-            dateTime: startDate?.toISOString(),
-          },
-          end: {
-            dateTime: new Date(
-              startDate.getTime() + duration * 60000
-            ).toISOString(),
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Error updating Google Calendar:", error);
-    }
-  }
-
   return { success: true };
 }
