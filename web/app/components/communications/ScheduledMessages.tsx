@@ -132,47 +132,6 @@ export function ScheduledMessages() {
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Scheduled</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {messages.filter((m) => m.status === "scheduled").length}
-                </p>
-              </div>
-              <Clock className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Sent This Week</p>
-                <p className="text-2xl text-gray-900 mt-1">12</p>
-              </div>
-              <Send className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Next Sending</p>
-                <p className="text-sm text-gray-900 mt-1">Tomorrow 9:00 AM</p>
-              </div>
-              <Calendar className="h-8 w-8 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Create New Button */}
       <div className="flex justify-end">
         <Dialog open={isCreating} onOpenChange={setIsCreating}>

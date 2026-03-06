@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
+import React, { useState } from "react";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 import { Sparkles, ChevronLeft, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -51,7 +51,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const result = await signIn?.create({
+      const result = await signIn.create({
         identifier: email,
         password,
       });
@@ -80,7 +80,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await signIn?.create({
+      await signIn.create({
         strategy: "reset_password_email_code",
         identifier: email,
       });

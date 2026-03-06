@@ -1,18 +1,17 @@
 name: transcript-lambda
+
 on:
   push:
     branches:
+      - dev
       - main
     paths:
       - "transcript-lambda/**"
       - ".github/workflows/transcript-lambda.yml"
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -34,14 +33,60 @@ jobs:
           cd transcript-lambda/dist
           zip -r ../function.zip .
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: transcript-lambda/function.zip
+
+  deploy-test:
+    if: github.ref == 'refs/heads/dev'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_TRANSCRIPT_DEV }}
+
+      - name: Deploy Test Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name virevos-vector-embed-dev \
+            --zip-file fileb://function.zip
+
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_TRANSCRIPT }}
 
-      - name: Deploy Lambda
+      - name: Deploy Prod Lambda
         run: |
           aws lambda update-function-code \
             --function-name virevos-vector-embed \
-            --zip-file fileb://transcript-lambda/function.zip
+            --zip-file fileb://function.zip

@@ -66,30 +66,34 @@ describe("POST /token", () => {
   });
 
   it("403 meeting not started", async () => {
-    where.mockResolvedValueOnce([
-      {
-        id: "1",
-        isMeeting: true,
-        origin: "app",
-        dateTime: new Date(Date.now() + 60000),
-        duration: 30,
-      },
-    ]);
+    where
+      .mockResolvedValueOnce([
+        {
+          id: "1",
+          isMeeting: true,
+          origin: "app",
+          dateTime: new Date(Date.now() + 60000),
+          duration: 30,
+        },
+      ])
+      .mockResolvedValueOnce([{ recordingStatus: false }]);
 
     const res = await POST(req({ meetingId: "1", name: "Dan" }));
     expect(res.status).toBe(403);
   });
 
   it("410 meeting ended", async () => {
-    where.mockResolvedValueOnce([
-      {
-        id: "1",
-        isMeeting: true,
-        origin: "app",
-        dateTime: new Date(Date.now() - 60 * 60 * 1000),
-        duration: 10,
-      },
-    ]);
+    where
+      .mockResolvedValueOnce([
+        {
+          id: "1",
+          isMeeting: true,
+          origin: "app",
+          dateTime: new Date(Date.now() - 60 * 60 * 1000),
+          duration: 10,
+        },
+      ])
+      .mockResolvedValueOnce([{ recordingStatus: false }]);
 
     const res = await POST(req({ meetingId: "1", name: "Dan" }));
     expect(res.status).toBe(410);
@@ -108,6 +112,7 @@ describe("POST /token", () => {
           duration: 30,
         },
       ])
+      .mockResolvedValueOnce([{ recordingStatus: false }])
       .mockResolvedValueOnce([{ title: "Daily Sync" }]);
 
     const res = await POST(req({ meetingId: "1", name: "Dan" }));

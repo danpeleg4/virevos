@@ -43,12 +43,30 @@ type Record = {
     endedAtEpoch: number;
 }
 
+type ActionItem = {
+    task: string;
+    owner: string;
+    dueDate: string | null;
+    completed: boolean;
+}
+
+type S3EventRecord = {
+    s3: {
+        bucket: { name: string };
+        object: { key: string };
+    };
+}
+
+type S3HandlerEvent = {
+    Records: S3EventRecord[];
+}
+
 const s3 = new S3Client({ region: process.env.REGION! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
 // Returns a YYYY-MM-DD string if valid, otherwise null
-function normalizeDueDate(value: unknown): string | null {
+export function normalizeDueDate(value: unknown): string | null {
     if (!value || typeof value !== "string") return null;
     const trimmed = value.trim();
     if (!trimmed || trimmed.toLowerCase() === "null") return null;
@@ -66,7 +84,7 @@ function normalizeDueDate(value: unknown): string | null {
 // Helper functions
 export async function streamToString(stream: Readable) {
     return new Promise<string>((resolve, reject) => {
-        const chunks: any[] = [];
+        const chunks: Buffer[] = [];
         stream.on("data", (chunk) => chunks.push(chunk));
         stream.on("error", reject);
         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
@@ -78,7 +96,7 @@ async function getJsonFromS3(bucket: string, key: string) {
     const response = await s3.send(command);
 
     // response.Body is a readable stream
-    const jsonString = await streamToString(response.Body as any);
+    const jsonString = await streamToString(response.Body as Readable);
     return JSON.parse(jsonString);
 }
 
@@ -103,7 +121,7 @@ async function waitForMainJson(bucket: string, prefix: string, retries = 5) {
 }
 
 // Lambda code
-export const handler = async (event: any) => {
+export const handler = async (event: S3HandlerEvent) => {
     const indexName = 'vire-recording';
     const jsonBucket = 'vire-json';
 
@@ -285,7 +303,7 @@ Rules for dueDate:
                     : [];
 
             const actionItems = Array.isArray(analysis.action_items)
-                ? analysis.action_items.map((item: any) => ({
+                ? analysis.action_items.map((item: ActionItem) => ({
                     ...item,
                     dueDate: normalizeDueDate(item.dueDate),
                 }))

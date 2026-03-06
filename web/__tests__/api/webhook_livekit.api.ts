@@ -100,11 +100,17 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("inserts attendee when participant joins", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce({
-      from: () => ({
-        where: () => [{ id: "room_123", userId: "user_1" }],
-      }),
-    });
+    (db.select as jest.Mock)
+      .mockReturnValueOnce({
+        from: () => ({
+          where: () => [{ id: "room_123", userId: "user_1" }],
+        }),
+      })
+      .mockReturnValueOnce({
+        from: () => ({
+          where: () => [{ recordingStatus: false }],
+        }),
+      });
 
     const req = mockRequest({
       event: "participant_joined",
@@ -141,7 +147,17 @@ describe("POST /api/webhooks/livekit", () => {
       })
       .mockReturnValueOnce({
         from: () => ({
+          where: () => [{ recordingStatus: false }],
+        }),
+      })
+      .mockReturnValueOnce({
+        from: () => ({
           where: () => [{ id: "room_123", userId: "user_1" }],
+        }),
+      })
+      .mockReturnValueOnce({
+        from: () => ({
+          where: () => [{ recordingStatus: false }],
         }),
       });
 

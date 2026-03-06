@@ -969,7 +969,6 @@ function VerificationStep({ formData }: VerificationStepProps) {
 
   const getClerkErrorMessage = (err: unknown) => {
     const e = err as { errors?: ClerkAPIError[] };
-    console.error("Clerk error:", e);
     return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
   };
 
