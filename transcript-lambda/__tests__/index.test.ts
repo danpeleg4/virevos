@@ -56,17 +56,20 @@ jest.mock("stream", () => {
   const actual = jest.requireActual("stream");
   return {
     ...actual,
-    pipeline: jest.fn((...args: any[]) => {
-      const cb = args[args.length - 1];
-      if (typeof cb === "function") cb(null);
-    }),
+    pipeline: jest.fn(
+      (_src: unknown, _dest: unknown, cb: (err: Error | null) => void) => cb(null)
+    ),
   };
 });
 
 jest.mock("child_process", () => {
   mockExecAsync = jest.fn().mockResolvedValue({ stdout: "", stderr: "" });
-  const mockExec: any = jest.fn((_cmd: string, cb: Function) => cb(null, "", ""));
-  mockExec[Symbol.for("nodejs.util.promisify.custom")] = mockExecAsync;
+  const mockExec: jest.Mock & Record<symbol, jest.Mock> = Object.assign(
+    jest.fn((_cmd: string, cb: (err: Error | null, stdout: string, stderr: string) => void) =>
+      cb(null, "", "")
+    ),
+    { [Symbol.for("nodejs.util.promisify.custom")]: mockExecAsync }
+  );
   return { exec: mockExec };
 });
 
@@ -78,7 +81,7 @@ jest.mock("fs", () => ({
 }));
 
 import { Readable } from "stream";
-import { handler, normalizeDueDate, streamToString } from "../src/index";
+import { handler, normalizeDueDate, streamToString } from "../src";
 import { db } from "@repo/db/db";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
