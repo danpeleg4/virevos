@@ -22,11 +22,11 @@ jobs:
 
       - name: Install deps
         run: npm ci
-        working-directory: transcript-lambda
 
       - name: Build lambda
-        run: npm run build
-        working-directory: transcript-lambda
+        run: |
+          cd transcript-lambda
+          npm run build
 
       - name: Zip lambda
         run: |
