@@ -76,6 +76,7 @@ export async function streamToString(stream: Readable) {
 async function getJsonFromS3(bucket: string, key: string) {
     const command = new GetObjectCommand({ Bucket: bucket, Key: key });
     const response = await s3.send(command);
+    const h = 1
 
     // response.Body is a readable stream
     const jsonString = await streamToString(response.Body as any);
