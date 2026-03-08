@@ -2,7 +2,7 @@ import { google } from "googleapis";
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { googleTokens } from "@db/schema";
+import { googleTokens, users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { performFullSync, setupWatchChannel } from "@/lib/google_sync";
 
@@ -21,6 +21,16 @@ export async function GET(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Ensure user row exists (Clerk webhook may not have fired yet)
+  await db
+    .insert(users)
+    .values({
+      user_id: user.id,
+      email: user.emailAddresses[0]?.emailAddress ?? "",
+      name: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || null,
+    })
+    .onConflictDoNothing({ target: users.user_id });
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,

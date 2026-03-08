@@ -123,7 +123,8 @@ export function ScheduleMessageDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="datetime" className="space-y-4 mt-4 data-[state=inactive]:hidden">
+          <div className="relative mt-4" style={{ height: "360px" }}>
+          <TabsContent value="datetime" className="absolute inset-0 overflow-y-auto data-[state=inactive]:hidden">
             <div className="grid grid-cols-2 gap-4 items-start">
               <div className="space-y-2">
                 <Label>Select Date</Label>
@@ -193,7 +194,7 @@ export function ScheduleMessageDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value="quick" className="space-y-4 mt-4 data-[state=inactive]:hidden">
+          <TabsContent value="quick" className="absolute inset-0 space-y-4 overflow-y-auto data-[state=inactive]:hidden">
             <div className="grid grid-cols-2 gap-3">
               {quickScheduleOptions.map((option) => (
                 <Button
@@ -249,6 +250,7 @@ export function ScheduleMessageDialog({
               />
             </div>
           </TabsContent>
+          </div>
         </Tabs>
 
         <div className="space-y-4 pt-4 border-t">

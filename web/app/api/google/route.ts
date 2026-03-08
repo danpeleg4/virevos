@@ -13,6 +13,9 @@ export async function GET() {
     prompt: "consent", // ensures refresh_token
     scope: [
       "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.send",
+      "https://www.googleapis.com/auth/userinfo.email",
     ],
   });
 
