@@ -113,27 +113,27 @@ export function ScheduleMessageDialog({
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger value="datetime">
+            <TabsTrigger className="cursor-pointer" value="datetime">
               <CalendarIcon className="h-4 w-4 mr-2" />
               Date & Time
             </TabsTrigger>
-            <TabsTrigger value="quick">
+            <TabsTrigger className="cursor-pointer" value="quick">
               <Clock className="h-4 w-4 mr-2" />
               Quick Schedule
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="datetime" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
+          <TabsContent value="datetime" className="space-y-4 mt-4 data-[state=inactive]:hidden">
+            <div className="grid grid-cols-2 gap-4 items-start">
               <div className="space-y-2">
                 <Label>Select Date</Label>
-                <div className="border rounded-lg p-3 bg-white">
+                <div className="border rounded-lg bg-white">
                   <Calendar
                     mode="single"
                     selected={date}
                     onSelect={setDate}
                     disabled={(date) => date < new Date()}
-                    className="rounded-md"
+                    className="w-full"
                   />
                 </div>
               </div>
@@ -193,7 +193,7 @@ export function ScheduleMessageDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value="quick" className="space-y-4 mt-4">
+          <TabsContent value="quick" className="space-y-4 mt-4 data-[state=inactive]:hidden">
             <div className="grid grid-cols-2 gap-3">
               {quickScheduleOptions.map((option) => (
                 <Button

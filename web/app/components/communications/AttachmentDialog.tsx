@@ -120,7 +120,7 @@ export function AttachmentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
           <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
@@ -136,9 +136,9 @@ export function AttachmentDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="upload" className="space-y-4">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-400 transition-colors cursor-pointer">
-              <Cloud className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <TabsContent value="upload" className="h-80 data-[state=inactive]:hidden">
+            <div className="h-full border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-400 transition-colors cursor-pointer flex flex-col items-center justify-center">
+              <Cloud className="h-12 w-12 text-gray-400 mb-4" />
               <p className="text-sm text-gray-700 mb-2">
                 Drop files here or click to browse
               </p>
@@ -152,13 +152,13 @@ export function AttachmentDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value="recent" className="space-y-4">
+          <TabsContent value="recent" className="h-80 flex flex-col gap-3 data-[state=inactive]:hidden">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input placeholder="Search files..." className="pl-10" />
             </div>
 
-            <ScrollArea className="h-72">
+            <ScrollArea className="flex-1">
               <div className="space-y-2">
                 {recentFiles.map((file, index) => (
                   <motion.div
@@ -189,7 +189,7 @@ export function AttachmentDialog({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="link" className="space-y-4">
+          <TabsContent value="link" className="h-80 space-y-4 overflow-y-auto data-[state=inactive]:hidden">
             <div className="space-y-3">
               <div>
                 <label className="text-sm text-gray-700 mb-2 block">
