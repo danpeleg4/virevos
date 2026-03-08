@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
             value: {
               accessKey: process.env.AWS_LIVE_KIT_S3_ACCESS_KEY,
               secret: process.env.AWS_LIVE_KIT_S3_SECRET_KEY,
-              bucket: "virevos-recordings-dev",
+              bucket: process.env.AWS_BUCKET_NAME,
               region: process.env.AWS_REGION,
               forcePathStyle: true,
             },
