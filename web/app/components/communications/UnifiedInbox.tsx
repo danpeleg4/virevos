@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -290,7 +290,7 @@ export function UnifiedInbox() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)] min-h-0">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
       {/* Message List */}
       <div className="lg:col-span-1 min-h-0 flex flex-col">
         <Card className="flex flex-col flex-1 min-h-0">

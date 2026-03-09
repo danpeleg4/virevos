@@ -19,8 +19,8 @@ export default function Communications() {
   const [scheduledCount] = useState(3);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto h-full flex flex-col overflow-hidden">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">
             Communications
@@ -32,9 +32,9 @@ export default function Communications() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="mb-6 min-w-max">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
+        <div className="overflow-x-auto pb-1 shrink-0">
+          <TabsList className="mb-4 min-w-max">
             <TabsTrigger value="inbox" className="relative cursor-pointer">
               Inbox
               {unreadCount > 0 && (
@@ -60,7 +60,7 @@ export default function Communications() {
           </TabsList>
         </div>
 
-        <TabsContent value="inbox">
+        <TabsContent value="inbox" className="min-h-0 h-full">
           <UnifiedInbox />
         </TabsContent>
 

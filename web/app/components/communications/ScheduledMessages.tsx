@@ -15,19 +15,10 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import {
   Clock,
   Plus,
   Calendar,
   Mail,
-  MessageSquare,
-  Edit,
   Trash2,
   Send,
   Loader2,
