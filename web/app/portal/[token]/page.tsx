@@ -10,7 +10,6 @@ import {
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import { Progress } from "../../components/ui/progress";
 import {
   Tabs,
   TabsContent,
@@ -21,14 +20,12 @@ import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { Textarea } from "../../components/ui/textarea";
 import {
   Calendar,
-  Clock,
   FileText,
   MessageSquare,
   Download,
   Send,
   Paperclip,
   Bell,
-  LogOut,
   Loader2,
   AlertCircle,
 } from "lucide-react";
@@ -105,7 +102,9 @@ export default function PortalPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [localMessages, setLocalMessages] = useState<PortalData["messages"]>([]);
+  const [localMessages, setLocalMessages] = useState<PortalData["messages"]>(
+    []
+  );
 
   useEffect(() => {
     if (token) fetchPortalData();
@@ -358,7 +357,9 @@ export default function PortalPage() {
                               {project.dueDate && (
                                 <p className="text-sm text-gray-600 mt-1">
                                   Due:{" "}
-                                  {new Date(project.dueDate).toLocaleDateString()}
+                                  {new Date(
+                                    project.dueDate
+                                  ).toLocaleDateString()}
                                 </p>
                               )}
                             </div>
@@ -373,7 +374,8 @@ export default function PortalPage() {
                           )}
                           <div className="mt-2 pt-2 border-t border-gray-100">
                             <p className="text-xs text-gray-500">
-                              Health: {project.health} · Priority: {project.priority}
+                              Health: {project.health} · Priority:{" "}
+                              {project.priority}
                             </p>
                           </div>
                         </motion.div>
@@ -491,7 +493,9 @@ export default function PortalPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {project.description && (
-                        <p className="text-sm text-gray-600">{project.description}</p>
+                        <p className="text-sm text-gray-600">
+                          {project.description}
+                        </p>
                       )}
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Due Date</span>
@@ -507,7 +511,9 @@ export default function PortalPage() {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Priority</span>
-                        <span className="text-gray-900">{project.priority}</span>
+                        <span className="text-gray-900">
+                          {project.priority}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
@@ -557,7 +563,9 @@ export default function PortalPage() {
                             {msg.subject}
                           </p>
                         )}
-                        <p className="text-sm text-gray-700 ml-10">{msg.preview}</p>
+                        <p className="text-sm text-gray-700 ml-10">
+                          {msg.preview}
+                        </p>
                       </div>
                     ))
                   )}

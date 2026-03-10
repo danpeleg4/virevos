@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { emails, clients } from "@db/schema";
-import { eq, desc, and, or, ilike } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { performGmailSync } from "@/lib/gmail_sync";
 
 export async function POST() {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     const filter = searchParams.get("filter") || "all"; // all | unread | starred | sent | archived
     const offset = (page - 1) * limit;
 
-    let query = db
+    const query = db
       .select({
         id: emails.id,
         gmailId: emails.gmailId,
@@ -71,11 +71,12 @@ export async function GET(req: NextRequest) {
       type: "email" as const,
       from: email.fromName || email.fromEmail || "Unknown",
       fromEmail: email.fromEmail,
-      initials: ((email.fromName || email.fromEmail || "?")
-        .split(" ")
-        .slice(0, 2)
-        .map((w: string) => w[0]?.toUpperCase() || "")
-        .join("")) || "?",
+      initials:
+        (email.fromName || email.fromEmail || "?")
+          .split(" ")
+          .slice(0, 2)
+          .map((w: string) => w[0]?.toUpperCase() || "")
+          .join("") || "?",
       subject: email.subject,
       preview: email.snippet || (email.bodyText?.slice(0, 150) ?? ""),
       body: email.bodyHtml || email.bodyText,
@@ -109,6 +110,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ messages: filtered, page, limit });
   } catch (err) {
     console.error("[api/gmail/sync GET]", err);
-    return NextResponse.json({ error: "Failed to fetch emails" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch emails" },
+      { status: 500 }
+    );
   }
 }

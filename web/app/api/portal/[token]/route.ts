@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import { clientPortalTokens, clients, projects, emails, projectFiles } from "@db/schema";
+import {
+  clientPortalTokens,
+  clients,
+  projects,
+  emails,
+  projectFiles,
+} from "@db/schema";
 import { and, eq } from "drizzle-orm";
 
 export async function GET(
@@ -18,7 +24,10 @@ export async function GET(
       .limit(1);
 
     if (!tokenRows.length || !tokenRows[0].enabled) {
-      return NextResponse.json({ error: "Portal not found or disabled" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Portal not found or disabled" },
+        { status: 404 }
+      );
     }
 
     const portalToken = tokenRows[0];
@@ -122,6 +131,9 @@ export async function GET(
     });
   } catch (err) {
     console.error("[api/portal/[token] GET]", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

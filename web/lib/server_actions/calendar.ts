@@ -12,7 +12,6 @@ import {
   SchedulerClient,
 } from "@aws-sdk/client-scheduler";
 
-
 const scheduler = new SchedulerClient({
   region: process.env.AWS_REGION!,
   credentials: {

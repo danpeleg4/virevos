@@ -36,7 +36,9 @@ export default function StatusPage() {
         ))}
       </section>
 
-      <p className="mt-8 text-sm text-gray-400">Last updated: February 27, 2026</p>
+      <p className="mt-8 text-sm text-gray-400">
+        Last updated: February 27, 2026
+      </p>
     </main>
   );
 }

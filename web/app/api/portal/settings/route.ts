@@ -36,7 +36,10 @@ export async function GET() {
     return NextResponse.json({ portals: portalRecords });
   } catch (err) {
     console.error("[api/portal/settings GET]", err);
-    return NextResponse.json({ error: "Failed to fetch portal settings" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch portal settings" },
+      { status: 500 }
+    );
   }
 }
 
@@ -113,6 +116,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("[api/portal/settings POST]", err);
-    return NextResponse.json({ error: "Failed to save portal settings" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to save portal settings" },
+      { status: 500 }
+    );
   }
 }

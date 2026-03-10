@@ -74,8 +74,11 @@ export async function POST(req: NextRequest) {
           });
 
           let assistantContent = "";
-          const toolCalls: Array<{ id: string; name: string; arguments: string }> =
-            [];
+          const toolCalls: Array<{
+            id: string;
+            name: string;
+            arguments: string;
+          }> = [];
 
           for await (const chunk of completion) {
             const delta = chunk.choices[0]?.delta;

@@ -37,7 +37,9 @@ async function fetchMessageWithRetry(
       }
     }
   }
-  throw new Error(`Failed to fetch message ${messageId} after ${retries} retries`);
+  throw new Error(
+    `Failed to fetch message ${messageId} after ${retries} retries`
+  );
 }
 
 async function processMessage(
@@ -59,10 +61,16 @@ async function processMessage(
   const { name: fromName, email: fromEmail } = parseEmailAddress(fromRaw);
 
   const toEmails = toRaw
-    ? toRaw.split(",").map((e) => parseEmailAddress(e.trim()).email).filter(Boolean)
+    ? toRaw
+        .split(",")
+        .map((e) => parseEmailAddress(e.trim()).email)
+        .filter(Boolean)
     : [];
   const ccEmails = ccRaw
-    ? ccRaw.split(",").map((e) => parseEmailAddress(e.trim()).email).filter(Boolean)
+    ? ccRaw
+        .split(",")
+        .map((e) => parseEmailAddress(e.trim()).email)
+        .filter(Boolean)
     : [];
 
   const sentAt = dateRaw ? new Date(dateRaw) : new Date();
@@ -126,7 +134,10 @@ async function processMessage(
       .where(eq(emails.id, existing[0].id));
     emailId = existing[0].id;
   } else {
-    const [inserted] = await db.insert(emails).values(emailData).returning({ id: emails.id });
+    const [inserted] = await db
+      .insert(emails)
+      .values(emailData)
+      .returning({ id: emails.id });
     emailId = inserted.id;
 
     // Save attachment metadata for new emails
@@ -197,7 +208,10 @@ export async function performGmailSync(
           await processMessage(gmail, msgRef.id, userId, clientsMap);
           synced++;
         } catch (err) {
-          console.error(`[gmail_sync] Error processing message ${msgRef.id}:`, err);
+          console.error(
+            `[gmail_sync] Error processing message ${msgRef.id}:`,
+            err
+          );
           errors++;
         }
       }
@@ -209,7 +223,10 @@ export async function performGmailSync(
   return { synced, errors };
 }
 
-export async function syncSingleMessage(userId: string, gmailId: string): Promise<void> {
+export async function syncSingleMessage(
+  userId: string,
+  gmailId: string
+): Promise<void> {
   const gmail = await getGmailClient(userId);
   if (!gmail) return;
 

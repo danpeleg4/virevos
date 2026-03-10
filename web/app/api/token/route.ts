@@ -13,9 +13,9 @@ import { notFound } from "next/navigation";
 
 const livekitHost = process.env.LIVEKIT_HOST;
 const roomService = new RoomServiceClient(
-    livekitHost!,
-    process.env.LIVEKIT_API_KEY,
-    process.env.LIVEKIT_API_SECRET
+  livekitHost!,
+  process.env.LIVEKIT_API_KEY,
+  process.env.LIVEKIT_API_SECRET
 );
 const egressClient = new EgressClient(livekitHost!);
 
@@ -23,42 +23,45 @@ export async function POST(req: NextRequest) {
   const { meetingId, name } = await req.json();
   if (!meetingId) {
     return NextResponse.json(
-        { error: "meetingId is required" },
-        { status: 400 }
+      { error: "meetingId is required" },
+      { status: 400 }
     );
   }
 
   const [meeting] = await db
-      .select()
-      .from(events)
-      .where(eq(events.id, meetingId));
+    .select()
+    .from(events)
+    .where(eq(events.id, meetingId));
 
   const isAppMeeting = !meeting?.origin || meeting.origin === "app";
   if (!meeting || !meeting.isMeeting || !isAppMeeting) {
     return notFound();
   }
 
-  const [userStatus] = await db.select({
-    recordingStatus: users.recordingStatus,
-  }).from(users).where(eq(users.user_id, meeting.userId));
+  const [userStatus] = await db
+    .select({
+      recordingStatus: users.recordingStatus,
+    })
+    .from(users)
+    .where(eq(users.user_id, meeting.userId));
 
   const participantName = name;
   if (!participantName) {
     return NextResponse.json(
-        { error: "identity (name) is required" },
-        { status: 400 }
+      { error: "identity (name) is required" },
+      { status: 400 }
     );
   }
 
   const startTime = new Date(meeting.dateTime);
   const endTime = new Date(
-      startTime.getTime() + (meeting.duration || 0) * 60000
+    startTime.getTime() + (meeting.duration || 0) * 60000
   );
   const now = new Date();
   if (now < startTime) {
     return NextResponse.json(
-        { error: "Meeting has not started yet" },
-        { status: 403 }
+      { error: "Meeting has not started yet" },
+      { status: 403 }
     );
   }
   if (now > endTime) {
@@ -108,21 +111,21 @@ export async function POST(req: NextRequest) {
 
   // Create the token
   const at = new AccessToken(
-      process.env.LIVEKIT_API_KEY!,
-      process.env.LIVEKIT_API_SECRET!,
-      {
-        identity: participantName,
-        ttl: 600, // 10 minutes
-      }
+    process.env.LIVEKIT_API_KEY!,
+    process.env.LIVEKIT_API_SECRET!,
+    {
+      identity: participantName,
+      ttl: 600, // 10 minutes
+    }
   );
   at.addGrant({ roomJoin: true, room: roomName });
   const token = await at.toJwt();
   const meetingTitle = await db
-      .select({
-        title: events.title,
-      })
-      .from(events)
-      .where(eq(events.id, roomName));
+    .select({
+      title: events.title,
+    })
+    .from(events)
+    .where(eq(events.id, roomName));
 
   return NextResponse.json({
     token,

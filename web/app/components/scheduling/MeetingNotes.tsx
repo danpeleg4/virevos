@@ -66,13 +66,13 @@ export function MeetingNotes() {
     queryFn: async () => {
       const res = await axios.get("/api/events");
       const data: Event[] = res.data;
-      const meeting =  data.map((m) => ({
+      const meeting = data.map((m) => ({
         ...m,
         attendees: m.attendees ?? [],
       }));
-      return meeting.filter(filter => {
+      return meeting.filter((filter) => {
         return filter.hasNotes !== false;
-      })
+      });
     },
   });
 
@@ -110,8 +110,14 @@ export function MeetingNotes() {
       (filterStatus === "with-transcript" && note.hasTranscript);
     return matchesSearch && matchesFilter;
   });
-  const totalPages = Math.max(1, Math.ceil((filteredNotes?.length ?? 0) / PAGE_SIZE));
-  const paginatedNotes = filteredNotes?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil((filteredNotes?.length ?? 0) / PAGE_SIZE)
+  );
+  const paginatedNotes = filteredNotes?.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
   const handleViewDetails = (note: Event) => {
     setSelectedNote(note);
@@ -125,7 +131,10 @@ export function MeetingNotes() {
     setAddedItems(alreadyAdded);
   };
 
-  async function handleAddSingleTask(item: { task: string; dueDate: string | null; completed: boolean }, index: number) {
+  async function handleAddSingleTask(
+    item: { task: string; dueDate: string | null; completed: boolean },
+    index: number
+  ) {
     setAddingItems((prev) => new Set(prev).add(index));
     try {
       await addProjectTasksAction({
@@ -144,11 +153,16 @@ export function MeetingNotes() {
       setAddedItems((prev) => new Set(prev).add(index));
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {
-      setAddingItems((prev) => { const s = new Set(prev); s.delete(index); return s; });
+      setAddingItems((prev) => {
+        const s = new Set(prev);
+        s.delete(index);
+        return s;
+      });
     }
   }
 
-  const allAdded = (selectedNote?.action_items?.length ?? 0) > 0 &&
+  const allAdded =
+    (selectedNote?.action_items?.length ?? 0) > 0 &&
     selectedNote?.action_items?.every((_, i) => addedItems.has(i));
 
   async function handleAddAllToTasks() {
@@ -357,12 +371,15 @@ export function MeetingNotes() {
                       <span className="flex flex-wrap items-center gap-3 text-sm">
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(selectedNote.dateTime).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                          {new Date(selectedNote.dateTime).toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }
+                          )}
                         </span>
                         <span className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
@@ -514,7 +531,7 @@ export function MeetingNotes() {
                 </div>
 
                 {/* Transcript */}
-                {(selectedNote.hasTranscript) && (
+                {selectedNote.hasTranscript && (
                   <div>
                     <div className="flex items-center space-x-2 mb-3">
                       <Mic className="h-4 w-4 text-purple-500" />
@@ -526,14 +543,32 @@ export function MeetingNotes() {
                       </div>
                     ) : transcriptData.length > 0 ? (
                       <>
-                        <div className={`max-h-96 overflow-y-auto p-4 rounded-lg border bg-gray-50 border-gray-200`}>
+                        <div
+                          className={`max-h-96 overflow-y-auto p-4 rounded-lg border bg-gray-50 border-gray-200`}
+                        >
                           <div className="space-y-4">
-                            {(showFullTranscript ? transcriptData : transcriptData.slice(0, 3)).map((entry, index) => (
-                              <div key={index} className="flex items-start space-x-3">
-                                <span className={`text-xs mt-1 text-gray-400 shrink-0`}>{entry.time}</span>
+                            {(showFullTranscript
+                              ? transcriptData
+                              : transcriptData.slice(0, 3)
+                            ).map((entry, index) => (
+                              <div
+                                key={index}
+                                className="flex items-start space-x-3"
+                              >
+                                <span
+                                  className={`text-xs mt-1 text-gray-400 shrink-0`}
+                                >
+                                  {entry.time}
+                                </span>
                                 <div className="flex-1">
-                                  <p className={`text-sm font-medium mb-0.5 text-blue-600`}>{entry.speaker}</p>
-                                  <p className={`text-sm text-gray-700`}>{entry.text}</p>
+                                  <p
+                                    className={`text-sm font-medium mb-0.5 text-blue-600`}
+                                  >
+                                    {entry.speaker}
+                                  </p>
+                                  <p className={`text-sm text-gray-700`}>
+                                    {entry.text}
+                                  </p>
                                 </div>
                               </div>
                             ))}
@@ -545,7 +580,9 @@ export function MeetingNotes() {
                             onClick={() => setShowFullTranscript((v) => !v)}
                           >
                             <FileText className="h-4 w-4" />
-                            {showFullTranscript ? "Show Less" : "View Full Transcript"}
+                            {showFullTranscript
+                              ? "Show Less"
+                              : "View Full Transcript"}
                           </button>
                         )}
                       </>

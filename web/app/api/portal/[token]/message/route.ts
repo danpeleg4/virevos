@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { clientPortalTokens, clients, emails, users } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getGmailClient, buildRawEmail } from "@/lib/gmail_client";
 
 export async function POST(
@@ -14,7 +14,10 @@ export async function POST(
     const { message } = body;
 
     if (!message?.trim()) {
-      return NextResponse.json({ error: "Message is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Message is required" },
+        { status: 400 }
+      );
     }
 
     // Find portal token
@@ -25,7 +28,10 @@ export async function POST(
       .limit(1);
 
     if (!tokenRows.length || !tokenRows[0].enabled) {
-      return NextResponse.json({ error: "Portal not found or disabled" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Portal not found or disabled" },
+        { status: 404 }
+      );
     }
 
     const portalToken = tokenRows[0];
@@ -132,6 +138,9 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/portal/[token]/message POST]", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

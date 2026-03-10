@@ -88,7 +88,9 @@ export function UnifiedInbox() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "email" | "chat">("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "unread" | "starred">("all");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "unread" | "starred"
+  >("all");
   const [showAIComposer, setShowAIComposer] = useState(false);
   const [showAttachmentDialog, setShowAttachmentDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
@@ -128,6 +130,7 @@ export function UnifiedInbox() {
       const res = await fetch(`/api/gmail/sync?${params}`);
       if (res.ok) {
         const data = await res.json();
+        console.log(data.messages);
         setMessages(data.messages || []);
       }
     } catch (err) {
@@ -227,7 +230,9 @@ export function UnifiedInbox() {
 
   const handleDeleteMessage = async (id: string) => {
     try {
-      const res = await fetch(`/api/gmail/messages/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/gmail/messages/${id}`, {
+        method: "DELETE",
+      });
       if (res.ok) {
         setMessages((prev) => prev.filter((m) => m.id !== id));
         if (selectedMessage?.id === id) setSelectedMessage(null);
@@ -290,9 +295,9 @@ export function UnifiedInbox() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Message List */}
-      <div className="lg:col-span-1 min-h-0 flex flex-col">
+      <div className="lg:col-span-1">
         <Card className="flex flex-col flex-1 min-h-0">
           <CardContent className="p-4 flex flex-col flex-1 min-h-0 gap-4">
             {/* Search and Filters */}
@@ -324,7 +329,10 @@ export function UnifiedInbox() {
               </div>
 
               <div className="flex gap-2">
-                <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
+                <Select
+                  value={filterType}
+                  onValueChange={(v: any) => setFilterType(v)}
+                >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -345,7 +353,10 @@ export function UnifiedInbox() {
                   </SelectContent>
                 </Select>
 
-                <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
+                <Select
+                  value={filterStatus}
+                  onValueChange={(v: any) => setFilterStatus(v)}
+                >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -397,8 +408,8 @@ export function UnifiedInbox() {
                       selectedMessage?.id === message.id
                         ? "bg-blue-50 border-blue-200 border"
                         : message.unread
-                        ? "bg-gray-50 hover:bg-gray-100"
-                        : "hover:bg-gray-50"
+                          ? "bg-gray-50 hover:bg-gray-100"
+                          : "hover:bg-gray-50"
                     }`}
                   >
                     <div className="flex items-start space-x-3">
@@ -471,7 +482,7 @@ export function UnifiedInbox() {
       </div>
 
       {/* Message Detail & Reply */}
-      <div className="lg:col-span-2 min-h-0 flex flex-col">
+      <div className="lg:col-span-2 min-h-0 flex flex-col h-full overflow-hidden">
         {selectedMessage ? (
           <Card className="flex flex-col flex-1 min-h-0">
             <CardContent className="p-6 flex flex-col flex-1 min-h-0 overflow-y-auto gap-6">
@@ -486,13 +497,19 @@ export function UnifiedInbox() {
                       {selectedMessage.from}
                     </h3>
                     {selectedMessage.fromEmail && (
-                      <p className="text-sm text-gray-500">{selectedMessage.fromEmail}</p>
+                      <p className="text-sm text-gray-500">
+                        {selectedMessage.fromEmail}
+                      </p>
                     )}
                     {selectedMessage.client && (
-                      <p className="text-sm text-gray-600">{selectedMessage.client}</p>
+                      <p className="text-sm text-gray-600">
+                        {selectedMessage.client}
+                      </p>
                     )}
                     {selectedMessage.subject && (
-                      <p className="text-sm text-gray-900 mt-2">{selectedMessage.subject}</p>
+                      <p className="text-sm text-gray-900 mt-2">
+                        {selectedMessage.subject}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -534,9 +551,14 @@ export function UnifiedInbox() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
-                          toggleStar(selectedMessage.id, selectedMessage.starred);
+                          toggleStar(
+                            selectedMessage.id,
+                            selectedMessage.starred
+                          );
                           toast.success(
-                            selectedMessage.starred ? "Removed from starred" : "Added to starred"
+                            selectedMessage.starred
+                              ? "Removed from starred"
+                              : "Added to starred"
                           );
                         }}
                       >
@@ -722,7 +744,9 @@ export function UnifiedInbox() {
         onSchedule={async (schedule) => {
           if (!selectedMessage) return;
           try {
-            const scheduledAt = new Date(`${schedule.date.toISOString().split("T")[0]}T${schedule.time}`);
+            const scheduledAt = new Date(
+              `${schedule.date.toISOString().split("T")[0]}T${schedule.time}`
+            );
             await fetch("/api/scheduled-emails", {
               method: "POST",
               headers: { "Content-Type": "application/json" },

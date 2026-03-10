@@ -3,7 +3,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { scheduledEmails } from "@db/schema";
 import { and, eq, asc } from "drizzle-orm";
-import { createEmailSchedule, deleteEmailSchedule } from "@/lib/email_scheduler";
+import {
+  createEmailSchedule,
+  deleteEmailSchedule,
+} from "@/lib/email_scheduler";
 
 export async function GET() {
   try {
@@ -21,7 +24,10 @@ export async function GET() {
     return NextResponse.json({ scheduledEmails: rows });
   } catch (err) {
     console.error("[api/scheduled-emails GET]", err);
-    return NextResponse.json({ error: "Failed to fetch scheduled emails" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch scheduled emails" },
+      { status: 500 }
+    );
   }
 }
 
@@ -33,11 +39,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { toEmail, toName, subject, bodyHtml, bodyText, scheduledAt, timezone, recurring, clientId } = body;
+    const {
+      toEmail,
+      toName,
+      subject,
+      bodyHtml,
+      bodyText,
+      scheduledAt,
+      timezone,
+      recurring,
+      clientId,
+    } = body;
 
     if (!toEmail || !subject || !bodyHtml || !scheduledAt) {
       return NextResponse.json(
-        { error: "Missing required fields: toEmail, subject, bodyHtml, scheduledAt" },
+        {
+          error:
+            "Missing required fields: toEmail, subject, bodyHtml, scheduledAt",
+        },
         { status: 400 }
       );
     }
@@ -71,14 +90,20 @@ export async function POST(req: NextRequest) {
         .set({ awsScheduleName })
         .where(eq(scheduledEmails.id, inserted.id));
     } catch (schedErr) {
-      console.error("[api/scheduled-emails POST] AWS schedule error:", schedErr);
+      console.error(
+        "[api/scheduled-emails POST] AWS schedule error:",
+        schedErr
+      );
       // Continue even if AWS scheduling fails
     }
 
     return NextResponse.json({ ...inserted, awsScheduleName });
   } catch (err) {
     console.error("[api/scheduled-emails POST]", err);
-    return NextResponse.json({ error: "Failed to create scheduled email" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create scheduled email" },
+      { status: 500 }
+    );
   }
 }
 
@@ -93,17 +118,28 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Missing id parameter" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing id parameter" },
+        { status: 400 }
+      );
     }
 
     const rows = await db
       .select()
       .from(scheduledEmails)
-      .where(and(eq(scheduledEmails.id, parseInt(id, 10)), eq(scheduledEmails.userId, user.id)))
+      .where(
+        and(
+          eq(scheduledEmails.id, parseInt(id, 10)),
+          eq(scheduledEmails.userId, user.id)
+        )
+      )
       .limit(1);
 
     if (!rows.length) {
-      return NextResponse.json({ error: "Scheduled email not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Scheduled email not found" },
+        { status: 404 }
+      );
     }
 
     const row = rows[0];
@@ -113,18 +149,29 @@ export async function DELETE(req: NextRequest) {
       try {
         await deleteEmailSchedule(row.awsScheduleName);
       } catch (schedErr) {
-        console.error("[api/scheduled-emails DELETE] AWS delete error:", schedErr);
+        console.error(
+          "[api/scheduled-emails DELETE] AWS delete error:",
+          schedErr
+        );
         // Continue even if AWS delete fails
       }
     }
 
     await db
       .delete(scheduledEmails)
-      .where(and(eq(scheduledEmails.id, parseInt(id, 10)), eq(scheduledEmails.userId, user.id)));
+      .where(
+        and(
+          eq(scheduledEmails.id, parseInt(id, 10)),
+          eq(scheduledEmails.userId, user.id)
+        )
+      );
 
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/scheduled-emails DELETE]", err);
-    return NextResponse.json({ error: "Failed to delete scheduled email" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete scheduled email" },
+      { status: 500 }
+    );
   }
 }

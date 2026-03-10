@@ -96,7 +96,9 @@ export function ScheduledMessages() {
 
   const deleteMessage = async (id: number) => {
     try {
-      const res = await fetch(`/api/scheduled-emails?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/scheduled-emails?id=${id}`, {
+        method: "DELETE",
+      });
       if (res.ok) {
         setMessages((prev) => prev.filter((m) => m.id !== id));
         toast.success("Scheduled message cancelled");
@@ -192,7 +194,10 @@ export function ScheduledMessages() {
 
   const nextScheduled = messages
     .filter((m) => m.status === "pending")
-    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
+    .sort(
+      (a, b) =>
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+    )[0];
 
   return (
     <div className="space-y-6">
@@ -229,12 +234,15 @@ export function ScheduledMessages() {
                 <p className="text-sm text-gray-600">Next Sending</p>
                 <p className="text-sm text-gray-900 mt-1">
                   {nextScheduled
-                    ? new Date(nextScheduled.scheduledAt).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })
+                    ? new Date(nextScheduled.scheduledAt).toLocaleString(
+                        undefined,
+                        {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        }
+                      )
                     : "None scheduled"}
                 </p>
               </div>
@@ -260,7 +268,9 @@ export function ScheduledMessages() {
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-700">Recipient Email *</label>
+                  <label className="text-sm text-gray-700">
+                    Recipient Email *
+                  </label>
                   <Input
                     placeholder="recipient@example.com"
                     value={formToEmail}
@@ -268,7 +278,9 @@ export function ScheduledMessages() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-700">Recipient Name</label>
+                  <label className="text-sm text-gray-700">
+                    Recipient Name
+                  </label>
                   <Input
                     placeholder="John Doe"
                     value={formToName}
@@ -370,25 +382,34 @@ export function ScheduledMessages() {
                           </Badge>
                           <Mail className="h-4 w-4 text-gray-400" />
                         </div>
-                        <p className="text-sm text-gray-900 mb-2">{message.subject}</p>
+                        <p className="text-sm text-gray-900 mb-2">
+                          {message.subject}
+                        </p>
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                           {message.bodyText ||
-                            message.bodyHtml.replace(/<[^>]*>/g, "").slice(0, 200)}
+                            message.bodyHtml
+                              .replace(/<[^>]*>/g, "")
+                              .slice(0, 200)}
                         </p>
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
                           <div className="flex items-center">
                             <Clock className="h-3 w-3 mr-1" />
-                            {new Date(message.scheduledAt).toLocaleString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
+                            {new Date(message.scheduledAt).toLocaleString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              }
+                            )}
                           </div>
                           {getStatusBadge(message.status)}
                           {message.errorMessage && (
-                            <span className="text-red-500 text-xs">{message.errorMessage}</span>
+                            <span className="text-red-500 text-xs">
+                              {message.errorMessage}
+                            </span>
                           )}
                         </div>
                       </div>

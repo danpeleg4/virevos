@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
 
   if (event.event === "room_started") {
     await db
-        .update(events)
-        .set({ status: "active" })
-        .where(eq(events.id, roomName));
+      .update(events)
+      .set({ status: "active" })
+      .where(eq(events.id, roomName));
   }
 
   if (event.event === "room_finished") {
@@ -33,17 +33,17 @@ export async function POST(req: NextRequest) {
       const finishedAt = Number(event.createdAt);
       const createdAt = Number(event.room.creationTimeMs);
       const durationInMinutes =
-          Number.isFinite(finishedAt) && Number.isFinite(createdAt)
-              ? Math.max(1, Math.round((finishedAt - createdAt) / 60000))
-              : res[0].duration;
+        Number.isFinite(finishedAt) && Number.isFinite(createdAt)
+          ? Math.max(1, Math.round((finishedAt - createdAt) / 60000))
+          : res[0].duration;
       await db
-          .update(events)
-          .set({
-            duration: durationInMinutes,
-            link: "Meeting ended.",
-            status: "ended",
-          })
-          .where(eq(events.id, res[0].id));
+        .update(events)
+        .set({
+          duration: durationInMinutes,
+          link: "Meeting ended.",
+          status: "ended",
+        })
+        .where(eq(events.id, res[0].id));
     }
   }
   if (event.event === "participant_joined") {
@@ -53,25 +53,27 @@ export async function POST(req: NextRequest) {
     const identity = event.participant?.identity;
     if (identity) {
       await db
-          .insert(meetingAttendees)
-          .values({
-            meetingId: roomName,
-            name: identity,
-            initials: identity[0],
-          })
-          .onConflictDoNothing({
-            target: [meetingAttendees.meetingId, meetingAttendees.name],
-          });
+        .insert(meetingAttendees)
+        .values({
+          meetingId: roomName,
+          name: identity,
+          initials: identity[0],
+        })
+        .onConflictDoNothing({
+          target: [meetingAttendees.meetingId, meetingAttendees.name],
+        });
 
       const [event] = await db
-          .select()
-          .from(events)
-          .where(eq(events.id, roomName));
+        .select()
+        .from(events)
+        .where(eq(events.id, roomName));
 
-
-      const [userStatus] = await db.select({
-        recordingStatus: users.recordingStatus,
-      }).from(users).where(eq(users.user_id, event.userId));
+      const [userStatus] = await db
+        .select({
+          recordingStatus: users.recordingStatus,
+        })
+        .from(users)
+        .where(eq(users.user_id, event.userId));
 
       const outputs: EncodedOutputs = {
         file: new EncodedFileOutput({

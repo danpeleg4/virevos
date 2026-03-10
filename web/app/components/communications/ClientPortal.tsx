@@ -170,7 +170,9 @@ export function ClientPortal() {
       if (res.ok) {
         const data = await res.json();
         setPortals((prev) => {
-          const existing = prev.find((p) => String(p.clientId) === selectedClientId);
+          const existing = prev.find(
+            (p) => String(p.clientId) === selectedClientId
+          );
           if (existing) {
             return prev.map((p) =>
               String(p.clientId) === selectedClientId ? { ...p, ...data } : p
@@ -190,7 +192,9 @@ export function ClientPortal() {
     }
   };
 
-  const currentPortal = portals.find((p) => String(p.clientId) === selectedClientId);
+  const currentPortal = portals.find(
+    (p) => String(p.clientId) === selectedClientId
+  );
   const portalUrl = currentPortal?.portalUrl || "";
 
   return (
@@ -201,7 +205,10 @@ export function ClientPortal() {
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <Label className="mb-2 block">Select Client</Label>
-              <Select value={selectedClientId} onValueChange={handleClientChange}>
+              <Select
+                value={selectedClientId}
+                onValueChange={handleClientChange}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a client to configure portal..." />
                 </SelectTrigger>
@@ -219,7 +226,9 @@ export function ClientPortal() {
                 </SelectContent>
               </Select>
             </div>
-            {isLoading && <Loader2 className="h-5 w-5 animate-spin text-gray-400" />}
+            {isLoading && (
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -274,7 +283,9 @@ export function ClientPortal() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-sm text-blue-800 font-mono break-all">{portalUrl}</p>
+                <p className="text-sm text-blue-800 font-mono break-all">
+                  {portalUrl}
+                </p>
                 {currentPortal.lastAccessedAt && (
                   <p className="text-xs text-blue-600 mt-2">
                     Last accessed:{" "}
@@ -292,7 +303,9 @@ export function ClientPortal() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl text-gray-900">{portals.filter((p) => p.enabled).length}</p>
+                <p className="text-2xl text-gray-900">
+                  {portals.filter((p) => p.enabled).length}
+                </p>
                 <p className="text-sm text-gray-600 mt-1">Active Portals</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
@@ -444,13 +457,15 @@ export function ClientPortal() {
                           <li className="flex items-start">
                             <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
                             <span>
-                              Instant answers to FAQs about projects and timelines
+                              Instant answers to FAQs about projects and
+                              timelines
                             </span>
                           </li>
                           <li className="flex items-start">
                             <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
                             <span>
-                              Automatic routing of complex questions to your team
+                              Automatic routing of complex questions to your
+                              team
                             </span>
                           </li>
                           <li className="flex items-start">
@@ -569,7 +584,9 @@ export function ClientPortal() {
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">IP whitelist</span>
+                      <span className="text-sm text-gray-700">
+                        IP whitelist
+                      </span>
                       <Switch />
                     </div>
                   </div>
@@ -587,7 +604,9 @@ export function ClientPortal() {
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Invoice access</span>
+                      <span className="text-sm text-gray-700">
+                        Invoice access
+                      </span>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
@@ -597,7 +616,9 @@ export function ClientPortal() {
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Feedback forms</span>
+                      <span className="text-sm text-gray-700">
+                        Feedback forms
+                      </span>
                       <Switch />
                     </div>
                   </div>
@@ -620,9 +641,7 @@ export function ClientPortal() {
           </Button>
         )}
         <Button onClick={handleSave} disabled={isSaving || !selectedClientId}>
-          {isSaving ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : null}
+          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
           Save Changes
         </Button>
       </div>

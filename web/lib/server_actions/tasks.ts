@@ -56,9 +56,7 @@ export async function updateTaskDueDate(taskId: number, dueDate: string) {
     .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 }
 
-export async function addProjectTasksAction(
-  task: Task
-): Promise<Task> {
+export async function addProjectTasksAction(task: Task): Promise<Task> {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
   const { title, description, priority, dueDate, projectId } = task;

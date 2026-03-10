@@ -1,17 +1,20 @@
-import {currentUser} from "@clerk/nextjs/server";
-import {NextResponse} from "next/server";
-import {db} from "@db/db";
-import {users} from "@db/schema";
-import {eq} from "drizzle-orm";
+import { currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { db } from "@db/db";
+import { users } from "@db/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET() {
-    const user = await currentUser();
-    if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
-    }
+  const user = await currentUser();
+  if (!user?.id) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
 
-    const [recordingStatus] = await db.select().from(users).where(eq(
-        users.user_id, user.id
-    ));
-    return NextResponse.json({ recording_status: recordingStatus.recordingStatus });
+  const [recordingStatus] = await db
+    .select()
+    .from(users)
+    .where(eq(users.user_id, user.id));
+  return NextResponse.json({
+    recording_status: recordingStatus.recordingStatus,
+  });
 }

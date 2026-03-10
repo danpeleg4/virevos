@@ -30,6 +30,9 @@ export async function GET() {
     return NextResponse.json({ files: rows });
   } catch (err) {
     console.error("[api/files/user-files GET]", err);
-    return NextResponse.json({ error: "Failed to fetch files" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch files" },
+      { status: 500 }
+    );
   }
 }

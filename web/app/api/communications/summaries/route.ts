@@ -32,7 +32,10 @@ export async function GET() {
     return NextResponse.json({ summaries: rows });
   } catch (err) {
     console.error("[api/communications/summaries GET]", err);
-    return NextResponse.json({ error: "Failed to fetch summaries" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch summaries" },
+      { status: 500 }
+    );
   }
 }
 
@@ -106,10 +109,15 @@ export async function POST(req: NextRequest) {
       summary = inserted;
     }
 
-    return NextResponse.json({ summary: { ...summary, clientName: clientRows[0].name } });
+    return NextResponse.json({
+      summary: { ...summary, clientName: clientRows[0].name },
+    });
   } catch (err) {
     console.error("[api/communications/summaries POST]", err);
-    return NextResponse.json({ error: "Failed to generate summary" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to generate summary" },
+      { status: 500 }
+    );
   }
 }
 
@@ -139,6 +147,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/communications/summaries DELETE]", err);
-    return NextResponse.json({ error: "Failed to delete summary" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete summary" },
+      { status: 500 }
+    );
   }
 }

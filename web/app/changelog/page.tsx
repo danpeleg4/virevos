@@ -16,7 +16,9 @@ export default function ChangelogPage() {
       <section className="space-y-10">
         <div>
           <h2 className="text-xl font-medium mb-1">v1.3.0 — February 2026</h2>
-          <p className="text-sm text-gray-500 mb-3">Released February 15, 2026</p>
+          <p className="text-sm text-gray-500 mb-3">
+            Released February 15, 2026
+          </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
             <li>AI assistant now supports meeting summaries</li>
             <li>Improved billing page with invoice history</li>
@@ -26,7 +28,9 @@ export default function ChangelogPage() {
 
         <div>
           <h2 className="text-xl font-medium mb-1">v1.2.0 — January 2026</h2>
-          <p className="text-sm text-gray-500 mb-3">Released January 10, 2026</p>
+          <p className="text-sm text-gray-500 mb-3">
+            Released January 10, 2026
+          </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
             <li>Launched client portal</li>
             <li>Added activity logs</li>
@@ -36,7 +40,9 @@ export default function ChangelogPage() {
 
         <div>
           <h2 className="text-xl font-medium mb-1">v1.0.0 — December 2025</h2>
-          <p className="text-sm text-gray-500 mb-3">Released December 1, 2025</p>
+          <p className="text-sm text-gray-500 mb-3">
+            Released December 1, 2025
+          </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
             <li>Initial launch of Virevos</li>
             <li>Core workspace features: projects, tasks, clients</li>

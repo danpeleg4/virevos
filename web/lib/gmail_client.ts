@@ -10,14 +10,24 @@ export async function getGmailClient(userId: string) {
 }
 
 // Parse MIME message parts recursively to extract HTML/text body
-export function parseEmailBody(payload: any): { html: string | null; text: string | null } {
+export function parseEmailBody(payload: any): {
+  html: string | null;
+  text: string | null;
+} {
   if (!payload) return { html: null, text: null };
 
   function decode(data: string): string {
-    return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
+    return Buffer.from(
+      data.replace(/-/g, "+").replace(/_/g, "/"),
+      "base64"
+    ).toString("utf-8");
   }
 
-  function findParts(part: any, html: string | null, text: string | null): { html: string | null; text: string | null } {
+  function findParts(
+    part: any,
+    html: string | null,
+    text: string | null
+  ): { html: string | null; text: string | null } {
     if (!part) return { html, text };
     if (part.mimeType === "text/html" && part.body?.data) {
       return { html: decode(part.body.data), text };
@@ -42,32 +52,64 @@ export function parseEmailBody(payload: any): { html: string | null; text: strin
 
 // Parse email header value (handles encoded words like =?UTF-8?...?=)
 export function parseHeaderValue(value: string): string {
-  return value?.replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (_, charset, encoding, text) => {
-    if (encoding.toLowerCase() === "b") {
-      return Buffer.from(text, "base64").toString("utf-8");
-    }
-    return text.replace(/_/g, " ");
-  }) ?? "";
+  return (
+    value?.replace(
+      /=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g,
+      (_, charset, encoding, text) => {
+        if (encoding.toLowerCase() === "b") {
+          return Buffer.from(text, "base64").toString("utf-8");
+        }
+        return text.replace(/_/g, " ");
+      }
+    ) ?? ""
+  );
 }
 
 // Extract name and email from "Name <email>" format
-export function parseEmailAddress(raw: string): { name: string; email: string } {
+export function parseEmailAddress(raw: string): {
+  name: string;
+  email: string;
+} {
   const match = raw?.match(/^(.*?)\s*<(.+?)>$/);
-  if (match) return { name: match[1].trim().replace(/^"|"$/g, ""), email: match[2].trim() };
+  if (match)
+    return {
+      name: match[1].trim().replace(/^"|"$/g, ""),
+      email: match[2].trim(),
+    };
   return { name: "", email: raw?.trim() ?? "" };
 }
 
-export function getHeader(headers: Array<{ name: string; value: string }>, name: string): string {
-  return headers?.find(h => h.name.toLowerCase() === name.toLowerCase())?.value ?? "";
+export function getHeader(
+  headers: Array<{ name: string; value: string }>,
+  name: string
+): string {
+  return (
+    headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ??
+    ""
+  );
 }
 
 // Build RFC 2822 email message for Gmail API
 export function buildRawEmail({
-  to, toName, from, fromName, subject, bodyHtml, bodyText, inReplyTo, references,
+  to,
+  toName,
+  from,
+  fromName,
+  subject,
+  bodyHtml,
+  bodyText,
+  inReplyTo,
+  references,
 }: {
-  to: string; toName?: string; from: string; fromName?: string;
-  subject: string; bodyHtml: string; bodyText?: string;
-  inReplyTo?: string; references?: string;
+  to: string;
+  toName?: string;
+  from: string;
+  fromName?: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText?: string;
+  inReplyTo?: string;
+  references?: string;
 }): string {
   const boundary = `boundary_${Date.now()}`;
   const toHeader = toName ? `"${toName}" <${to}>` : to;

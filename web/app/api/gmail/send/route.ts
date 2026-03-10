@@ -3,7 +3,11 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { emails, clients } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { getGmailClient, buildRawEmail, parseEmailAddress } from "@/lib/gmail_client";
+import {
+  getGmailClient,
+  buildRawEmail,
+  parseEmailAddress,
+} from "@/lib/gmail_client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +17,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { to, toName, subject, bodyHtml, bodyText, replyToGmailId, threadId } = body;
+    const {
+      to,
+      toName,
+      subject,
+      bodyHtml,
+      bodyText,
+      replyToGmailId,
+      threadId,
+    } = body;
 
     if (!to || !subject || !bodyHtml) {
       return NextResponse.json(
@@ -32,7 +44,10 @@ export async function POST(req: NextRequest) {
 
     // Get user's Gmail address
     const profileRes = await gmail.users.getProfile({ userId: "me" });
-    const fromEmail = profileRes.data.emailAddress || user.emailAddresses?.[0]?.emailAddress || "";
+    const fromEmail =
+      profileRes.data.emailAddress ||
+      user.emailAddresses?.[0]?.emailAddress ||
+      "";
     const fromName = user.fullName || "";
 
     const rawEmail = buildRawEmail({
@@ -83,7 +98,9 @@ export async function POST(req: NextRequest) {
       gmailId,
       threadId: sentThreadId,
       subject,
-      snippet: bodyText?.slice(0, 200) || bodyHtml.replace(/<[^>]*>/g, "").slice(0, 200),
+      snippet:
+        bodyText?.slice(0, 200) ||
+        bodyHtml.replace(/<[^>]*>/g, "").slice(0, 200),
       fromEmail,
       fromName,
       toEmails: [toEmailAddr],
@@ -102,6 +119,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, gmailId });
   } catch (err) {
     console.error("[api/gmail/send POST]", err);
-    return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to send email" },
+      { status: 500 }
+    );
   }
 }

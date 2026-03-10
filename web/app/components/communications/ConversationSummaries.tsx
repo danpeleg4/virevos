@@ -190,7 +190,9 @@ export function ConversationSummaries() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Clients</p>
-                <p className="text-2xl text-gray-900 mt-1">{summaries.length}</p>
+                <p className="text-2xl text-gray-900 mt-1">
+                  {summaries.length}
+                </p>
               </div>
               <FileText className="h-8 w-8 text-blue-500" />
             </div>
@@ -217,7 +219,10 @@ export function ConversationSummaries() {
               <div>
                 <p className="text-sm text-gray-600">Need Attention</p>
                 <p className="text-2xl text-gray-900 mt-1">
-                  {summaries.filter((s) => s.sentiment === "needs-attention").length}
+                  {
+                    summaries.filter((s) => s.sentiment === "needs-attention")
+                      .length
+                  }
                 </p>
               </div>
               <Badge className="h-8 w-8 bg-red-100 text-red-600 flex items-center justify-center">
@@ -248,13 +253,18 @@ export function ConversationSummaries() {
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700 mb-1">Generate Summary</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  Generate Summary
+                </p>
                 <p className="text-xs text-gray-500">
                   AI-powered analysis of email conversations with a client
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                <Select
+                  value={selectedClientId}
+                  onValueChange={setSelectedClientId}
+                >
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Select client..." />
                   </SelectTrigger>
@@ -267,7 +277,10 @@ export function ConversationSummaries() {
                   </SelectContent>
                 </Select>
                 <Button
-                  onClick={() => selectedClientId && generateSummary(parseInt(selectedClientId, 10))}
+                  onClick={() =>
+                    selectedClientId &&
+                    generateSummary(parseInt(selectedClientId, 10))
+                  }
                   disabled={!selectedClientId || isGenerating !== null}
                 >
                   {isGenerating !== null ? (
@@ -330,7 +343,9 @@ export function ConversationSummaries() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarFallback>{getInitials(summary.clientName)}</AvatarFallback>
+                        <AvatarFallback>
+                          {getInitials(summary.clientName)}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center space-x-3 mb-2">
@@ -351,7 +366,9 @@ export function ConversationSummaries() {
                           {summary.generatedAt && (
                             <span className="text-xs text-gray-400">
                               Generated{" "}
-                              {new Date(summary.generatedAt).toLocaleDateString()}
+                              {new Date(
+                                summary.generatedAt
+                              ).toLocaleDateString()}
                             </span>
                           )}
                         </div>
@@ -392,7 +409,10 @@ export function ConversationSummaries() {
                       </p>
                       <ul className="space-y-1">
                         {(summary.actionItems || []).map((item, i) => (
-                          <li key={i} className="text-sm text-blue-800 flex items-start">
+                          <li
+                            key={i}
+                            className="text-sm text-blue-800 flex items-start"
+                          >
                             <span className="mr-2">•</span>
                             <span>{item}</span>
                           </li>
@@ -434,12 +454,16 @@ export function ConversationSummaries() {
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">No conversation summaries found</p>
             <p className="text-sm text-gray-500 mt-1">
-              Generate an AI summary for a client to see their communication overview
+              Generate an AI summary for a client to see their communication
+              overview
             </p>
             {clients.length > 0 && (
               <Button
                 className="mt-4"
-                onClick={() => selectedClientId && generateSummary(parseInt(selectedClientId, 10))}
+                onClick={() =>
+                  selectedClientId &&
+                  generateSummary(parseInt(selectedClientId, 10))
+                }
                 disabled={!selectedClientId || isGenerating !== null}
               >
                 <Sparkles className="h-4 w-4 mr-2" />

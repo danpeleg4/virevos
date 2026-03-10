@@ -145,7 +145,11 @@ Best,
 John`,
 };
 
-export function AIReplyComposer({ message, onClose, onSend }: AIReplyComposerProps) {
+export function AIReplyComposer({
+  message,
+  onClose,
+  onSend,
+}: AIReplyComposerProps) {
   const [tone, setTone] = useState("professional");
   const [draft, setDraft] = useState(mockDrafts.professional);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -166,7 +170,10 @@ Return only the email body text, no subject line.`;
         body: JSON.stringify({
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Generate a ${tone} reply to this email from ${message.from}: "${message.preview}"` },
+            {
+              role: "user",
+              content: `Generate a ${tone} reply to this email from ${message.from}: "${message.preview}"`,
+            },
           ],
         }),
       });
@@ -197,12 +204,16 @@ Return only the email body text, no subject line.`;
 
       if (!fullText) {
         // Fall back to mock if AI returns nothing
-        setDraft(mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional);
+        setDraft(
+          mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional
+        );
       }
     } catch (err) {
       console.error("AI generation error:", err);
       // Fall back to mock drafts
-      setDraft(mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional);
+      setDraft(
+        mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -250,7 +261,9 @@ Return only the email body text, no subject line.`;
             <strong>Context:</strong> Replying to {message.from} from{" "}
             {message.client}
           </p>
-          <p className="text-xs text-blue-800 italic">&quot;{message.preview}&quot;</p>
+          <p className="text-xs text-blue-800 italic">
+            &quot;{message.preview}&quot;
+          </p>
         </CardContent>
       </Card>
 
@@ -350,7 +363,10 @@ Return only the email body text, no subject line.`;
             <Clock className="h-4 w-4 mr-2" />
             Schedule
           </Button>
-          <Button onClick={handleSend} disabled={isSending || !draft || !onSend}>
+          <Button
+            onClick={handleSend}
+            disabled={isSending || !draft || !onSend}
+          >
             {isSending ? (
               <>
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

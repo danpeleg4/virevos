@@ -395,44 +395,46 @@ export default function Billing() {
         </div>
 
         <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Invoice ID</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invoices.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell className="text-gray-900">{invoice.id}</TableCell>
-                <TableCell className="text-gray-600">{invoice.date}</TableCell>
-                <TableCell className="text-gray-600">
-                  {invoice.description}
-                </TableCell>
-                <TableCell className="text-gray-900">
-                  ${invoice.amount.toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  <Badge className="bg-green-100 text-green-700">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    {invoice.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    PDF
-                  </Button>
-                </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {invoices.map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell className="text-gray-900">{invoice.id}</TableCell>
+                  <TableCell className="text-gray-600">
+                    {invoice.date}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {invoice.description}
+                  </TableCell>
+                  <TableCell className="text-gray-900">
+                    ${invoice.amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className="bg-green-100 text-green-700">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      {invoice.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      PDF
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </Card>
     </div>

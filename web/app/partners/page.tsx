@@ -17,9 +17,9 @@ export default function PartnersPage() {
         <div>
           <h2 className="text-xl font-medium mb-2">Partner Program</h2>
           <p>
-            We work with agencies, consultants, and technology companies to bring Virevos to more
-            users. Our partner program offers referral commissions, co-marketing opportunities, and
-            dedicated support.
+            We work with agencies, consultants, and technology companies to
+            bring Virevos to more users. Our partner program offers referral
+            commissions, co-marketing opportunities, and dedicated support.
           </p>
         </div>
 
@@ -36,7 +36,10 @@ export default function PartnersPage() {
           <h2 className="text-xl font-medium mb-2">Get Started</h2>
           <p>
             Interested in partnering with us? Reach out at{" "}
-            <a href="mailto:partners@virevos.com" className="text-blue-600 hover:underline">
+            <a
+              href="mailto:partners@virevos.com"
+              className="text-blue-600 hover:underline"
+            >
               partners@virevos.com
             </a>
           </p>

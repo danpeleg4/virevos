@@ -14,7 +14,10 @@ type ActionType =
   | "markUnread"
   | "trash";
 
-const labelActions: Record<ActionType, { addLabels?: string[]; removeLabels?: string[] }> = {
+const labelActions: Record<
+  ActionType,
+  { addLabels?: string[]; removeLabels?: string[] }
+> = {
   star: { addLabels: ["STARRED"] },
   unstar: { removeLabels: ["STARRED"] },
   archive: { removeLabels: ["INBOX"] },
@@ -84,16 +87,16 @@ export async function PATCH(
     if (action === "markUnread") dbUpdate.isRead = false;
 
     if (Object.keys(dbUpdate).length > 0) {
-      await db
-        .update(emails)
-        .set(dbUpdate)
-        .where(eq(emails.id, email.id));
+      await db.update(emails).set(dbUpdate).where(eq(emails.id, email.id));
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/gmail/messages/[id] PATCH]", err);
-    return NextResponse.json({ error: "Failed to update message" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update message" },
+      { status: 500 }
+    );
   }
 }
 
@@ -116,6 +119,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/gmail/messages/[id] DELETE]", err);
-    return NextResponse.json({ error: "Failed to delete message" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete message" },
+      { status: 500 }
+    );
   }
 }

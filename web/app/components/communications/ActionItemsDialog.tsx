@@ -86,7 +86,9 @@ export function ActionItemsDialog({
   clientName,
   existingItems,
 }: ActionItemsDialogProps) {
-  const [items, setItems] = useState<ActionItem[]>(existingItems.length > 0 ? existingItems : mockActionItems);
+  const [items, setItems] = useState<ActionItem[]>(
+    existingItems.length > 0 ? existingItems : mockActionItems
+  );
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({
     title: "",
@@ -130,8 +132,8 @@ export function ActionItemsDialog({
                 item.status === "completed"
                   ? "pending"
                   : item.status === "pending"
-                  ? "in-progress"
-                  : "completed",
+                    ? "in-progress"
+                    : "completed",
             }
           : item
       )
@@ -255,9 +257,7 @@ export function ActionItemsDialog({
                 <Label>Assignee</Label>
                 <Select
                   value={newItem.assignee}
-                  onValueChange={(v) =>
-                    setNewItem({ ...newItem, assignee: v })
-                  }
+                  onValueChange={(v) => setNewItem({ ...newItem, assignee: v })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -299,7 +299,9 @@ export function ActionItemsDialog({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className={`border rounded-lg p-4 ${
-                  item.status === "completed" ? "bg-gray-50 opacity-75" : "bg-white"
+                  item.status === "completed"
+                    ? "bg-gray-50 opacity-75"
+                    : "bg-white"
                 }`}
               >
                 <div className="flex items-start space-x-3">
@@ -355,7 +357,11 @@ export function ActionItemsDialog({
                         </Badge>
                       )}
                       {item.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {tag}
                         </Badge>
                       ))}
@@ -371,9 +377,7 @@ export function ActionItemsDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-          <Button>
-            Save Changes
-          </Button>
+          <Button>Save Changes</Button>
         </div>
       </DialogContent>
     </Dialog>

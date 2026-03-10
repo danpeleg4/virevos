@@ -32,7 +32,11 @@ export default function Communications() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 min-h-0 flex flex-col"
+      >
         <div className="overflow-x-auto pb-1 shrink-0">
           <TabsList className="mb-4 min-w-max">
             <TabsTrigger value="inbox" className="relative cursor-pointer">
@@ -60,7 +64,10 @@ export default function Communications() {
           </TabsList>
         </div>
 
-        <TabsContent value="inbox" className="min-h-0 h-full">
+        <TabsContent
+          value="inbox"
+          className="flex-1 min-h-0 overflow-hidden flex flex-col"
+        >
           <UnifiedInbox />
         </TabsContent>
 

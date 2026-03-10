@@ -246,8 +246,8 @@ export default function Security() {
             <Card className="p-6">
               <h3 className="text-xl text-gray-900 mb-2">Data Privacy</h3>
               <p className="text-gray-600">
-                We never sell your data. Your information is yours, and we&apos;re
-                committed to keeping it private and secure.
+                We never sell your data. Your information is yours, and
+                we&apos;re committed to keeping it private and secure.
               </p>
             </Card>
           </div>

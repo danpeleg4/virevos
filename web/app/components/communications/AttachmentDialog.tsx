@@ -60,11 +60,16 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getFileType(mimeType: string | null, name: string): AttachedFile["type"] {
+function getFileType(
+  mimeType: string | null,
+  name: string
+): AttachedFile["type"] {
   if (!mimeType) {
     const ext = name.split(".").pop()?.toLowerCase();
-    if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(ext || "")) return "image";
-    if (["pdf", "doc", "docx", "xls", "xlsx", "txt"].includes(ext || "")) return "document";
+    if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(ext || ""))
+      return "image";
+    if (["pdf", "doc", "docx", "xls", "xlsx", "txt"].includes(ext || ""))
+      return "document";
     return "other";
   }
   if (mimeType.startsWith("image/")) return "image";
@@ -113,7 +118,9 @@ export function AttachmentDialog({
     }
   };
 
-  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
@@ -212,7 +219,11 @@ export function AttachmentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-col"
+        >
           <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
@@ -229,7 +240,10 @@ export function AttachmentDialog({
           </TabsList>
 
           <div className="relative mt-2" style={{ height: "320px" }}>
-            <TabsContent value="upload" className="absolute inset-0 data-[state=inactive]:hidden">
+            <TabsContent
+              value="upload"
+              className="absolute inset-0 data-[state=inactive]:hidden"
+            >
               <div
                 className="h-full border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-400 transition-colors cursor-pointer flex flex-col items-center justify-center"
                 onClick={() => fileInputRef.current?.click()}
@@ -264,7 +278,10 @@ export function AttachmentDialog({
               </div>
             </TabsContent>
 
-            <TabsContent value="recent" className="absolute inset-0 flex flex-col gap-3 data-[state=inactive]:hidden">
+            <TabsContent
+              value="recent"
+              className="absolute inset-0 flex flex-col gap-3 data-[state=inactive]:hidden"
+            >
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -289,7 +306,9 @@ export function AttachmentDialog({
                   <div className="space-y-2">
                     {filteredAppFiles.map((file, index) => {
                       const type = getFileType(file.mimeType, file.name);
-                      const attached = selectedFiles.find((f) => f.id === String(file.id));
+                      const attached = selectedFiles.find(
+                        (f) => f.id === String(file.id)
+                      );
                       return (
                         <motion.div
                           key={file.id}
@@ -303,16 +322,22 @@ export function AttachmentDialog({
                               : "hover:bg-gray-50"
                           }`}
                         >
-                          <div className="flex-shrink-0">{getFileIcon(type)}</div>
+                          <div className="flex-shrink-0">
+                            {getFileIcon(type)}
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-900 truncate">{file.name}</p>
+                            <p className="text-sm text-gray-900 truncate">
+                              {file.name}
+                            </p>
                             <p className="text-xs text-gray-500">
                               {formatFileSize(file.size)}
                               {file.projectName ? ` · ${file.projectName}` : ""}
                             </p>
                           </div>
                           {attached && (
-                            <Badge className="bg-blue-500 text-white">Selected</Badge>
+                            <Badge className="bg-blue-500 text-white">
+                              Selected
+                            </Badge>
                           )}
                         </motion.div>
                       );
@@ -322,7 +347,10 @@ export function AttachmentDialog({
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="link" className="absolute inset-0 space-y-4 overflow-y-auto data-[state=inactive]:hidden">
+            <TabsContent
+              value="link"
+              className="absolute inset-0 space-y-4 overflow-y-auto data-[state=inactive]:hidden"
+            >
               <div className="space-y-3">
                 <div>
                   <label className="text-sm text-gray-700 mb-2 block">
@@ -335,7 +363,8 @@ export function AttachmentDialog({
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Add a link to a file stored in cloud storage or external website
+                  Add a link to a file stored in cloud storage or external
+                  website
                 </p>
                 {linkUrl && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -377,7 +406,9 @@ export function AttachmentDialog({
                   {file.name}
                   <button
                     onClick={() =>
-                      setSelectedFiles(selectedFiles.filter((f) => f.id !== file.id))
+                      setSelectedFiles(
+                        selectedFiles.filter((f) => f.id !== file.id)
+                      )
                     }
                     className="ml-2 hover:bg-gray-300 rounded-full p-0.5"
                   >
