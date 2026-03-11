@@ -295,11 +295,11 @@ export function UnifiedInbox() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-screen">
       {/* Message List */}
-      <div className="lg:col-span-1">
-        <Card className="flex flex-col flex-1 min-h-0">
-          <CardContent className="p-4 flex flex-col flex-1 min-h-0 gap-4">
+      <div className="lg:col-span-1 h-full">
+        <Card className="flex flex-col h-full">
+          <CardContent className="p-4 flex flex-col gap-4 h-screen">
             {/* Search and Filters */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -372,7 +372,7 @@ export function UnifiedInbox() {
             <Separator />
 
             {/* Message List */}
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-2 pr-1">
+            <div className="flex-1 h-64 overflow-y-auto space-y-2">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
