@@ -225,15 +225,15 @@ export function AttachmentDialog({
           className="flex flex-col"
         >
           <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="upload">
+            <TabsTrigger value="upload" className={activeTab == "upload" ? "" : "cursor-pointer"}>
               <Upload className="h-4 w-4 mr-2" />
               Upload
             </TabsTrigger>
-            <TabsTrigger value="recent">
+            <TabsTrigger value="recent" className={activeTab == "recent" ? "" : "cursor-pointer"}>
               <Folder className="h-4 w-4 mr-2" />
               App Files
             </TabsTrigger>
-            <TabsTrigger value="link">
+            <TabsTrigger value="link" className={activeTab == "link" ? "" : "cursor-pointer"}>
               <Link2 className="h-4 w-4 mr-2" />
               Add Link
             </TabsTrigger>

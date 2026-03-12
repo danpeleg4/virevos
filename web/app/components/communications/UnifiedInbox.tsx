@@ -437,7 +437,7 @@ export function UnifiedInbox() {
                             }}
                           >
                             <Star
-                              className={`h-4 w-4 ${
+                              className={`h-4 w-4 cursor-pointer ${
                                 message.starred
                                   ? "fill-yellow-400 text-yellow-400"
                                   : "text-gray-400"
