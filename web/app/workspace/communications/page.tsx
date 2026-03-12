@@ -19,7 +19,7 @@ export default function Communications() {
   const [scheduledCount] = useState(3);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto h-full flex flex-col overflow-hidden">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex flex-col overflow-y-auto">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">
@@ -64,10 +64,7 @@ export default function Communications() {
           </TabsList>
         </div>
 
-        <TabsContent
-          value="inbox"
-          className="flex-1 min-h-0 overflow-hidden flex flex-col"
-        >
+        <TabsContent value="inbox">
           <UnifiedInbox />
         </TabsContent>
 

@@ -87,10 +87,8 @@ export function UnifiedInbox() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "email" | "chat">("all");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "unread" | "starred"
-  >("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showAIComposer, setShowAIComposer] = useState(false);
   const [showAttachmentDialog, setShowAttachmentDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
@@ -295,7 +293,7 @@ export function UnifiedInbox() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-screen">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
       {/* Message List */}
       <div className="lg:col-span-1 h-full">
         <Card className="flex flex-col h-full">
@@ -331,7 +329,7 @@ export function UnifiedInbox() {
               <div className="flex gap-2">
                 <Select
                   value={filterType}
-                  onValueChange={(v: any) => setFilterType(v)}
+                  onValueChange={(v) => setFilterType(v)}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -355,7 +353,7 @@ export function UnifiedInbox() {
 
                 <Select
                   value={filterStatus}
-                  onValueChange={(v: any) => setFilterStatus(v)}
+                  onValueChange={(v) => setFilterStatus(v)}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -372,7 +370,7 @@ export function UnifiedInbox() {
             <Separator />
 
             {/* Message List */}
-            <div className="flex-1 h-64 overflow-y-auto space-y-2">
+            <div className="flex-1 h-64 overflow-y-auto overflow-x-hidden space-y-2">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -482,10 +480,10 @@ export function UnifiedInbox() {
       </div>
 
       {/* Message Detail & Reply */}
-      <div className="lg:col-span-2 min-h-0 flex flex-col h-full overflow-hidden">
+      <div className="lg:col-span-2 flex flex-col h-full overflow-y-auto space-y-2">
         {selectedMessage ? (
-          <Card className="flex flex-col flex-1 min-h-0">
-            <CardContent className="p-6 flex flex-col flex-1 min-h-0 overflow-y-auto gap-6">
+          <Card className="flex flex-col flex-1">
+            <CardContent className="p-6 flex flex-col flex-1 gap-6">
               {/* Message Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-4">
