@@ -4,7 +4,7 @@ import {
   changePriorityStatus,
   updateTaskDueDate,
   addProjectTasksAction,
-} from "@/lib/server_actions/tasks";
+} from "@/lib/tasks";
 import { currentUser } from "@clerk/nextjs/server";
 
 jest.mock("@clerk/nextjs/server", () => ({

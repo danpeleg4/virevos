@@ -1,6 +1,7 @@
 import { db } from "@db/db";
 import { emails, emailAttachments, clients } from "@db/schema";
 import { and, eq } from "drizzle-orm";
+import { gmail_v1 } from "googleapis";
 import {
   getGmailClient,
   parseEmailBody,
@@ -18,7 +19,7 @@ async function fetchMessageWithRetry(
   gmail: NonNullable<Awaited<ReturnType<typeof getGmailClient>>>,
   messageId: string,
   retries = 3
-): Promise<any> {
+): Promise<gmail_v1.Schema$Message> {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const res = await gmail.users.messages.get({
@@ -27,13 +28,14 @@ async function fetchMessageWithRetry(
         format: "full",
       });
       return res.data;
-    } catch (err: any) {
-      if (err?.code === 429 || err?.status === 429) {
+    } catch (err: unknown) {
+      const e = err as { code?: number; status?: number };
+      if (e?.code === 429 || e?.status === 429) {
         const delay = Math.pow(2, attempt) * 1000;
         console.log(`[gmail_sync] Rate limited, retrying after ${delay}ms`);
         await sleep(delay);
       } else {
-        throw err;
+        throw err as Error;
       }
     }
   }
@@ -51,7 +53,7 @@ async function processMessage(
   const msg = await fetchMessageWithRetry(gmail, messageId);
   if (!msg) return;
 
-  const headers = msg.payload?.headers ?? [];
+  const headers = (msg.payload?.headers ?? []) as Array<{ name: string; value: string }>;
   const fromRaw = parseHeaderValue(getHeader(headers, "From"));
   const toRaw = parseHeaderValue(getHeader(headers, "To"));
   const ccRaw = parseHeaderValue(getHeader(headers, "CC"));
@@ -75,7 +77,7 @@ async function processMessage(
 
   const sentAt = dateRaw ? new Date(dateRaw) : new Date();
 
-  const { html: bodyHtml, text: bodyText } = parseEmailBody(msg.payload);
+  const { html: bodyHtml, text: bodyText } = parseEmailBody((msg.payload ?? {}) as import("@/types/gmail").GmailMessagePart);
 
   const labelIds: string[] = msg.labelIds ?? [];
   const isRead = !labelIds.includes("UNREAD");
@@ -141,7 +143,7 @@ async function processMessage(
     emailId = inserted.id;
 
     // Save attachment metadata for new emails
-    const attachmentMeta = listAttachments(msg.payload);
+    const attachmentMeta = listAttachments((msg.payload ?? {}) as import("@/types/gmail").GmailMessagePart);
     if (attachmentMeta.length > 0) {
       await db.insert(emailAttachments).values(
         attachmentMeta.map((att) => ({

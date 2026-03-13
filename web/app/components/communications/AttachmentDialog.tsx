@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,10 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { uploadCommunicationAttachment } from "@/lib/projects";
+import type { AttachedFile } from "@/types/communications";
 
 interface AttachmentDialogProps {
   open: boolean;
@@ -35,14 +39,7 @@ interface AttachmentDialogProps {
   onAttach: (files: AttachedFile[]) => void;
 }
 
-interface AttachedFile {
-  id: string;
-  name: string;
-  size: string;
-  type: "document" | "image" | "other";
-  url?: string;
-  path?: string;
-}
+export type { AttachedFile };
 
 interface AppFile {
   id: number;
@@ -91,32 +88,38 @@ export function AttachmentDialog({
   const [selectedFiles, setSelectedFiles] = useState<AttachedFile[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
   const [activeTab, setActiveTab] = useState("upload");
-  const [appFiles, setAppFiles] = useState<AppFile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (open) {
-      fetchAppFiles();
-    }
-  }, [open]);
+  const { data: appFilesData, isLoading: isLoadingFiles } = useQuery({
+    queryKey: ["user-files"],
+    queryFn: async () => {
+      const res = await axios.get<{ files: AppFile[] }>("/api/files/user-files");
+      return res.data.files;
+    },
+    enabled: open,
+  });
 
-  const fetchAppFiles = async () => {
-    setIsLoadingFiles(true);
-    try {
-      const res = await fetch("/api/files/user-files");
-      if (res.ok) {
-        const data = await res.json();
-        setAppFiles(data.files || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch app files:", err);
-    } finally {
-      setIsLoadingFiles(false);
-    }
-  };
+  const appFiles = appFilesData ?? [];
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => uploadCommunicationAttachment(file),
+    onSuccess: (data, file) => {
+      const attachedFile: AttachedFile = {
+        id: data.path,
+        name: data.name,
+        size: formatFileSize(data.size),
+        type: getFileType(file.type, file.name),
+        path: data.path,
+        url: data.url,
+      };
+      setSelectedFiles((prev) => [...prev, attachedFile]);
+      toast.success(`${file.name} uploaded successfully`);
+    },
+    onError: (_err, file) => {
+      toast.error(`Failed to upload ${file.name}`);
+    },
+  });
 
   const handleFileInputChange = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -124,39 +127,11 @@ export function AttachmentDialog({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    setIsUploading(true);
-    try {
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await fetch("/api/files/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const attachedFile: AttachedFile = {
-            id: String(data.id || Date.now()),
-            name: file.name,
-            size: formatFileSize(file.size),
-            type: getFileType(file.type, file.name),
-            path: data.path,
-            url: data.url,
-          };
-          setSelectedFiles((prev) => [...prev, attachedFile]);
-          toast.success(`${file.name} uploaded successfully`);
-        } else {
-          toast.error(`Failed to upload ${file.name}`);
-        }
-      }
-    } catch (err) {
-      toast.error("Upload failed");
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    for (const file of files) {
+      await uploadMutation.mutateAsync(file);
     }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSelectAppFile = (file: AppFile) => {
@@ -205,6 +180,8 @@ export function AttachmentDialog({
   const filteredAppFiles = appFiles.filter((f) =>
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const isUploading = uploadMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

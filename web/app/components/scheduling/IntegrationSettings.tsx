@@ -1,4 +1,4 @@
-import { ComponentType, SVGProps, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   Card,
@@ -15,18 +15,9 @@ import { CheckCircle, ExternalLink, Settings } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { changeRecordingStatus } from "@/lib/server_actions/user";
-
-interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>> | string;
-  connected: boolean;
-  syncStatus: "synced" | "syncing" | "error" | "not-connected";
-  lastSync?: string;
-  features: string[];
-}
+import { changeRecordingStatus } from "@/lib/user";
+import type { ComponentType, SVGProps } from "react";
+import type { Integration } from "@/types/integrations";
 
 const INITIAL_INTEGRATIONS: Integration[] = [
   {

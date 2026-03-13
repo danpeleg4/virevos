@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
-import { createInstantMeeting } from "@/lib/server_actions/meetings";
+import { createInstantMeeting } from "@/lib/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 export function Meetings() {

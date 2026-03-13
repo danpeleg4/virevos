@@ -30,12 +30,17 @@ describe("GET /api/google", () => {
     );
   });
 
-  it("generates auth URL with calendar scope and offline access", async () => {
+  it("generates auth URL with required scopes and offline access", async () => {
     await GET();
     expect(mockGenerateAuthUrl).toHaveBeenCalledWith({
       access_type: "offline",
       prompt: "consent",
-      scope: ["https://www.googleapis.com/auth/calendar"],
+      scope: [
+        "https://www.googleapis.com/auth/calendar",
+        "https://www.googleapis.com/auth/gmail.modify",
+        "https://www.googleapis.com/auth/gmail.send",
+        "https://www.googleapis.com/auth/userinfo.email",
+      ],
     });
   });
 });

@@ -25,23 +25,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-
-interface ScheduledEmail {
-  id: number;
-  toEmail: string;
-  toName: string | null;
-  subject: string;
-  bodyHtml: string;
-  bodyText: string | null;
-  scheduledAt: string;
-  timezone: string;
-  recurring: string | null;
-  status: string;
-  sentAt: string | null;
-  errorMessage: string | null;
-  clientId: number | null;
-  createdAt: string | null;
-}
+import type { ScheduledEmail } from "@/types/communications";
 
 export function ScheduledMessages() {
   const [messages, setMessages] = useState<ScheduledEmail[]>([]);

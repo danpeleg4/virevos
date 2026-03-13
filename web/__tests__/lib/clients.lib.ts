@@ -3,7 +3,7 @@ import {
   updateExistingClient,
   deleteClient,
   updateNotes,
-} from "@/lib/server_actions/clients";
+} from "@/lib/clients";
 import { currentUser } from "@clerk/nextjs/server";
 
 jest.mock("@clerk/nextjs/server", () => ({

@@ -38,6 +38,11 @@ import {
   Loader2,
   AlertCircle,
   Plus,
+  X,
+  FileText,
+  Image,
+  File,
+  Link2,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { motion } from "motion/react";
@@ -47,28 +52,7 @@ import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { toast } from "sonner";
 import axios from "axios";
-
-interface Message {
-  id: string;
-  gmailId?: string;
-  threadId?: string;
-  type: "email" | "chat";
-  from: string;
-  fromEmail?: string;
-  initials: string;
-  subject?: string;
-  preview: string;
-  body?: string;
-  timestamp: Date | string;
-  unread: boolean;
-  starred: boolean;
-  archived?: boolean;
-  sent?: boolean;
-  client: string;
-  clientId?: number | null;
-  labels?: string[];
-  tags: string[];
-}
+import type { InboxMessage, AttachedFile, ScheduleDetails } from "@/types/communications";
 
 function formatTimestamp(ts: Date | string): string {
   const date = typeof ts === "string" ? new Date(ts) : ts;
@@ -85,8 +69,8 @@ function formatTimestamp(ts: Date | string): string {
 }
 
 export function UnifiedInbox() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [messages, setMessages] = useState<InboxMessage[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<InboxMessage | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -99,6 +83,8 @@ export function UnifiedInbox() {
   const [isSending, setIsSending] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<AttachedFile[]>([]);
+  const [pendingSchedule, setPendingSchedule] = useState<ScheduleDetails | null>(null);
 
   useEffect(() => {
     checkGoogleConnection();
@@ -154,7 +140,8 @@ export function UnifiedInbox() {
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "unread" && msg.unread) ||
-      (filterStatus === "starred" && msg.starred);
+      (filterStatus === "starred" && msg.starred) ||
+      (filterStatus === "archived" && msg.archived === true);
 
     return matchesSearch && matchesType && matchesStatus;
   });
@@ -202,9 +189,11 @@ export function UnifiedInbox() {
     if (msg?.unread) applyAction(id, "markRead");
   };
 
-  const handleSelectMessage = (message: Message) => {
+  const handleSelectMessage = (message: InboxMessage) => {
     setSelectedMessage(message);
     setReplyText("");
+    setPendingAttachments([]);
+    setPendingSchedule(null);
     setShowAIComposer(false);
     markAsRead(message.id);
   };
@@ -224,17 +213,43 @@ export function UnifiedInbox() {
     if (!selectedMessage || !replyText.trim()) return;
     setIsSending(true);
     try {
-      await axios.post("/api/gmail/send", {
-        to: selectedMessage.fromEmail || selectedMessage.from,
-        subject: `Re: ${selectedMessage.subject || ""}`,
-        bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-        bodyText: replyText,
-        threadId: selectedMessage.threadId,
-        replyToGmailId: selectedMessage.gmailId,
-      });
-      toast.success("Reply sent successfully");
-      setReplyText("");
-      await fetchEmails();
+      if (pendingSchedule) {
+        const scheduledAt = new Date(
+          `${pendingSchedule.date.toISOString().split("T")[0]}T${pendingSchedule.time}`
+        );
+        await axios.post("/api/scheduled-emails", {
+          toEmail: selectedMessage.fromEmail || selectedMessage.from,
+          toName: selectedMessage.from,
+          subject: `Re: ${selectedMessage.subject || ""}`,
+          bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+          bodyText: replyText,
+          scheduledAt: scheduledAt.toISOString(),
+          timezone: pendingSchedule.timezone,
+          clientId: selectedMessage.clientId,
+        });
+        toast.success(
+          `Reply scheduled for ${pendingSchedule.date.toLocaleDateString()} at ${pendingSchedule.time}`
+        );
+        setReplyText("");
+        setPendingAttachments([]);
+        setPendingSchedule(null);
+      } else {
+        await axios.post("/api/gmail/send", {
+          to: selectedMessage.fromEmail || selectedMessage.from,
+          subject: `Re: ${selectedMessage.subject || ""}`,
+          bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+          bodyText: replyText,
+          threadId: selectedMessage.threadId,
+          replyToGmailId: selectedMessage.gmailId,
+          attachments: pendingAttachments
+            .filter((f) => f.path || f.url)
+            .map((f) => ({ name: f.name, url: f.url, path: f.path })),
+        });
+        toast.success("Reply sent successfully");
+        setReplyText("");
+        setPendingAttachments([]);
+        await fetchEmails();
+      }
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
       toast.error(error.response?.data?.error || "Failed to send reply");
@@ -339,6 +354,7 @@ export function UnifiedInbox() {
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="unread">Unread</SelectItem>
                     <SelectItem value="starred">Starred</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -507,16 +523,25 @@ export function UnifiedInbox() {
                       <DropdownMenuLabel>Message Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
+                          className="cursor-pointer"
                         onClick={() => {
-                          applyAction(selectedMessage.id, "archive");
-                          setSelectedMessage(null);
-                          toast.success("Message archived");
+                          applyAction(
+                            selectedMessage.id,
+                            selectedMessage.archived ? "unarchive" : "archive"
+                          );
+                          if (!selectedMessage.archived) setSelectedMessage(null);
+                          toast.success(
+                            selectedMessage.archived
+                              ? "Message unarchived"
+                              : "Message archived"
+                          );
                         }}
                       >
-                        <Archive className="h-4 w-4 mr-2" />
-                        Archive
+                        <Archive className={`h-4 w-4 mr-2 ${selectedMessage.archived ? "fill-blue-500 text-blue-500" : ""}`} />
+                        {selectedMessage.archived ? "Unarchive" : "Archive"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                          className="cursor-pointer"
                         onClick={() => {
                           toggleStar(
                             selectedMessage.id,
@@ -529,21 +554,29 @@ export function UnifiedInbox() {
                           );
                         }}
                       >
-                        <Star className="h-4 w-4 mr-2" />
+                        <Star className={`h-4 w-4 mr-2 ${selectedMessage.starred ? "fill-yellow-400 text-yellow-400" : ""}`} />
                         {selectedMessage.starred ? "Unstar" : "Star"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                          className="cursor-pointer"
                         onClick={() => {
-                          applyAction(selectedMessage.id, "markUnread");
-                          toast.success("Marked as unread");
+                          applyAction(
+                            selectedMessage.id,
+                            selectedMessage.unread ? "markRead" : "markUnread"
+                          );
+                          toast.success(
+                            selectedMessage.unread
+                              ? "Marked as read"
+                              : "Marked as unread"
+                          );
                         }}
                       >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Mark as Unread
+                        <Mail className={`h-4 w-4 mr-2 ${selectedMessage.unread ? "fill-blue-500 text-blue-500" : ""}`} />
+                        {selectedMessage.unread ? "Mark as Read" : "Mark as Unread"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-red-600"
+                        className="cursor-pointer text-red-600"
                         onClick={() => handleDeleteMessage(selectedMessage.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -663,6 +696,52 @@ export function UnifiedInbox() {
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                   />
+                  {(pendingAttachments.length > 0 || pendingSchedule) && (
+                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border">
+                      {pendingAttachments.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-1.5 bg-white border rounded-md px-2 py-1 text-xs text-gray-700"
+                        >
+                          {file.type === "document" ? (
+                            <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                          ) : file.type === "image" ? (
+                            <Image className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                          ) : file.url?.startsWith("http") && !file.path ? (
+                            <Link2 className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
+                          ) : (
+                            <File className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                          )}
+                          <span className="max-w-32 truncate">{file.name}</span>
+                          <span className="text-gray-400">{file.size}</span>
+                          <button
+                            onClick={() =>
+                              setPendingAttachments((prev) =>
+                                prev.filter((f) => f.id !== file.id)
+                              )
+                            }
+                            className="ml-0.5 hover:bg-gray-100 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                      {pendingSchedule && (
+                        <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-md px-2 py-1 text-xs text-blue-700">
+                          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span>
+                            {pendingSchedule.date.toLocaleDateString()} at {pendingSchedule.time}
+                          </span>
+                          <button
+                            onClick={() => setPendingSchedule(null)}
+                            className="ml-0.5 hover:bg-blue-100 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Button
@@ -672,14 +751,19 @@ export function UnifiedInbox() {
                       >
                         <Paperclip className="h-4 w-4 mr-2" />
                         Attach
+                        {pendingAttachments.length > 0 && (
+                          <Badge className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center text-xs bg-blue-500">
+                            {pendingAttachments.length}
+                          </Badge>
+                        )}
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant={pendingSchedule ? "default" : "outline"}
                         onClick={() => setShowScheduleDialog(true)}
                       >
                         <Clock className="h-4 w-4 mr-2" />
-                        Schedule
+                        {pendingSchedule ? "Change Schedule" : "Schedule"}
                       </Button>
                     </div>
                     <Button
@@ -692,7 +776,7 @@ export function UnifiedInbox() {
                       ) : (
                         <Send className="h-4 w-4 mr-2" />
                       )}
-                      Send Reply
+                      {pendingSchedule ? "Schedule Reply" : "Send Reply"}
                     </Button>
                   </div>
                 </div>
@@ -763,34 +847,20 @@ export function UnifiedInbox() {
         open={showAttachmentDialog}
         onOpenChange={setShowAttachmentDialog}
         onAttach={(files) => {
-          toast.success(`${files.length} file(s) attached successfully`);
+          setPendingAttachments((prev) => {
+            const existingIds = new Set(prev.map((f) => f.id));
+            const newFiles = files.filter((f) => !existingIds.has(f.id));
+            return [...prev, ...newFiles];
+          });
+          toast.success(`${files.length} file(s) ready to attach`);
         }}
       />
       <ScheduleMessageDialog
         open={showScheduleDialog}
         onOpenChange={setShowScheduleDialog}
-        onSchedule={async (schedule) => {
-          if (!selectedMessage) return;
-          try {
-            const scheduledAt = new Date(
-              `${schedule.date.toISOString().split("T")[0]}T${schedule.time}`
-            );
-            await axios.post("/api/scheduled-emails", {
-              toEmail: selectedMessage.fromEmail || selectedMessage.from,
-              toName: selectedMessage.from,
-              subject: `Re: ${selectedMessage.subject || ""}`,
-              bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-              bodyText: replyText,
-              scheduledAt: scheduledAt.toISOString(),
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              clientId: selectedMessage.clientId,
-            });
-            toast.success(
-              `Message scheduled for ${schedule.date.toLocaleDateString()} at ${schedule.time}`
-            );
-          } catch {
-            toast.error("Failed to schedule message");
-          }
+        onSchedule={(schedule) => {
+          setPendingSchedule(schedule);
+          setShowScheduleDialog(false);
         }}
       />
     </div>

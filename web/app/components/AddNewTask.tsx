@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { useState } from "react";
-import { addProjectTasksAction } from "@/lib/server_actions/tasks";
+import { addProjectTasksAction } from "@/lib/tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from "@/types/projects";

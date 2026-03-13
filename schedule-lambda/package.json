@@ -21,7 +21,9 @@
     "ts-jest": "^29.3.1"
   },
   "dependencies": {
+    "@aws-sdk/client-scheduler": "^3.980.0",
     "@repo/db": "*",
-    "drizzle-orm": "^0.45.1"
+    "drizzle-orm": "^0.45.1",
+    "googleapis": "^146.0.0"
   }
 }

@@ -18,36 +18,12 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { clients } from "@/types/clients";
+import type { AIMessage, AddClientToolResult, StreamEvent } from "@/types/ai";
 
 interface AIAssistantProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
-
-type AddClientToolResult = {
-  kind: "clients_updated";
-  client: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    industry: string;
-    notes?: string;
-  };
-  message: string;
-};
-
-type StreamEvent =
-  | { type: "text_delta"; delta: string }
-  | { type: "tool_result"; id: string; name: string; result: unknown }
-  | { type: "done" }
-  | { type: "error"; message: string };
 
 const nextBestActions = [
   {
@@ -71,7 +47,7 @@ const nextBestActions = [
 ];
 
 export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<AIMessage[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming">("idle");
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();
@@ -80,7 +56,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const sendMessage = async (text: string) => {
     if (!text.trim() || status === "streaming") return;
 
-    const userMessage: Message = {
+    const userMessage: AIMessage = {
       id: `user-${Date.now()}`,
       role: "user",
       content: text,

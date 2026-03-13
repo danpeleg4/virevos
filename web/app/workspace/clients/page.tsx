@@ -33,7 +33,7 @@ import {
   addAClient,
   deleteClient,
   updateExistingClient,
-} from "@/lib/server_actions/clients";
+} from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 
 const ITEMS_PER_PAGE = 8;

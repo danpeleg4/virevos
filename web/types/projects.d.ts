@@ -38,3 +38,10 @@ export type AddFileMetadataInput = {
   projectId: number;
   mimeType?: string;
 };
+
+export interface UploadedAttachment {
+  path: string;
+  url: string;
+  name: string;
+  size: number;
+}

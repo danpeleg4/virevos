@@ -37,35 +37,12 @@ import {
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { toast } from "sonner";
-
-interface PortalRecord {
-  id: number;
-  clientId: number;
-  clientName: string | null;
-  token: string;
-  enabled: boolean;
-  settings: {
-    brandColor?: string;
-    welcomeMessage?: string;
-    logoUrl?: string;
-    customDomain?: string;
-    chatEnabled?: boolean;
-    fileSharing?: boolean;
-    aiChatBot?: boolean;
-    emailNotifications?: boolean;
-  };
-  portalUrl: string;
-  lastAccessedAt: string | null;
-}
-
-interface Client {
-  id: number;
-  name: string;
-}
+import type { PortalRecord } from "@/types/portal";
+import type { ClientSummary } from "@/types/clients";
 
 export function ClientPortal() {
   const [portals, setPortals] = useState<PortalRecord[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<ClientSummary[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

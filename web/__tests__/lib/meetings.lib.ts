@@ -2,7 +2,7 @@ import {
   createInstantMeeting,
   markActionItemAdded,
   getPastMeetingTranscript,
-} from "@/lib/server_actions/meetings";
+} from "@/lib/meetings";
 import { currentUser } from "@clerk/nextjs/server";
 
 jest.mock("@clerk/nextjs/server", () => ({

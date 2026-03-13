@@ -4,8 +4,8 @@ import { db } from "@db/db";
 import { notes, projectFiles, projects, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import { AddFileMetadataInput, Project, ProjectNote } from "@/types/projects";
-import { supabase } from "../supabase";
+import { AddFileMetadataInput, Project, ProjectNote, UploadedAttachment } from "@/types/projects";
+import { supabase } from "./supabase";
 
 export async function deleteProject(projectId: number) {
   const user = await currentUser();
@@ -112,4 +112,28 @@ export async function changeProjectStatus(project: Project, newStatus: string) {
     .update(projects)
     .set({ status: newStatus })
     .where(and(eq(projects.id, id), eq(projects.userId, user.id)));
+}
+
+export async function uploadCommunicationAttachment(
+  file: File
+): Promise<UploadedAttachment> {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("No user");
+
+  const filePath = `communications/${user.id}/${Date.now()}-${file.name}`;
+
+  const { error } = await supabase.storage
+    .from("ProjectFiles")
+    .upload(filePath, file, { upsert: false });
+
+  if (error) {
+    console.error("Storage upload failed:", error);
+    throw new Error("Failed to upload file");
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("ProjectFiles").getPublicUrl(filePath);
+
+  return { path: filePath, url: publicUrl, name: file.name, size: file.size };
 }

@@ -4,7 +4,7 @@ import {
   createProject,
   addNotes,
   changeProjectStatus,
-} from "@/lib/server_actions/projects";
+} from "@/lib/projects";
 import { currentUser } from "@clerk/nextjs/server";
 
 jest.mock("@clerk/nextjs/server", () => ({
