@@ -38,6 +38,7 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
+  Plus,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { motion } from "motion/react";
@@ -45,6 +46,7 @@ import { AIReplyComposer } from "./AIReplyComposer";
 import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { MessageThreadDialog } from "./MessageThreadDialog";
+import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -94,6 +96,7 @@ export function UnifiedInbox() {
   const [showAttachmentDialog, setShowAttachmentDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [showThreadDialog, setShowThreadDialog] = useState(false);
+  const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -292,6 +295,14 @@ export function UnifiedInbox() {
                   ) : (
                     <RefreshCw className="h-4 w-4" />
                   )}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setShowComposeDialog(true)}
+                  title="Compose new message"
+                >
+                  <Plus className="h-4 w-4" />
                 </Button>
               </div>
 
@@ -692,6 +703,11 @@ export function UnifiedInbox() {
       </div>
 
       {/* Dialogs */}
+      <ComposeMessageDialog
+        open={showComposeDialog}
+        onOpenChange={setShowComposeDialog}
+        onSent={fetchEmails}
+      />
       <AttachmentDialog
         open={showAttachmentDialog}
         onOpenChange={setShowAttachmentDialog}
