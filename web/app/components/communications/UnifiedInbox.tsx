@@ -46,6 +46,7 @@ import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { MessageThreadDialog } from "./MessageThreadDialog";
 import { toast } from "sonner";
+import axios from "axios";
 
 interface Message {
   id: string;
@@ -106,13 +107,8 @@ export function UnifiedInbox() {
 
   const checkGoogleConnection = async () => {
     try {
-      const res = await fetch("/api/integrations/google");
-      if (res.ok) {
-        const data = await res.json();
-        setIsConnected(data.connected === true);
-      } else {
-        setIsConnected(false);
-      }
+      const { data } = await axios.get("/api/integrations/google");
+      setIsConnected(data.connected === true);
     } catch {
       setIsConnected(false);
     }
@@ -125,12 +121,9 @@ export function UnifiedInbox() {
       if (searchQuery) params.set("search", searchQuery);
       if (filterStatus !== "all") params.set("filter", filterStatus);
 
-      const res = await fetch(`/api/gmail/sync?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        console.log(data.messages);
-        setMessages(data.messages || []);
-      }
+      const { data } = await axios.get(`/api/gmail/sync?${params}`);
+      console.log(data.messages);
+      setMessages(data.messages || []);
     } catch (err) {
       console.error("Failed to fetch emails:", err);
     } finally {
@@ -141,14 +134,9 @@ export function UnifiedInbox() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const res = await fetch("/api/gmail/sync", { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        toast.success(`Synced ${data.synced} emails`);
-        await fetchEmails();
-      } else {
-        toast.error("Sync failed");
-      }
+      const { data } = await axios.post("/api/gmail/sync");
+      toast.success(`Synced ${data.synced} emails`);
+      await fetchEmails();
     } catch {
       toast.error("Sync failed");
     } finally {
@@ -173,12 +161,7 @@ export function UnifiedInbox() {
 
   const applyAction = async (id: string, action: string) => {
     try {
-      const res = await fetch(`/api/gmail/messages/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      if (!res.ok) throw new Error("Action failed");
+      await axios.patch(`/api/gmail/messages/${id}`, { action });
 
       // Update local state
       setMessages((prev) =>
@@ -228,16 +211,10 @@ export function UnifiedInbox() {
 
   const handleDeleteMessage = async (id: string) => {
     try {
-      const res = await fetch(`/api/gmail/messages/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setMessages((prev) => prev.filter((m) => m.id !== id));
-        if (selectedMessage?.id === id) setSelectedMessage(null);
-        toast.success("Message deleted");
-      } else {
-        toast.error("Delete failed");
-      }
+      await axios.delete(`/api/gmail/messages/${id}`);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+      if (selectedMessage?.id === id) setSelectedMessage(null);
+      toast.success("Message deleted");
     } catch {
       toast.error("Delete failed");
     }
@@ -247,28 +224,20 @@ export function UnifiedInbox() {
     if (!selectedMessage || !replyText.trim()) return;
     setIsSending(true);
     try {
-      const res = await fetch("/api/gmail/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: selectedMessage.fromEmail || selectedMessage.from,
-          subject: `Re: ${selectedMessage.subject || ""}`,
-          bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-          bodyText: replyText,
-          threadId: selectedMessage.threadId,
-          replyToGmailId: selectedMessage.gmailId,
-        }),
+      await axios.post("/api/gmail/send", {
+        to: selectedMessage.fromEmail || selectedMessage.from,
+        subject: `Re: ${selectedMessage.subject || ""}`,
+        bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+        bodyText: replyText,
+        threadId: selectedMessage.threadId,
+        replyToGmailId: selectedMessage.gmailId,
       });
-      if (res.ok) {
-        toast.success("Reply sent successfully");
-        setReplyText("");
-        await fetchEmails();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to send reply");
-      }
-    } catch {
-      toast.error("Failed to send reply");
+      toast.success("Reply sent successfully");
+      setReplyText("");
+      await fetchEmails();
+    } catch (err) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "Failed to send reply");
     } finally {
       setIsSending(false);
     }
@@ -672,25 +641,19 @@ export function UnifiedInbox() {
                   onSend={async (replyHtml: string) => {
                     setIsSending(true);
                     try {
-                      const res = await fetch("/api/gmail/send", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          to: selectedMessage.fromEmail || selectedMessage.from,
-                          subject: `Re: ${selectedMessage.subject || ""}`,
-                          bodyHtml: replyHtml,
-                          threadId: selectedMessage.threadId,
-                          replyToGmailId: selectedMessage.gmailId,
-                        }),
+                      await axios.post("/api/gmail/send", {
+                        to: selectedMessage.fromEmail || selectedMessage.from,
+                        subject: `Re: ${selectedMessage.subject || ""}`,
+                        bodyHtml: replyHtml,
+                        threadId: selectedMessage.threadId,
+                        replyToGmailId: selectedMessage.gmailId,
                       });
-                      if (res.ok) {
-                        toast.success("Reply sent successfully");
-                        setShowAIComposer(false);
-                        await fetchEmails();
-                      } else {
-                        const data = await res.json();
-                        toast.error(data.error || "Failed to send");
-                      }
+                      toast.success("Reply sent successfully");
+                      setShowAIComposer(false);
+                      await fetchEmails();
+                    } catch (err) {
+                      const error = err as { response?: { data?: { error?: string } } };
+                      toast.error(error.response?.data?.error || "Failed to send");
                     } finally {
                       setIsSending(false);
                     }
@@ -745,19 +708,15 @@ export function UnifiedInbox() {
             const scheduledAt = new Date(
               `${schedule.date.toISOString().split("T")[0]}T${schedule.time}`
             );
-            await fetch("/api/scheduled-emails", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                toEmail: selectedMessage.fromEmail || selectedMessage.from,
-                toName: selectedMessage.from,
-                subject: `Re: ${selectedMessage.subject || ""}`,
-                bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-                bodyText: replyText,
-                scheduledAt: scheduledAt.toISOString(),
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                clientId: selectedMessage.clientId,
-              }),
+            await axios.post("/api/scheduled-emails", {
+              toEmail: selectedMessage.fromEmail || selectedMessage.from,
+              toName: selectedMessage.from,
+              subject: `Re: ${selectedMessage.subject || ""}`,
+              bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+              bodyText: replyText,
+              scheduledAt: scheduledAt.toISOString(),
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              clientId: selectedMessage.clientId,
             });
             toast.success(
               `Message scheduled for ${schedule.date.toLocaleDateString()} at ${schedule.time}`
