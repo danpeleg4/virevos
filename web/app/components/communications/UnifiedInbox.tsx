@@ -38,11 +38,16 @@ import {
   Loader2,
   AlertCircle,
   Plus,
+  X,
+  FileText,
+  Image,
+  File,
+  Link2,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { motion } from "motion/react";
 import { AIReplyComposer } from "./AIReplyComposer";
-import { AttachmentDialog } from "./AttachmentDialog";
+import { AttachmentDialog, AttachedFile } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { toast } from "sonner";
@@ -99,6 +104,7 @@ export function UnifiedInbox() {
   const [isSending, setIsSending] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<AttachedFile[]>([]);
 
   useEffect(() => {
     checkGoogleConnection();
@@ -206,6 +212,7 @@ export function UnifiedInbox() {
   const handleSelectMessage = (message: Message) => {
     setSelectedMessage(message);
     setReplyText("");
+    setPendingAttachments([]);
     setShowAIComposer(false);
     markAsRead(message.id);
   };
@@ -232,9 +239,13 @@ export function UnifiedInbox() {
         bodyText: replyText,
         threadId: selectedMessage.threadId,
         replyToGmailId: selectedMessage.gmailId,
+        attachments: pendingAttachments
+          .filter((f) => f.path || f.url)
+          .map((f) => ({ name: f.name, url: f.url, path: f.path })),
       });
       toast.success("Reply sent successfully");
       setReplyText("");
+      setPendingAttachments([]);
       await fetchEmails();
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
@@ -682,6 +693,38 @@ export function UnifiedInbox() {
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                   />
+                  {pendingAttachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border">
+                      {pendingAttachments.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-1.5 bg-white border rounded-md px-2 py-1 text-xs text-gray-700"
+                        >
+                          {file.type === "document" ? (
+                            <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                          ) : file.type === "image" ? (
+                            <Image className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                          ) : file.url?.startsWith("http") && !file.path ? (
+                            <Link2 className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
+                          ) : (
+                            <File className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                          )}
+                          <span className="max-w-32 truncate">{file.name}</span>
+                          <span className="text-gray-400">{file.size}</span>
+                          <button
+                            onClick={() =>
+                              setPendingAttachments((prev) =>
+                                prev.filter((f) => f.id !== file.id)
+                              )
+                            }
+                            className="ml-0.5 hover:bg-gray-100 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Button
@@ -691,6 +734,11 @@ export function UnifiedInbox() {
                       >
                         <Paperclip className="h-4 w-4 mr-2" />
                         Attach
+                        {pendingAttachments.length > 0 && (
+                          <Badge className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center text-xs bg-blue-500">
+                            {pendingAttachments.length}
+                          </Badge>
+                        )}
                       </Button>
                       <Button
                         size="sm"
@@ -782,7 +830,12 @@ export function UnifiedInbox() {
         open={showAttachmentDialog}
         onOpenChange={setShowAttachmentDialog}
         onAttach={(files) => {
-          toast.success(`${files.length} file(s) attached successfully`);
+          setPendingAttachments((prev) => {
+            const existingIds = new Set(prev.map((f) => f.id));
+            const newFiles = files.filter((f) => !existingIds.has(f.id));
+            return [...prev, ...newFiles];
+          });
+          toast.success(`${files.length} file(s) ready to attach`);
         }}
       />
       <ScheduleMessageDialog

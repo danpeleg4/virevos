@@ -113,3 +113,34 @@ export async function changeProjectStatus(project: Project, newStatus: string) {
     .set({ status: newStatus })
     .where(and(eq(projects.id, id), eq(projects.userId, user.id)));
 }
+
+export interface UploadedAttachment {
+  path: string;
+  url: string;
+  name: string;
+  size: number;
+}
+
+export async function uploadCommunicationAttachment(
+  file: File
+): Promise<UploadedAttachment> {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("No user");
+
+  const filePath = `communications/${user.id}/${Date.now()}-${file.name}`;
+
+  const { error } = await supabase.storage
+    .from("ProjectFiles")
+    .upload(filePath, file, { upsert: false });
+
+  if (error) {
+    console.error("Storage upload failed:", error);
+    throw new Error("Failed to upload file");
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("ProjectFiles").getPublicUrl(filePath);
+
+  return { path: filePath, url: publicUrl, name: file.name, size: file.size };
+}

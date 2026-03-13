@@ -3,11 +3,14 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { emails, clients } from "@db/schema";
 import { eq } from "drizzle-orm";
+import axios from "axios";
 import {
   getGmailClient,
   buildRawEmail,
   parseEmailAddress,
+  EmailAttachment,
 } from "@/lib/gmail_client";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +27,16 @@ export async function POST(req: NextRequest) {
       bodyHtml,
       bodyText,
       threadId,
-    } = body;
+      attachments: rawAttachments,
+    } = body as {
+      to: string;
+      toName?: string;
+      subject: string;
+      bodyHtml: string;
+      bodyText?: string;
+      threadId?: string;
+      attachments?: Array<{ name: string; url?: string; path?: string }>;
+    };
 
     if (!to || !subject || !bodyHtml) {
       return NextResponse.json(
@@ -49,6 +61,41 @@ export async function POST(req: NextRequest) {
       "";
     const fromName = user.fullName || "";
 
+    // Fetch attachment content — prefer Supabase path (works for private buckets),
+    // fall back to direct URL fetch for link-only attachments.
+    const attachments: EmailAttachment[] = [];
+    if (rawAttachments && rawAttachments.length > 0) {
+      for (const att of rawAttachments) {
+        try {
+          let buffer: Buffer | null = null;
+          let mimeType = "application/octet-stream";
+
+          if (att.path) {
+            const { data, error } = await supabase.storage
+              .from("ProjectFiles")
+              .download(att.path);
+            if (error) throw error;
+            buffer = Buffer.from(await data.arrayBuffer());
+            mimeType = data.type || mimeType;
+          } else if (att.url) {
+            const res = await axios.get<ArrayBuffer>(att.url, {
+              responseType: "arraybuffer",
+            });
+            buffer = Buffer.from(res.data);
+          }
+
+          if (!buffer) continue;
+          attachments.push({
+            name: att.name,
+            contentBase64: buffer.toString("base64"),
+            mimeType,
+          });
+        } catch (err) {
+          console.error(`Failed to fetch attachment "${att.name}":`, err);
+        }
+      }
+    }
+
     const rawEmail = buildRawEmail({
       to,
       toName,
@@ -57,15 +104,16 @@ export async function POST(req: NextRequest) {
       subject,
       bodyHtml,
       bodyText,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
-    const sendParams: any = {
+    const sendParams = {
       userId: "me",
-      requestBody: { raw: rawEmail },
+      requestBody: {
+        raw: rawEmail,
+        ...(threadId ? { threadId } : {}),
+      },
     };
-    if (threadId) {
-      sendParams.requestBody.threadId = threadId;
-    }
 
     const sendRes = await gmail.users.messages.send(sendParams);
     const gmailId = sendRes.data.id!;
