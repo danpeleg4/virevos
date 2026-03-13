@@ -28,8 +28,6 @@ export async function createEmailSchedule(
   scheduledAt: Date
 ): Promise<string> {
   const scheduleName = `email-${scheduledEmailId}-${Date.now()}`;
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL_NGROK || process.env.NEXT_PUBLIC_APP_URL;
 
   const command = new CreateScheduleCommand({
     Name: scheduleName,
@@ -41,8 +39,6 @@ export async function createEmailSchedule(
       Input: JSON.stringify({
         type: "scheduled_email",
         scheduledEmailId,
-        callbackUrl: `${appUrl}/api/webhooks/scheduled-email`,
-        secret: process.env.WEBHOOK_SECRET || "virevos-schedule-email",
       }),
     },
   });

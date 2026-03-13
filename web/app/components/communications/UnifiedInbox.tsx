@@ -52,7 +52,7 @@ import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { toast } from "sonner";
 import axios from "axios";
-import type { InboxMessage, AttachedFile } from "@/types/communications";
+import type { InboxMessage, AttachedFile, ScheduleDetails } from "@/types/communications";
 
 function formatTimestamp(ts: Date | string): string {
   const date = typeof ts === "string" ? new Date(ts) : ts;
@@ -84,6 +84,7 @@ export function UnifiedInbox() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [replyText, setReplyText] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<AttachedFile[]>([]);
+  const [pendingSchedule, setPendingSchedule] = useState<ScheduleDetails | null>(null);
 
   useEffect(() => {
     checkGoogleConnection();
@@ -192,6 +193,7 @@ export function UnifiedInbox() {
     setSelectedMessage(message);
     setReplyText("");
     setPendingAttachments([]);
+    setPendingSchedule(null);
     setShowAIComposer(false);
     markAsRead(message.id);
   };
@@ -211,21 +213,43 @@ export function UnifiedInbox() {
     if (!selectedMessage || !replyText.trim()) return;
     setIsSending(true);
     try {
-      await axios.post("/api/gmail/send", {
-        to: selectedMessage.fromEmail || selectedMessage.from,
-        subject: `Re: ${selectedMessage.subject || ""}`,
-        bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-        bodyText: replyText,
-        threadId: selectedMessage.threadId,
-        replyToGmailId: selectedMessage.gmailId,
-        attachments: pendingAttachments
-          .filter((f) => f.path || f.url)
-          .map((f) => ({ name: f.name, url: f.url, path: f.path })),
-      });
-      toast.success("Reply sent successfully");
-      setReplyText("");
-      setPendingAttachments([]);
-      await fetchEmails();
+      if (pendingSchedule) {
+        const scheduledAt = new Date(
+          `${pendingSchedule.date.toISOString().split("T")[0]}T${pendingSchedule.time}`
+        );
+        await axios.post("/api/scheduled-emails", {
+          toEmail: selectedMessage.fromEmail || selectedMessage.from,
+          toName: selectedMessage.from,
+          subject: `Re: ${selectedMessage.subject || ""}`,
+          bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+          bodyText: replyText,
+          scheduledAt: scheduledAt.toISOString(),
+          timezone: pendingSchedule.timezone,
+          clientId: selectedMessage.clientId,
+        });
+        toast.success(
+          `Reply scheduled for ${pendingSchedule.date.toLocaleDateString()} at ${pendingSchedule.time}`
+        );
+        setReplyText("");
+        setPendingAttachments([]);
+        setPendingSchedule(null);
+      } else {
+        await axios.post("/api/gmail/send", {
+          to: selectedMessage.fromEmail || selectedMessage.from,
+          subject: `Re: ${selectedMessage.subject || ""}`,
+          bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+          bodyText: replyText,
+          threadId: selectedMessage.threadId,
+          replyToGmailId: selectedMessage.gmailId,
+          attachments: pendingAttachments
+            .filter((f) => f.path || f.url)
+            .map((f) => ({ name: f.name, url: f.url, path: f.path })),
+        });
+        toast.success("Reply sent successfully");
+        setReplyText("");
+        setPendingAttachments([]);
+        await fetchEmails();
+      }
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
       toast.error(error.response?.data?.error || "Failed to send reply");
@@ -672,7 +696,7 @@ export function UnifiedInbox() {
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                   />
-                  {pendingAttachments.length > 0 && (
+                  {(pendingAttachments.length > 0 || pendingSchedule) && (
                     <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border">
                       {pendingAttachments.map((file) => (
                         <div
@@ -702,6 +726,20 @@ export function UnifiedInbox() {
                           </button>
                         </div>
                       ))}
+                      {pendingSchedule && (
+                        <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-md px-2 py-1 text-xs text-blue-700">
+                          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span>
+                            {pendingSchedule.date.toLocaleDateString()} at {pendingSchedule.time}
+                          </span>
+                          <button
+                            onClick={() => setPendingSchedule(null)}
+                            className="ml-0.5 hover:bg-blue-100 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="flex items-center justify-between">
@@ -721,11 +759,11 @@ export function UnifiedInbox() {
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant={pendingSchedule ? "default" : "outline"}
                         onClick={() => setShowScheduleDialog(true)}
                       >
                         <Clock className="h-4 w-4 mr-2" />
-                        Schedule
+                        {pendingSchedule ? "Change Schedule" : "Schedule"}
                       </Button>
                     </div>
                     <Button
@@ -738,7 +776,7 @@ export function UnifiedInbox() {
                       ) : (
                         <Send className="h-4 w-4 mr-2" />
                       )}
-                      Send Reply
+                      {pendingSchedule ? "Schedule Reply" : "Send Reply"}
                     </Button>
                   </div>
                 </div>
@@ -820,28 +858,9 @@ export function UnifiedInbox() {
       <ScheduleMessageDialog
         open={showScheduleDialog}
         onOpenChange={setShowScheduleDialog}
-        onSchedule={async (schedule) => {
-          if (!selectedMessage) return;
-          try {
-            const scheduledAt = new Date(
-              `${schedule.date.toISOString().split("T")[0]}T${schedule.time}`
-            );
-            await axios.post("/api/scheduled-emails", {
-              toEmail: selectedMessage.fromEmail || selectedMessage.from,
-              toName: selectedMessage.from,
-              subject: `Re: ${selectedMessage.subject || ""}`,
-              bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-              bodyText: replyText,
-              scheduledAt: scheduledAt.toISOString(),
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              clientId: selectedMessage.clientId,
-            });
-            toast.success(
-              `Message scheduled for ${schedule.date.toLocaleDateString()} at ${schedule.time}`
-            );
-          } catch {
-            toast.error("Failed to schedule message");
-          }
+        onSchedule={(schedule) => {
+          setPendingSchedule(schedule);
+          setShowScheduleDialog(false);
         }}
       />
     </div>
