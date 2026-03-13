@@ -293,11 +293,11 @@ export function UnifiedInbox() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+    <div className="flex gap-6" style={{ flex: '1 1 0%', minHeight: 0 }}>
       {/* Message List */}
-      <div className="lg:col-span-1 h-full">
-        <Card className="flex flex-col h-full">
-          <CardContent className="p-4 flex flex-col gap-4 h-screen">
+      <div className="flex flex-col" style={{ width: '33.333%', minHeight: 0, flexShrink: 0 }}>
+        <Card className="flex flex-col" style={{ flex: '1 1 0%', minHeight: 0 }}>
+          <CardContent className="p-4 flex flex-col gap-4" style={{ flex: '1 1 0%', minHeight: 0 }}>
             {/* Search and Filters */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export function UnifiedInbox() {
             <Separator />
 
             {/* Message List */}
-            <div className="flex-1 h-64 overflow-y-auto overflow-x-hidden space-y-2">
+            <div className="overflow-y-auto overflow-x-hidden space-y-2" style={{ flex: '1 1 0%', minHeight: 0 }}>
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -480,9 +480,9 @@ export function UnifiedInbox() {
       </div>
 
       {/* Message Detail & Reply */}
-      <div className="lg:col-span-2 flex flex-col h-full overflow-y-auto space-y-2">
+      <div className="flex flex-col overflow-y-auto space-y-2" style={{ flex: '1 1 0%', minHeight: 0 }}>
         {selectedMessage ? (
-          <Card className="flex flex-col flex-1">
+          <Card className="flex flex-col" style={{ flex: '1 1 0%', minHeight: 0 }}>
             <CardContent className="p-6 flex flex-col flex-1 gap-6">
               {/* Message Header */}
               <div className="flex items-start justify-between">
