@@ -46,19 +46,9 @@ export default function Communications() {
           <TabsList className="mb-4 min-w-max">
             <TabsTrigger value="inbox" className="relative cursor-pointer">
               Inbox
-              {unreadCount > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white">
-                  {unreadCount}
-                </Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger value="scheduled" className="cursor-pointer">
               Scheduled
-              {scheduledCount > 0 && (
-                <Badge className="ml-2" variant="outline">
-                  {scheduledCount}
-                </Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger value="summaries" className="cursor-pointer">
               Summaries

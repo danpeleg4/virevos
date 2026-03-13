@@ -523,7 +523,7 @@ export function UnifiedInbox() {
                           );
                         }}
                       >
-                        <Archive className="h-4 w-4 mr-2" />
+                        <Archive className={`h-4 w-4 mr-2 ${selectedMessage.archived ? "fill-blue-500 text-blue-500" : ""}`} />
                         {selectedMessage.archived ? "Unarchive" : "Archive"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -540,7 +540,7 @@ export function UnifiedInbox() {
                           );
                         }}
                       >
-                        <Star className="h-4 w-4 mr-2" />
+                        <Star className={`h-4 w-4 mr-2 ${selectedMessage.starred ? "fill-yellow-400 text-yellow-400" : ""}`} />
                         {selectedMessage.starred ? "Unstar" : "Star"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -557,7 +557,7 @@ export function UnifiedInbox() {
                           );
                         }}
                       >
-                        <Mail className="h-4 w-4 mr-2" />
+                        <Mail className={`h-4 w-4 mr-2 ${selectedMessage.unread ? "fill-blue-500 text-blue-500" : ""}`} />
                         {selectedMessage.unread ? "Mark as Read" : "Mark as Unread"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
