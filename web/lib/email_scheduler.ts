@@ -42,7 +42,7 @@ export async function createEmailSchedule(
         type: "scheduled_email",
         scheduledEmailId,
         callbackUrl: `${appUrl}/api/webhooks/scheduled-email`,
-        secret: process.env.WEBHOOK_SECRET || "virevos-scheduled-email",
+        secret: process.env.WEBHOOK_SECRET || "virevos-schedule-email",
       }),
     },
   });

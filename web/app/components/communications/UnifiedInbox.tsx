@@ -154,7 +154,8 @@ export function UnifiedInbox() {
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "unread" && msg.unread) ||
-      (filterStatus === "starred" && msg.starred);
+      (filterStatus === "starred" && msg.starred) ||
+      (filterStatus === "archived" && msg.archived === true);
 
     return matchesSearch && matchesType && matchesStatus;
   });
@@ -339,6 +340,7 @@ export function UnifiedInbox() {
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="unread">Unread</SelectItem>
                     <SelectItem value="starred">Starred</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -507,16 +509,25 @@ export function UnifiedInbox() {
                       <DropdownMenuLabel>Message Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
+                          className="cursor-pointer"
                         onClick={() => {
-                          applyAction(selectedMessage.id, "archive");
-                          setSelectedMessage(null);
-                          toast.success("Message archived");
+                          applyAction(
+                            selectedMessage.id,
+                            selectedMessage.archived ? "unarchive" : "archive"
+                          );
+                          if (!selectedMessage.archived) setSelectedMessage(null);
+                          toast.success(
+                            selectedMessage.archived
+                              ? "Message unarchived"
+                              : "Message archived"
+                          );
                         }}
                       >
                         <Archive className="h-4 w-4 mr-2" />
-                        Archive
+                        {selectedMessage.archived ? "Unarchive" : "Archive"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                          className="cursor-pointer"
                         onClick={() => {
                           toggleStar(
                             selectedMessage.id,
@@ -533,17 +544,25 @@ export function UnifiedInbox() {
                         {selectedMessage.starred ? "Unstar" : "Star"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                          className="cursor-pointer"
                         onClick={() => {
-                          applyAction(selectedMessage.id, "markUnread");
-                          toast.success("Marked as unread");
+                          applyAction(
+                            selectedMessage.id,
+                            selectedMessage.unread ? "markRead" : "markUnread"
+                          );
+                          toast.success(
+                            selectedMessage.unread
+                              ? "Marked as read"
+                              : "Marked as unread"
+                          );
                         }}
                       >
                         <Mail className="h-4 w-4 mr-2" />
-                        Mark as Unread
+                        {selectedMessage.unread ? "Mark as Read" : "Mark as Unread"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-red-600"
+                        className="cursor-pointer text-red-600"
                         onClick={() => handleDeleteMessage(selectedMessage.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
