@@ -34,7 +34,6 @@ import {
   MoreVertical,
   Archive,
   Trash2,
-  History,
   RefreshCw,
   Loader2,
   AlertCircle,
@@ -45,7 +44,6 @@ import { motion } from "motion/react";
 import { AIReplyComposer } from "./AIReplyComposer";
 import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
-import { MessageThreadDialog } from "./MessageThreadDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { toast } from "sonner";
 import axios from "axios";
@@ -95,7 +93,6 @@ export function UnifiedInbox() {
   const [showAIComposer, setShowAIComposer] = useState(false);
   const [showAttachmentDialog, setShowAttachmentDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [showThreadDialog, setShowThreadDialog] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -500,14 +497,6 @@ export function UnifiedInbox() {
                     )}
                     {selectedMessage.type}
                   </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowThreadDialog(true)}
-                  >
-                    <History className="h-4 w-4 mr-2" />
-                    Thread
-                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -590,6 +579,68 @@ export function UnifiedInbox() {
               )}
 
               <Separator />
+
+              {/* Conversation History */}
+              {(() => {
+                const threadMessages = selectedMessage.threadId
+                  ? messages
+                      .filter(
+                        (m) =>
+                          m.threadId === selectedMessage.threadId &&
+                          m.id !== selectedMessage.id
+                      )
+                      .sort(
+                        (a, b) =>
+                          new Date(a.timestamp).getTime() -
+                          new Date(b.timestamp).getTime()
+                      )
+                  : [];
+
+                if (threadMessages.length === 0) return null;
+
+                return (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-gray-700">
+                      Conversation History ({threadMessages.length} message{threadMessages.length !== 1 ? "s" : ""})
+                    </h4>
+                    <div className="space-y-2">
+                      {threadMessages.map((msg) => (
+                        <motion.div
+                          key={msg.id}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`rounded-lg border p-3 text-sm ${
+                            msg.sent
+                              ? "bg-blue-50 border-blue-100 ml-6"
+                              : "bg-gray-50 border-gray-100 mr-6"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">{msg.from}</span>
+                              {msg.type === "email" ? (
+                                <Mail className="h-3 w-3 text-gray-400" />
+                              ) : (
+                                <MessageSquare className="h-3 w-3 text-gray-400" />
+                              )}
+                              {msg.subject && (
+                                <span className="text-gray-500 truncate max-w-48">{msg.subject}</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-400 flex-shrink-0">
+                              {formatTimestamp(msg.timestamp)}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 line-clamp-3">
+                            {msg.preview}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </div>
+                    <Separator />
+                  </div>
+                );
+              })()}
 
               {/* Reply Section */}
               {!showAIComposer ? (
@@ -742,16 +793,6 @@ export function UnifiedInbox() {
           }
         }}
       />
-      {selectedMessage && (
-        <MessageThreadDialog
-          open={showThreadDialog}
-          onOpenChange={setShowThreadDialog}
-          clientName={selectedMessage.from}
-          clientInitials={selectedMessage.initials}
-          dateRange="Last 30 days"
-          totalMessages={5}
-        />
-      )}
     </div>
   );
 }

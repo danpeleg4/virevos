@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
       subject,
       bodyHtml,
       bodyText,
-      replyToGmailId,
       threadId,
     } = body;
 
@@ -75,11 +74,6 @@ export async function POST(req: NextRequest) {
     // Try to match recipient to a client
     let clientId: number | null = null;
     const toEmailAddr = parseEmailAddress(to).email || to;
-    const clientRows = await db
-      .select({ id: clients.id })
-      .from(clients)
-      .where(eq(clients.userId, user.id))
-      .limit(100);
 
     // Simple email match
     const allClients = await db

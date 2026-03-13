@@ -192,8 +192,8 @@ Return only the email body text, no subject line.`;
         for (const line of lines) {
           try {
             const event = JSON.parse(line);
-            if (event.type === "text_delta" && event.content) {
-              fullText += event.content;
+            if (event.type === "text_delta" && event.delta) {
+              fullText += event.delta;
               setDraft(fullText);
             }
           } catch {
