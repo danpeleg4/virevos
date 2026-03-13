@@ -43,7 +43,13 @@ afterEach(() => {
 // ─── addAClient ───────────────────────────────────────────────────────────
 
 describe("addAClient", () => {
-  const baseInput = { name: "John", email: "john@example.com", phone: "", industry: "", notes: "" };
+  const baseInput = {
+    name: "John",
+    email: "john@example.com",
+    phone: "",
+    industry: "",
+    notes: "",
+  };
 
   it("returns server error when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
@@ -65,19 +71,31 @@ describe("addAClient", () => {
 
   it("returns 400 when email format is invalid", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const result = (await addAClient({ ...baseInput, email: "not-an-email" })) as any;
+    const result = (await addAClient({
+      ...baseInput,
+      email: "not-an-email",
+    })) as any;
     expect(result.status).toBe(400);
   });
 
   it("inserts client and returns the created record", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const created = { id: 1, name: "John", email: "john@example.com", userId: "user_1" };
+    const created = {
+      id: 1,
+      name: "John",
+      email: "john@example.com",
+      userId: "user_1",
+    };
     mockReturning.mockResolvedValueOnce([created]);
 
     const result = await addAClient(baseInput);
 
     expect(mockValues).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "John", email: "john@example.com", userId: "user_1" })
+      expect.objectContaining({
+        name: "John",
+        email: "john@example.com",
+        userId: "user_1",
+      })
     );
     expect(result).toEqual(created);
   });
@@ -108,7 +126,9 @@ describe("updateExistingClient", () => {
   it("calls db.update only with non-empty fields", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     await updateExistingClient({ id: 1, name: "Updated Name", email: "" });
-    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ name: "Updated Name" }));
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Updated Name" })
+    );
     expect(mockSet).toHaveBeenCalledWith(
       expect.not.objectContaining({ email: expect.anything() })
     );
@@ -156,7 +176,9 @@ describe("deleteClient", () => {
 describe("updateNotes", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(updateNotes({ id: 1, notes: "hi" })).rejects.toThrow("No user");
+    await expect(updateNotes({ id: 1, notes: "hi" })).rejects.toThrow(
+      "No user"
+    );
   });
 
   it("calls db.update with { notes } and correct where clause", async () => {

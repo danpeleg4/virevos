@@ -24,7 +24,6 @@ interface AIAssistantProps {
   onClose: () => void;
 }
 
-
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -90,7 +89,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     const assistantId = `assistant-${Date.now() + 1}`;
 
     const updatedMessages = [...messages, userMessage];
-    setMessages([...updatedMessages, { id: assistantId, role: "assistant", content: "" }]);
+    setMessages([
+      ...updatedMessages,
+      { id: assistantId, role: "assistant", content: "" },
+    ]);
     setStatus("streaming");
 
     abortRef.current = new AbortController();
@@ -137,7 +139,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                     : m
                 )
               );
-            } else if (event.type === "tool_result" && event.name === "addClient") {
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "addClient"
+            ) {
               const data = event.result as AddClientToolResult;
               if (data.kind === "clients_updated") {
                 const newClient = data.client;
@@ -157,7 +162,11 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId
-                    ? { ...m, content: "Sorry, something went wrong. Please try again." }
+                    ? {
+                        ...m,
+                        content:
+                          "Sorry, something went wrong. Please try again.",
+                      }
                     : m
                 )
               );
@@ -172,7 +181,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? { ...m, content: "Sorry, something went wrong. Please try again." }
+              ? {
+                  ...m,
+                  content: "Sorry, something went wrong. Please try again.",
+                }
               : m
           )
         );
@@ -258,7 +270,9 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm text-gray-900">{action.title}</p>
+                          <p className="text-sm text-gray-900">
+                            {action.title}
+                          </p>
                           <Badge
                             variant="outline"
                             className={`text-xs border ${
@@ -272,7 +286,9 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                             {action.priority}
                           </Badge>
                         </div>
-                        <p className="text-xs text-gray-600">{action.description}</p>
+                        <p className="text-xs text-gray-600">
+                          {action.description}
+                        </p>
                       </div>
                     </div>
                   </Card>

@@ -22,7 +22,9 @@ var mockCalendar: jest.Mock;
 jest.mock("@aws-sdk/client-scheduler", () => {
   mockSchedulerSend = jest.fn();
   return {
-    SchedulerClient: jest.fn().mockImplementation(() => ({ send: mockSchedulerSend })),
+    SchedulerClient: jest
+      .fn()
+      .mockImplementation(() => ({ send: mockSchedulerSend })),
     CreateScheduleCommand: jest.fn(),
   };
 });
@@ -37,7 +39,9 @@ jest.mock("googleapis", () => {
   return {
     google: {
       auth: {
-        OAuth2: jest.fn().mockImplementation(() => ({ setCredentials: mockSetCredentials })),
+        OAuth2: jest
+          .fn()
+          .mockImplementation(() => ({ setCredentials: mockSetCredentials })),
       },
       // eslint-disable-next-line prefer-spread
       calendar: (...args: never[]) => mockCalendar.apply(null, args),
@@ -48,7 +52,7 @@ jest.mock("googleapis", () => {
 const mockGetFreshGoogleAccessToken = jest.fn();
 jest.mock("@/lib/google_access", () => ({
   getFreshGoogleAccessToken: (...args: never[]) =>
-      // eslint-disable-next-line prefer-spread
+    // eslint-disable-next-line prefer-spread
     mockGetFreshGoogleAccessToken.apply(null, args),
 }));
 
@@ -113,7 +117,9 @@ afterEach(() => {
 describe("addMeetingToCalendar", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(addMeetingToCalendar(mockMeeting)).rejects.toThrow("Unauthorized");
+    await expect(addMeetingToCalendar(mockMeeting)).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("throws when user not found in DB", async () => {
@@ -166,7 +172,10 @@ describe("addMeetingToCalendar", () => {
     mockSelectLimit.mockResolvedValueOnce([{ user_id: "user_1" }]);
     mockSchedulerSend.mockRejectedValueOnce(new Error("Scheduler error"));
 
-    const result = await addMeetingToCalendar({ ...mockMeeting, isMeeting: true });
+    const result = await addMeetingToCalendar({
+      ...mockMeeting,
+      isMeeting: true,
+    });
 
     expect(db.insert).not.toHaveBeenCalled();
     expect(result).toBeUndefined();
@@ -189,7 +198,9 @@ describe("addMeetingToCalendar", () => {
 describe("deleteEventFromCalendar", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(deleteEventFromCalendar("event-1")).rejects.toThrow("Unauthorized");
+    await expect(deleteEventFromCalendar("event-1")).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("returns { success: false, error: 'Meeting not found' } when event does not exist in DB", async () => {
@@ -201,7 +212,9 @@ describe("deleteEventFromCalendar", () => {
 
   it("deletes from Google Calendar when a token is available", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([{ id: "event-1", googleEventId: "gcal-id" }]);
+    mockSelectLimit.mockResolvedValueOnce([
+      { id: "event-1", googleEventId: "gcal-id" },
+    ]);
     mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
 
     await deleteEventFromCalendar("event-1");
@@ -213,7 +226,9 @@ describe("deleteEventFromCalendar", () => {
 
   it("continues and deletes from DB even if Google Calendar delete throws", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([{ id: "event-1", googleEventId: null }]);
+    mockSelectLimit.mockResolvedValueOnce([
+      { id: "event-1", googleEventId: null },
+    ]);
     mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
     mockEventsDelete.mockRejectedValueOnce(new Error("Google error"));
 
@@ -225,7 +240,9 @@ describe("deleteEventFromCalendar", () => {
 
   it("returns { success: true } after deleting from DB", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([{ id: "event-1", googleEventId: null }]);
+    mockSelectLimit.mockResolvedValueOnce([
+      { id: "event-1", googleEventId: null },
+    ]);
 
     const result = await deleteEventFromCalendar("event-1");
 

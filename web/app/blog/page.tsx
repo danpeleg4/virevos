@@ -16,19 +16,23 @@ export default function BlogPage() {
       <section className="space-y-8">
         <div className="border border-gray-200 rounded-lg p-6">
           <p className="text-sm text-gray-400 mb-2">February 20, 2026</p>
-          <h2 className="text-xl font-medium mb-2">How AI is Changing the Way We Work</h2>
+          <h2 className="text-xl font-medium mb-2">
+            How AI is Changing the Way We Work
+          </h2>
           <p className="text-gray-600">
-            A look at how intelligent assistants are helping teams save time and stay focused on
-            high-impact work.
+            A look at how intelligent assistants are helping teams save time and
+            stay focused on high-impact work.
           </p>
         </div>
 
         <div className="border border-gray-200 rounded-lg p-6">
           <p className="text-sm text-gray-400 mb-2">January 28, 2026</p>
-          <h2 className="text-xl font-medium mb-2">Introducing the Client Portal</h2>
+          <h2 className="text-xl font-medium mb-2">
+            Introducing the Client Portal
+          </h2>
           <p className="text-gray-600">
-            Our new client portal makes it easier than ever to collaborate with your clients in a
-            dedicated, branded space.
+            Our new client portal makes it easier than ever to collaborate with
+            your clients in a dedicated, branded space.
           </p>
         </div>
 
@@ -36,8 +40,8 @@ export default function BlogPage() {
           <p className="text-sm text-gray-400 mb-2">December 5, 2025</p>
           <h2 className="text-xl font-medium mb-2">Welcome to Virevos</h2>
           <p className="text-gray-600">
-            We&apos;re excited to announce the launch of Virevos — the productivity platform built for
-            the modern professional.
+            We&apos;re excited to announce the launch of Virevos — the
+            productivity platform built for the modern professional.
           </p>
         </div>
       </section>

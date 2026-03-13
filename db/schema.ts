@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
+
 // USERS
 export const users = pgTable("users", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
@@ -176,6 +177,96 @@ export const googleSyncState = pgTable("google_sync_state", {
     .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
+// EMAILS - Gmail messages stored locally
+export const emails = pgTable("emails", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  gmailId: text("gmail_id").notNull(),
+  threadId: text("thread_id").notNull(),
+  subject: text("subject").default("(no subject)"),
+  snippet: text("snippet"),
+  fromEmail: text("from_email"),
+  fromName: text("from_name"),
+  toEmails: text("to_emails").array().default([]),
+  ccEmails: text("cc_emails").array().default([]),
+  bodyHtml: text("body_html"),
+  bodyText: text("body_text"),
+  labelIds: text("label_ids").array().default([]),
+  isRead: boolean("is_read").default(false),
+  isStarred: boolean("is_starred").default(false),
+  isArchived: boolean("is_archived").default(false),
+  isSent: boolean("is_sent").default(false),
+  sentAt: timestamp("sent_at").notNull(),
+  clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+  userId: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// EMAIL ATTACHMENTS
+export const emailAttachments = pgTable("email_attachments", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  emailId: integer("email_id").notNull().references(() => emails.id, { onDelete: "cascade" }),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type"),
+  size: integer("size"),
+  gmailAttachmentId: text("gmail_attachment_id"),
+  supabasePath: text("supabase_path"),
+  userId: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
+});
+
+// SCHEDULED EMAILS
+export const scheduledEmails = pgTable("scheduled_emails", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  toEmail: text("to_email").notNull(),
+  toName: text("to_name"),
+  subject: text("subject").notNull(),
+  bodyHtml: text("body_html").notNull(),
+  bodyText: text("body_text"),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  timezone: text("timezone").notNull().default("UTC"),
+  recurring: text("recurring").default("none"),
+  status: text("status").notNull().default("pending"),
+  awsScheduleName: text("aws_schedule_name"),
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+  userId: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// CONVERSATION SUMMARIES
+export const conversationSummaries = pgTable("conversation_summaries", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  summary: text("summary").notNull(),
+  keyTopics: text("key_topics").array().default([]),
+  actionItems: text("action_items").array().default([]),
+  sentiment: text("sentiment").default("neutral"),
+  emailCount: integer("email_count").default(0),
+  generatedAt: timestamp("generated_at").defaultNow(),
+  userId: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
+});
+
+// CLIENT PORTAL TOKENS
+export const clientPortalTokens = pgTable("client_portal_tokens", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  enabled: boolean("enabled").default(true),
+  settings: jsonb("settings").$type<{
+    brandColor?: string;
+    welcomeMessage?: string;
+    logoUrl?: string;
+    customDomain?: string;
+    chatEnabled?: boolean;
+    fileSharing?: boolean;
+    aiChatBot?: boolean;
+    emailNotifications?: boolean;
+  }>().default({}),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  userId: varchar("user_id").notNull().references(() => users.user_id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // RELATIONS
 export const usersRelations = relations(users, ({ many, one }) => ({
   clients: many(clients),
@@ -187,6 +278,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     fields: [users.user_id],
     references: [googleSyncState.userId],
   }),
+  emails: many(emails),
+  scheduledEmails: many(scheduledEmails),
+  conversationSummaries: many(conversationSummaries),
+  clientPortalTokens: many(clientPortalTokens),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -195,6 +290,16 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     references: [users.user_id],
   }),
   projects: many(projects),
+  emails: many(emails),
+  scheduledEmails: many(scheduledEmails),
+  conversationSummary: one(conversationSummaries, {
+    fields: [clients.id],
+    references: [conversationSummaries.clientId],
+  }),
+  portalToken: one(clientPortalTokens, {
+    fields: [clients.id],
+    references: [clientPortalTokens.clientId],
+  }),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -263,5 +368,61 @@ export const googleSyncStateRelations = relations(googleSyncState, ({ one }) => 
   user: one(users, {
     fields: [googleSyncState.userId],
     references: [users.user_id],
+  }),
+}));
+
+export const emailsRelations = relations(emails, ({ one, many }) => ({
+  user: one(users, {
+    fields: [emails.userId],
+    references: [users.user_id],
+  }),
+  client: one(clients, {
+    fields: [emails.clientId],
+    references: [clients.id],
+  }),
+  attachments: many(emailAttachments),
+}));
+
+export const emailAttachmentsRelations = relations(emailAttachments, ({ one }) => ({
+  email: one(emails, {
+    fields: [emailAttachments.emailId],
+    references: [emails.id],
+  }),
+  user: one(users, {
+    fields: [emailAttachments.userId],
+    references: [users.user_id],
+  }),
+}));
+
+export const scheduledEmailsRelations = relations(scheduledEmails, ({ one }) => ({
+  user: one(users, {
+    fields: [scheduledEmails.userId],
+    references: [users.user_id],
+  }),
+  client: one(clients, {
+    fields: [scheduledEmails.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const conversationSummariesRelations = relations(conversationSummaries, ({ one }) => ({
+  user: one(users, {
+    fields: [conversationSummaries.userId],
+    references: [users.user_id],
+  }),
+  client: one(clients, {
+    fields: [conversationSummaries.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const clientPortalTokensRelations = relations(clientPortalTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [clientPortalTokens.userId],
+    references: [users.user_id],
+  }),
+  client: one(clients, {
+    fields: [clientPortalTokens.clientId],
+    references: [clients.id],
   }),
 }));

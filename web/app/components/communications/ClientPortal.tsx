@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -14,6 +16,13 @@ import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import {
   Globe,
   Palette,
   MessageSquare,
@@ -24,26 +33,206 @@ import {
   Eye,
   Settings,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
-import Link from "next/link";
+import { toast } from "sonner";
+
+interface PortalRecord {
+  id: number;
+  clientId: number;
+  clientName: string | null;
+  token: string;
+  enabled: boolean;
+  settings: {
+    brandColor?: string;
+    welcomeMessage?: string;
+    logoUrl?: string;
+    customDomain?: string;
+    chatEnabled?: boolean;
+    fileSharing?: boolean;
+    aiChatBot?: boolean;
+    emailNotifications?: boolean;
+  };
+  portalUrl: string;
+  lastAccessedAt: string | null;
+}
+
+interface Client {
+  id: number;
+  name: string;
+}
 
 export function ClientPortal() {
+  const [portals, setPortals] = useState<PortalRecord[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Settings state for currently selected client
   const [portalEnabled, setPortalEnabled] = useState(true);
   const [chatEnabled, setChatEnabled] = useState(true);
   const [fileSharing, setFileSharing] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [aiChatBot, setAiChatBot] = useState(true);
-  const [customDomain, setCustomDomain] = useState("");
   const [brandColor, setBrandColor] = useState("#3B82F6");
   const [welcomeMessage, setWelcomeMessage] = useState(
     "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
   );
 
-  const portalUrl = customDomain || "portal.virevos.com/acme-corp";
+  useEffect(() => {
+    fetchPortals();
+    fetchClients();
+  }, []);
+
+  const fetchPortals = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/portal/settings");
+      if (res.ok) {
+        const data = await res.json();
+        setPortals(data.portals || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch portals:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const res = await fetch("/api/clients");
+      if (res.ok) {
+        const data = await res.json();
+        setClients(data.clients || data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch clients:", err);
+    }
+  };
+
+  // When client selection changes, load their portal settings
+  const handleClientChange = (clientId: string) => {
+    setSelectedClientId(clientId);
+    const portal = portals.find((p) => String(p.clientId) === clientId);
+    if (portal) {
+      setPortalEnabled(portal.enabled);
+      setBrandColor(portal.settings?.brandColor || "#3B82F6");
+      setWelcomeMessage(
+        portal.settings?.welcomeMessage ||
+          "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
+      );
+      setChatEnabled(portal.settings?.chatEnabled ?? true);
+      setFileSharing(portal.settings?.fileSharing ?? true);
+      setAiChatBot(portal.settings?.aiChatBot ?? true);
+      setEmailNotifications(portal.settings?.emailNotifications ?? true);
+    } else {
+      // Reset to defaults for new portal
+      setPortalEnabled(true);
+      setBrandColor("#3B82F6");
+      setWelcomeMessage(
+        "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
+      );
+      setChatEnabled(true);
+      setFileSharing(true);
+      setAiChatBot(true);
+      setEmailNotifications(true);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedClientId) {
+      toast.error("Please select a client first");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/portal/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: parseInt(selectedClientId, 10),
+          enabled: portalEnabled,
+          settings: {
+            brandColor,
+            welcomeMessage,
+            chatEnabled,
+            fileSharing,
+            aiChatBot,
+            emailNotifications,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPortals((prev) => {
+          const existing = prev.find(
+            (p) => String(p.clientId) === selectedClientId
+          );
+          if (existing) {
+            return prev.map((p) =>
+              String(p.clientId) === selectedClientId ? { ...p, ...data } : p
+            );
+          }
+          return [...prev, data];
+        });
+        toast.success("Portal settings saved");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to save settings");
+      }
+    } catch {
+      toast.error("Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const currentPortal = portals.find(
+    (p) => String(p.clientId) === selectedClientId
+  );
+  const portalUrl = currentPortal?.portalUrl || "";
 
   return (
     <div className="space-y-6">
+      {/* Client Selector */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Label className="mb-2 block">Select Client</Label>
+              <Select
+                value={selectedClientId}
+                onValueChange={handleClientChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a client to configure portal..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.name}
+                      {portals.find((p) => p.clientId === c.id) && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          Active
+                        </Badge>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {isLoading && (
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Overview */}
       <Card>
         <CardHeader>
@@ -64,54 +253,77 @@ export function ClientPortal() {
             />
           </div>
         </CardHeader>
-        {portalEnabled && (
+        {selectedClientId && portalEnabled && (
           <CardContent className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-blue-900">
-                  <strong>Your Portal URL:</strong>
-                </p>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      navigator.clipboard.writeText(`https://${portalUrl}`)
-                    }
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Eye className="h-4 w-4 mr-2" />
-                    <Link href="/workspace/portal">Preview</Link>
-                  </Button>
+            {currentPortal ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-blue-900">
+                    <strong>Portal URL:</strong>
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(portalUrl);
+                        toast.success("URL copied to clipboard");
+                      }}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(portalUrl, "_blank")}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
+                  </div>
                 </div>
+                <p className="text-sm text-blue-800 font-mono break-all">
+                  {portalUrl}
+                </p>
+                {currentPortal.lastAccessedAt && (
+                  <p className="text-xs text-blue-600 mt-2">
+                    Last accessed:{" "}
+                    {new Date(currentPortal.lastAccessedAt).toLocaleString()}
+                  </p>
+                )}
               </div>
-              <p className="text-sm text-blue-800 font-mono break-all">
-                https://{portalUrl}
-              </p>
-            </div>
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                <p className="text-sm text-gray-600">
+                  Save settings to generate a portal URL for this client
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl text-gray-900">12</p>
-                <p className="text-sm text-gray-600 mt-1">Active Clients</p>
+                <p className="text-2xl text-gray-900">
+                  {portals.filter((p) => p.enabled).length}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">Active Portals</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl text-gray-900">43</p>
-                <p className="text-sm text-gray-600 mt-1">Messages This Week</p>
+                <p className="text-2xl text-gray-900">{portals.length}</p>
+                <p className="text-sm text-gray-600 mt-1">Total Portals</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl text-gray-900">8.2k</p>
-                <p className="text-sm text-gray-600 mt-1">Total Views</p>
+                <p className="text-2xl text-gray-900">
+                  {portals.filter((p) => p.lastAccessedAt).length}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">Accessed</p>
               </div>
             </div>
           </CardContent>
         )}
       </Card>
 
-      {portalEnabled && (
+      {selectedClientId && portalEnabled && (
         <Tabs defaultValue="branding">
           <TabsList>
             <TabsTrigger value="branding">Branding</TabsTrigger>
@@ -132,23 +344,6 @@ export function ClientPortal() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="custom-domain">
-                    Custom Domain (Optional)
-                  </Label>
-                  <Input
-                    id="custom-domain"
-                    placeholder="portal.yourcompany.com"
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Use your own domain for a fully white-labeled experience
-                  </p>
-                </div>
-
-                <Separator />
-
                 <div className="space-y-2">
                   <Label htmlFor="brand-color">Primary Brand Color</Label>
                   <div className="flex items-center space-x-3">
@@ -197,7 +392,7 @@ export function ClientPortal() {
                     rows={3}
                   />
                   <p className="text-xs text-gray-500">
-                    This message appears when clients first log in
+                    This message appears when clients first access the portal
                   </p>
                 </div>
               </CardContent>
@@ -299,20 +494,6 @@ export function ClientPortal() {
                         onCheckedChange={setFileSharing}
                       />
                     </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <Label>Auto-Reply Message (Optional)</Label>
-                      <Textarea
-                        placeholder="Thanks for your message! We'll get back to you within 2 hours."
-                        rows={2}
-                      />
-                      <p className="text-xs text-gray-500">
-                        Sent automatically when clients send a message outside
-                        business hours
-                      </p>
-                    </div>
                   </>
                 )}
               </CardContent>
@@ -338,20 +519,6 @@ export function ClientPortal() {
                     onCheckedChange={setEmailNotifications}
                   />
                 </div>
-
-                {emailNotifications && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Label>Notification Email</Label>
-                      <Input
-                        type="email"
-                        defaultValue="notifications@yourcompany.com"
-                        placeholder="your@email.com"
-                      />
-                    </div>
-                  </>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -464,11 +631,19 @@ export function ClientPortal() {
 
       {/* Actions */}
       <div className="flex justify-end space-x-2">
-        <Button variant="outline">
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Preview Portal
+        {currentPortal && (
+          <Button
+            variant="outline"
+            onClick={() => window.open(currentPortal.portalUrl, "_blank")}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Preview Portal
+          </Button>
+        )}
+        <Button onClick={handleSave} disabled={isSaving || !selectedClientId}>
+          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Save Changes
         </Button>
-        <Button>Save Changes</Button>
       </div>
     </div>
   );

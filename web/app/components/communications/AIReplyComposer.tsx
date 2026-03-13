@@ -20,6 +20,7 @@ interface AIReplyComposerProps {
     preview: string;
   };
   onClose: () => void;
+  onSend?: (html: string) => Promise<void>;
 }
 
 const tonePresets = [
@@ -144,20 +145,78 @@ Best,
 John`,
 };
 
-export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
+export function AIReplyComposer({
+  message,
+  onClose,
+  onSend,
+}: AIReplyComposerProps) {
   const [tone, setTone] = useState("professional");
   const [draft, setDraft] = useState(mockDrafts.professional);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [customInstructions, setCustomInstructions] = useState("");
 
-  const handleGenerateDraft = () => {
+  const handleGenerateDraft = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    try {
+      const systemPrompt = `You are a helpful email assistant. The user is replying to an email from ${message.from} (${message.client}).
+Original email preview: "${message.preview}"
+Generate a ${tone} reply email. ${customInstructions ? `Additional instructions: ${customInstructions}` : ""}
+Return only the email body text, no subject line.`;
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `Generate a ${tone} reply to this email from ${message.from}: "${message.preview}"`,
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error("AI request failed");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter(Boolean);
+        for (const line of lines) {
+          try {
+            const event = JSON.parse(line);
+            if (event.type === "text_delta" && event.delta) {
+              fullText += event.delta;
+              setDraft(fullText);
+            }
+          } catch {
+            // skip non-JSON lines
+          }
+        }
+      }
+
+      if (!fullText) {
+        // Fall back to mock if AI returns nothing
+        setDraft(
+          mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional
+        );
+      }
+    } catch (err) {
+      console.error("AI generation error:", err);
+      // Fall back to mock drafts
       setDraft(
         mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional
       );
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   const handleToneChange = (newTone: string) => {
@@ -165,6 +224,17 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
     setDraft(
       mockDrafts[newTone as keyof typeof mockDrafts] || mockDrafts.professional
     );
+  };
+
+  const handleSend = async () => {
+    if (!onSend || !draft) return;
+    setIsSending(true);
+    try {
+      const html = `<p>${draft.replace(/\n/g, "<br>")}</p>`;
+      await onSend(html);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -191,7 +261,9 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
             <strong>Context:</strong> Replying to {message.from} from{" "}
             {message.client}
           </p>
-          <p className="text-xs text-blue-800 italic">&quot;{message.preview}&quot;</p>
+          <p className="text-xs text-blue-800 italic">
+            &quot;{message.preview}&quot;
+          </p>
         </CardContent>
       </Card>
 
@@ -291,9 +363,21 @@ export function AIReplyComposer({ message, onClose }: AIReplyComposerProps) {
             <Clock className="h-4 w-4 mr-2" />
             Schedule
           </Button>
-          <Button>
-            <Send className="h-4 w-4 mr-2" />
-            Send Reply
+          <Button
+            onClick={handleSend}
+            disabled={isSending || !draft || !onSend}
+          >
+            {isSending ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Send Reply
+              </>
+            )}
           </Button>
         </div>
       </div>

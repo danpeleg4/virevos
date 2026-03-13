@@ -11,12 +11,11 @@ import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
-import { Separator } from "../ui/separator";
 import { CheckCircle, ExternalLink, Settings } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {changeRecordingStatus} from "@/lib/server_actions/user";
+import { changeRecordingStatus } from "@/lib/server_actions/user";
 
 interface Integration {
   id: string;
@@ -87,10 +86,10 @@ export function IntegrationSettings() {
   const { data: recordingStatus } = useQuery({
     queryKey: ["recordingStatus"],
     queryFn: async () => {
-      const res = await axios.get('/api/recording_status')
-      return res.data
-    }
-  })
+      const res = await axios.get("/api/recording_status");
+      return res.data;
+    },
+  });
 
   const mutation = useMutation({
     mutationFn: async ({
@@ -113,12 +112,12 @@ export function IntegrationSettings() {
 
   const changeRecordingStatusMutation = useMutation({
     mutationFn: async () => {
-      await changeRecordingStatus()
+      await changeRecordingStatus();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recordingStatus"] });
     },
-  })
+  });
 
   const toggleConnection = (id: string) => {
     const integration = integrations.find((i) => i.id === id);
@@ -153,7 +152,9 @@ export function IntegrationSettings() {
                         />
                       ) : (
                         (() => {
-                          const Icon = integration.icon as ComponentType<SVGProps<SVGSVGElement>>;
+                          const Icon = integration.icon as ComponentType<
+                            SVGProps<SVGSVGElement>
+                          >;
                           return <Icon className="h-6 w-6 text-blue-600" />;
                         })()
                       )}

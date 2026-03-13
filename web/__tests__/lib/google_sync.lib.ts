@@ -111,14 +111,19 @@ describe("getCalendarClient", () => {
   it("returns a calendar client when token exists", async () => {
     const client = await getCalendarClient("user_1");
     expect(client).toBeDefined();
-    expect(mockCalendar).toHaveBeenCalledWith({ version: "v3", auth: expect.anything() });
+    expect(mockCalendar).toHaveBeenCalledWith({
+      version: "v3",
+      auth: expect.anything(),
+    });
   });
 });
 
 describe("performFullSync", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue("mock-access-token");
+    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
+      "mock-access-token"
+    );
   });
 
   it("fetches events and stores syncToken on a single page", async () => {
@@ -141,7 +146,9 @@ describe("performFullSync", () => {
   it("paginates through multiple pages and uses nextSyncToken from last page", async () => {
     mockEventsList
       .mockResolvedValueOnce({ data: { items: [], nextPageToken: "page-2" } })
-      .mockResolvedValueOnce({ data: { items: [], nextSyncToken: "final-sync-token" } });
+      .mockResolvedValueOnce({
+        data: { items: [], nextSyncToken: "final-sync-token" },
+      });
     mockFullSyncDb();
 
     await performFullSync("user_1");
@@ -157,7 +164,9 @@ describe("performFullSync", () => {
 describe("performIncrementalSync", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue("mock-access-token");
+    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
+      "mock-access-token"
+    );
   });
 
   it("falls back to full sync when no syncToken is stored (null)", async () => {
@@ -222,7 +231,9 @@ describe("performIncrementalSync", () => {
       data: { items: [], nextSyncToken: "new-token" },
     });
     (db.update as jest.Mock).mockReturnValue({
-      set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
+      set: jest
+        .fn()
+        .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
     });
     (db.delete as jest.Mock).mockReturnValue({
       where: jest.fn().mockResolvedValue(undefined),
@@ -243,7 +254,9 @@ describe("performIncrementalSync", () => {
     const goneError = Object.assign(new Error("Gone"), { code: 410 });
     mockEventsList
       .mockRejectedValueOnce(goneError)
-      .mockResolvedValueOnce({ data: { items: [], nextSyncToken: "new-token" } });
+      .mockResolvedValueOnce({
+        data: { items: [], nextSyncToken: "new-token" },
+      });
 
     (db.insert as jest.Mock).mockReturnValue({
       values: jest.fn().mockReturnValue({
@@ -268,17 +281,23 @@ describe("performIncrementalSync", () => {
       }),
     });
 
-    const networkError = Object.assign(new Error("Network error"), { code: 500 });
+    const networkError = Object.assign(new Error("Network error"), {
+      code: 500,
+    });
     mockEventsList.mockRejectedValueOnce(networkError);
 
-    await expect(performIncrementalSync("user_1")).rejects.toThrow("Network error");
+    await expect(performIncrementalSync("user_1")).rejects.toThrow(
+      "Network error"
+    );
   });
 });
 
 describe("setupWatchChannel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue("mock-access-token");
+    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
+      "mock-access-token"
+    );
     // Jest runs with NODE_ENV=test (non-production), so setupWatchChannel uses NEXT_PUBLIC_APP_URL_NGROK
     process.env.NEXT_PUBLIC_APP_URL_NGROK = "https://example.ngrok.io";
   });
@@ -329,7 +348,9 @@ describe("setupWatchChannel", () => {
 describe("stopWatchChannel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue("mock-access-token");
+    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
+      "mock-access-token"
+    );
   });
 
   it("does nothing if no sync state exists for user", async () => {

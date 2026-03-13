@@ -151,19 +151,6 @@ export function Hero() {
             transition={{ delay: 0.6 }}
             className="mt-24 grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto"
           >
-            {[
-              { number: "1000+", label: "Active users" },
-              { number: "99.9%", label: "Uptime" },
-              { number: "2M+", label: "Tasks completed" },
-              { number: "150+", label: "Integrations" },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl sm:text-4xl text-gray-900 mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
-              </div>
-            ))}
           </motion.div>
         </div>
       </div>

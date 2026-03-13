@@ -17,8 +17,12 @@ export default function PressPage() {
         <div>
           <h2 className="text-xl font-medium mb-2">Media Inquiries</h2>
           <p>
-            For press inquiries, interview requests, or media partnerships, please contact us at{" "}
-            <a href="mailto:press@virevos.com" className="text-blue-600 hover:underline">
+            For press inquiries, interview requests, or media partnerships,
+            please contact us at{" "}
+            <a
+              href="mailto:press@virevos.com"
+              className="text-blue-600 hover:underline"
+            >
               press@virevos.com
             </a>
           </p>
@@ -27,9 +31,10 @@ export default function PressPage() {
         <div>
           <h2 className="text-xl font-medium mb-2">About Virevos</h2>
           <p className="text-gray-600">
-            Virevos is a productivity platform designed to help professionals and teams accomplish
-            more with less effort. Founded in 2025, Virevos combines AI-powered tools, seamless
-            collaboration, and intuitive design.
+            Virevos is a productivity platform designed to help professionals
+            and teams accomplish more with less effort. Founded in 2025, Virevos
+            combines AI-powered tools, seamless collaboration, and intuitive
+            design.
           </p>
         </div>
 

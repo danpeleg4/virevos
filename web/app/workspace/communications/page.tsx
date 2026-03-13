@@ -6,12 +6,14 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../components/ui/tabs";
-import { UnifiedInbox } from "../../components/communications/UnifiedInbox";
-import { ScheduledMessages } from "../../components/communications/ScheduledMessages";
-import { ClientPortal } from "../../components/communications/ClientPortal";
-import { ConversationSummaries } from "../../components/communications/ConversationSummaries";
-import { Badge } from "../../components/ui/badge";
+} from "@/app/components/ui/tabs";
+import { UnifiedInbox } from "@/app/components/communications/UnifiedInbox";
+import { ScheduledMessages } from "@/app/components/communications/ScheduledMessages";
+import { ClientPortal } from "@/app/components/communications/ClientPortal";
+import { ConversationSummaries } from "@/app/components/communications/ConversationSummaries";
+import { Badge } from "@/app/components/ui/badge";
+
+const fillStyle: React.CSSProperties = { flex: '1 1 0%', minHeight: 0, display: 'flex', flexDirection: 'column' };
 
 export default function Communications() {
   const [activeTab, setActiveTab] = useState("inbox");
@@ -19,7 +21,10 @@ export default function Communications() {
   const [scheduledCount] = useState(3);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div
+      className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex flex-col overflow-hidden"
+      style={{ height: 'calc(100dvh - 65px)' }}
+    >
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">
@@ -32,9 +37,13 @@ export default function Communications() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="mb-6 min-w-max">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        style={fillStyle}
+      >
+        <div className="overflow-x-auto pb-1 shrink-0">
+          <TabsList className="mb-4 min-w-max">
             <TabsTrigger value="inbox" className="relative cursor-pointer">
               Inbox
               {unreadCount > 0 && (
@@ -60,7 +69,7 @@ export default function Communications() {
           </TabsList>
         </div>
 
-        <TabsContent value="inbox">
+        <TabsContent value="inbox" style={fillStyle}>
           <UnifiedInbox />
         </TabsContent>
 

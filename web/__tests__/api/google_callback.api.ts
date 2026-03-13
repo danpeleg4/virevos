@@ -116,7 +116,9 @@ describe("GET /api/google/callback", () => {
       from: () => ({
         where: () => ({
           limit: () =>
-            Promise.resolve([{ refresh_token: "old_refresh", connected: false }]),
+            Promise.resolve([
+              { refresh_token: "old_refresh", connected: false },
+            ]),
         }),
       }),
     });
@@ -143,13 +145,19 @@ describe("GET /api/google/callback", () => {
   it("still redirects when performFullSync fails", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     mockGetToken.mockResolvedValue({
-      tokens: { access_token: "access_123", refresh_token: "refresh_123", expiry_date: null },
+      tokens: {
+        access_token: "access_123",
+        refresh_token: "refresh_123",
+        expiry_date: null,
+      },
     });
     mockDbSelectEmpty();
     (db.insert as jest.Mock).mockReturnValue({
       values: jest.fn().mockResolvedValue(undefined),
     });
-    (performFullSync as jest.Mock).mockRejectedValueOnce(new Error("sync error"));
+    (performFullSync as jest.Mock).mockRejectedValueOnce(
+      new Error("sync error")
+    );
     jest.spyOn(console, "error").mockImplementationOnce(() => {});
 
     const res = await GET(makeRequest("auth_code_123"));
@@ -159,13 +167,19 @@ describe("GET /api/google/callback", () => {
   it("still redirects when setupWatchChannel fails", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     mockGetToken.mockResolvedValue({
-      tokens: { access_token: "access_123", refresh_token: "refresh_123", expiry_date: null },
+      tokens: {
+        access_token: "access_123",
+        refresh_token: "refresh_123",
+        expiry_date: null,
+      },
     });
     mockDbSelectEmpty();
     (db.insert as jest.Mock).mockReturnValue({
       values: jest.fn().mockResolvedValue(undefined),
     });
-    (setupWatchChannel as jest.Mock).mockRejectedValueOnce(new Error("watch error"));
+    (setupWatchChannel as jest.Mock).mockRejectedValueOnce(
+      new Error("watch error")
+    );
     jest.spyOn(console, "error").mockImplementationOnce(() => {});
 
     const res = await GET(makeRequest("auth_code_123"));

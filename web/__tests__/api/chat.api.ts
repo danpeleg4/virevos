@@ -47,7 +47,9 @@ describe("POST /api/chat", () => {
     jest.clearAllMocks();
   });
 
-  function mockRequest(body: { messages: { role: string; content: string }[] }) {
+  function mockRequest(body: {
+    messages: { role: string; content: string }[];
+  }) {
     return {
       json: jest.fn().mockResolvedValue(body),
     } as unknown as NextRequest;

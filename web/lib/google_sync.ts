@@ -62,7 +62,9 @@ async function applyGoogleEventsToDb(
         // Try to find by googleEventId directly
         await db
           .delete(events)
-          .where(and(eq(events.googleEventId, e.id), eq(events.userId, userId)));
+          .where(
+            and(eq(events.googleEventId, e.id), eq(events.userId, userId))
+          );
       }
       continue;
     }
@@ -130,7 +132,15 @@ async function applyGoogleEventsToDb(
       if (hasChanged) {
         await db
           .update(events)
-          .set({ title, description, link, dateTime, duration: durationMinutes, status, isMeeting })
+          .set({
+            title,
+            description,
+            link,
+            dateTime,
+            duration: durationMinutes,
+            status,
+            isMeeting,
+          })
           .where(eq(events.id, m.id));
       }
       continue;
@@ -191,8 +201,8 @@ export async function performFullSync(userId: string): Promise<void> {
     const start = e.start.dateTime
       ? new Date(e.start.dateTime)
       : e.start.date
-      ? new Date(e.start.date)
-      : null;
+        ? new Date(e.start.date)
+        : null;
     return start !== null && start >= timeMin && start <= timeMax;
   });
 
@@ -256,10 +266,11 @@ export async function performIncrementalSync(userId: string): Promise<void> {
       .where(eq(googleSyncState.userId, userId));
   } catch (err: unknown) {
     const status =
-      (err as { code?: number }).code ??
-      (err as { status?: number }).status;
+      (err as { code?: number }).code ?? (err as { status?: number }).status;
     if (status === 410) {
-      console.log(`[google_sync] syncToken expired for ${userId}, falling back to full sync`);
+      console.log(
+        `[google_sync] syncToken expired for ${userId}, falling back to full sync`
+      );
       await performFullSync(userId);
     } else {
       throw err;
@@ -329,11 +340,12 @@ export async function stopWatchChannel(userId: string): Promise<void> {
         requestBody: { id: channelId, resourceId },
       });
     } catch (err) {
-      console.error(`[google_sync] Failed to stop watch channel for ${userId}:`, err);
+      console.error(
+        `[google_sync] Failed to stop watch channel for ${userId}:`,
+        err
+      );
     }
   }
 
-  await db
-    .delete(googleSyncState)
-    .where(eq(googleSyncState.userId, userId));
+  await db.delete(googleSyncState).where(eq(googleSyncState.userId, userId));
 }

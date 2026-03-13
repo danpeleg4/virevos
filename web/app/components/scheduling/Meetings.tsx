@@ -96,8 +96,14 @@ export function Meetings() {
   }
 
   const filteredMeetings = meetings?.data?.filter((event) => event.isMeeting);
-  const totalPages = Math.max(1, Math.ceil((filteredMeetings?.length ?? 0) / PAGE_SIZE));
-  const paginatedMeetings = filteredMeetings?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil((filteredMeetings?.length ?? 0) / PAGE_SIZE)
+  );
+  const paginatedMeetings = filteredMeetings?.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
   const color = (meeting: Event) => {
     switch (meeting.status) {
@@ -194,7 +200,7 @@ export function Meetings() {
                         Join Now
                       </Button>
                     )}
-                    {(meeting.status === "ended" && meeting.hasTranscript) && (
+                    {meeting.status === "ended" && meeting.hasTranscript && (
                       <Button
                         variant="outline"
                         onClick={() => handleViewSummary(meeting)}

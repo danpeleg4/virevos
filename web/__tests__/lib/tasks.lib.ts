@@ -71,7 +71,9 @@ describe("updateTaskStatus", () => {
   it("throws when task not found", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockFindFirst.mockResolvedValue(undefined);
-    await expect(updateTaskStatus("todo", 99)).rejects.toThrow("Task not found");
+    await expect(updateTaskStatus("todo", 99)).rejects.toThrow(
+      "Task not found"
+    );
   });
 
   it("updates status and returns success for todo", async () => {
@@ -165,7 +167,12 @@ describe("addProjectTasksAction", () => {
 
   it("inserts task and returns the created record", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const created = { ...baseTask, id: 10, title: "New Task", userId: "user_1" };
+    const created = {
+      ...baseTask,
+      id: 10,
+      title: "New Task",
+      userId: "user_1",
+    };
     mockReturning.mockResolvedValue([created]);
 
     const result = await addProjectTasksAction(baseTask);
@@ -205,7 +212,9 @@ describe("addProjectTasksAction", () => {
 
   it("includes projectId in insert when provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockReturning.mockResolvedValue([{ ...baseTask, title: "New Task", projectId: 5 }]);
+    mockReturning.mockResolvedValue([
+      { ...baseTask, title: "New Task", projectId: 5 },
+    ]);
 
     await addProjectTasksAction({ ...baseTask, projectId: 5 });
 
@@ -216,7 +225,9 @@ describe("addProjectTasksAction", () => {
 
   it("sets dueDate to null when not provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockReturning.mockResolvedValue([{ ...baseTask, title: "New Task", dueDate: null }]);
+    mockReturning.mockResolvedValue([
+      { ...baseTask, title: "New Task", dueDate: null },
+    ]);
 
     await addProjectTasksAction({ ...baseTask, dueDate: null });
 

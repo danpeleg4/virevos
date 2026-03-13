@@ -263,7 +263,7 @@ export default function PricingPage() {
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left text-gray-900">
+                <AccordionTrigger className="text-left text-gray-900 cursor-pointer">
                   {faq.question}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600">

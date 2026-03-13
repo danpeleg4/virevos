@@ -1,10 +1,12 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "../ui/card";
-import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,119 +15,134 @@ import {
   SelectValue,
 } from "../ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import {
+  Search,
   Mail,
   MessageSquare,
-  Search,
   Star,
-  Archive,
-  Trash2,
   Send,
   Sparkles,
   Clock,
   Paperclip,
   MoreVertical,
+  Archive,
+  Trash2,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+  Plus,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
 import { Separator } from "../ui/separator";
 import { motion } from "motion/react";
 import { AIReplyComposer } from "./AIReplyComposer";
+import { AttachmentDialog } from "./AttachmentDialog";
+import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
+import { ComposeMessageDialog } from "./ComposeMessageDialog";
+import { toast } from "sonner";
+import axios from "axios";
 
 interface Message {
   id: string;
+  gmailId?: string;
+  threadId?: string;
   type: "email" | "chat";
   from: string;
+  fromEmail?: string;
   initials: string;
   subject?: string;
   preview: string;
-  timestamp: string;
+  body?: string;
+  timestamp: Date | string;
   unread: boolean;
   starred: boolean;
+  archived?: boolean;
+  sent?: boolean;
   client: string;
+  clientId?: number | null;
+  labels?: string[];
   tags: string[];
-  lastMessage?: string;
 }
 
-const mockMessages: Message[] = [
-  {
-    id: "1",
-    type: "email",
-    from: "Sarah Johnson",
-    initials: "SJ",
-    subject: "Q4 Project Timeline Question",
-    preview:
-      "Hey team, I wanted to follow up on the timeline we discussed for the Q4 rollout...",
-    timestamp: "10 minutes ago",
-    unread: true,
-    starred: false,
-    client: "Acme Corp",
-    tags: ["urgent", "project"],
-  },
-  {
-    id: "2",
-    type: "chat",
-    from: "Mike Chen",
-    initials: "MC",
-    preview: "Quick question about the API integration we discussed yesterday",
-    timestamp: "1 hour ago",
-    unread: true,
-    starred: true,
-    client: "TechStart Inc",
-    tags: ["technical"],
-  },
-  {
-    id: "3",
-    type: "email",
-    from: "Alex Kim",
-    initials: "AK",
-    subject: "Invoice #1234 Payment Confirmation",
-    preview:
-      "Thank you for your service this month. Payment has been processed...",
-    timestamp: "3 hours ago",
-    unread: true,
-    starred: false,
-    client: "DesignCo",
-    tags: ["billing"],
-  },
-  {
-    id: "4",
-    type: "chat",
-    from: "Emily Davis",
-    initials: "ED",
-    preview: "The new dashboard looks amazing! Just a few minor tweaks needed",
-    timestamp: "Yesterday",
-    unread: false,
-    starred: false,
-    client: "Global Solutions",
-    tags: ["feedback"],
-  },
-  {
-    id: "5",
-    type: "email",
-    from: "Robert Wilson",
-    initials: "RW",
-    subject: "Meeting Notes Follow-up",
-    preview:
-      "Following up on our call this morning. Here are the action items we discussed...",
-    timestamp: "2 days ago",
-    unread: false,
-    starred: true,
-    client: "Enterprise Ltd",
-    tags: ["meeting"],
-  },
-];
+function formatTimestamp(ts: Date | string): string {
+  const date = typeof ts === "string" ? new Date(ts) : ts;
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
+}
 
 export function UnifiedInbox() {
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showAIComposer, setShowAIComposer] = useState(false);
+  const [showAttachmentDialog, setShowAttachmentDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [showComposeDialog, setShowComposeDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [replyText, setReplyText] = useState("");
+
+  useEffect(() => {
+    checkGoogleConnection();
+    fetchEmails();
+  }, []);
+
+  const checkGoogleConnection = async () => {
+    try {
+      const { data } = await axios.get("/api/integrations/google");
+      setIsConnected(data.connected === true);
+    } catch {
+      setIsConnected(false);
+    }
+  };
+
+  const fetchEmails = async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: "100" });
+      if (searchQuery) params.set("search", searchQuery);
+      if (filterStatus !== "all") params.set("filter", filterStatus);
+
+      const { data } = await axios.get(`/api/gmail/sync?${params}`);
+      console.log(data.messages);
+      setMessages(data.messages || []);
+    } catch (err) {
+      console.error("Failed to fetch emails:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const { data } = await axios.post("/api/gmail/sync");
+      toast.success(`Synced ${data.synced} emails`);
+      await fetchEmails();
+    } catch {
+      toast.error("Sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const filteredMessages = messages.filter((msg) => {
     const matchesSearch =
@@ -142,47 +159,154 @@ export function UnifiedInbox() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const toggleStar = (id: string) => {
-    setMessages(
-      messages.map((msg) =>
-        msg.id === id ? { ...msg, starred: !msg.starred } : msg
-      )
-    );
+  const applyAction = async (id: string, action: string) => {
+    try {
+      await axios.patch(`/api/gmail/messages/${id}`, { action });
+
+      // Update local state
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id !== id) return msg;
+          const updated = { ...msg };
+          if (action === "star") updated.starred = true;
+          if (action === "unstar") updated.starred = false;
+          if (action === "archive") updated.archived = true;
+          if (action === "unarchive") updated.archived = false;
+          if (action === "markRead") updated.unread = false;
+          if (action === "markUnread") updated.unread = true;
+          return updated;
+        })
+      );
+      if (selectedMessage?.id === id) {
+        setSelectedMessage((prev) => {
+          if (!prev) return prev;
+          const updated = { ...prev };
+          if (action === "star") updated.starred = true;
+          if (action === "unstar") updated.starred = false;
+          if (action === "markRead") updated.unread = false;
+          if (action === "markUnread") updated.unread = true;
+          return updated;
+        });
+      }
+    } catch {
+      toast.error("Action failed");
+    }
+  };
+
+  const toggleStar = (id: string, currentlyStarred: boolean) => {
+    applyAction(id, currentlyStarred ? "unstar" : "star");
   };
 
   const markAsRead = (id: string) => {
-    setMessages(
-      messages.map((msg) => (msg.id === id ? { ...msg, unread: false } : msg))
-    );
+    const msg = messages.find((m) => m.id === id);
+    if (msg?.unread) applyAction(id, "markRead");
   };
 
   const handleSelectMessage = (message: Message) => {
     setSelectedMessage(message);
+    setReplyText("");
+    setShowAIComposer(false);
     markAsRead(message.id);
   };
 
+  const handleDeleteMessage = async (id: string) => {
+    try {
+      await axios.delete(`/api/gmail/messages/${id}`);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+      if (selectedMessage?.id === id) setSelectedMessage(null);
+      toast.success("Message deleted");
+    } catch {
+      toast.error("Delete failed");
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedMessage || !replyText.trim()) return;
+    setIsSending(true);
+    try {
+      await axios.post("/api/gmail/send", {
+        to: selectedMessage.fromEmail || selectedMessage.from,
+        subject: `Re: ${selectedMessage.subject || ""}`,
+        bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+        bodyText: replyText,
+        threadId: selectedMessage.threadId,
+        replyToGmailId: selectedMessage.gmailId,
+      });
+      toast.success("Reply sent successfully");
+      setReplyText("");
+      await fetchEmails();
+    } catch (err) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "Failed to send reply");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  if (isConnected === false) {
+    return (
+      <Card>
+        <CardContent className="py-24 text-center">
+          <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+          <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
+          <p className="text-sm text-gray-500 mb-6">
+            Connect your Google account to sync emails and use the inbox.
+          </p>
+          <Button onClick={() => (window.location.href = "/api/google")}>
+            <Mail className="h-4 w-4 mr-2" />
+            Connect Gmail
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="flex gap-6" style={{ flex: '1 1 0%', minHeight: 0 }}>
       {/* Message List */}
-      <div className="lg:col-span-1">
-        <Card>
-          <CardContent className="p-4 space-y-4">
+      <div className="flex flex-col" style={{ width: '33.333%', minHeight: 0, flexShrink: 0 }}>
+        <Card className="flex flex-col" style={{ flex: '1 1 0%', minHeight: 0 }}>
+          <CardContent className="p-4 flex flex-col gap-4" style={{ flex: '1 1 0%', minHeight: 0 }}>
             {/* Search and Filters */}
             <div className="space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search messages..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search messages..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && fetchEmails()}
+                    className="pl-10"
+                  />
+                </div>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  title="Sync Gmail"
+                >
+                  {isSyncing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setShowComposeDialog(true)}
+                  title="Compose new message"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
 
               <div className="flex gap-2">
                 <Select
                   value={filterType}
-                  onValueChange={(v: string) => setFilterType(v)}
+                  onValueChange={(v) => setFilterType(v)}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -206,7 +330,7 @@ export function UnifiedInbox() {
 
                 <Select
                   value={filterStatus}
-                  onValueChange={(v: string) => setFilterStatus(v)}
+                  onValueChange={(v) => setFilterStatus(v)}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -223,91 +347,120 @@ export function UnifiedInbox() {
             <Separator />
 
             {/* Message List */}
-            <div className="space-y-2">
-              {filteredMessages.map((message, index) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => handleSelectMessage(message)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedMessage?.id === message.id
-                      ? "bg-blue-50 border-blue-200 border"
-                      : message.unread
-                        ? "bg-gray-50 hover:bg-gray-100"
-                        : "hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarFallback>{message.initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`text-sm ${
-                              message.unread ? "font-semibold" : ""
-                            } text-gray-900 truncate`}
+            <div className="overflow-y-auto overflow-x-hidden space-y-2" style={{ flex: '1 1 0%', minHeight: 0 }}>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                </div>
+              ) : filteredMessages.length === 0 ? (
+                <div className="text-center py-12">
+                  <MessageSquare className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No messages found</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-3"
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Sync Gmail
+                  </Button>
+                </div>
+              ) : (
+                filteredMessages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    onClick={() => handleSelectMessage(message)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedMessage?.id === message.id
+                        ? "bg-blue-50 border-blue-200 border"
+                        : message.unread
+                          ? "bg-gray-50 hover:bg-gray-100"
+                          : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarFallback>{message.initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`text-sm ${
+                                message.unread ? "font-semibold" : ""
+                              } text-gray-900 truncate`}
+                            >
+                              {message.from}
+                            </span>
+                            {message.type === "email" ? (
+                              <Mail className="h-3 w-3 text-gray-400" />
+                            ) : (
+                              <MessageSquare className="h-3 w-3 text-gray-400" />
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStar(message.id, message.starred);
+                            }}
                           >
-                            {message.from}
-                          </span>
-                          {message.type === "email" ? (
-                            <Mail className="h-3 w-3 text-gray-400" />
-                          ) : (
-                            <MessageSquare className="h-3 w-3 text-gray-400" />
-                          )}
+                            <Star
+                              className={`h-4 w-4 cursor-pointer ${
+                                message.starred
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-400"
+                              }`}
+                            />
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleStar(message.id);
-                          }}
-                        >
-                          <Star
-                            className={`h-4 w-4 ${
-                              message.starred
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-400"
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      {message.subject && (
-                        <p
-                          className={`text-sm ${
-                            message.unread ? "font-medium" : ""
-                          } text-gray-700 truncate mb-1`}
-                        >
-                          {message.subject}
+                        {message.subject && (
+                          <p
+                            className={`text-sm ${
+                              message.unread ? "font-medium" : ""
+                            } text-gray-700 truncate mb-1`}
+                          >
+                            {message.subject}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 truncate mb-2">
+                          {message.preview}
                         </p>
-                      )}
-                      <p className="text-xs text-gray-500 truncate mb-2">
-                        {message.preview}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {message.client}
-                        </Badge>
-                        <span className="text-xs text-gray-400">
-                          {message.timestamp}
-                        </span>
+                        <div className="flex items-center justify-between">
+                          {message.client ? (
+                            <Badge variant="outline" className="text-xs">
+                              {message.client}
+                            </Badge>
+                          ) : (
+                            <span />
+                          )}
+                          <span className="text-xs text-gray-400">
+                            {formatTimestamp(message.timestamp)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Message Detail & Reply */}
-      <div className="lg:col-span-2">
+      <div className="flex flex-col overflow-y-auto space-y-2" style={{ flex: '1 1 0%', minHeight: 0 }}>
         {selectedMessage ? (
-          <Card>
-            <CardContent className="p-6 space-y-6">
+          <Card className="flex flex-col" style={{ flex: '1 1 0%', minHeight: 0 }}>
+            <CardContent className="p-6 flex flex-col flex-1 gap-6">
               {/* Message Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-4">
@@ -315,12 +468,19 @@ export function UnifiedInbox() {
                     <AvatarFallback>{selectedMessage.initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg text-gray-900">
+                    <h3 className="text-lg font-semibold text-gray-900">
                       {selectedMessage.from}
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      {selectedMessage.client}
-                    </p>
+                    {selectedMessage.fromEmail && (
+                      <p className="text-sm text-gray-500">
+                        {selectedMessage.fromEmail}
+                      </p>
+                    )}
+                    {selectedMessage.client && (
+                      <p className="text-sm text-gray-600">
+                        {selectedMessage.client}
+                      </p>
+                    )}
                     {selectedMessage.subject && (
                       <p className="text-sm text-gray-900 mt-2">
                         {selectedMessage.subject}
@@ -344,15 +504,48 @@ export function UnifiedInbox() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuLabel>Message Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          applyAction(selectedMessage.id, "archive");
+                          setSelectedMessage(null);
+                          toast.success("Message archived");
+                        }}
+                      >
                         <Archive className="h-4 w-4 mr-2" />
                         Archive
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          toggleStar(
+                            selectedMessage.id,
+                            selectedMessage.starred
+                          );
+                          toast.success(
+                            selectedMessage.starred
+                              ? "Removed from starred"
+                              : "Added to starred"
+                          );
+                        }}
+                      >
                         <Star className="h-4 w-4 mr-2" />
                         {selectedMessage.starred ? "Unstar" : "Star"}
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          applyAction(selectedMessage.id, "markUnread");
+                          toast.success("Marked as unread");
+                        }}
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Mark as Unread
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => handleDeleteMessage(selectedMessage.id)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -365,34 +558,89 @@ export function UnifiedInbox() {
 
               {/* Message Content */}
               <div className="prose prose-sm max-w-none">
-                <p className="text-gray-700">{selectedMessage.preview}</p>
-                <p className="text-gray-700 mt-4">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris.
-                </p>
-                <p className="text-gray-700 mt-4">
-                  I&apos;m looking forward to hearing your thoughts on this. Please
-                  let me know if you have any questions or need any
-                  clarification.
-                </p>
-                <p className="text-gray-700 mt-4">
-                  Best regards,
-                  <br />
-                  {selectedMessage.from}
-                </p>
+                {selectedMessage.body ? (
+                  <div
+                    className="text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: selectedMessage.body }}
+                  />
+                ) : (
+                  <p className="text-gray-700">{selectedMessage.preview}</p>
+                )}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {selectedMessage.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
+              {selectedMessage.tags && selectedMessage.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedMessage.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
 
               <Separator />
+
+              {/* Conversation History */}
+              {(() => {
+                const threadMessages = selectedMessage.threadId
+                  ? messages
+                      .filter(
+                        (m) =>
+                          m.threadId === selectedMessage.threadId &&
+                          m.id !== selectedMessage.id
+                      )
+                      .sort(
+                        (a, b) =>
+                          new Date(a.timestamp).getTime() -
+                          new Date(b.timestamp).getTime()
+                      )
+                  : [];
+
+                if (threadMessages.length === 0) return null;
+
+                return (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-gray-700">
+                      Conversation History ({threadMessages.length} message{threadMessages.length !== 1 ? "s" : ""})
+                    </h4>
+                    <div className="space-y-2">
+                      {threadMessages.map((msg) => (
+                        <motion.div
+                          key={msg.id}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`rounded-lg border p-3 text-sm ${
+                            msg.sent
+                              ? "bg-blue-50 border-blue-100 ml-6"
+                              : "bg-gray-50 border-gray-100 mr-6"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">{msg.from}</span>
+                              {msg.type === "email" ? (
+                                <Mail className="h-3 w-3 text-gray-400" />
+                              ) : (
+                                <MessageSquare className="h-3 w-3 text-gray-400" />
+                              )}
+                              {msg.subject && (
+                                <span className="text-gray-500 truncate max-w-48">{msg.subject}</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-400 flex-shrink-0">
+                              {formatTimestamp(msg.timestamp)}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 line-clamp-3">
+                            {msg.preview}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </div>
+                    <Separator />
+                  </div>
+                );
+              })()}
 
               {/* Reply Section */}
               {!showAIComposer ? (
@@ -412,20 +660,38 @@ export function UnifiedInbox() {
                     placeholder="Type your reply..."
                     rows={4}
                     className="resize-none"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
                   />
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowAttachmentDialog(true)}
+                      >
                         <Paperclip className="h-4 w-4 mr-2" />
                         Attach
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowScheduleDialog(true)}
+                      >
                         <Clock className="h-4 w-4 mr-2" />
                         Schedule
                       </Button>
                     </div>
-                    <Button size="sm">
-                      <Send className="h-4 w-4 mr-2" />
+                    <Button
+                      size="sm"
+                      onClick={handleSendReply}
+                      disabled={isSending || !replyText.trim()}
+                    >
+                      {isSending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
                       Send Reply
                     </Button>
                   </div>
@@ -434,22 +700,99 @@ export function UnifiedInbox() {
                 <AIReplyComposer
                   message={selectedMessage}
                   onClose={() => setShowAIComposer(false)}
+                  onSend={async (replyHtml: string) => {
+                    setIsSending(true);
+                    try {
+                      await axios.post("/api/gmail/send", {
+                        to: selectedMessage.fromEmail || selectedMessage.from,
+                        subject: `Re: ${selectedMessage.subject || ""}`,
+                        bodyHtml: replyHtml,
+                        threadId: selectedMessage.threadId,
+                        replyToGmailId: selectedMessage.gmailId,
+                      });
+                      toast.success("Reply sent successfully");
+                      setShowAIComposer(false);
+                      await fetchEmails();
+                    } catch (err) {
+                      const error = err as { response?: { data?: { error?: string } } };
+                      toast.error(error.response?.data?.error || "Failed to send");
+                    } finally {
+                      setIsSending(false);
+                    }
+                  }}
                 />
               )}
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="flex-1 flex flex-col justify-center">
             <CardContent className="py-24 text-center">
               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">Select a message to view</p>
               <p className="text-sm text-gray-500 mt-1">
                 Choose from {filteredMessages.length} messages in your inbox
               </p>
+              {filteredMessages.length === 0 && !isLoading && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-4"
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Sync Gmail
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Dialogs */}
+      <ComposeMessageDialog
+        open={showComposeDialog}
+        onOpenChange={setShowComposeDialog}
+        onSent={fetchEmails}
+      />
+      <AttachmentDialog
+        open={showAttachmentDialog}
+        onOpenChange={setShowAttachmentDialog}
+        onAttach={(files) => {
+          toast.success(`${files.length} file(s) attached successfully`);
+        }}
+      />
+      <ScheduleMessageDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        onSchedule={async (schedule) => {
+          if (!selectedMessage) return;
+          try {
+            const scheduledAt = new Date(
+              `${schedule.date.toISOString().split("T")[0]}T${schedule.time}`
+            );
+            await axios.post("/api/scheduled-emails", {
+              toEmail: selectedMessage.fromEmail || selectedMessage.from,
+              toName: selectedMessage.from,
+              subject: `Re: ${selectedMessage.subject || ""}`,
+              bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+              bodyText: replyText,
+              scheduledAt: scheduledAt.toISOString(),
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              clientId: selectedMessage.clientId,
+            });
+            toast.success(
+              `Message scheduled for ${schedule.date.toLocaleDateString()} at ${schedule.time}`
+            );
+          } catch {
+            toast.error("Failed to schedule message");
+          }
+        }}
+      />
     </div>
   );
 }

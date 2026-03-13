@@ -42,11 +42,17 @@ export function EventDetailsDialog({
   const [showFullTranscript, setShowFullTranscript] = useState(false);
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [addedItems, setAddedItems] = useState<Set<number>>(
-    () => new Set<number>((event.action_items ?? []).flatMap((item, i) => (item.added ? [i] : [])))
+    () =>
+      new Set<number>(
+        (event.action_items ?? []).flatMap((item, i) => (item.added ? [i] : []))
+      )
   );
   const queryClient = useQueryClient();
 
-  async function handleAddSingleTask(item: { task: string; dueDate: string | null; completed: boolean }, index: number) {
+  async function handleAddSingleTask(
+    item: { task: string; dueDate: string | null; completed: boolean },
+    index: number
+  ) {
     setAddingItems((prev) => new Set(prev).add(index));
     try {
       await addProjectTasksAction({
@@ -65,7 +71,11 @@ export function EventDetailsDialog({
       setAddedItems((prev) => new Set(prev).add(index));
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {
-      setAddingItems((prev) => { const s = new Set(prev); s.delete(index); return s; });
+      setAddingItems((prev) => {
+        const s = new Set(prev);
+        s.delete(index);
+        return s;
+      });
     }
   }
 
@@ -99,7 +109,8 @@ export function EventDetailsDialog({
     fn();
   }, [event.id, open]);
 
-  const allAdded = (event.action_items?.length ?? 0) > 0 &&
+  const allAdded =
+    (event.action_items?.length ?? 0) > 0 &&
     event.action_items?.every((_, i) => addedItems.has(i));
 
   async function handleAddAllToTasks() {
@@ -268,9 +279,15 @@ export function EventDetailsDialog({
                                 variant="outline"
                                 className="text-xs h-6 px-2 bg-white"
                                 onClick={() => handleAddSingleTask(item, i)}
-                                disabled={addingItems.has(i) || addedItems.has(i)}
+                                disabled={
+                                  addingItems.has(i) || addedItems.has(i)
+                                }
                               >
-                                {addingItems.has(i) ? "Adding..." : addedItems.has(i) ? "Added" : "Add"}
+                                {addingItems.has(i)
+                                  ? "Adding..."
+                                  : addedItems.has(i)
+                                    ? "Added"
+                                    : "Add"}
                               </Button>
                             </div>
                             <div className="flex items-center text-xs text-gray-600 space-x-3">
@@ -312,12 +329,24 @@ export function EventDetailsDialog({
                       <>
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
                           <div className="space-y-4">
-                            {(showFullTranscript ? formattedData : formattedData.slice(0, 3)).map((chunk, i) => (
-                              <div key={i} className="flex items-start space-x-3">
-                                <span className="text-xs mt-1 text-gray-400 shrink-0">{chunk.time}</span>
+                            {(showFullTranscript
+                              ? formattedData
+                              : formattedData.slice(0, 3)
+                            ).map((chunk, i) => (
+                              <div
+                                key={i}
+                                className="flex items-start space-x-3"
+                              >
+                                <span className="text-xs mt-1 text-gray-400 shrink-0">
+                                  {chunk.time}
+                                </span>
                                 <div className="flex-1">
-                                  <p className="text-sm font-medium text-blue-600 mb-0.5">{chunk.speaker}</p>
-                                  <p className="text-sm text-gray-700">{chunk.text}</p>
+                                  <p className="text-sm font-medium text-blue-600 mb-0.5">
+                                    {chunk.speaker}
+                                  </p>
+                                  <p className="text-sm text-gray-700">
+                                    {chunk.text}
+                                  </p>
                                 </div>
                               </div>
                             ))}
@@ -331,7 +360,9 @@ export function EventDetailsDialog({
                             onClick={() => setShowFullTranscript((v) => !v)}
                           >
                             <FileText className="h-4 w-4 mr-2" />
-                            {showFullTranscript ? "Show Less" : "View Full Transcript"}
+                            {showFullTranscript
+                              ? "Show Less"
+                              : "View Full Transcript"}
                           </Button>
                         )}
                       </>

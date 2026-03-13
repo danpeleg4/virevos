@@ -57,7 +57,9 @@ beforeEach(() => {
 describe("createInstantMeeting", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(createInstantMeeting("standup")).rejects.toThrow("Unauthorized");
+    await expect(createInstantMeeting("standup")).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("inserts an event and returns { id, link } where link contains the id", async () => {
@@ -65,7 +67,11 @@ describe("createInstantMeeting", () => {
     const result = await createInstantMeeting("Weekly Sync");
 
     expect(mockValues).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Weekly Sync", userId: "user_1", isMeeting: true })
+      expect.objectContaining({
+        title: "Weekly Sync",
+        userId: "user_1",
+        isMeeting: true,
+      })
     );
     expect(result).toHaveProperty("id");
     expect(result.link).toContain(result.id);
@@ -77,7 +83,9 @@ describe("createInstantMeeting", () => {
 describe("markActionItemAdded", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(markActionItemAdded("evt-1", 0)).rejects.toThrow("Unauthorized");
+    await expect(markActionItemAdded("evt-1", 0)).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("returns early when event has no action_items", async () => {

@@ -17,8 +17,8 @@ export default function CommunityPage() {
         <div>
           <h2 className="text-xl font-medium mb-2">Join the Conversation</h2>
           <p>
-            Our community is the place to ask questions, share workflows, and connect with
-            professionals who use Virevos every day.
+            Our community is the place to ask questions, share workflows, and
+            connect with professionals who use Virevos every day.
           </p>
         </div>
 
@@ -36,7 +36,10 @@ export default function CommunityPage() {
           <h2 className="text-xl font-medium mb-2">Contact Us</h2>
           <p>
             Have a community question? Email{" "}
-            <a href="mailto:community@virevos.com" className="text-blue-600 hover:underline">
+            <a
+              href="mailto:community@virevos.com"
+              className="text-blue-600 hover:underline"
+            >
               community@virevos.com
             </a>
           </p>

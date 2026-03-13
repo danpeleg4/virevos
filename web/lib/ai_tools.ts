@@ -21,9 +21,18 @@ export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         properties: {
           name: { type: "string", description: "The name of the client" },
           email: { type: "string", description: "The email of the client" },
-          phone: { type: "string", description: "The phone number of the client" },
-          industry: { type: "string", description: "The industry of the client" },
-          notes: { type: "string", description: "Notes that can be added to the client" },
+          phone: {
+            type: "string",
+            description: "The phone number of the client",
+          },
+          industry: {
+            type: "string",
+            description: "The industry of the client",
+          },
+          notes: {
+            type: "string",
+            description: "Notes that can be added to the client",
+          },
         },
         required: ["name", "email", "phone", "industry"],
       },
@@ -33,11 +42,15 @@ export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "getPastMeetingData",
-      description: "Get meeting transcript data and does semantic search to find relevant info",
+      description:
+        "Get meeting transcript data and does semantic search to find relevant info",
       parameters: {
         type: "object",
         properties: {
-          text: { type: "string", description: "Text to apply semantic search" },
+          text: {
+            type: "string",
+            description: "Text to apply semantic search",
+          },
         },
         required: ["text"],
       },

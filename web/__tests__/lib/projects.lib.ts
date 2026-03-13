@@ -79,11 +79,13 @@ describe("deleteProject", () => {
 
 describe("addFileMetadata", () => {
   const makeFile = (name = "test.pdf", size = 100): File =>
-    ({ name, size, type: "application/pdf" } as unknown as File);
+    ({ name, size, type: "application/pdf" }) as unknown as File;
 
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(addFileMetadata({ projectId: 1 }, makeFile())).rejects.toThrow("No user");
+    await expect(addFileMetadata({ projectId: 1 }, makeFile())).rejects.toThrow(
+      "No user"
+    );
   });
 
   it("returns early (no upload) when user already has 3 or more files", async () => {
@@ -129,7 +131,9 @@ describe("createProject", () => {
 
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(createProject(baseProject as never)).rejects.toThrow("Unauthorized");
+    await expect(createProject(baseProject as never)).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("inserts project (without id field) and returns it with default stats", async () => {
@@ -147,7 +151,11 @@ describe("createProject", () => {
     expect(mockValues).toHaveBeenCalledWith(
       expect.not.objectContaining({ id: expect.anything() })
     );
-    expect(result.stats).toEqual({ totalTasks: 0, completedTasks: 0, percentage: 0 });
+    expect(result.stats).toEqual({
+      totalTasks: 0,
+      completedTasks: 0,
+      percentage: 0,
+    });
   });
 });
 
@@ -161,13 +169,22 @@ describe("addNotes", () => {
 
   it("inserts note and returns the created record", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const noteRecord = { id: 1, content: "Note content", projectId: 5, userId: "user_1" };
+    const noteRecord = {
+      id: 1,
+      content: "Note content",
+      projectId: 5,
+      userId: "user_1",
+    };
     mockReturning.mockResolvedValueOnce([noteRecord]);
 
     const result = await addNotes("Note content", 5);
 
     expect(mockValues).toHaveBeenCalledWith(
-      expect.objectContaining({ content: "Note content", projectId: 5, userId: "user_1" })
+      expect.objectContaining({
+        content: "Note content",
+        projectId: 5,
+        userId: "user_1",
+      })
     );
     expect(result).toEqual(noteRecord);
   });
@@ -178,7 +195,9 @@ describe("addNotes", () => {
 describe("changeProjectStatus", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(changeProjectStatus({ id: 1 } as never, "completed")).rejects.toThrow("No user");
+    await expect(
+      changeProjectStatus({ id: 1 } as never, "completed")
+    ).rejects.toThrow("No user");
   });
 
   it("calls db.update().set({ status: newStatus }) with correct where clause", async () => {
