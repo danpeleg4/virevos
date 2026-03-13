@@ -150,8 +150,8 @@ export async function POST(req: NextRequest) {
         .where(eq(scheduledEmails.id, scheduledEmailId));
 
       return NextResponse.json({ success: true, gmailId });
-    } catch (sendErr: any) {
-      const errMsg = sendErr?.message || "Send failed";
+    } catch (sendErr: unknown) {
+      const errMsg = sendErr instanceof Error ? sendErr.message : "Send failed";
       await db
         .update(scheduledEmails)
         .set({ status: "failed", errorMessage: errMsg })

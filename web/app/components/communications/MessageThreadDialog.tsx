@@ -25,19 +25,7 @@ import {
 import { motion } from "motion/react";
 import { ActionItemsDialog } from "./ActionItemsDialog";
 import { toast } from "sonner";
-
-interface Message {
-  id: string;
-  type: "email" | "chat";
-  from: string;
-  to: string;
-  subject?: string;
-  content: string;
-  timestamp: string;
-  date: Date;
-  starred: boolean;
-  actionItems?: string[];
-}
+import type { ThreadMessage } from "@/types/communications";
 
 interface MessageThreadDialogProps {
   open: boolean;
@@ -49,7 +37,7 @@ interface MessageThreadDialogProps {
 }
 
 // Mock conversation data
-const getMockMessages = (clientName: string): Message[] => {
+const getMockMessages = (clientName: string): ThreadMessage[] => {
   const baseDate = new Date("2025-11-11");
 
   return [
@@ -139,7 +127,7 @@ export function MessageThreadDialog({
   dateRange,
   totalMessages,
 }: MessageThreadDialogProps) {
-  const [messages] = useState<Message[]>(getMockMessages(clientName));
+  const [messages] = useState<ThreadMessage[]>(getMockMessages(clientName));
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "email" | "chat">("all");
   const [showActionItems, setShowActionItems] = useState(false);

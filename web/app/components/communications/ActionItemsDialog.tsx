@@ -28,23 +28,13 @@ import {
   Trash2,
 } from "lucide-react";
 import { motion } from "motion/react";
+import type { ActionItem } from "@/types/communications";
 
 interface ActionItemsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientName: string;
   existingItems: ActionItem[];
-}
-
-interface ActionItem {
-  id: string;
-  title: string;
-  description?: string;
-  status: "pending" | "in-progress" | "completed";
-  priority: "low" | "medium" | "high";
-  dueDate?: string;
-  assignee?: string;
-  tags: string[];
 }
 
 const mockActionItems: ActionItem[] = [
@@ -229,7 +219,7 @@ export function ActionItemsDialog({
                 <Label>Priority</Label>
                 <Select
                   value={newItem.priority}
-                  onValueChange={(v: any) =>
+                  onValueChange={(v: "low" | "medium" | "high") =>
                     setNewItem({ ...newItem, priority: v })
                   }
                 >

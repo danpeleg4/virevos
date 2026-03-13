@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { uploadCommunicationAttachment } from "@/lib/projects";
+import type { AttachedFile } from "@/types/communications";
 
 interface AttachmentDialogProps {
   open: boolean;
@@ -38,14 +39,7 @@ interface AttachmentDialogProps {
   onAttach: (files: AttachedFile[]) => void;
 }
 
-export interface AttachedFile {
-  id: string;
-  name: string;
-  size: string;
-  type: "document" | "image" | "other";
-  url?: string;
-  path?: string;
-}
+export type { AttachedFile };
 
 interface AppFile {
   id: number;

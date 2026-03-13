@@ -26,18 +26,12 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import type { ScheduleDetails } from "@/types/communications";
 
 interface ScheduleMessageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSchedule: (schedule: ScheduleDetails) => void;
-}
-
-interface ScheduleDetails {
-  date: Date;
-  time: string;
-  timezone: string;
-  recurring?: "none" | "daily" | "weekly" | "monthly";
 }
 
 export function ScheduleMessageDialog({
@@ -190,7 +184,7 @@ export function ScheduleMessageDialog({
                     <Label>Recurring</Label>
                     <Select
                       value={recurring}
-                      onValueChange={(v: any) => setRecurring(v)}
+                      onValueChange={(v) => setRecurring(v as "none" | "daily" | "weekly" | "monthly")}
                     >
                       <SelectTrigger>
                         <SelectValue />

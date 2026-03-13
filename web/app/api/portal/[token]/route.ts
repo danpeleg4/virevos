@@ -82,7 +82,7 @@ export async function GET(
 
     // Fetch project files for client's projects
     const projectIds = clientProjects.map((p) => p.id);
-    let files: any[] = [];
+    let files: Array<typeof projectFiles.$inferSelect> = [];
     if (projectIds.length > 0) {
       // Fetch files for all projects (drizzle doesn't support inArray easily without import, use loop)
       for (const pid of projectIds) {

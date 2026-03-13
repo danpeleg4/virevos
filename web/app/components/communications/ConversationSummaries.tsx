@@ -28,27 +28,12 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-
-interface ConversationSummary {
-  id: number;
-  clientId: number;
-  clientName: string | null;
-  summary: string;
-  keyTopics: string[] | null;
-  actionItems: string[] | null;
-  sentiment: string | null;
-  emailCount: number | null;
-  generatedAt: string | null;
-}
-
-interface Client {
-  id: number;
-  name: string;
-}
+import type { ConversationSummary } from "@/types/communications";
+import type { ClientSummary } from "@/types/clients";
 
 export function ConversationSummaries() {
   const [summaries, setSummaries] = useState<ConversationSummary[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<ClientSummary[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSentiment, setFilterSentiment] = useState("all");
   const [isLoading, setIsLoading] = useState(false);

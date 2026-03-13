@@ -1,5 +1,7 @@
 import { google } from "googleapis";
 import { getFreshGoogleAccessToken } from "./google_access";
+import type { GmailMessagePart, GmailAttachment, EmailAttachment } from "@/types/gmail";
+export type { GmailMessagePart, GmailAttachment, EmailAttachment };
 
 export async function getGmailClient(userId: string) {
   const accessToken = await getFreshGoogleAccessToken(userId);
@@ -10,7 +12,7 @@ export async function getGmailClient(userId: string) {
 }
 
 // Parse MIME message parts recursively to extract HTML/text body
-export function parseEmailBody(payload: any): {
+export function parseEmailBody(payload: GmailMessagePart): {
   html: string | null;
   text: string | null;
 } {
@@ -24,7 +26,7 @@ export function parseEmailBody(payload: any): {
   }
 
   function findParts(
-    part: any,
+    part: GmailMessagePart,
     html: string | null,
     text: string | null
   ): { html: string | null; text: string | null } {
@@ -89,11 +91,6 @@ export function getHeader(
   );
 }
 
-export interface EmailAttachment {
-  name: string;
-  contentBase64: string;
-  mimeType: string;
-}
 
 // Build RFC 2822 email message for Gmail API
 export function buildRawEmail({
@@ -185,13 +182,13 @@ export function buildRawEmail({
 }
 
 // List attachments from a message payload
-export function listAttachments(payload: any, attachments: any[] = []): any[] {
+export function listAttachments(payload: GmailMessagePart, attachments: GmailAttachment[] = []): GmailAttachment[] {
   if (!payload) return attachments;
   if (payload.filename && payload.body?.attachmentId) {
     attachments.push({
       filename: payload.filename,
-      mimeType: payload.mimeType,
-      size: payload.body.size,
+      mimeType: payload.mimeType ?? "",
+      size: payload.body.size ?? 0,
       attachmentId: payload.body.attachmentId,
     });
   }

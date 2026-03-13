@@ -31,47 +31,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-
-interface PortalData {
-  client: {
-    id: number;
-    name: string;
-    email: string | null;
-    industry: string | null;
-  };
-  settings: {
-    brandColor?: string;
-    welcomeMessage?: string;
-    chatEnabled?: boolean;
-    fileSharing?: boolean;
-  };
-  projects: Array<{
-    id: number;
-    name: string;
-    status: string;
-    dueDate: string;
-    health: string;
-    priority: string;
-    description: string | null;
-  }>;
-  messages: Array<{
-    id: number;
-    subject: string | null;
-    preview: string;
-    from: string;
-    isSent: boolean;
-    sentAt: string;
-    isRead: boolean;
-  }>;
-  files: Array<{
-    id: number;
-    name: string;
-    size: number;
-    mimeType: string | null;
-    path: string;
-    createdAt: string | null;
-  }>;
-}
+import type { PortalData } from "@/types/portal";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

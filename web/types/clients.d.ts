@@ -30,3 +30,5 @@ type UpdateClientInput = {
   industry?: string;
   notes?: string;
 };
+
+export type ClientSummary = Pick<clients, "id" | "name">;

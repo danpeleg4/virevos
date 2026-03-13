@@ -47,33 +47,12 @@ import {
 import { Separator } from "../ui/separator";
 import { motion } from "motion/react";
 import { AIReplyComposer } from "./AIReplyComposer";
-import { AttachmentDialog, AttachedFile } from "./AttachmentDialog";
+import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { toast } from "sonner";
 import axios from "axios";
-
-interface Message {
-  id: string;
-  gmailId?: string;
-  threadId?: string;
-  type: "email" | "chat";
-  from: string;
-  fromEmail?: string;
-  initials: string;
-  subject?: string;
-  preview: string;
-  body?: string;
-  timestamp: Date | string;
-  unread: boolean;
-  starred: boolean;
-  archived?: boolean;
-  sent?: boolean;
-  client: string;
-  clientId?: number | null;
-  labels?: string[];
-  tags: string[];
-}
+import type { InboxMessage, AttachedFile } from "@/types/communications";
 
 function formatTimestamp(ts: Date | string): string {
   const date = typeof ts === "string" ? new Date(ts) : ts;
@@ -90,8 +69,8 @@ function formatTimestamp(ts: Date | string): string {
 }
 
 export function UnifiedInbox() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [messages, setMessages] = useState<InboxMessage[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<InboxMessage | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -209,7 +188,7 @@ export function UnifiedInbox() {
     if (msg?.unread) applyAction(id, "markRead");
   };
 
-  const handleSelectMessage = (message: Message) => {
+  const handleSelectMessage = (message: InboxMessage) => {
     setSelectedMessage(message);
     setReplyText("");
     setPendingAttachments([]);

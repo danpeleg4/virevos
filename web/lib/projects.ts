@@ -4,7 +4,7 @@ import { db } from "@db/db";
 import { notes, projectFiles, projects, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import { AddFileMetadataInput, Project, ProjectNote } from "@/types/projects";
+import { AddFileMetadataInput, Project, ProjectNote, UploadedAttachment } from "@/types/projects";
 import { supabase } from "./supabase";
 
 export async function deleteProject(projectId: number) {
@@ -112,13 +112,6 @@ export async function changeProjectStatus(project: Project, newStatus: string) {
     .update(projects)
     .set({ status: newStatus })
     .where(and(eq(projects.id, id), eq(projects.userId, user.id)));
-}
-
-export interface UploadedAttachment {
-  path: string;
-  url: string;
-  name: string;
-  size: number;
 }
 
 export async function uploadCommunicationAttachment(

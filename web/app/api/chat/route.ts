@@ -5,17 +5,7 @@ import { db } from "@db/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { openai, tools, executeTool, MODEL, MAX_STEPS } from "@/lib/ai_tools";
-
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
-type StreamEvent =
-  | { type: "text_delta"; delta: string }
-  | { type: "tool_result"; id: string; name: string; result: unknown }
-  | { type: "done" }
-  | { type: "error"; message: string };
+import type { ChatMessage, StreamEvent } from "@/types/ai";
 
 function encodeEvent(event: StreamEvent, encoder: TextEncoder): Uint8Array {
   return encoder.encode(JSON.stringify(event) + "\n");
