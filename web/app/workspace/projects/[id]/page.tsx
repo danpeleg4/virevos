@@ -40,8 +40,8 @@ import {
   addFileMetadata,
   addNotes,
   deleteProject,
-} from "@/lib/server_actions/projects";
-import { deleteTask, updateTaskStatus } from "@/lib/server_actions/tasks";
+} from "@/lib/projects";
+import { deleteTask, updateTaskStatus } from "@/lib/tasks";
 import { Project, ProjectFile, ProjectNote } from "@/types/projects";
 import { Task } from "@/types/tasks";
 

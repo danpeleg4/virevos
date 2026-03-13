@@ -16,7 +16,7 @@ import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateTaskStatus } from "@/lib/server_actions/tasks";
+import { updateTaskStatus } from "@/lib/tasks";
 import { Task } from "@/types/tasks";
 
 export default function Tasks() {

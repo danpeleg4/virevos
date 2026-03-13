@@ -1,7 +1,7 @@
 import {
   addMeetingToCalendar,
   deleteEventFromCalendar,
-} from "@/lib/server_actions/calendar";
+} from "@/lib/calendar";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import type { Event } from "@/types/meeting";

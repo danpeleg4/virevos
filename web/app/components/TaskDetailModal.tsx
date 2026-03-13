@@ -21,7 +21,7 @@ import {
   deleteTask,
   updateTaskDueDate,
   updateTaskStatus,
-} from "@/lib/server_actions/tasks";
+} from "@/lib/tasks";
 import { Task, TaskDetailModalProps } from "@/types/tasks";
 
 export function TaskDetailModal({

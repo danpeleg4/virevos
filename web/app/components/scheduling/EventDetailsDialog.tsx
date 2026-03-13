@@ -21,8 +21,8 @@ import {
 } from "lucide-react";
 import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
-import { addProjectTasksAction } from "@/lib/server_actions/tasks";
-import { markActionItemAdded } from "@/lib/server_actions/meetings";
+import { addProjectTasksAction } from "@/lib/tasks";
+import { markActionItemAdded } from "@/lib/meetings";
 import axios from "axios";
 
 interface MeetingDetailsDialogProps {

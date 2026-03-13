@@ -29,11 +29,11 @@ jest.mock("@/lib/ai_tools", () => ({
   MAX_STEPS: 5,
 }));
 
-jest.mock("@/lib/server_actions/clients", () => ({
+jest.mock("@/lib/clients", () => ({
   addAClient: jest.fn(),
 }));
 
-jest.mock("@/lib/server_actions/meetings", () => ({
+jest.mock("@/lib/meetings", () => ({
   getPastMeetingTranscript: jest.fn(),
 }));
 

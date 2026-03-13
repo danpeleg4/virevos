@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { CreateClientInput } from "@/types/clients";
-import { addAClient } from "@/lib/server_actions/clients";
-import { getPastMeetingTranscript } from "@/lib/server_actions/meetings";
+import { addAClient } from "@/lib/clients";
+import { getPastMeetingTranscript } from "@/lib/meetings";
 
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

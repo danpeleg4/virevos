@@ -1,4 +1,4 @@
-import { changeRecordingStatus } from "@/lib/server_actions/user";
+import { changeRecordingStatus } from "@/lib/user";
 import { currentUser } from "@clerk/nextjs/server";
 
 jest.mock("@clerk/nextjs/server", () => ({

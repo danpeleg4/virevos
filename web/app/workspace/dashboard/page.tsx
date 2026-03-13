@@ -22,7 +22,7 @@ import { task_percentage } from "@/lib/task_percentage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Project } from "@/types/projects";
 import { Task } from "@/types/tasks";
-import { updateTaskStatus } from "@/lib/server_actions/tasks";
+import { updateTaskStatus } from "@/lib/tasks";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
 const fadeInUp = {

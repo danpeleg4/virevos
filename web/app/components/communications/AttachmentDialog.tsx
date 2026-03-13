@@ -30,7 +30,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { uploadCommunicationAttachment } from "@/lib/server_actions/projects";
+import { uploadCommunicationAttachment } from "@/lib/projects";
 
 interface AttachmentDialogProps {
   open: boolean;

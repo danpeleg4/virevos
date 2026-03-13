@@ -5,7 +5,7 @@ import { notes, projectFiles, projects, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import { AddFileMetadataInput, Project, ProjectNote } from "@/types/projects";
-import { supabase } from "../supabase";
+import { supabase } from "./supabase";
 
 export async function deleteProject(projectId: number) {
   const user = await currentUser();

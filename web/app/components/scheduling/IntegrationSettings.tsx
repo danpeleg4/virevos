@@ -15,7 +15,7 @@ import { CheckCircle, ExternalLink, Settings } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { changeRecordingStatus } from "@/lib/server_actions/user";
+import { changeRecordingStatus } from "@/lib/user";
 
 interface Integration {
   id: string;

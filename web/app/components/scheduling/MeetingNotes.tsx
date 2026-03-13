@@ -4,8 +4,8 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { addProjectTasksAction } from "@/lib/server_actions/tasks";
-import { markActionItemAdded } from "@/lib/server_actions/meetings";
+import { addProjectTasksAction } from "@/lib/tasks";
+import { markActionItemAdded } from "@/lib/meetings";
 import {
   Dialog,
   DialogContent,
