@@ -137,3 +137,27 @@ export async function uploadCommunicationAttachment(
 
   return { path: filePath, url: publicUrl, name: file.name, size: file.size };
 }
+
+export async function uploadPortalLogo(
+  file: File
+): Promise<UploadedAttachment> {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("No user");
+
+  const filePath = `portal-logos/${user.id}/${Date.now()}-${file.name}`;
+
+  const { error } = await supabase.storage
+    .from("ProjectFiles")
+    .upload(filePath, file, { upsert: false });
+
+  if (error) {
+    console.error("Storage upload failed:", error);
+    throw new Error("Failed to upload logo");
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("ProjectFiles").getPublicUrl(filePath);
+
+  return { path: filePath, url: publicUrl, name: file.name, size: file.size };
+}

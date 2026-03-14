@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -34,9 +34,13 @@ import {
   Settings,
   Sparkles,
   Loader2,
+  Upload,
+  X,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import { uploadPortalLogo } from "@/lib/projects";
 import type { PortalRecord } from "@/types/portal";
 import type { ClientSummary } from "@/types/clients";
 
@@ -54,9 +58,23 @@ export function ClientPortal() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [aiChatBot, setAiChatBot] = useState(true);
   const [brandColor, setBrandColor] = useState("#3B82F6");
+  const [logoUrl, setLogoUrl] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState(
     "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
   );
+
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const logoUploadMutation = useMutation({
+    mutationFn: (file: File) => uploadPortalLogo(file),
+    onSuccess: (data) => {
+      setLogoUrl(data.url);
+      toast.success("Logo uploaded successfully");
+    },
+    onError: () => {
+      toast.error("Failed to upload logo");
+    },
+  });
 
   useEffect(() => {
     fetchPortals();
@@ -97,6 +115,7 @@ export function ClientPortal() {
     if (portal) {
       setPortalEnabled(portal.enabled);
       setBrandColor(portal.settings?.brandColor || "#3B82F6");
+      setLogoUrl(portal.settings?.logoUrl || "");
       setWelcomeMessage(
         portal.settings?.welcomeMessage ||
           "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
@@ -109,6 +128,7 @@ export function ClientPortal() {
       // Reset to defaults for new portal
       setPortalEnabled(true);
       setBrandColor("#3B82F6");
+      setLogoUrl("");
       setWelcomeMessage(
         "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
       );
@@ -135,6 +155,7 @@ export function ClientPortal() {
           enabled: portalEnabled,
           settings: {
             brandColor,
+            logoUrl,
             welcomeMessage,
             chatEnabled,
             fileSharing,
@@ -347,18 +368,58 @@ export function ClientPortal() {
 
                 <div className="space-y-2">
                   <Label htmlFor="logo">Company Logo</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <Globe className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Upload your company logo
-                    </p>
-                    <Button size="sm" variant="outline">
-                      Choose File
-                    </Button>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Recommended: 200x60px, PNG or SVG
-                    </p>
-                  </div>
+                  {logoUrl ? (
+                    <div className="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4">
+                      <img
+                        src={logoUrl}
+                        alt="Company logo"
+                        className="h-12 max-w-[200px] object-contain"
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setLogoUrl("")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      {logoUploadMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-12 w-12 text-blue-400 mx-auto mb-3 animate-spin" />
+                          <p className="text-sm text-gray-600">Uploading...</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                          <p className="text-sm text-gray-600 mb-2">
+                            Click to upload your company logo
+                          </p>
+                          <Button size="sm" variant="outline" type="button">
+                            Choose File
+                          </Button>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Recommended: 200x60px, PNG or SVG
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) logoUploadMutation.mutate(file);
+                      if (logoInputRef.current) logoInputRef.current.value = "";
+                    }}
+                  />
                 </div>
 
                 <Separator />
