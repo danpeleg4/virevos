@@ -8,7 +8,6 @@ export interface PortalRecord {
     title?: string;
     brandColor?: string;
     welcomeMessage?: string;
-    logoUrl?: string;
     customDomain?: string;
     chatEnabled?: boolean;
     fileSharing?: boolean;
@@ -30,7 +29,6 @@ export interface PortalData {
     title?: string;
     brandColor?: string;
     welcomeMessage?: string;
-    logoUrl?: string;
     chatEnabled?: boolean;
     fileSharing?: boolean;
   };

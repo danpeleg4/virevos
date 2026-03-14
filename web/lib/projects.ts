@@ -154,34 +154,3 @@ export async function uploadCommunicationAttachment(
   return { path: filePath, url, name: file.name, size: file.size };
 }
 
-export async function uploadPortalLogo(
-  file: File
-): Promise<UploadedAttachment> {
-  const user = await currentUser();
-  if (!user?.id) throw new Error("No user");
-
-  const filePath = `portal-logos/${user.id}/${Date.now()}-${file.name}`;
-
-  const logoBuffer = Buffer.from(await file.arrayBuffer());
-  try {
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: S3_BUCKET,
-        Key: filePath,
-        Body: logoBuffer,
-        ContentType: file.type,
-      })
-    );
-  } catch (error) {
-    console.error("Storage upload failed:", error);
-    throw new Error("Failed to upload logo");
-  }
-
-  const url = await getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: S3_BUCKET, Key: filePath }),
-    { expiresIn: 604800 }
-  );
-
-  return { path: filePath, url, name: file.name, size: file.size };
-}
