@@ -309,9 +309,6 @@ export function ClientPortal() {
             <TabsTrigger className="cursor-pointer" value="chat">
               Chat Features
             </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="settings">
-              Settings
-            </TabsTrigger>
           </TabsList>
 
           {/* Branding Tab */}
@@ -501,110 +498,6 @@ export function ClientPortal() {
                     checked={emailNotifications}
                     onCheckedChange={setEmailNotifications}
                   />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="h-5 w-5 mr-2 text-gray-600" />
-                  Portal Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Access Control</Label>
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Require email verification
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Two-factor authentication
-                      </span>
-                      <Switch />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Session timeout (hours)
-                      </span>
-                      <Input type="number" defaultValue="24" className="w-20" />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label className="flex items-center">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Privacy & Security
-                  </Label>
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        End-to-end encryption
-                      </span>
-                      <Badge className="bg-green-100 text-green-700">
-                        Enabled
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Data retention (days)
-                      </span>
-                      <Input
-                        type="number"
-                        defaultValue="365"
-                        className="w-20"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        IP whitelist
-                      </span>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label>Features</Label>
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Project timeline view
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Invoice access
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Document library
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Feedback forms
-                      </span>
-                      <Switch />
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
