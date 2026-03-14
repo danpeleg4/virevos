@@ -68,7 +68,7 @@ export default function Communications() {
           <ConversationSummaries />
         </TabsContent>
 
-        <TabsContent value="portal">
+        <TabsContent value="portal" style={fillStyle}>
           <ClientPortal />
         </TabsContent>
       </Tabs>

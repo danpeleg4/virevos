@@ -249,7 +249,9 @@ export default function Page() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto pb-1 mb-6">
             <TabsList className="min-w-max">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="overview">
+                Overview
+              </TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>

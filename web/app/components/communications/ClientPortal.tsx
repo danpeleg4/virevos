@@ -175,7 +175,7 @@ export function ClientPortal() {
   const portalUrl = currentPortal?.portalUrl || "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-y-auto h-full">
       {/* Client Selector */}
       <Card>
         <CardContent className="pt-6">
@@ -303,9 +303,15 @@ export function ClientPortal() {
       {selectedClientId && portalEnabled && (
         <Tabs defaultValue="branding">
           <TabsList>
-            <TabsTrigger value="branding">Branding</TabsTrigger>
-            <TabsTrigger value="chat">Chat Features</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="branding">
+              Branding
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="chat">
+              Chat Features
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="settings">
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           {/* Branding Tab */}
