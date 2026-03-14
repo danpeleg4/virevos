@@ -10,7 +10,8 @@ import {
   parseEmailAddress,
   EmailAttachment,
 } from "@/lib/gmail_client";
-import { supabase } from "@/lib/supabase";
+import { s3, S3_BUCKET } from "@/lib/s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,8 +62,6 @@ export async function POST(req: NextRequest) {
       "";
     const fromName = user.fullName || "";
 
-    // Fetch attachment content — prefer Supabase path (works for private buckets),
-    // fall back to direct URL fetch for link-only attachments.
     const attachments: EmailAttachment[] = [];
     if (rawAttachments && rawAttachments.length > 0) {
       for (const att of rawAttachments) {
@@ -71,12 +70,12 @@ export async function POST(req: NextRequest) {
           let mimeType = "application/octet-stream";
 
           if (att.path) {
-            const { data, error } = await supabase.storage
-              .from("ProjectFiles")
-              .download(att.path);
-            if (error) throw error;
-            buffer = Buffer.from(await data.arrayBuffer());
-            mimeType = data.type || mimeType;
+            const result = await s3.send(
+              new GetObjectCommand({ Bucket: S3_BUCKET, Key: att.path })
+            );
+            if (!result.Body) throw new Error("Empty S3 body");
+            buffer = Buffer.from(await result.Body.transformToByteArray());
+            mimeType = result.ContentType || mimeType;
           } else if (att.url) {
             const res = await axios.get<ArrayBuffer>(att.url, {
               responseType: "arraybuffer",

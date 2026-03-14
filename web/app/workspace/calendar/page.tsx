@@ -9,9 +9,9 @@ import {
   TabsTrigger,
 } from "@/app/components/ui/tabs";
 import { CalendarView } from "@/app/components/scheduling/CalendarView";
-import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSettings";
 import { MeetingNotes } from "@/app/components/scheduling/MeetingNotes";
 import { Meetings } from "@/app/components/scheduling/Meetings";
+import { VideoMeetingPreferences } from "@/app/components/scheduling/IntegrationSettings";
 
 function CalendarContent() {
   const searchParams = useSearchParams();
@@ -49,8 +49,8 @@ function CalendarContent() {
             <TabsTrigger className="cursor-pointer" value="notes">
               Meeting Notes
             </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="integrations">
-              Integrations
+            <TabsTrigger className="cursor-pointer" value="preferences">
+              Preferences
             </TabsTrigger>
           </TabsList>
         </div>
@@ -73,12 +73,10 @@ function CalendarContent() {
           <MeetingNotes />
         </TabsContent>
 
-        <TabsContent
-          value="integrations"
-          className="flex-1 min-h-0 overflow-y-auto"
-        >
-          <IntegrationSettings />
+        <TabsContent value="preferences" className="flex-1 min-h-0 overflow-y-auto">
+          <VideoMeetingPreferences />
         </TabsContent>
+
       </Tabs>
     </div>
   );

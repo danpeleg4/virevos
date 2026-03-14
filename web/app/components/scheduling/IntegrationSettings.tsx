@@ -21,10 +21,10 @@ import type { Integration } from "@/types/integrations";
 
 const INITIAL_INTEGRATIONS: Integration[] = [
   {
-    id: "google-calendar",
-    name: "Google Calendar",
-    description: "Sync with your Google Calendar",
-    icon: "/google-calendar.svg",
+    id: "google",
+    name: "Google",
+    description: "Sync with your Google Account",
+    icon: "/google.svg",
     connected: false,
     syncStatus: "synced",
     lastSync: "1 minute ago",
@@ -51,53 +51,15 @@ const INITIAL_INTEGRATIONS: Integration[] = [
   },
 ];
 
-export function IntegrationSettings() {
+export function VideoMeetingPreferences() {
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const [autoRecording, setAutoRecording] = useState(true);
-  const [autoTranscription, setAutoTranscription] = useState(true);
-
-  const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
-    queryKey: ["integrations"],
-    queryFn: async () => {
-      const [googleCheck] = await Promise.all([
-        axios.post("/api/integrations/google", { action: "status" }),
-      ]);
-
-      const googleCalendarConnected = googleCheck.data.connected;
-
-      return INITIAL_INTEGRATIONS.map((int) => {
-        if (int.id === "google-calendar")
-          return { ...int, connected: googleCalendarConnected };
-        return int;
-      });
-    },
-  });
+  const [autoTranscription] = useState(true);
 
   const { data: recordingStatus } = useQuery({
     queryKey: ["recordingStatus"],
     queryFn: async () => {
       const res = await axios.get("/api/recording_status");
       return res.data;
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async ({
-      id,
-      action,
-    }: {
-      id: string;
-      action: "disconnect" | "connect";
-    }) => {
-      if (id === "google-calendar" && action === "disconnect") {
-        await axios.post("/api/integrations/google", {
-          action: "disconnect",
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
     },
   });
 
@@ -110,15 +72,107 @@ export function IntegrationSettings() {
     },
   });
 
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Video Meeting Preferences</CardTitle>
+        <CardDescription>
+          Configure how virevos handles video meetings
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label>Auto-Record Meetings</Label>
+            <p className="text-sm text-gray-600">
+              Automatically start recording when meetings begin
+            </p>
+          </div>
+          <Switch
+            checked={recordingStatus?.recording_status ?? false}
+            onCheckedChange={() => changeRecordingStatusMutation.mutate()}
+          />
+        </div>
+
+        {autoTranscription && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h4 className="text-sm text-purple-900 mb-2">
+              After transcription, virevos will:
+            </h4>
+            <ul className="space-y-1 text-sm text-purple-800">
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Generate meeting summary and key points</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Extract action items and assign them</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Create follow-up tasks automatically</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Update project status based on discussion</span>
+              </li>
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function IntegrationSettings() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
+    queryKey: ["integrations"],
+    queryFn: async () => {
+      const [googleCheck] = await Promise.all([
+        axios.post("/api/integrations/google", { action: "status" }),
+      ]);
+
+      const googleCalendarConnected = googleCheck.data.connected;
+
+      return INITIAL_INTEGRATIONS.map((int) => {
+        if (int.id === "google")
+          return { ...int, connected: googleCalendarConnected };
+        return int;
+      });
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async ({
+      id,
+      action,
+    }: {
+      id: string;
+      action: "disconnect" | "connect";
+    }) => {
+      if (id === "google" && action === "disconnect") {
+        await axios.post("/api/integrations/google", {
+          action: "disconnect",
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+    },
+  });
+
   const toggleConnection = (id: string) => {
     const integration = integrations.find((i) => i.id === id);
-    if (id === "google-calendar" && integration && !integration.connected) {
+    if (id === "google" && integration && !integration.connected) {
       router.push("/api/google");
       return;
     }
 
-    if (id === "google-calendar" && integration && integration.connected) {
-      mutation.mutate({ id: "google-calendar", action: "disconnect" });
+    if (id === "google" && integration && integration.connected) {
+      mutation.mutate({ id: "google", action: "disconnect" });
       return;
     }
   };
@@ -210,56 +264,6 @@ export function IntegrationSettings() {
           );
         })}
       </div>
-
-      {/* Video Meeting Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Video Meeting Preferences</CardTitle>
-          <CardDescription>
-            Configure how virevos handles video meetings
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Auto-Record Meetings</Label>
-              <p className="text-sm text-gray-600">
-                Automatically start recording when meetings begin
-              </p>
-            </div>
-            <Switch
-              checked={recordingStatus?.recording_status ?? false}
-              onCheckedChange={() => changeRecordingStatusMutation.mutate()}
-            />
-          </div>
-
-          {autoTranscription && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="text-sm text-purple-900 mb-2">
-                After transcription, virevos will:
-              </h4>
-              <ul className="space-y-1 text-sm text-purple-800">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Generate meeting summary and key points</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Extract action items and assign them</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Create follow-up tasks automatically</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Update project status based on discussion</span>
-                </li>
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -151,7 +151,7 @@ export default function PortalPage() {
     );
   }
 
-  const brandColor = data.settings?.brandColor || "#3B82F6";
+  const portalTitle = data.settings?.title || "Virevos";
   const unreadCount = localMessages.filter((m) => !m.isRead).length;
 
   return (
@@ -164,24 +164,13 @@ export default function PortalPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <div
-                className="h-8 w-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: brandColor }}
-              >
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-blue-500">
                 <span className="text-white text-sm font-bold">V</span>
               </div>
-              <span className="text-xl text-gray-900">Virevos</span>
+              <span className="text-xl text-gray-900">{portalTitle}</span>
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </Button>
               <div className="flex items-center space-x-3">
                 <Avatar>
                   <AvatarFallback>
@@ -597,7 +586,7 @@ export default function PortalPage() {
                         </div>
                         <Button variant="outline" size="icon" asChild>
                           <a
-                            href={`/api/files/download?path=${encodeURIComponent(file.path)}`}
+                            href={`/api/portal/${token}/files/${file.id}/download`}
                             download={file.name}
                           >
                             <Download className="h-4 w-4" />

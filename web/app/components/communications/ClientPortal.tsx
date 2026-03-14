@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -27,11 +27,9 @@ import {
   Palette,
   MessageSquare,
   Bell,
-  Shield,
   ExternalLink,
   Copy,
   Eye,
-  Settings,
   Sparkles,
   Loader2,
 } from "lucide-react";
@@ -53,7 +51,7 @@ export function ClientPortal() {
   const [fileSharing, setFileSharing] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [aiChatBot, setAiChatBot] = useState(true);
-  const [brandColor, setBrandColor] = useState("#3B82F6");
+  const [title, setTitle] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState(
     "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
   );
@@ -96,11 +94,7 @@ export function ClientPortal() {
     const portal = portals.find((p) => String(p.clientId) === clientId);
     if (portal) {
       setPortalEnabled(portal.enabled);
-      setBrandColor(portal.settings?.brandColor || "#3B82F6");
-      setWelcomeMessage(
-        portal.settings?.welcomeMessage ||
-          "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
-      );
+      setTitle(portal.settings?.title || "");
       setChatEnabled(portal.settings?.chatEnabled ?? true);
       setFileSharing(portal.settings?.fileSharing ?? true);
       setAiChatBot(portal.settings?.aiChatBot ?? true);
@@ -108,7 +102,7 @@ export function ClientPortal() {
     } else {
       // Reset to defaults for new portal
       setPortalEnabled(true);
-      setBrandColor("#3B82F6");
+      setTitle("");
       setWelcomeMessage(
         "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
       );
@@ -134,7 +128,7 @@ export function ClientPortal() {
           clientId: parseInt(selectedClientId, 10),
           enabled: portalEnabled,
           settings: {
-            brandColor,
+            title,
             welcomeMessage,
             chatEnabled,
             fileSharing,
@@ -175,7 +169,7 @@ export function ClientPortal() {
   const portalUrl = currentPortal?.portalUrl || "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-y-auto h-full">
       {/* Client Selector */}
       <Card>
         <CardContent className="pt-6">
@@ -303,9 +297,12 @@ export function ClientPortal() {
       {selectedClientId && portalEnabled && (
         <Tabs defaultValue="branding">
           <TabsList>
-            <TabsTrigger value="branding">Branding</TabsTrigger>
-            <TabsTrigger value="chat">Chat Features</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="branding">
+              Branding
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="chat">
+              Chat Features
+            </TabsTrigger>
           </TabsList>
 
           {/* Branding Tab */}
@@ -322,40 +319,16 @@ export function ClientPortal() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="brand-color">Primary Brand Color</Label>
-                  <div className="flex items-center space-x-3">
-                    <Input
-                      id="brand-color"
-                      type="color"
-                      value={brandColor}
-                      onChange={(e) => setBrandColor(e.target.value)}
-                      className="w-20 h-10"
-                    />
-                    <Input
-                      value={brandColor}
-                      onChange={(e) => setBrandColor(e.target.value)}
-                      placeholder="#3B82F6"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="logo">Company Logo</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <Globe className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Upload your company logo
-                    </p>
-                    <Button size="sm" variant="outline">
-                      Choose File
-                    </Button>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Recommended: 200x60px, PNG or SVG
-                    </p>
-                  </div>
+                  <Label htmlFor="portal-title">Portal Title</Label>
+                  <Input
+                    id="portal-title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Acme Agency"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Displayed in the portal header
+                  </p>
                 </div>
 
                 <Separator />
@@ -495,110 +468,6 @@ export function ClientPortal() {
                     checked={emailNotifications}
                     onCheckedChange={setEmailNotifications}
                   />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="h-5 w-5 mr-2 text-gray-600" />
-                  Portal Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Access Control</Label>
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Require email verification
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Two-factor authentication
-                      </span>
-                      <Switch />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Session timeout (hours)
-                      </span>
-                      <Input type="number" defaultValue="24" className="w-20" />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label className="flex items-center">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Privacy & Security
-                  </Label>
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        End-to-end encryption
-                      </span>
-                      <Badge className="bg-green-100 text-green-700">
-                        Enabled
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Data retention (days)
-                      </span>
-                      <Input
-                        type="number"
-                        defaultValue="365"
-                        className="w-20"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        IP whitelist
-                      </span>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label>Features</Label>
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Project timeline view
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Invoice access
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Document library
-                      </span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">
-                        Feedback forms
-                      </span>
-                      <Switch />
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>

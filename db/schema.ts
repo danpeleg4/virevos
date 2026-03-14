@@ -255,7 +255,6 @@ export const clientPortalTokens = pgTable("client_portal_tokens", {
   settings: jsonb("settings").$type<{
     brandColor?: string;
     welcomeMessage?: string;
-    logoUrl?: string;
     customDomain?: string;
     chatEnabled?: boolean;
     fileSharing?: boolean;

@@ -30,14 +30,13 @@ jest.mock("@db/db", () => ({
   },
 }));
 
-const mockUpload = jest.fn();
-jest.mock("@/lib/supabase", () => ({
-  supabase: {
-    storage: {
-      from: jest.fn(() => ({ upload: mockUpload })),
-    },
-  },
+jest.mock("@/lib/s3", () => ({
+  s3: { send: jest.fn() },
+  S3_BUCKET: "virevos-project-files",
 }));
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mockS3Send = (require("@/lib/s3").s3.send) as jest.Mock;
 
 const mockUser = { id: "user_1" };
 
@@ -79,7 +78,12 @@ describe("deleteProject", () => {
 
 describe("addFileMetadata", () => {
   const makeFile = (name = "test.pdf", size = 100): File =>
-    ({ name, size, type: "application/pdf" }) as unknown as File;
+    ({
+      name,
+      size,
+      type: "application/pdf",
+      arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(size)),
+    }) as unknown as File;
 
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
@@ -92,14 +96,14 @@ describe("addFileMetadata", () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([{}, {}, {}]); // 3 existing files
     const result = await addFileMetadata({ projectId: 1 }, makeFile());
-    expect(mockUpload).not.toHaveBeenCalled();
+    expect(mockS3Send).not.toHaveBeenCalled();
     expect(result).toBeUndefined();
   });
 
-  it("throws when Supabase upload returns an error", async () => {
+  it("throws when S3 upload throws", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([]); // 0 existing files
-    mockUpload.mockResolvedValueOnce({ error: new Error("Upload failed") });
+    mockS3Send.mockRejectedValueOnce(new Error("Upload failed"));
     await expect(addFileMetadata({ projectId: 1 }, makeFile())).rejects.toThrow(
       "Failed to upload file"
     );
@@ -108,7 +112,7 @@ describe("addFileMetadata", () => {
   it("inserts metadata and returns { path, name, size } on success", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([]); // 0 existing files
-    mockUpload.mockResolvedValueOnce({ error: null });
+    mockS3Send.mockResolvedValueOnce({});
 
     const file = makeFile("doc.pdf", 2048);
     const result = await addFileMetadata({ projectId: 1 }, file);

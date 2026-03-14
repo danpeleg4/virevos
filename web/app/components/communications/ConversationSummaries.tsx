@@ -20,10 +20,8 @@ import {
   TrendingUp,
   MessageSquare,
   Mail,
-  Download,
   ExternalLink,
   Loader2,
-  Plus,
   Trash2,
 } from "lucide-react";
 import { motion } from "motion/react";
