@@ -40,7 +40,7 @@ export async function GET(
     return new NextResponse("Download failed", { status: 500 });
   }
 
-  return new NextResponse(body, {
+  return new NextResponse(Buffer.from(body), {
     headers: {
       "Content-Type": file.mimeType ?? "application/octet-stream",
       "Content-Disposition": `attachment; filename="${file.name}"`,

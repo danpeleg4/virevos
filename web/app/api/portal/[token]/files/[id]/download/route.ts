@@ -41,7 +41,7 @@ export async function GET(
     .where(eq(projects.id, file.projectId))
     .limit(1);
 
-  if (!project || project.clientId !== portalToken.clientId) {
+  if (!project || project.clientId == null || project.clientId !== portalToken.clientId) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
@@ -58,7 +58,7 @@ export async function GET(
     return new NextResponse("Download failed", { status: 500 });
   }
 
-  return new NextResponse(body, {
+  return new NextResponse(Buffer.from(body), {
     headers: {
       "Content-Type": file.mimeType ?? "application/octet-stream",
       "Content-Disposition": `attachment; filename="${file.name}"`,
