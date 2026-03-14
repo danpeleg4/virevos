@@ -385,7 +385,7 @@ export function ClientPortal() {
                           AI Chat Assistant
                           <Badge className="ml-2 bg-purple-100 text-purple-700">
                             <Sparkles className="h-3 w-3 mr-1" />
-                            Beta
+                            Coming soon
                           </Badge>
                         </Label>
                         <p className="text-sm text-gray-600">
@@ -393,6 +393,7 @@ export function ClientPortal() {
                         </p>
                       </div>
                       <Switch
+                        disabled={true}
                         checked={aiChatBot}
                         onCheckedChange={setAiChatBot}
                       />
