@@ -151,7 +151,8 @@ export default function PortalPage() {
     );
   }
 
-  const brandColor = data.settings?.brandColor || "#3B82F6";
+  const logoUrl = data.settings?.logoUrl;
+  const portalTitle = data.settings?.title || "Virevos";
   const unreadCount = localMessages.filter((m) => !m.isRead).length;
 
   return (
@@ -164,13 +165,18 @@ export default function PortalPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <div
-                className="h-8 w-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: brandColor }}
-              >
-                <span className="text-white text-sm font-bold">V</span>
-              </div>
-              <span className="text-xl text-gray-900">Virevos</span>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={portalTitle}
+                  className="h-8 max-w-[160px] object-contain"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-blue-500">
+                  <span className="text-white text-sm font-bold">V</span>
+                </div>
+              )}
+              <span className="text-xl text-gray-900">{portalTitle}</span>
             </div>
 
             <div className="flex items-center space-x-4">

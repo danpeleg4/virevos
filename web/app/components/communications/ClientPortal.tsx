@@ -57,7 +57,7 @@ export function ClientPortal() {
   const [fileSharing, setFileSharing] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [aiChatBot, setAiChatBot] = useState(true);
-  const [brandColor, setBrandColor] = useState("#3B82F6");
+  const [title, setTitle] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState(
     "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
@@ -114,7 +114,7 @@ export function ClientPortal() {
     const portal = portals.find((p) => String(p.clientId) === clientId);
     if (portal) {
       setPortalEnabled(portal.enabled);
-      setBrandColor(portal.settings?.brandColor || "#3B82F6");
+      setTitle(portal.settings?.title || "");
       setLogoUrl(portal.settings?.logoUrl || "");
       setWelcomeMessage(
         portal.settings?.welcomeMessage ||
@@ -127,7 +127,7 @@ export function ClientPortal() {
     } else {
       // Reset to defaults for new portal
       setPortalEnabled(true);
-      setBrandColor("#3B82F6");
+      setTitle("");
       setLogoUrl("");
       setWelcomeMessage(
         "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
@@ -154,7 +154,7 @@ export function ClientPortal() {
           clientId: parseInt(selectedClientId, 10),
           enabled: portalEnabled,
           settings: {
-            brandColor,
+            title,
             logoUrl,
             welcomeMessage,
             chatEnabled,
@@ -346,22 +346,16 @@ export function ClientPortal() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="brand-color">Primary Brand Color</Label>
-                  <div className="flex items-center space-x-3">
-                    <Input
-                      id="brand-color"
-                      type="color"
-                      value={brandColor}
-                      onChange={(e) => setBrandColor(e.target.value)}
-                      className="w-20 h-10"
-                    />
-                    <Input
-                      value={brandColor}
-                      onChange={(e) => setBrandColor(e.target.value)}
-                      placeholder="#3B82F6"
-                      className="flex-1"
-                    />
-                  </div>
+                  <Label htmlFor="portal-title">Portal Title</Label>
+                  <Input
+                    id="portal-title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Acme Agency"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Displayed in the portal header next to your logo
+                  </p>
                 </div>
 
                 <Separator />

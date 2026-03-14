@@ -5,6 +5,7 @@ export interface PortalRecord {
   token: string;
   enabled: boolean;
   settings: {
+    title?: string;
     brandColor?: string;
     welcomeMessage?: string;
     logoUrl?: string;
@@ -26,8 +27,10 @@ export interface PortalData {
     industry: string | null;
   };
   settings: {
+    title?: string;
     brandColor?: string;
     welcomeMessage?: string;
+    logoUrl?: string;
     chatEnabled?: boolean;
     fileSharing?: boolean;
   };

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
+import { Card, CardContent, CardHeader } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import {
@@ -23,6 +23,8 @@ import {
   Pause,
   ChevronLeft,
   ChevronRight,
+  Search,
+  FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -33,6 +35,7 @@ import { createInstantMeeting } from "@/lib/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 export function Meetings() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [meetingName, setMeetingName] = useState("");
@@ -95,7 +98,18 @@ export function Meetings() {
     );
   }
 
-  const filteredMeetings = meetings?.data?.filter((event) => event.isMeeting);
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const filteredMeetings = meetings?.data?.filter(
+    (event) =>
+      event.isMeeting &&
+      (!searchQuery ||
+        decodeURIComponent(event.title)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()))
+  );
   const totalPages = Math.max(
     1,
     Math.ceil((filteredMeetings?.length ?? 0) / PAGE_SIZE)
@@ -129,6 +143,21 @@ export function Meetings() {
 
   return (
     <div className={`px-6 pt-3 pb-6 space-y-4`}>
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search meetings..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Meetings List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -245,6 +274,20 @@ export function Meetings() {
           </div>
         )}
       </div>
+
+      {filteredMeetings?.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-600">No meetings found</p>
+            <p className="text-sm mt-1 text-gray-500">
+              {searchQuery
+                ? "Try adjusting your search"
+                : "Start a new meeting or check back when you have upcoming meetings"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Start Meeting Modal */}
       <Dialog open={startModalOpen} onOpenChange={setStartModalOpen}>
