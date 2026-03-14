@@ -3,7 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { projectFiles } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { supabase } from "@/lib/supabase";
+import { s3, S3_BUCKET } from "@/lib/s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 
 export async function GET(
   _req: NextRequest,
@@ -26,20 +27,24 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const { data, error } = await supabase.storage
-    .from("ProjectFiles")
-    .download(file.path);
-
-  if (error || !data) {
+  let body: Uint8Array;
+  try {
+    const result = await s3.send(
+      new GetObjectCommand({ Bucket: S3_BUCKET, Key: file.path })
+    );
+    if (!result.Body) {
+      return new NextResponse("Download failed", { status: 500 });
+    }
+    body = await result.Body.transformToByteArray();
+  } catch {
     return new NextResponse("Download failed", { status: 500 });
   }
 
-  const buffer = await data.arrayBuffer();
-  return new NextResponse(buffer, {
+  return new NextResponse(body, {
     headers: {
       "Content-Type": file.mimeType ?? "application/octet-stream",
       "Content-Disposition": `attachment; filename="${file.name}"`,
-      "Content-Length": buffer.byteLength.toString(),
+      "Content-Length": body.byteLength.toString(),
     },
   });
 }

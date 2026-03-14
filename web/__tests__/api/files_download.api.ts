@@ -1,7 +1,7 @@
 import { GET } from "@/app/api/files/[id]/download/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { supabase } from "@/lib/supabase";
+import { s3 } from "@/lib/s3";
 import { NextRequest } from "next/server";
 
 jest.mock("@clerk/nextjs/server", () => ({
@@ -14,12 +14,11 @@ jest.mock("@db/db", () => ({
   },
 }));
 
-jest.mock("@/lib/supabase", () => ({
-  supabase: {
-    storage: {
-      from: jest.fn(),
-    },
+jest.mock("@/lib/s3", () => ({
+  s3: {
+    send: jest.fn(),
   },
+  S3_BUCKET: "virevos-project-files",
 }));
 
 describe("GET /api/project-files/[id]", () => {
@@ -56,7 +55,7 @@ describe("GET /api/project-files/[id]", () => {
     expect(await res.text()).toBe("Not found");
   });
 
-  it("returns 500 if supabase download fails", async () => {
+  it("returns 500 if S3 download fails", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     (db.select as jest.Mock).mockReturnValue({
       from: () => ({
@@ -72,14 +71,7 @@ describe("GET /api/project-files/[id]", () => {
       }),
     });
 
-    const mockDownload = jest.fn().mockResolvedValue({
-      data: null,
-      error: new Error("fail"),
-    });
-
-    (supabase.storage.from as jest.Mock).mockReturnValue({
-      download: mockDownload,
-    });
+    (s3.send as jest.Mock).mockRejectedValue(new Error("S3 error"));
 
     const res = await GET({} as NextRequest, mockCtx("1"));
 
@@ -103,17 +95,13 @@ describe("GET /api/project-files/[id]", () => {
       }),
     });
 
-    const fakeBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fakeBytes = new Uint8Array([1, 2, 3]);
 
-    const mockDownload = jest.fn().mockResolvedValue({
-      data: {
-        arrayBuffer: jest.fn().mockResolvedValue(fakeBuffer),
+    (s3.send as jest.Mock).mockResolvedValue({
+      Body: {
+        transformToByteArray: jest.fn().mockResolvedValue(fakeBytes),
       },
-      error: null,
-    });
-
-    (supabase.storage.from as jest.Mock).mockReturnValue({
-      download: mockDownload,
+      ContentType: "application/pdf",
     });
 
     const res = await GET({} as NextRequest, mockCtx("1"));

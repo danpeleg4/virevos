@@ -5,7 +5,9 @@ import { notes, projectFiles, projects, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import { AddFileMetadataInput, Project, ProjectNote, UploadedAttachment } from "@/types/projects";
-import { supabase } from "./supabase";
+import { s3, S3_BUCKET } from "./s3";
+import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export async function deleteProject(projectId: number) {
   const user = await currentUser();
@@ -31,11 +33,17 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
     .from(projectFiles)
     .where(eq(projectFiles.userId, user.id));
   if (fls.length >= 3) return;
-  const { error: uploadError } = await supabase.storage
-    .from("ProjectFiles")
-    .upload(filePath, file, { upsert: false });
-
-  if (uploadError) {
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  try {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: filePath,
+        Body: fileBuffer,
+        ContentType: file.type,
+      })
+    );
+  } catch (uploadError) {
     console.error("Storage upload failed:", uploadError);
     throw new Error("Failed to upload file");
   }
@@ -122,20 +130,28 @@ export async function uploadCommunicationAttachment(
 
   const filePath = `communications/${user.id}/${Date.now()}-${file.name}`;
 
-  const { error } = await supabase.storage
-    .from("ProjectFiles")
-    .upload(filePath, file, { upsert: false });
-
-  if (error) {
+  const commBuffer = Buffer.from(await file.arrayBuffer());
+  try {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: filePath,
+        Body: commBuffer,
+        ContentType: file.type,
+      })
+    );
+  } catch (error) {
     console.error("Storage upload failed:", error);
     throw new Error("Failed to upload file");
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("ProjectFiles").getPublicUrl(filePath);
+  const url = await getSignedUrl(
+    s3,
+    new GetObjectCommand({ Bucket: S3_BUCKET, Key: filePath }),
+    { expiresIn: 604800 }
+  );
 
-  return { path: filePath, url: publicUrl, name: file.name, size: file.size };
+  return { path: filePath, url, name: file.name, size: file.size };
 }
 
 export async function uploadPortalLogo(
@@ -146,18 +162,26 @@ export async function uploadPortalLogo(
 
   const filePath = `portal-logos/${user.id}/${Date.now()}-${file.name}`;
 
-  const { error } = await supabase.storage
-    .from("ProjectFiles")
-    .upload(filePath, file, { upsert: false });
-
-  if (error) {
+  const logoBuffer = Buffer.from(await file.arrayBuffer());
+  try {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: filePath,
+        Body: logoBuffer,
+        ContentType: file.type,
+      })
+    );
+  } catch (error) {
     console.error("Storage upload failed:", error);
     throw new Error("Failed to upload logo");
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("ProjectFiles").getPublicUrl(filePath);
+  const url = await getSignedUrl(
+    s3,
+    new GetObjectCommand({ Bucket: S3_BUCKET, Key: filePath }),
+    { expiresIn: 604800 }
+  );
 
-  return { path: filePath, url: publicUrl, name: file.name, size: file.size };
+  return { path: filePath, url, name: file.name, size: file.size };
 }
