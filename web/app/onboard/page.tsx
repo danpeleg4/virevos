@@ -8,15 +8,12 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import {
-  Check,
   ChevronLeft,
   Zap,
-  Calendar,
   Sparkles,
   CreditCard,
   Users,
   Brain,
-  FileSpreadsheet,
   ArrowRight,
   CheckCircle2,
   Shield,
@@ -30,30 +27,11 @@ import type { ClerkAPIError } from "@clerk/types";
 import {
   AccountStepProps,
   AIPersonalizationStepProps,
-  ImportDataStepProps,
-  ImportOption,
-  Integration,
-  IntegrationsStepProps,
   OnboardingFormData,
   PaymentStepProps,
   PlanStepProps,
   VerificationStepProps,
 } from "@/types/onboard";
-
-const importOptions: ImportOption[] = [
-  {
-    id: "csv",
-    title: "CSV Spreadsheet",
-    icon: FileSpreadsheet,
-    desc: "Quick upload from Excel or Sheets.",
-  },
-  {
-    id: "manual",
-    title: "Manual Entry",
-    icon: Users,
-    desc: "Add details one by one later.",
-  },
-];
 
 const plans = [
   {
@@ -98,17 +76,6 @@ const plans = [
       "Full app access",
     ],
     highlighted: false,
-  },
-];
-
-const integrations = [
-  {
-    id: "google",
-    name: "Google",
-    icon: Calendar,
-    description: "Sync your google account",
-    color: "bg-blue-500",
-    category: "calendar",
   },
 ];
 
@@ -181,30 +148,18 @@ export default function Onboarding() {
     },
     {
       id: 3,
-      name: "Connect",
-      title: "Connect Tools",
-      subtitle: "Integrate your existing calendar and video apps.",
-    },
-    {
-      id: 4,
-      name: "Import",
-      title: "Import Data",
-      subtitle: "Bring your clients and projects over easily.",
-    },
-    {
-      id: 5,
       name: "Personalize",
       title: "Personalize AI",
       subtitle: "Help our AI understand how you work.",
     },
     {
-      id: 6,
+      id: 4,
       name: "Payment",
       title: "Secure Checkout",
       subtitle: "Safe and encrypted payment processing.",
     },
     {
-      id: 7,
+      id: 5,
       name: "Verify",
       title: "Verify Email",
       subtitle: "We've sent a 4-digit code to your email.",
@@ -221,15 +176,6 @@ export default function Onboarding() {
     }));
   };
 
-  const toggleIntegration = (integrationId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedIntegrations: prev.selectedIntegrations.includes(integrationId)
-        ? prev.selectedIntegrations.filter((id) => id !== integrationId)
-        : [...prev.selectedIntegrations, integrationId],
-    }));
-  };
-
   const nextStep = () => {
     if (currentStep >= steps.length - 1) return;
 
@@ -240,8 +186,8 @@ export default function Onboarding() {
       return;
     }
 
-    if (currentStep === 5 && formData.selectedPlan === "starter") {
-      setCurrentStep(7);
+    if (currentStep === 3 && formData.selectedPlan === "starter") {
+      setCurrentStep(5);
       return;
     }
 
@@ -250,8 +196,8 @@ export default function Onboarding() {
 
   const prevStep = () => {
     if (currentStep <= 0) return;
-    if (currentStep === 7 && formData.selectedPlan === "starter") {
-      setCurrentStep(5);
+    if (currentStep === 5 && formData.selectedPlan === "starter") {
+      setCurrentStep(3);
       return;
     }
 
@@ -282,29 +228,13 @@ export default function Onboarding() {
         );
       case 3:
         return (
-          <IntegrationsStep
-            formData={formData}
-            toggleIntegration={toggleIntegration}
-            onNext={nextStep}
-          />
-        );
-      case 4:
-        return (
-          <ImportDataStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-          />
-        );
-      case 5:
-        return (
           <AIPersonalizationStep
             formData={formData}
             updateFormData={updateFormData}
             onNext={nextStep}
           />
         );
-      case 6:
+      case 4:
         return (
           <PaymentStep
             formData={formData}
@@ -312,7 +242,7 @@ export default function Onboarding() {
             onNext={nextStep}
           />
         );
-      case 7:
+      case 5:
         return <VerificationStep formData={formData} />;
       default:
         return null;
@@ -365,7 +295,7 @@ export default function Onboarding() {
         </div>
 
         <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-[12px] text-gray-400 font-medium">
-          <p>Copyright © 2026 Virevos Enterprises LTD.</p>
+          <p>Copyright © 2026 Virevos.</p>
           <div className="flex space-x-6 mt-4 sm:mt-0">
             <button
               onClick={() => router.push("/privacy")}
@@ -426,8 +356,8 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           },
           {
             icon: Users,
-            title: "Team Synergy",
-            desc: "Unified workspace for seamless collaboration.",
+            title: "Client Management",
+            desc: "Track every client, project, and invoice in one place.",
           },
         ].map((item, i) => (
           <div
@@ -509,22 +439,6 @@ function AccountStep({
       setError(getClerkErrorMessage(err));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSocialLogin = async (
-    strategy: "oauth_google" | "oauth_apple"
-  ) => {
-    if (!isLoaded) return;
-    setError(null);
-    try {
-      await signUp.authenticateWithRedirect({
-        strategy,
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/workspace/dashboard",
-      });
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err));
     }
   };
 
@@ -660,110 +574,6 @@ function PlanStep({ formData, updateFormData, onNext }: PlanStepProps) {
           </div>
         ))}
       </div>
-
-      <Button
-        onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
-      >
-        {formData.selectedPlan === "starter"
-          ? "Continue"
-          : "Continue to Payment"}
-      </Button>
-    </div>
-  );
-}
-
-// Integrations Step Component
-function IntegrationsStep({
-  formData,
-  toggleIntegration,
-  onNext,
-}: IntegrationsStepProps) {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3">
-        {integrations.map((int: Integration) => (
-          <div
-            key={int.id}
-            onClick={() => toggleIntegration(int.id)}
-            className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center space-x-4 ${
-              formData.selectedIntegrations.includes(int.id)
-                ? "border-blue-600 bg-blue-50/30"
-                : "border-gray-100 bg-white hover:border-gray-200"
-            }`}
-          >
-            <div
-              className={`w-10 h-10 rounded-lg ${int.color} flex items-center justify-center text-white`}
-            >
-              <int.icon size={20} />
-            </div>
-
-            <div className="flex-1">
-              <h4 className="text-[14px] font-bold text-gray-900">
-                {int.name}
-              </h4>
-              <p className="text-[12px] text-gray-500">{int.description}</p>
-            </div>
-
-            <div
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                formData.selectedIntegrations.includes(int.id)
-                  ? "border-blue-600 bg-blue-600"
-                  : "border-gray-200"
-              }`}
-            >
-              {formData.selectedIntegrations.includes(int.id) && (
-                <Check size={12} className="text-white" />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <Button
-        onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
-      >
-        {formData.selectedIntegrations.length > 0
-          ? "Connect Selected"
-          : "Skip Integrations"}
-      </Button>
-    </div>
-  );
-}
-
-// Import Data Step Component
-function ImportDataStep({
-  formData,
-  updateFormData,
-  onNext,
-}: ImportDataStepProps) {
-  return (
-    <div className="space-y-4">
-      {importOptions.map((opt) => (
-        <div
-          key={opt.id}
-          onClick={() => updateFormData("importMethod", opt.id)}
-          className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center space-x-4 ${
-            formData.importMethod === opt.id
-              ? "border-blue-600 bg-blue-50/30"
-              : "border-gray-100 bg-white hover:border-gray-200"
-          }`}
-        >
-          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
-            <opt.icon size={20} />
-          </div>
-
-          <div className="flex-1">
-            <h4 className="text-[14px] font-bold text-gray-900">{opt.title}</h4>
-            <p className="text-[12px] text-gray-500">{opt.desc}</p>
-          </div>
-
-          {formData.importMethod === opt.id && (
-            <div className="w-2 h-2 rounded-full bg-blue-600" />
-          )}
-        </div>
-      ))}
 
       <Button
         onClick={onNext}
