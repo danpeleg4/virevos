@@ -74,7 +74,12 @@ describe("GET /api/google/callback", () => {
   });
 
   it("inserts a new token and redirects for a new user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1", emailAddresses: [{ emailAddress: "user@example.com" }], firstName: "Test", lastName: "User" });
+    (currentUser as jest.Mock).mockResolvedValue({
+      id: "user_1",
+      emailAddresses: [{ emailAddress: "user@example.com" }],
+      firstName: "Test",
+      lastName: "User",
+    });
     mockGetToken.mockResolvedValue({
       tokens: {
         access_token: "access_123",
@@ -84,7 +89,9 @@ describe("GET /api/google/callback", () => {
     });
     mockDbSelectEmpty();
     const onConflictDoNothingMock = jest.fn().mockResolvedValue(undefined);
-    const insertValuesMock = jest.fn().mockReturnValue({ onConflictDoNothing: onConflictDoNothingMock });
+    const insertValuesMock = jest
+      .fn()
+      .mockReturnValue({ onConflictDoNothing: onConflictDoNothingMock });
     (db.insert as jest.Mock).mockReturnValue({ values: insertValuesMock });
 
     const res = await GET(makeRequest("auth_code_123"));
@@ -99,13 +106,16 @@ describe("GET /api/google/callback", () => {
       })
     );
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toContain(
-      "/workspace/calendar?tab=integrations"
-    );
+    expect(res.headers.get("location")).toContain("/workspace/settings");
   });
 
   it("updates an existing token and redirects", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1", emailAddresses: [{ emailAddress: "user@example.com" }], firstName: "Test", lastName: "User" });
+    (currentUser as jest.Mock).mockResolvedValue({
+      id: "user_1",
+      emailAddresses: [{ emailAddress: "user@example.com" }],
+      firstName: "Test",
+      lastName: "User",
+    });
     mockGetToken.mockResolvedValue({
       tokens: {
         access_token: "access_new",
@@ -138,13 +148,16 @@ describe("GET /api/google/callback", () => {
       })
     );
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toContain(
-      "/workspace/calendar?tab=integrations"
-    );
+    expect(res.headers.get("location")).toContain("/workspace/settings");
   });
 
   it("still redirects when performFullSync fails", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1", emailAddresses: [{ emailAddress: "user@example.com" }], firstName: "Test", lastName: "User" });
+    (currentUser as jest.Mock).mockResolvedValue({
+      id: "user_1",
+      emailAddresses: [{ emailAddress: "user@example.com" }],
+      firstName: "Test",
+      lastName: "User",
+    });
     mockGetToken.mockResolvedValue({
       tokens: {
         access_token: "access_123",
@@ -154,7 +167,11 @@ describe("GET /api/google/callback", () => {
     });
     mockDbSelectEmpty();
     (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({ onConflictDoNothing: jest.fn().mockResolvedValue(undefined) }),
+      values: jest
+        .fn()
+        .mockReturnValue({
+          onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+        }),
     });
     (performFullSync as jest.Mock).mockRejectedValueOnce(
       new Error("sync error")
@@ -166,7 +183,12 @@ describe("GET /api/google/callback", () => {
   });
 
   it("still redirects when setupWatchChannel fails", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1", emailAddresses: [{ emailAddress: "user@example.com" }], firstName: "Test", lastName: "User" });
+    (currentUser as jest.Mock).mockResolvedValue({
+      id: "user_1",
+      emailAddresses: [{ emailAddress: "user@example.com" }],
+      firstName: "Test",
+      lastName: "User",
+    });
     mockGetToken.mockResolvedValue({
       tokens: {
         access_token: "access_123",
@@ -176,7 +198,11 @@ describe("GET /api/google/callback", () => {
     });
     mockDbSelectEmpty();
     (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({ onConflictDoNothing: jest.fn().mockResolvedValue(undefined) }),
+      values: jest
+        .fn()
+        .mockReturnValue({
+          onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+        }),
     });
     (setupWatchChannel as jest.Mock).mockRejectedValueOnce(
       new Error("watch error")
