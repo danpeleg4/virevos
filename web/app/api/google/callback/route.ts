@@ -82,7 +82,7 @@ export async function GET(req: Request) {
 
   return NextResponse.redirect(
     new URL(
-      "/workspace/calendar?tab=integrations",
+      "/workspace/settings",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     )
   );
