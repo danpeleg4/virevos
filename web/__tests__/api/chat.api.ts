@@ -29,6 +29,10 @@ jest.mock("@/lib/ai_tools", () => ({
   MAX_STEPS: 5,
 }));
 
+jest.mock("@/lib/plan_limits", () => ({
+  assertHasAiAssistant: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock("@/lib/clients", () => ({
   addAClient: jest.fn(),
 }));

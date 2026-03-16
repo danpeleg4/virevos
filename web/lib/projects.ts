@@ -8,6 +8,7 @@ import { AddFileMetadataInput, Project, ProjectNote, UploadedAttachment } from "
 import { s3, S3_BUCKET } from "./s3";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { assertCanAddProject } from "./plan_limits";
 
 export async function deleteProject(projectId: number) {
   const user = await currentUser();
@@ -71,6 +72,8 @@ export async function createProject(project: Project): Promise<Project> {
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
+
+  await assertCanAddProject(user.id);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, ...rest } = project;

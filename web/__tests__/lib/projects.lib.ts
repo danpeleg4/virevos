@@ -35,6 +35,10 @@ jest.mock("@/lib/s3", () => ({
   S3_BUCKET: "virevos-project-files",
 }));
 
+jest.mock("@/lib/plan_limits", () => ({
+  assertCanAddProject: jest.fn().mockResolvedValue(undefined),
+}));
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const mockS3Send = (require("@/lib/s3").s3.send) as jest.Mock;
 

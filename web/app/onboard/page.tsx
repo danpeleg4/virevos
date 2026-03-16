@@ -11,12 +11,10 @@ import {
   ChevronLeft,
   Zap,
   Sparkles,
-  CreditCard,
   Users,
   Brain,
   ArrowRight,
   CheckCircle2,
-  Shield,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -28,10 +26,11 @@ import {
   AccountStepProps,
   AIPersonalizationStepProps,
   OnboardingFormData,
-  PaymentStepProps,
   PlanStepProps,
   VerificationStepProps,
 } from "@/types/onboard";
+import PaymentStep from "./PaymentStep";
+import { registerFreePlan } from "@/lib/billing";
 
 const plans = [
   {
@@ -99,11 +98,6 @@ export default function Onboarding() {
     selectedPlan: "professional",
     billingCycle: "monthly",
 
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
-    billingAddress: "",
-
     selectedIntegrations: [],
     importMethod: "manual",
 
@@ -154,15 +148,15 @@ export default function Onboarding() {
     },
     {
       id: 4,
-      name: "Payment",
-      title: "Secure Checkout",
-      subtitle: "Safe and encrypted payment processing.",
-    },
-    {
-      id: 5,
       name: "Verify",
       title: "Verify Email",
       subtitle: "We've sent a 4-digit code to your email.",
+    },
+    {
+      id: 5,
+      name: "Payment",
+      title: "Secure Checkout",
+      subtitle: "Safe and encrypted payment processing.",
     },
   ];
 
@@ -186,21 +180,16 @@ export default function Onboarding() {
       return;
     }
 
-    if (currentStep === 3 && formData.selectedPlan === "starter") {
-      setCurrentStep(5);
-      return;
-    }
-
     setCurrentStep((prev) => prev + 1);
   };
 
   const prevStep = () => {
     if (currentStep <= 0) return;
-    if (currentStep === 5 && formData.selectedPlan === "starter") {
+    // Step 5 (Payment) skips back over step 4 (Verify — already completed)
+    if (currentStep === 5) {
       setCurrentStep(3);
       return;
     }
-
     setCurrentStep((prev) => prev - 1);
   };
 
@@ -236,14 +225,21 @@ export default function Onboarding() {
         );
       case 4:
         return (
-          <PaymentStep
-            formData={formData}
-            updateFormData={updateFormData}
+          <VerificationStep
+            formData={{
+              email: formData.email,
+              password: formData.password,
+              selectedPlan: formData.selectedPlan,
+            }}
             onNext={nextStep}
           />
         );
       case 5:
-        return <VerificationStep formData={formData} />;
+        return (
+          <PaymentStep
+            formData={formData}
+          />
+        );
       default:
         return null;
     }
@@ -634,83 +630,8 @@ function AIPersonalizationStep({
   );
 }
 
-// Payment Step Component
-function PaymentStep({ formData, updateFormData, onNext }: PaymentStepProps) {
-  return (
-    <div className="space-y-5">
-      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[13px] text-gray-500">Selected Plan</span>
-          <span className="text-[14px] font-bold text-gray-900">
-            Professional
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-[13px] text-gray-500">Billed Monthly</span>
-          <span className="text-[14px] font-bold text-gray-900">$29.00</span>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-            Card Number
-          </Label>
-          <div className="relative">
-            <Input
-              placeholder="0000 0000 0000 0000"
-              value={formData.cardNumber}
-              onChange={(e) => updateFormData("cardNumber", e.target.value)}
-              className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex space-x-1 opacity-50">
-              <CreditCard size={18} />
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-              Expiry
-            </Label>
-            <Input
-              placeholder="MM/YY"
-              value={formData.cardExpiry}
-              onChange={(e) => updateFormData("cardExpiry", e.target.value)}
-              className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-            />
-          </div>
-          <div>
-            <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-              CVC
-            </Label>
-            <Input
-              placeholder="123"
-              value={formData.cardCVC}
-              onChange={(e) => updateFormData("cardCVC", e.target.value)}
-              className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2 text-[12px] text-gray-400 justify-center">
-        <Shield size={14} className="text-green-500" />
-        <span>Payments are secure and encrypted.</span>
-      </div>
-
-      <Button
-        onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
-      >
-        Complete Checkout
-      </Button>
-    </div>
-  );
-}
-
 // Verification Step Component
-function VerificationStep({ formData }: VerificationStepProps) {
+function VerificationStep({ formData, onNext }: VerificationStepProps) {
   const { isLoaded, signUp, setActive } = useSignUp();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
@@ -734,7 +655,15 @@ function VerificationStep({ formData }: VerificationStepProps) {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.push("/workspace/dashboard");
+
+        if (formData.selectedPlan && formData.selectedPlan !== "starter") {
+          // Paid plan — go to payment step (user is now authenticated)
+          onNext();
+        } else {
+          // Starter plan — register free tier and redirect
+          await registerFreePlan();
+          router.push("/workspace/dashboard");
+        }
       }
     } catch (err) {
       setError(getClerkErrorMessage(err));
