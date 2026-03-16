@@ -33,7 +33,10 @@ export async function getOrCreateStripeCustomer(
     return existing[0].stripeCustomerId;
   }
 
-  const customer = await stripe.customers.create({ email, metadata: { userId } });
+  const customer = await stripe.customers.create({
+    email,
+    metadata: { userId },
+  });
 
   await db.insert(subscriptions).values({
     userId,
@@ -184,9 +187,10 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
   if (!user?.id) throw new Error("Unauthorized");
 
   const sub = await getUserSubscription();
-  if (!sub.stripeSubscriptionId) throw new Error("No active subscription");
 
+  // Downgrade to starter: cancel at period end (or immediately if no sub)
   if (input.planId === "starter") {
+    if (!sub.stripeSubscriptionId) return; // already on starter free plan
     await stripe.subscriptions.update(sub.stripeSubscriptionId, {
       cancel_at_period_end: true,
     });
@@ -195,6 +199,30 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
 
   const priceId = PRICE_ID_MAP[input.planId];
   if (!priceId) throw new Error(`Unknown plan: ${input.planId}`);
+
+  // No existing subscription — create one using the customer's default payment method
+  if (!sub.stripeSubscriptionId) {
+    if (!sub.stripeCustomerId) throw new Error("No Stripe customer");
+    const customer = await stripe.customers.retrieve(sub.stripeCustomerId, {
+      expand: ["invoice_settings.default_payment_method"],
+    });
+    const deletedCheck = customer as import("stripe").default.DeletedCustomer;
+    if (deletedCheck.deleted) throw new Error("Stripe customer deleted");
+    const stripeCustomer = customer as import("stripe").default.Customer;
+    const pm = stripeCustomer.invoice_settings?.default_payment_method as
+      | import("stripe").default.PaymentMethod
+      | null;
+    if (!pm?.id)
+      throw new Error(
+        "No payment method on file. Please add a payment method first."
+      );
+    await stripe.subscriptions.create({
+      customer: sub.stripeCustomerId,
+      items: [{ price: priceId }],
+      default_payment_method: pm.id,
+    });
+    return;
+  }
 
   const stripeSub = await stripe.subscriptions.retrieve(
     sub.stripeSubscriptionId
@@ -215,9 +243,13 @@ export async function cancelSubscription(): Promise<void> {
   const sub = await getUserSubscription();
   if (!sub.stripeSubscriptionId) throw new Error("No active subscription");
 
-  await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-    cancel_at_period_end: true,
-  });
+  try {
+    await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 export async function updatePaymentMethod(pmId: string): Promise<void> {

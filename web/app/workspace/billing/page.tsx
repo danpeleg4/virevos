@@ -23,6 +23,16 @@ import {
   DialogTrigger,
 } from "../../components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +48,7 @@ import {
   Users,
   TrendingUp,
   AlertCircle,
+  Star,
 } from "lucide-react";
 import {
   changePlan,
@@ -175,6 +186,7 @@ export default function Billing() {
   const queryClient = useQueryClient();
   const [changePlanOpen, setChangePlanOpen] = useState(false);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
+  const [confirmPlan, setConfirmPlan] = useState<PlanId | null>(null);
 
   const { data: billing, isLoading } = useQuery<BillingOverview>({
     queryKey: ["billing"],
@@ -306,65 +318,137 @@ export default function Billing() {
                   Change Plan
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Choose a Plan</DialogTitle>
+              <DialogContent className="max-w-3xl w-full">
+                <DialogHeader className="text-center pb-2">
+                  <DialogTitle className="text-2xl">Choose a Plan</DialogTitle>
                   <DialogDescription>
                     Select the plan that best fits your needs
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-6 md:grid-cols-3 mt-6">
+                <div className="grid gap-4 sm:grid-cols-3 mt-2">
                   {(["starter", "professional", "business"] as PlanId[]).map(
                     (planId) => {
                       const pd = PLAN_DETAILS[planId];
                       const isCurrent = planId === currentPlan;
+                      const isPopular = planId === "professional";
                       return (
-                        <Card
-                          key={planId}
-                          className={`p-6 ${isCurrent ? "border-2 border-blue-500" : ""}`}
-                        >
-                          {isCurrent && (
-                            <Badge className="mb-4 bg-blue-100 text-blue-700">
-                              Current Plan
-                            </Badge>
+                        <div key={planId} className="relative flex flex-col">
+                          {isPopular && (
+                            <div className="absolute -top-3 left-0 right-0 flex justify-center">
+                              <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
+                                <Star className="h-3 w-3 fill-white" />
+                                Most Popular
+                              </span>
+                            </div>
                           )}
-                          <h3 className="text-xl text-gray-900 mb-2">
-                            {pd.name}
-                          </h3>
-                          <p className="text-3xl text-gray-900 mb-6">
-                            ${pd.price}
-                            <span className="text-lg text-gray-600">/mo</span>
-                          </p>
-                          <div className="space-y-3 mb-6">
-                            {pd.features.map((f, i) => (
-                              <div
-                                key={i}
-                                className="flex items-start space-x-2"
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-sm text-gray-700">
-                                  {f}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                          <Button
-                            className="w-full"
-                            variant={isCurrent ? "outline" : "default"}
-                            disabled={isCurrent || changePlanMutation.isPending}
-                            onClick={() =>
-                              !isCurrent && changePlanMutation.mutate(planId)
-                            }
+                          <Card
+                            className={`flex flex-col h-full p-5 transition-all ${
+                              isCurrent
+                                ? "border-2 border-blue-500 bg-blue-50/40"
+                                : isPopular
+                                  ? "border-2 border-blue-300"
+                                  : "border border-gray-200"
+                            }`}
                           >
-                            {isCurrent ? "Current Plan" : "Select Plan"}
-                          </Button>
-                        </Card>
+                            <div className="mb-4">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {pd.name}
+                                </h3>
+                                {isCurrent && (
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                    Current
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-3xl font-bold text-gray-900">
+                                  ${pd.price}
+                                </span>
+                                <span className="text-sm text-gray-500">/mo</span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 mb-6 flex-1">
+                              {pd.features.map((f, i) => (
+                                <div
+                                  key={i}
+                                  className="flex items-start gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                  <span className="text-sm text-gray-600">
+                                    {f}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <Button
+                              className="w-full"
+                              variant={isCurrent ? "outline" : isPopular ? "default" : "outline"}
+                              disabled={isCurrent || changePlanMutation.isPending}
+                              onClick={() => !isCurrent && setConfirmPlan(planId)}
+                            >
+                              {isCurrent
+                                ? "Current Plan"
+                                : changePlanMutation.isPending && confirmPlan === planId
+                                  ? "Changing..."
+                                  : planId === "starter"
+                                    ? "Downgrade"
+                                    : "Select Plan"}
+                            </Button>
+                          </Card>
+                        </div>
                       );
                     }
                   )}
                 </div>
+
+                {changePlanMutation.isError && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm mt-2">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>
+                      {changePlanMutation.error instanceof Error
+                        ? changePlanMutation.error.message
+                        : "Failed to change plan. Please try again."}
+                    </span>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
+
+            <AlertDialog
+              open={confirmPlan !== null}
+              onOpenChange={(open) => !open && setConfirmPlan(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {confirmPlan === "starter"
+                      ? "Downgrade to Starter?"
+                      : `Switch to ${PLAN_DETAILS[confirmPlan ?? "professional"]?.name}?`}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {confirmPlan === "starter"
+                      ? "Your subscription will be canceled at the end of the current billing period and you'll move to the free Starter plan."
+                      : `You'll be switched to the ${PLAN_DETAILS[confirmPlan ?? "professional"]?.name} plan at $${PLAN_DETAILS[confirmPlan ?? "professional"]?.price}/month. Prorated charges may apply.`}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (confirmPlan) {
+                        changePlanMutation.mutate(confirmPlan);
+                        setConfirmPlan(null);
+                      }
+                    }}
+                  >
+                    Confirm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <Button
               variant="outline"
