@@ -39,7 +39,12 @@ import {
   TrendingUp,
   AlertCircle,
 } from "lucide-react";
-import { changePlan, cancelSubscription, updatePaymentMethod, createSetupIntent } from "@/lib/billing";
+import {
+  changePlan,
+  cancelSubscription,
+  updatePaymentMethod,
+  createSetupIntent,
+} from "@/lib/billing";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -89,15 +94,14 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   active: { label: "Active", className: "bg-blue-100 text-blue-700" },
   past_due: { label: "Past Due", className: "bg-red-100 text-red-700" },
   canceled: { label: "Canceled", className: "bg-gray-100 text-gray-700" },
-  incomplete: { label: "Incomplete", className: "bg-yellow-100 text-yellow-700" },
+  incomplete: {
+    label: "Incomplete",
+    className: "bg-yellow-100 text-yellow-700",
+  },
   trialing: { label: "Trialing", className: "bg-purple-100 text-purple-700" },
 };
 
-function UpdatePaymentForm({
-  onSuccess,
-}: {
-  onSuccess: () => void;
-}) {
+function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const queryClient = useQueryClient();
@@ -134,7 +138,7 @@ function UpdatePaymentForm({
       const pmId =
         typeof result.setupIntent?.payment_method === "string"
           ? result.setupIntent.payment_method
-          : result.setupIntent?.payment_method?.id ?? null;
+          : (result.setupIntent?.payment_method?.id ?? null);
 
       if (pmId) {
         mutation.mutate(pmId);
@@ -206,7 +210,9 @@ export default function Billing() {
 
   const currentPlan = billing?.subscription?.plan ?? "starter";
   const planInfo = PLAN_DETAILS[currentPlan] ?? PLAN_DETAILS.starter;
-  const statusInfo = STATUS_BADGE[billing?.subscription?.status ?? "active"] ?? STATUS_BADGE.active;
+  const statusInfo =
+    STATUS_BADGE[billing?.subscription?.status ?? "active"] ??
+    STATUS_BADGE.active;
   const clientCount = clientList?.length ?? 0;
   const clientLimit = currentPlan === "starter" ? 5 : null;
 
@@ -403,16 +409,13 @@ export default function Billing() {
             </div>
           )}
 
-          <Dialog
-            open={paymentMethodOpen}
-            onOpenChange={setPaymentMethodOpen}
-          >
+          <Dialog open={paymentMethodOpen} onOpenChange={setPaymentMethodOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full">
                 Update Payment Method
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Update Payment Method</DialogTitle>
                 <DialogDescription>
