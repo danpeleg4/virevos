@@ -365,16 +365,15 @@ export default function Billing() {
                                 <span className="text-3xl font-bold text-gray-900">
                                   ${pd.price}
                                 </span>
-                                <span className="text-sm text-gray-500">/mo</span>
+                                <span className="text-sm text-gray-500">
+                                  /mo
+                                </span>
                               </div>
                             </div>
 
                             <div className="space-y-2 mb-6 flex-1">
                               {pd.features.map((f, i) => (
-                                <div
-                                  key={i}
-                                  className="flex items-start gap-2"
-                                >
+                                <div key={i} className="flex items-start gap-2">
                                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                                   <span className="text-sm text-gray-600">
                                     {f}
@@ -385,13 +384,24 @@ export default function Billing() {
 
                             <Button
                               className="w-full"
-                              variant={isCurrent ? "outline" : isPopular ? "default" : "outline"}
-                              disabled={isCurrent || changePlanMutation.isPending}
-                              onClick={() => !isCurrent && setConfirmPlan(planId)}
+                              variant={
+                                isCurrent
+                                  ? "outline"
+                                  : isPopular
+                                    ? "default"
+                                    : "outline"
+                              }
+                              disabled={
+                                isCurrent || changePlanMutation.isPending
+                              }
+                              onClick={() =>
+                                !isCurrent && setConfirmPlan(planId)
+                              }
                             >
                               {isCurrent
                                 ? "Current Plan"
-                                : changePlanMutation.isPending && confirmPlan === planId
+                                : changePlanMutation.isPending &&
+                                    confirmPlan === planId
                                   ? "Changing..."
                                   : planId === "starter"
                                     ? "Downgrade"
@@ -450,18 +460,20 @@ export default function Billing() {
               </AlertDialogContent>
             </AlertDialog>
 
-            <Button
-              variant="outline"
-              onClick={() => cancelMutation.mutate()}
-              disabled={
-                cancelMutation.isPending ||
-                !billing?.subscription?.stripeSubscriptionId
-              }
-            >
-              {cancelMutation.isPending
-                ? "Canceling..."
-                : "Cancel Subscription"}
-            </Button>
+            {billing?.subscription?.cancelAtPeriodEnd === true ? (
+              <Button
+                variant="outline"
+                onClick={() => cancelMutation.mutate()}
+                disabled={
+                  cancelMutation.isPending ||
+                  !billing?.subscription?.stripeSubscriptionId
+                }
+              >
+                {cancelMutation.isPending
+                  ? "Canceling..."
+                  : "Cancel Subscription"}
+              </Button>
+            ) : null}
           </div>
         </Card>
 

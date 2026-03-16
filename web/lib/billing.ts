@@ -16,8 +16,6 @@ export async function getOrCreateStripeCustomer(
   userId: string,
   email: string
 ): Promise<string> {
-  // Ensure the user row exists before inserting a subscription that FK-references it.
-  // The Clerk webhook may not have fired yet during onboarding.
   await db
     .insert(users)
     .values({ user_id: userId, email })
