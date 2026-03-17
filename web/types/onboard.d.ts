@@ -11,11 +11,6 @@ type OnboardingFormData = {
   selectedPlan: string | null;
   billingCycle: "monthly" | "yearly";
 
-  cardNumber: string;
-  cardExpiry: string;
-  cardCVC: string;
-  billingAddress: string;
-
   selectedIntegrations: string[];
   importMethod: "csv" | "manual" | null;
 
@@ -25,6 +20,11 @@ type OnboardingFormData = {
   workStyle: string;
   aiContext: string;
 };
+
+type UpdateFormData = <K extends keyof OnboardingFormData>(
+  field: K,
+  value: OnboardingFormData[K]
+) => void;
 
 type AccountStepProps = {
   formData: Pick<OnboardingFormData, "fullName" | "email" | "password">;
@@ -88,14 +88,10 @@ type AIPersonalizationStepProps = {
 };
 
 type VerificationStepProps = {
-  formData: Pick<OnboardingFormData, "password" | "email">;
+  formData: Pick<OnboardingFormData, "password" | "email" | "selectedPlan">;
+  onNext: () => void;
 };
 
 type PaymentStepProps = {
-  formData: Pick<
-    OnboardingFormData,
-    "selectedPlan" | "cardNumber" | "cardExpiry" | "cardCVC"
-  >;
-  updateFormData: UpdateFormData;
-  onNext: () => void;
+  formData: Pick<OnboardingFormData, "selectedPlan">;
 };

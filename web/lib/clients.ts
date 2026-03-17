@@ -6,11 +6,15 @@ import { NextResponse } from "next/server";
 import { db } from "@db/db";
 import { clients } from "@db/schema";
 import { and, eq } from "drizzle-orm";
+import { assertCanAddClient } from "./plan_limits";
 
 export async function addAClient(body: CreateClientInput) {
   try {
     const user = await currentUser();
     if (!user?.id) throw new Error("No user");
+
+    await assertCanAddClient(user.id);
+
     const { name, email, phone, industry, notes } = body;
 
     if (!name || !email) {

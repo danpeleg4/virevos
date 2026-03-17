@@ -1,6 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -13,8 +22,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../components/ui/dialog";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -29,110 +46,221 @@ import {
   CheckCircle,
   Calendar,
   Users,
-  Zap,
   TrendingUp,
+  AlertCircle,
+  Star,
 } from "lucide-react";
+import {
+  changePlan,
+  cancelSubscription,
+  resubscribe,
+  updatePaymentMethod,
+  createSetupIntent,
+} from "@/lib/billing";
 
-const currentPlan = {
-  name: "Professional",
-  price: 29,
-  billingCycle: "monthly",
-  nextBilling: "Dec 10, 2025",
-  features: [
-    "Unlimited projects",
-    "Up to 50 team members",
-    "50GB storage",
-    "Advanced integrations",
-    "Priority support",
-    "Custom workflows",
-  ],
-};
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
-const usage = {
-  projects: { current: 18, limit: -1, percentage: 0 }, // -1 means unlimited
-  teamMembers: { current: 12, limit: 50, percentage: 24 },
-  storage: { current: 23.4, limit: 50, percentage: 47 },
-  automations: { current: 89, limit: -1, percentage: 0 },
-};
-
-const invoices = [
-  {
-    id: "INV-2025-011",
-    date: "Nov 10, 2025",
-    amount: 29.0,
-    status: "paid",
-    description: "Professional Plan - Monthly",
-  },
-  {
-    id: "INV-2025-010",
-    date: "Oct 10, 2025",
-    amount: 29.0,
-    status: "paid",
-    description: "Professional Plan - Monthly",
-  },
-  {
-    id: "INV-2025-009",
-    date: "Sep 10, 2025",
-    amount: 29.0,
-    status: "paid",
-    description: "Professional Plan - Monthly",
-  },
-  {
-    id: "INV-2025-008",
-    date: "Aug 10, 2025",
-    amount: 29.0,
-    status: "paid",
-    description: "Professional Plan - Monthly",
-  },
-];
-
-const plans = [
-  {
+const PLAN_DETAILS: Record<
+  string,
+  { name: string; price: number; features: string[] }
+> = {
+  starter: {
     name: "Starter",
-    price: 9,
-    description: "Perfect for individuals",
+    price: 0,
     features: [
-      "Up to 5 projects",
-      "1 team member",
-      "1GB storage",
-      "Basic features",
+      "Up to 5 clients",
+      "1 project",
+      "10 AI credits/month",
+      "Basic automation",
     ],
   },
-  {
+  professional: {
     name: "Professional",
     price: 29,
-    description: "Great for small teams",
     features: [
+      "Unlimited clients",
       "Unlimited projects",
-      "Up to 50 team members",
-      "50GB storage",
-      "Advanced features",
+      "50 AI credits/month",
+      "Advanced automation",
+      "AI Assistant",
       "Priority support",
     ],
-    current: true,
   },
-  {
-    name: "Enterprise",
-    price: 99,
-    description: "For large organizations",
+  business: {
+    name: "Business",
+    price: 79,
     features: [
-      "Unlimited everything",
-      "Unlimited team members",
-      "Unlimited storage",
-      "All features",
-      "24/7 phone support",
-      "Dedicated account manager",
+      "Unlimited clients",
+      "Unlimited projects",
+      "Highest AI credits/month",
+      "Full app access",
+      "AI Assistant",
+      "24/7 support",
     ],
   },
-];
+};
+
+const STATUS_BADGE: Record<string, { label: string; className: string }> = {
+  active: { label: "Active", className: "bg-blue-100 text-blue-700" },
+  past_due: { label: "Past Due", className: "bg-red-100 text-red-700" },
+  canceled: { label: "Canceled", className: "bg-gray-100 text-gray-700" },
+  incomplete: {
+    label: "Incomplete",
+    className: "bg-yellow-100 text-yellow-700",
+  },
+  trialing: { label: "Trialing", className: "bg-purple-100 text-purple-700" },
+};
+
+function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (pmId: string) => updatePaymentMethod(pmId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["billing"] });
+      onSuccess();
+    },
+  });
+
+  const handleSubmit = async () => {
+    if (!stripe || !elements) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const submitResult = await elements.submit();
+      if (submitResult.error) {
+        setError(submitResult.error.message ?? "Error");
+        return;
+      }
+      const result = await stripe.confirmSetup({
+        elements,
+        redirect: "if_required",
+        confirmParams: {},
+      });
+      if (result.error) {
+        setError(result.error.message ?? "Error");
+        return;
+      }
+      const pmId =
+        typeof result.setupIntent?.payment_method === "string"
+          ? result.setupIntent.payment_method
+          : (result.setupIntent?.payment_method?.id ?? null);
+
+      if (pmId) {
+        mutation.mutate(pmId);
+      }
+    } catch {
+      setError("Unexpected error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 mt-4">
+      {error && (
+        <div className="flex items-start space-x-2 text-red-600">
+          <AlertCircle className="h-4 w-4 mt-0.5" />
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+      <PaymentElement options={{ layout: "tabs" }} />
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button
+          onClick={handleSubmit}
+          disabled={!stripe || !elements || loading || mutation.isPending}
+        >
+          {loading || mutation.isPending ? "Saving..." : "Save Card"}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function Billing() {
+  const queryClient = useQueryClient();
   const [changePlanOpen, setChangePlanOpen] = useState(false);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
+  const [confirmPlan, setConfirmPlan] = useState<PlanId | null>(null);
+
+  const { data: billing, isLoading } = useQuery<BillingOverview>({
+    queryKey: ["billing"],
+    queryFn: () => axios.get("/api/billing").then((r) => r.data),
+  });
+
+  const { data: clientList } = useQuery<{ id: number }[]>({
+    queryKey: ["clients"],
+    queryFn: () => axios.get("/api/clients").then((r) => r.data),
+  });
+
+  const { data: setupSecret } = useQuery<string>({
+    queryKey: ["setup-intent-billing"],
+    queryFn: createSetupIntent,
+    enabled: paymentMethodOpen,
+    staleTime: Infinity,
+  });
+
+  const changePlanMutation = useMutation({
+    mutationFn: (planId: PlanId) => changePlan({ planId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["billing"] });
+      setChangePlanOpen(false);
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: cancelSubscription,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["billing"] });
+    },
+  });
+
+  const resubscribeMutation = useMutation({
+    mutationFn: resubscribe,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["billing"] });
+    },
+  });
+
+  const currentPlan = billing?.subscription?.plan ?? "starter";
+  const planInfo = PLAN_DETAILS[currentPlan] ?? PLAN_DETAILS.starter;
+  const statusInfo =
+    STATUS_BADGE[billing?.subscription?.status ?? "active"] ??
+    STATUS_BADGE.active;
+  const clientCount = clientList?.length ?? 0;
+  const clientLimit = currentPlan === "starter" ? 5 : null;
+
+  const formatDate = (val: Date | string | null | undefined) => {
+    if (!val) return "—";
+    return new Date(val).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatAmount = (cents: number, currency: string) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(cents / 100);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 sm:p-6 flex items-center justify-center min-h-64">
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl text-gray-900">
@@ -151,20 +279,18 @@ export default function Billing() {
             <div>
               <h2 className="text-xl text-gray-900">Current Plan</h2>
               <p className="text-sm text-gray-600 mt-1">
-                You&#39;re on the {currentPlan.name} plan
+                You&#39;re on the {planInfo.name} plan
               </p>
             </div>
-            <Badge className="bg-blue-100 text-blue-700">Active</Badge>
+            <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-6 mb-6">
             <div>
               <p className="text-sm text-gray-500 mb-2">Plan</p>
               <p className="text-3xl text-gray-900">
-                ${currentPlan.price}
-                <span className="text-lg text-gray-600">
-                  /{currentPlan.billingCycle}
-                </span>
+                ${planInfo.price}
+                <span className="text-lg text-gray-600">/month</span>
               </p>
             </div>
             <div>
@@ -172,7 +298,11 @@ export default function Billing() {
               <div className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5 text-gray-400" />
                 <p className="text-lg text-gray-900">
-                  {currentPlan.nextBilling}
+                  {billing?.subscription.plan === "starter"
+                    ? `Free Forever`
+                    : billing?.subscription?.cancelAtPeriodEnd
+                      ? `Cancels ${formatDate(billing.subscription.currentPeriodEnd)}`
+                      : formatDate(billing?.subscription?.currentPeriodEnd)}
                 </p>
               </div>
             </div>
@@ -181,7 +311,7 @@ export default function Billing() {
           <div className="mb-6">
             <p className="text-sm text-gray-700 mb-3">Included Features</p>
             <div className="grid sm:grid-cols-2 gap-3">
-              {currentPlan.features.map((feature, index) => (
+              {planInfo.features.map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                   <span className="text-sm text-gray-700">{feature}</span>
@@ -198,64 +328,172 @@ export default function Billing() {
                   Change Plan
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Choose a Plan</DialogTitle>
+              <DialogContent className="max-w-3xl w-full">
+                <DialogHeader className="text-center pb-2">
+                  <DialogTitle className="text-2xl">Choose a Plan</DialogTitle>
                   <DialogDescription>
                     Select the plan that best fits your needs
                   </DialogDescription>
                 </DialogHeader>
-
-                <div className="grid gap-6 md:grid-cols-3 mt-6">
-                  {plans.map((plan, index) => (
-                    <Card
-                      key={index}
-                      className={`p-6 ${
-                        plan.current ? "border-2 border-blue-500" : ""
-                      }`}
-                    >
-                      {plan.current && (
-                        <Badge className="mb-4 bg-blue-100 text-blue-700">
-                          Current Plan
-                        </Badge>
-                      )}
-                      <h3 className="text-xl text-gray-900 mb-2">
-                        {plan.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {plan.description}
-                      </p>
-                      <p className="text-3xl text-gray-900 mb-6">
-                        ${plan.price}
-                        <span className="text-lg text-gray-600">/mo</span>
-                      </p>
-                      <div className="space-y-3 mb-6">
-                        {plan.features.map((feature, fIndex) => (
-                          <div
-                            key={fIndex}
-                            className="flex items-start space-x-2"
+                <div className="grid gap-4 sm:grid-cols-3 mt-2">
+                  {(["starter", "professional", "business"] as PlanId[]).map(
+                    (planId) => {
+                      const pd = PLAN_DETAILS[planId];
+                      const isCurrent = planId === currentPlan;
+                      const isPopular = planId === "professional";
+                      return (
+                        <div key={planId} className="relative flex flex-col">
+                          {isPopular && (
+                            <div className="absolute -top-3 left-0 right-0 flex justify-center">
+                              <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
+                                <Star className="h-3 w-3 fill-white" />
+                                Most Popular
+                              </span>
+                            </div>
+                          )}
+                          <Card
+                            className={`flex flex-col h-full p-5 transition-all ${
+                              isCurrent
+                                ? "border-2 border-blue-500 bg-blue-50/40"
+                                : isPopular
+                                  ? "border-2 border-blue-300"
+                                  : "border border-gray-200"
+                            }`}
                           >
-                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-gray-700">
-                              {feature}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <Button
-                        className="w-full"
-                        variant={plan.current ? "outline" : "default"}
-                        disabled={plan.current}
-                      >
-                        {plan.current ? "Current Plan" : "Select Plan"}
-                      </Button>
-                    </Card>
-                  ))}
+                            <div className="mb-4">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {pd.name}
+                                </h3>
+                                {isCurrent && (
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                    Current
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-3xl font-bold text-gray-900">
+                                  ${pd.price}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  /mo
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 mb-6 flex-1">
+                              {pd.features.map((f, i) => (
+                                <div key={i} className="flex items-start gap-2">
+                                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                  <span className="text-sm text-gray-600">
+                                    {f}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <Button
+                              className="w-full"
+                              variant={
+                                isCurrent
+                                  ? "outline"
+                                  : isPopular
+                                    ? "default"
+                                    : "outline"
+                              }
+                              disabled={
+                                isCurrent || changePlanMutation.isPending
+                              }
+                              onClick={() =>
+                                !isCurrent && setConfirmPlan(planId)
+                              }
+                            >
+                              {isCurrent
+                                ? "Current Plan"
+                                : changePlanMutation.isPending &&
+                                    confirmPlan === planId
+                                  ? "Changing..."
+                                  : planId === "starter"
+                                    ? "Downgrade"
+                                    : "Select Plan"}
+                            </Button>
+                          </Card>
+                        </div>
+                      );
+                    }
+                  )}
                 </div>
+
+                {changePlanMutation.isError && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm mt-2">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>
+                      {changePlanMutation.error instanceof Error
+                        ? changePlanMutation.error.message
+                        : "Failed to change plan. Please try again."}
+                    </span>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
 
-            <Button variant="outline">Cancel Subscription</Button>
+            <AlertDialog
+              open={confirmPlan !== null}
+              onOpenChange={(open) => !open && setConfirmPlan(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {confirmPlan === "starter"
+                      ? "Downgrade to Starter?"
+                      : `Switch to ${PLAN_DETAILS[confirmPlan ?? "professional"]?.name}?`}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {confirmPlan === "starter"
+                      ? "Your subscription will be canceled at the end of the current billing period and you'll move to the free Starter plan."
+                      : `You'll be switched to the ${PLAN_DETAILS[confirmPlan ?? "professional"]?.name} plan at $${PLAN_DETAILS[confirmPlan ?? "professional"]?.price}/month. Prorated charges may apply.`}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (confirmPlan) {
+                        changePlanMutation.mutate(confirmPlan);
+                        setConfirmPlan(null);
+                      }
+                    }}
+                  >
+                    Confirm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {!billing?.subscription?.cancelAtPeriodEnd ? (
+              <Button
+                variant="outline"
+                onClick={() => cancelMutation.mutate()}
+                disabled={
+                  cancelMutation.isPending ||
+                  !billing?.subscription?.stripeSubscriptionId
+                }
+              >
+                {cancelMutation.isPending
+                  ? "Canceling..."
+                  : "Cancel Subscription"}
+              </Button>
+            ) : billing?.subscription?.stripeSubscriptionId ? (
+              <Button
+                variant="outline"
+                onClick={() => resubscribeMutation.mutate()}
+                disabled={resubscribeMutation.isPending}
+              >
+                {resubscribeMutation.isPending
+                  ? "Reactivating..."
+                  : "Reactivate Subscription"}
+              </Button>
+            ) : null}
           </div>
         </Card>
 
@@ -265,14 +503,27 @@ export default function Billing() {
             <h2 className="text-xl text-gray-900">Payment Method</h2>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-4 mb-6 text-white">
-            <div className="flex items-center justify-between mb-6">
-              <CreditCard className="h-8 w-8" />
-              <p className="text-sm">VISA</p>
+          {billing?.paymentMethod ? (
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-4 mb-6 text-white">
+              <div className="flex items-center justify-between mb-6">
+                <CreditCard className="h-8 w-8" />
+                <p className="text-sm uppercase">
+                  {billing.paymentMethod.brand}
+                </p>
+              </div>
+              <p className="text-lg mb-1">
+                •••• •••• •••• {billing.paymentMethod.last4}
+              </p>
+              <p className="text-sm opacity-80">
+                Expires {billing.paymentMethod.expMonth}/
+                {billing.paymentMethod.expYear}
+              </p>
             </div>
-            <p className="text-lg mb-1">•••• •••• •••• 4242</p>
-            <p className="text-sm opacity-80">Expires 12/2027</p>
-          </div>
+          ) : (
+            <div className="bg-gray-100 rounded-lg p-4 mb-6 text-center text-sm text-gray-500">
+              No payment method on file
+            </div>
+          )}
 
           <Dialog open={paymentMethodOpen} onOpenChange={setPaymentMethodOpen}>
             <DialogTrigger asChild>
@@ -280,46 +531,27 @@ export default function Billing() {
                 Update Payment Method
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Update Payment Method</DialogTitle>
                 <DialogDescription>
                   Add or update your payment information
                 </DialogDescription>
               </DialogHeader>
-
-              <div className="space-y-4 mt-4">
-                <div>
-                  <Label>Card Number</Label>
-                  <Input placeholder="1234 5678 9012 3456" className="mt-2" />
+              {setupSecret ? (
+                <Elements
+                  stripe={stripePromise}
+                  options={{ clientSecret: setupSecret }}
+                >
+                  <UpdatePaymentForm
+                    onSuccess={() => setPaymentMethodOpen(false)}
+                  />
+                </Elements>
+              ) : (
+                <div className="py-8 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Expiry Date</Label>
-                    <Input placeholder="MM/YY" className="mt-2" />
-                  </div>
-                  <div>
-                    <Label>CVV</Label>
-                    <Input placeholder="123" className="mt-2" />
-                  </div>
-                </div>
-                <div>
-                  <Label>Cardholder Name</Label>
-                  <Input placeholder="John Doe" className="mt-2" />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPaymentMethodOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={() => setPaymentMethodOpen(false)}>
-                    Save Card
-                  </Button>
-                </div>
-              </div>
+              )}
             </DialogContent>
           </Dialog>
         </Card>
@@ -328,58 +560,29 @@ export default function Billing() {
       {/* Usage Stats */}
       <Card className="p-6">
         <h2 className="text-xl text-gray-900 mb-6">Usage Overview</h2>
-
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
                 <Users className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Team Members</p>
+                <p className="text-sm text-gray-600">Clients</p>
               </div>
               <p className="text-sm text-gray-900">
-                {usage.teamMembers.current} / {usage.teamMembers.limit}
+                {clientCount} / {clientLimit ?? "Unlimited"}
               </p>
             </div>
-            <Progress value={usage.teamMembers.percentage} />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <CreditCard className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Storage</p>
-              </div>
-              <p className="text-sm text-gray-900">
-                {usage.storage.current}GB / {usage.storage.limit}GB
+            <Progress
+              value={
+                clientLimit
+                  ? Math.min((clientCount / clientLimit) * 100, 100)
+                  : 100
+              }
+            />
+            {currentPlan === "starter" && clientCount >= 5 && (
+              <p className="text-[11px] text-red-500 mt-1">
+                Limit reached — upgrade to add more
               </p>
-            </div>
-            <Progress value={usage.storage.percentage} />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <Zap className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Projects</p>
-              </div>
-              <p className="text-sm text-gray-900">
-                {usage.projects.current} / Unlimited
-              </p>
-            </div>
-            <Progress value={100} />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <Zap className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Automations</p>
-              </div>
-              <p className="text-sm text-gray-900">
-                {usage.automations.current} / Unlimited
-              </p>
-            </div>
-            <Progress value={100} />
+            )}
           </div>
         </div>
       </Card>
@@ -388,54 +591,72 @@ export default function Billing() {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl text-gray-900">Billing History</h2>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Download All
-          </Button>
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="text-gray-900">{invoice.id}</TableCell>
-                  <TableCell className="text-gray-600">
-                    {invoice.date}
-                  </TableCell>
-                  <TableCell className="text-gray-600">
-                    {invoice.description}
-                  </TableCell>
-                  <TableCell className="text-gray-900">
-                    ${invoice.amount.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className="bg-green-100 text-green-700">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      {invoice.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      PDF
-                    </Button>
-                  </TableCell>
+        {billing?.invoices?.length ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {billing.invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="text-gray-900">
+                      {invoice.number ?? invoice.id.slice(0, 12)}
+                    </TableCell>
+                    <TableCell className="text-gray-600">
+                      {invoice.date
+                        ? formatDate(new Date(invoice.date * 1000))
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-gray-600">
+                      {invoice.description ?? `${planInfo.name} Plan - Monthly`}
+                    </TableCell>
+                    <TableCell className="text-gray-900">
+                      {formatAmount(invoice.amountPaid, invoice.currency)}
+                    </TableCell>
+                    <TableCell>
+                      {invoice.status === "paid" ? (
+                        <Badge className="bg-green-100 text-green-700">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Paid
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-700">
+                          {invoice.status}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {invoice.pdfUrl && (
+                        <a
+                          href={invoice.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4 mr-2" />
+                            PDF
+                          </Button>
+                        </a>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No invoices yet.</p>
+        )}
       </Card>
     </div>
   );

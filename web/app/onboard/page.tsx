@@ -8,19 +8,13 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import {
-  Check,
   ChevronLeft,
   Zap,
-  Calendar,
-  Video,
   Sparkles,
-  CreditCard,
   Users,
   Brain,
-  FileSpreadsheet,
   ArrowRight,
   CheckCircle2,
-  Shield,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -31,30 +25,12 @@ import type { ClerkAPIError } from "@clerk/types";
 import {
   AccountStepProps,
   AIPersonalizationStepProps,
-  ImportDataStepProps,
-  ImportOption,
-  Integration,
-  IntegrationsStepProps,
   OnboardingFormData,
-  PaymentStepProps,
   PlanStepProps,
   VerificationStepProps,
 } from "@/types/onboard";
-
-const importOptions: ImportOption[] = [
-  {
-    id: "csv",
-    title: "CSV Spreadsheet",
-    icon: FileSpreadsheet,
-    desc: "Quick upload from Excel or Sheets.",
-  },
-  {
-    id: "manual",
-    title: "Manual Entry",
-    icon: Users,
-    desc: "Add details one by one later.",
-  },
-];
+import PaymentStep from "./PaymentStep";
+import { registerFreePlan } from "@/lib/billing";
 
 const plans = [
   {
@@ -102,25 +78,6 @@ const plans = [
   },
 ];
 
-const integrations = [
-  {
-    id: "google-calendar",
-    name: "Google Calendar",
-    icon: Calendar,
-    description: "Sync your schedule",
-    color: "bg-blue-500",
-    category: "calendar",
-  },
-  {
-    id: "outlook",
-    name: "Outlook",
-    icon: Video,
-    description: "Outlook",
-    color: "bg-purple-500",
-    category: "email",
-  },
-];
-
 const getClerkErrorMessage = (err: unknown) => {
   const e = err as { errors?: ClerkAPIError[] };
   console.error("Clerk error:", e);
@@ -141,13 +98,8 @@ export default function Onboarding() {
     selectedPlan: "professional",
     billingCycle: "monthly",
 
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
-    billingAddress: "",
-
     selectedIntegrations: [],
-    importMethod: null,
+    importMethod: "manual",
 
     industry: "",
     teamSize: "",
@@ -190,33 +142,21 @@ export default function Onboarding() {
     },
     {
       id: 3,
-      name: "Connect",
-      title: "Connect Tools",
-      subtitle: "Integrate your existing calendar and video apps.",
-    },
-    {
-      id: 4,
-      name: "Import",
-      title: "Import Data",
-      subtitle: "Bring your clients and projects over easily.",
-    },
-    {
-      id: 5,
       name: "Personalize",
       title: "Personalize AI",
       subtitle: "Help our AI understand how you work.",
     },
     {
-      id: 6,
-      name: "Payment",
-      title: "Secure Checkout",
-      subtitle: "Safe and encrypted payment processing.",
-    },
-    {
-      id: 7,
+      id: 4,
       name: "Verify",
       title: "Verify Email",
       subtitle: "We've sent a 4-digit code to your email.",
+    },
+    {
+      id: 5,
+      name: "Payment",
+      title: "Secure Checkout",
+      subtitle: "Safe and encrypted payment processing.",
     },
   ];
 
@@ -230,15 +170,6 @@ export default function Onboarding() {
     }));
   };
 
-  const toggleIntegration = (integrationId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedIntegrations: prev.selectedIntegrations.includes(integrationId)
-        ? prev.selectedIntegrations.filter((id) => id !== integrationId)
-        : [...prev.selectedIntegrations, integrationId],
-    }));
-  };
-
   const nextStep = () => {
     if (currentStep >= steps.length - 1) return;
 
@@ -249,21 +180,16 @@ export default function Onboarding() {
       return;
     }
 
-    if (currentStep === 5 && formData.selectedPlan === "starter") {
-      setCurrentStep(7);
-      return;
-    }
-
     setCurrentStep((prev) => prev + 1);
   };
 
   const prevStep = () => {
     if (currentStep <= 0) return;
-    if (currentStep === 7 && formData.selectedPlan === "starter") {
-      setCurrentStep(5);
+    // Step 5 (Payment) skips back over step 4 (Verify — already completed)
+    if (currentStep === 5) {
+      setCurrentStep(3);
       return;
     }
-
     setCurrentStep((prev) => prev - 1);
   };
 
@@ -291,38 +217,29 @@ export default function Onboarding() {
         );
       case 3:
         return (
-          <IntegrationsStep
-            formData={formData}
-            toggleIntegration={toggleIntegration}
-            onNext={nextStep}
-          />
-        );
-      case 4:
-        return (
-          <ImportDataStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-          />
-        );
-      case 5:
-        return (
           <AIPersonalizationStep
             formData={formData}
             updateFormData={updateFormData}
             onNext={nextStep}
           />
         );
-      case 6:
+      case 4:
         return (
-          <PaymentStep
-            formData={formData}
-            updateFormData={updateFormData}
+          <VerificationStep
+            formData={{
+              email: formData.email,
+              password: formData.password,
+              selectedPlan: formData.selectedPlan,
+            }}
             onNext={nextStep}
           />
         );
-      case 7:
-        return <VerificationStep formData={formData} />;
+      case 5:
+        return (
+          <PaymentStep
+            formData={formData}
+          />
+        );
       default:
         return null;
     }
@@ -374,7 +291,7 @@ export default function Onboarding() {
         </div>
 
         <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-[12px] text-gray-400 font-medium">
-          <p>Copyright © 2026 Virevos Enterprises LTD.</p>
+          <p>Copyright © 2026 Virevos.</p>
           <div className="flex space-x-6 mt-4 sm:mt-0">
             <button
               onClick={() => router.push("/privacy")}
@@ -435,8 +352,8 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           },
           {
             icon: Users,
-            title: "Team Synergy",
-            desc: "Unified workspace for seamless collaboration.",
+            title: "Client Management",
+            desc: "Track every client, project, and invoice in one place.",
           },
         ].map((item, i) => (
           <div
@@ -521,22 +438,6 @@ function AccountStep({
     }
   };
 
-  const handleSocialLogin = async (
-    strategy: "oauth_google" | "oauth_apple"
-  ) => {
-    if (!isLoaded) return;
-    setError(null);
-    try {
-      await signUp.authenticateWithRedirect({
-        strategy,
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/workspace/dashboard",
-      });
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err));
-    }
-  };
-
   return (
     <div className="space-y-6">
       {error && (
@@ -607,59 +508,6 @@ function AccountStep({
       >
         {loading ? "Creating Account..." : "Continue"}
       </Button>
-
-      <div className="relative py-2">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-100"></span>
-        </div>
-        <div className="relative flex justify-center text-[12px] uppercase">
-          <span className="bg-white px-3 text-gray-400 font-bold tracking-widest">
-            Or Register With
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          variant="outline"
-          onClick={() => handleSocialLogin("oauth_google")}
-          className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50"
-        >
-          <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="currentColor"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          Google
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => handleSocialLogin("oauth_apple")}
-          className="h-11 rounded-xl border-gray-200 text-gray-700 text-[13px] font-bold hover:bg-gray-50"
-        >
-          <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M17.05 20.28c-.96.95-2.04 1.44-3.23 1.47-1.15.02-2.24-.46-3.27-.46-1.04 0-2.25.48-3.32.44-1.18-.04-2.25-.53-3.22-1.47C2 18.25.96 15.11.96 12.03c0-3.08 1.04-6.22 3.08-8.25 1.03-1.03 2.22-1.57 3.56-1.57 1.25 0 2.44.47 3.2.47.75 0 2.05-.51 3.46-.51 1.34 0 2.45.5 3.3 1.42.45.48.86 1.03 1.15 1.63-2.6 1.07-4.24 3.42-4.24 6.22 0 2.92 1.83 5.43 4.58 6.57-.28.8-.7 1.5-1.25 2.05h-.04zM12.03 4.3c-.02-2.2 1.81-4.05 4.02-4.07.03 2.22-1.83 4.08-4.02 4.07z"
-            />
-          </svg>
-          Apple
-        </Button>
-      </div>
-
       <p className="text-center text-[12px] text-gray-400">
         Already have an account?{" "}
         <button
@@ -727,108 +575,6 @@ function PlanStep({ formData, updateFormData, onNext }: PlanStepProps) {
         onClick={onNext}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
       >
-        Continue to Payment
-      </Button>
-    </div>
-  );
-}
-
-// Integrations Step Component
-function IntegrationsStep({
-  formData,
-  toggleIntegration,
-  onNext,
-}: IntegrationsStepProps) {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3">
-        {integrations.map((int: Integration) => (
-          <div
-            key={int.id}
-            onClick={() => toggleIntegration(int.id)}
-            className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center space-x-4 ${
-              formData.selectedIntegrations.includes(int.id)
-                ? "border-blue-600 bg-blue-50/30"
-                : "border-gray-100 bg-white hover:border-gray-200"
-            }`}
-          >
-            <div
-              className={`w-10 h-10 rounded-lg ${int.color} flex items-center justify-center text-white`}
-            >
-              <int.icon size={20} />
-            </div>
-
-            <div className="flex-1">
-              <h4 className="text-[14px] font-bold text-gray-900">
-                {int.name}
-              </h4>
-              <p className="text-[12px] text-gray-500">{int.description}</p>
-            </div>
-
-            <div
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                formData.selectedIntegrations.includes(int.id)
-                  ? "border-blue-600 bg-blue-600"
-                  : "border-gray-200"
-              }`}
-            >
-              {formData.selectedIntegrations.includes(int.id) && (
-                <Check size={12} className="text-white" />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <Button
-        onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
-      >
-        {formData.selectedIntegrations.length > 0
-          ? "Connect Selected"
-          : "Skip Integrations"}
-      </Button>
-    </div>
-  );
-}
-
-// Import Data Step Component
-function ImportDataStep({
-  formData,
-  updateFormData,
-  onNext,
-}: ImportDataStepProps) {
-  return (
-    <div className="space-y-4">
-      {importOptions.map((opt) => (
-        <div
-          key={opt.id}
-          onClick={() => updateFormData("importMethod", opt.id)}
-          className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center space-x-4 ${
-            formData.importMethod === opt.id
-              ? "border-blue-600 bg-blue-50/30"
-              : "border-gray-100 bg-white hover:border-gray-200"
-          }`}
-        >
-          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
-            <opt.icon size={20} />
-          </div>
-
-          <div className="flex-1">
-            <h4 className="text-[14px] font-bold text-gray-900">{opt.title}</h4>
-            <p className="text-[12px] text-gray-500">{opt.desc}</p>
-          </div>
-
-          {formData.importMethod === opt.id && (
-            <div className="w-2 h-2 rounded-full bg-blue-600" />
-          )}
-        </div>
-      ))}
-
-      <Button
-        onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200 mt-4"
-      >
         Continue
       </Button>
     </div>
@@ -884,83 +630,8 @@ function AIPersonalizationStep({
   );
 }
 
-// Payment Step Component
-function PaymentStep({ formData, updateFormData, onNext }: PaymentStepProps) {
-  return (
-    <div className="space-y-5">
-      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[13px] text-gray-500">Selected Plan</span>
-          <span className="text-[14px] font-bold text-gray-900">
-            Professional
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-[13px] text-gray-500">Billed Monthly</span>
-          <span className="text-[14px] font-bold text-gray-900">$29.00</span>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-            Card Number
-          </Label>
-          <div className="relative">
-            <Input
-              placeholder="0000 0000 0000 0000"
-              value={formData.cardNumber}
-              onChange={(e) => updateFormData("cardNumber", e.target.value)}
-              className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex space-x-1 opacity-50">
-              <CreditCard size={18} />
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-              Expiry
-            </Label>
-            <Input
-              placeholder="MM/YY"
-              value={formData.cardExpiry}
-              onChange={(e) => updateFormData("cardExpiry", e.target.value)}
-              className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-            />
-          </div>
-          <div>
-            <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-              CVC
-            </Label>
-            <Input
-              placeholder="123"
-              value={formData.cardCVC}
-              onChange={(e) => updateFormData("cardCVC", e.target.value)}
-              className="h-11 bg-gray-50/50 border-gray-200 rounded-xl px-4 text-[14px]"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2 text-[12px] text-gray-400 justify-center">
-        <Shield size={14} className="text-green-500" />
-        <span>Payments are secure and encrypted.</span>
-      </div>
-
-      <Button
-        onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-200"
-      >
-        Complete Checkout
-      </Button>
-    </div>
-  );
-}
-
 // Verification Step Component
-function VerificationStep({ formData }: VerificationStepProps) {
+function VerificationStep({ formData, onNext }: VerificationStepProps) {
   const { isLoaded, signUp, setActive } = useSignUp();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
@@ -984,7 +655,15 @@ function VerificationStep({ formData }: VerificationStepProps) {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.push("/workspace/dashboard");
+
+        if (formData.selectedPlan && formData.selectedPlan !== "starter") {
+          // Paid plan — go to payment step (user is now authenticated)
+          onNext();
+        } else {
+          // Starter plan — register free tier and redirect
+          await registerFreePlan();
+          router.push("/workspace/dashboard");
+        }
       }
     } catch (err) {
       setError(getClerkErrorMessage(err));

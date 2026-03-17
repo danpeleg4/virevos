@@ -66,6 +66,8 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@radix-ui/themes": "^3.3.0",
+    "@stripe/react-stripe-js": "^3.10.0",
+    "@stripe/stripe-js": "^8.9.0",
     "@tanstack/react-query": "^5.90.12",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
@@ -93,6 +95,7 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
     "streamdown": "^2.1.0",
+    "stripe": "^20.4.1",
     "svix": "^1.84.1",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"

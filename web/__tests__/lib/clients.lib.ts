@@ -10,6 +10,11 @@ jest.mock("@clerk/nextjs/server", () => ({
   currentUser: jest.fn(),
 }));
 
+const mockAssertCanAddClient = jest.fn();
+jest.mock("@/lib/plan_limits", () => ({
+  assertCanAddClient: (...args: unknown[]) => mockAssertCanAddClient(...args),
+}));
+
 const mockWhere = jest.fn();
 const mockSet = jest.fn(() => ({ where: mockWhere }));
 const mockReturning = jest.fn();
@@ -34,6 +39,7 @@ beforeEach(() => {
   mockSet.mockReturnValue({ where: mockWhere });
   mockValues.mockReturnValue({ returning: mockReturning });
   mockReturning.mockResolvedValue([]);
+  mockAssertCanAddClient.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -103,6 +109,16 @@ describe("addAClient", () => {
   it("returns server error on DB error", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockReturning.mockRejectedValueOnce(new Error("DB error"));
+
+    const result = await addAClient(baseInput);
+    expect(result).toEqual({ message: "Server error" });
+  });
+
+  it("returns server error when plan limit is reached", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockAssertCanAddClient.mockRejectedValueOnce(
+      new Error("Client limit reached. The starter plan allows up to 5 clients.")
+    );
 
     const result = await addAClient(baseInput);
     expect(result).toEqual({ message: "Server error" });

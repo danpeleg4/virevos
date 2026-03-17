@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { openai, tools, executeTool, MODEL, MAX_STEPS } from "@/lib/ai_tools";
 import type { ChatMessage, StreamEvent } from "@/types/ai";
+import { assertHasAiAssistant } from "@/lib/plan_limits";
 
 function encodeEvent(event: StreamEvent, encoder: TextEncoder): Uint8Array {
   return encoder.encode(JSON.stringify(event) + "\n");
@@ -17,6 +18,13 @@ export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  try {
+    await assertHasAiAssistant(user.id);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "AI assistant unavailable";
+    return NextResponse.json({ message }, { status: 403 });
   }
 
   const [res] = await db

@@ -41,7 +41,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "99",
+    price: "79",
     description: "For large organizations with advanced needs",
     features: [
       "Everything in Professional plan +",
