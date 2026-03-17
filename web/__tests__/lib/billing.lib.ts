@@ -1,8 +1,6 @@
 import {
   createSetupIntent,
-  createSubscription,
   getUserSubscription,
-  getBillingOverview,
   changePlan,
   cancelSubscription,
   updatePaymentMethod,
@@ -19,7 +17,10 @@ const mockLimit = jest.fn();
 const mockSet = jest.fn(() => ({ where: mockWhere }));
 const mockReturning = jest.fn();
 const mockOnConflictDoNothing = jest.fn();
-const mockValues = jest.fn(() => ({ returning: mockReturning, onConflictDoNothing: mockOnConflictDoNothing }));
+const mockValues = jest.fn(() => ({
+  returning: mockReturning,
+  onConflictDoNothing: mockOnConflictDoNothing,
+}));
 const mockFrom = jest.fn(() => ({ where: mockWhere }));
 const mockSelect = jest.fn(() => ({ from: mockFrom }));
 
@@ -43,7 +44,9 @@ const mockStripeInvoiceList = jest.fn();
 
 jest.mock("@/lib/stripe", () => ({
   stripe: {
-    setupIntents: { create: (...args: unknown[]) => mockStripeSetupIntentCreate(...args) },
+    setupIntents: {
+      create: (...args: unknown[]) => mockStripeSetupIntentCreate(...args),
+    },
     customers: {
       create: (...args: unknown[]) => mockStripeCustomerCreate(...args),
       retrieve: (...args: unknown[]) => mockStripeCustomerRetrieve(...args),
@@ -86,7 +89,10 @@ beforeEach(() => {
   mockLimit.mockResolvedValue([]);
   mockSet.mockReturnValue({ where: mockWhere });
   mockOnConflictDoNothing.mockResolvedValue(undefined);
-  mockValues.mockReturnValue({ returning: mockReturning, onConflictDoNothing: mockOnConflictDoNothing });
+  mockValues.mockReturnValue({
+    returning: mockReturning,
+    onConflictDoNothing: mockOnConflictDoNothing,
+  });
   mockReturning.mockResolvedValue([]);
 });
 
@@ -121,7 +127,9 @@ describe("createSetupIntent", () => {
     mockDbSelect([]);
     mockStripeCustomerCreate.mockResolvedValue({ id: "cus_new" });
     mockReturning.mockResolvedValue([]);
-    mockStripeSetupIntentCreate.mockResolvedValue({ client_secret: "seti_secret" });
+    mockStripeSetupIntentCreate.mockResolvedValue({
+      client_secret: "seti_secret",
+    });
 
     const result = await createSetupIntent();
     expect(mockStripeCustomerCreate).toHaveBeenCalledWith(
