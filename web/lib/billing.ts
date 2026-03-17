@@ -250,6 +250,19 @@ export async function cancelSubscription(): Promise<void> {
   }
 }
 
+export async function resubscribe(): Promise<void> {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const sub = await getUserSubscription();
+  if (!sub.stripeSubscriptionId)
+    throw new Error("No subscription to reactivate");
+
+  await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+    cancel_at_period_end: false,
+  });
+}
+
 export async function updatePaymentMethod(pmId: string): Promise<void> {
   const user = await currentUser();
   if (!user?.id) throw new Error("Unauthorized");

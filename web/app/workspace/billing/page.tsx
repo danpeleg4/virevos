@@ -53,6 +53,7 @@ import {
 import {
   changePlan,
   cancelSubscription,
+  resubscribe,
   updatePaymentMethod,
   createSetupIntent,
 } from "@/lib/billing";
@@ -220,6 +221,13 @@ export default function Billing() {
     },
   });
 
+  const resubscribeMutation = useMutation({
+    mutationFn: resubscribe,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["billing"] });
+    },
+  });
+
   const currentPlan = billing?.subscription?.plan ?? "starter";
   const planInfo = PLAN_DETAILS[currentPlan] ?? PLAN_DETAILS.starter;
   const statusInfo =
@@ -290,9 +298,11 @@ export default function Billing() {
               <div className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5 text-gray-400" />
                 <p className="text-lg text-gray-900">
-                  {billing?.subscription?.cancelAtPeriodEnd
-                    ? `Cancels ${formatDate(billing.subscription.currentPeriodEnd)}`
-                    : formatDate(billing?.subscription?.currentPeriodEnd)}
+                  {billing?.subscription.plan === "starter"
+                    ? `Free Forever`
+                    : billing?.subscription?.cancelAtPeriodEnd
+                      ? `Cancels ${formatDate(billing.subscription.currentPeriodEnd)}`
+                      : formatDate(billing?.subscription?.currentPeriodEnd)}
                 </p>
               </div>
             </div>
@@ -460,7 +470,7 @@ export default function Billing() {
               </AlertDialogContent>
             </AlertDialog>
 
-            {billing?.subscription?.cancelAtPeriodEnd === true ? (
+            {!billing?.subscription?.cancelAtPeriodEnd ? (
               <Button
                 variant="outline"
                 onClick={() => cancelMutation.mutate()}
@@ -472,6 +482,16 @@ export default function Billing() {
                 {cancelMutation.isPending
                   ? "Canceling..."
                   : "Cancel Subscription"}
+              </Button>
+            ) : billing?.subscription?.stripeSubscriptionId ? (
+              <Button
+                variant="outline"
+                onClick={() => resubscribeMutation.mutate()}
+                disabled={resubscribeMutation.isPending}
+              >
+                {resubscribeMutation.isPending
+                  ? "Reactivating..."
+                  : "Reactivate Subscription"}
               </Button>
             ) : null}
           </div>
