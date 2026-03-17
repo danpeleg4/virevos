@@ -75,14 +75,17 @@ export async function createProject(project: Project): Promise<Project> {
 
   await assertCanAddProject(user.id);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, ...rest } = project;
   // Insert project into DB
   const inserted = await db
     .insert(projects)
     .values({
-      ...rest,
+      name: project.name,
       userId: user.id,
+      clientId: project.clientId ?? undefined,
+      status: project.status,
+      dueDate: project.dueDate ?? undefined,
+      priority: project.priority,
+      health: project.health,
     })
     .returning();
 

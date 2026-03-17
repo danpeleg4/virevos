@@ -22,9 +22,11 @@ import {
   Trash2,
   Send,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
 
 export function ScheduledMessages() {
@@ -32,6 +34,7 @@ export function ScheduledMessages() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
   // Form state
   const [formToEmail, setFormToEmail] = useState("");
@@ -42,8 +45,18 @@ export function ScheduledMessages() {
   const [formTime, setFormTime] = useState("09:00");
 
   useEffect(() => {
+    checkGoogleConnection();
     fetchScheduledEmails();
   }, []);
+
+  const checkGoogleConnection = async () => {
+    try {
+      const { data } = await axios.get("/api/integrations/google");
+      setIsConnected(data.connected === true);
+    } catch {
+      setIsConnected(false);
+    }
+  };
 
   const fetchScheduledEmails = async () => {
     setIsLoading(true);
@@ -182,6 +195,24 @@ export function ScheduledMessages() {
       (a, b) =>
         new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
     )[0];
+
+  if (isConnected === false) {
+    return (
+      <Card>
+        <CardContent className="py-24 text-center">
+          <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+          <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
+          <p className="text-sm text-gray-500 mb-6">
+            Connect your Google account to sync emails and use the inbox.
+          </p>
+          <Button onClick={() => (window.location.href = "/api/google")}>
+            <Mail className="h-4 w-4 mr-2" />
+            Connect Gmail
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

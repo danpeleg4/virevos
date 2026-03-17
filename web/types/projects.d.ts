@@ -16,13 +16,13 @@ export interface ProjectStats {
 export interface Project {
   clientName?: string;
   id: number;
-  name;
-  clientId;
-  status;
-  dueDate;
-  priority;
+  name: string;
+  clientId: number | null;
+  status: string;
+  dueDate: string | null;
+  priority: string;
   stats: ProjectStats;
-  health;
+  health: string;
 }
 
 export interface ProjectNote {

@@ -2,14 +2,14 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { clients } from "@db/schema";
+import { clients, projects } from "@db/schema";
 import { eq, count } from "drizzle-orm";
 import { getUserSubscriptionByUserId } from "./billing";
 
 const PLAN_LIMITS = {
-  starter: { maxClients: 5, maxProjects: 1, aiAssistant: false },
-  professional: { maxClients: null, maxProjects: null, aiAssistant: true },
-  business: { maxClients: null, maxProjects: null, aiAssistant: true },
+  starter: { maxClients: 5, maxProjects: 10, aiAssistant: true },
+  professional: { maxClients: 100, maxProjects: 50, aiAssistant: true },
+  business: { maxClients: 500, maxProjects: 1000, aiAssistant: true },
 } as const;
 
 export async function getUserPlan(userId: string): Promise<PlanId> {
@@ -39,9 +39,16 @@ export async function assertCanAddProject(userId: string): Promise<void> {
   const limit = PLAN_LIMITS[plan].maxProjects;
   if (limit === null) return;
 
-  throw new Error(
-    `Project limit reached. The ${plan} plan allows up to ${limit} project. Please upgrade to add more.`
-  );
+  const [result] = await db
+    .select({ count: count() })
+    .from(projects)
+    .where(eq(projects.userId, userId));
+
+  if (result.count >= limit) {
+    throw new Error(
+      `Project limit reached. The ${plan} plan allows up to ${limit} projects. Please upgrade to add more.`
+    );
+  }
 }
 
 export async function assertHasAiAssistant(userId: string): Promise<void> {
