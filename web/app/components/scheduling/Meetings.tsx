@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader } from "../../components/ui/card";
+import { Card, CardContent } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import {
@@ -98,10 +98,6 @@ export function Meetings() {
     );
   }
 
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery]);
-
   const filteredMeetings = meetings?.data?.filter(
     (event) =>
       event.isMeeting &&
@@ -151,7 +147,7 @@ export function Meetings() {
             <Input
               placeholder="Search meetings..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               className="pl-10"
             />
           </div>
