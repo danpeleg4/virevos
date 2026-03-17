@@ -6,13 +6,29 @@ import {
   EgressClient,
   EncodedFileOutput,
   EncodedOutputs,
+  WebhookEvent,
+  WebhookReceiver,
 } from "livekit-server-sdk";
+import { ParticipantInfo_Kind } from "@livekit/protocol";
+
+const webhookReceiver = new WebhookReceiver(
+  process.env.LIVEKIT_API_KEY!,
+  process.env.LIVEKIT_API_SECRET!
+);
 
 /*
 LiveKit webhook
  */
 export async function POST(req: NextRequest) {
-  const event = await req.json();
+  const body = await req.text();
+  const authHeader = req.headers.get("Authorization");
+
+  let event: WebhookEvent;
+  try {
+    event = await webhookReceiver.receive(body, authHeader ?? undefined);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const roomName = event?.room?.name ?? event?.room?.sid;
   if (!roomName) {
     return NextResponse.json({ status: "missing room" }, { status: 400 });
@@ -31,7 +47,7 @@ export async function POST(req: NextRequest) {
     const res = await db.select().from(events).where(eq(events.id, roomName));
     if (res.length > 0) {
       const finishedAt = Number(event.createdAt);
-      const createdAt = Number(event.room.creationTimeMs);
+      const createdAt = Number(event?.room?.creationTimeMs);
       const durationInMinutes =
         Number.isFinite(finishedAt) && Number.isFinite(createdAt)
           ? Math.max(1, Math.round((finishedAt - createdAt) / 60000))
@@ -47,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
   }
   if (event.event === "participant_joined") {
-    if (event.participant.kind === "EGRESS") {
+    if (event.participant?.kind === ParticipantInfo_Kind.EGRESS) {
       return NextResponse.json({ status: "EGRESS OUT" });
     }
     const identity = event.participant?.identity;

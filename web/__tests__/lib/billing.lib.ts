@@ -18,7 +18,8 @@ const mockWhere = jest.fn();
 const mockLimit = jest.fn();
 const mockSet = jest.fn(() => ({ where: mockWhere }));
 const mockReturning = jest.fn();
-const mockValues = jest.fn(() => ({ returning: mockReturning }));
+const mockOnConflictDoNothing = jest.fn();
+const mockValues = jest.fn(() => ({ returning: mockReturning, onConflictDoNothing: mockOnConflictDoNothing }));
 const mockFrom = jest.fn(() => ({ where: mockWhere }));
 const mockSelect = jest.fn(() => ({ from: mockFrom }));
 
@@ -84,7 +85,8 @@ beforeEach(() => {
   mockWhere.mockResolvedValue(undefined);
   mockLimit.mockResolvedValue([]);
   mockSet.mockReturnValue({ where: mockWhere });
-  mockValues.mockReturnValue({ returning: mockReturning });
+  mockOnConflictDoNothing.mockResolvedValue(undefined);
+  mockValues.mockReturnValue({ returning: mockReturning, onConflictDoNothing: mockOnConflictDoNothing });
   mockReturning.mockResolvedValue([]);
 });
 
