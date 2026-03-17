@@ -195,12 +195,13 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
     return;
   }
 
+  if (!sub.stripeCustomerId) throw new Error("No active subscription");
+
   const priceId = PRICE_ID_MAP[input.planId];
   if (!priceId) throw new Error(`Unknown plan: ${input.planId}`);
 
   // No existing subscription — create one using the customer's default payment method
   if (!sub.stripeSubscriptionId) {
-    if (!sub.stripeCustomerId) throw new Error("No Stripe customer");
     const customer = await stripe.customers.retrieve(sub.stripeCustomerId, {
       expand: ["invoice_settings.default_payment_method"],
     });

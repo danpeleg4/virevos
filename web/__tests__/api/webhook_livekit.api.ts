@@ -1,6 +1,7 @@
 import { POST } from "@/app/api/webhooks/livekit/route";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
+import { ParticipantInfo_Kind } from "@livekit/protocol";
 
 // db mock
 jest.mock("@db/db", () => ({
@@ -24,23 +25,48 @@ jest.mock("@db/db", () => ({
 }));
 
 // livekit mock
-jest.mock("livekit-server-sdk", () => ({
-  EgressClient: jest.fn().mockImplementation(() => ({
-    startParticipantEgress: jest.fn(),
-  })),
-  EncodedFileOutput: jest.fn(),
-}));
+jest.mock("livekit-server-sdk", () => {
+  const receiveFn = jest.fn();
+  return {
+    EgressClient: jest.fn().mockImplementation(() => ({
+      startParticipantEgress: jest.fn(),
+    })),
+    EncodedFileOutput: jest.fn(),
+    WebhookReceiver: jest.fn().mockImplementation(() => ({
+      receive: receiveFn,
+    })),
+    __receiveFn: receiveFn,
+  };
+});
+
+const { __receiveFn: mockReceive } = jest.requireMock("livekit-server-sdk") as {
+  __receiveFn: jest.Mock;
+};
 
 // Helper
-function mockRequest<T>(body: T): NextRequest {
+function mockRequest<T>(event: T, authHeader = "valid-token"): NextRequest {
   return {
-    json: jest.fn().mockResolvedValue(body),
+    text: jest.fn().mockResolvedValue(JSON.stringify(event)),
+    headers: { get: jest.fn().mockReturnValue(authHeader) },
   } as unknown as NextRequest;
 }
 
 describe("POST /api/webhooks/livekit", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockReceive.mockImplementation((_body: string, _auth: string) =>
+      Promise.resolve(JSON.parse(_body))
+    );
+  });
+
+  it("returns 401 if authorization fails", async () => {
+    mockReceive.mockRejectedValueOnce(new Error("invalid token"));
+    const req = mockRequest({ event: "room_started", room: { name: "r1" } });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(401);
+    expect(db.update).not.toHaveBeenCalled();
   });
 
   it("returns 400 if room is missing", async () => {
@@ -90,7 +116,7 @@ describe("POST /api/webhooks/livekit", () => {
     const req = mockRequest({
       event: "participant_joined",
       room: { name: "room_123" },
-      participant: { kind: "EGRESS" },
+      participant: { kind: ParticipantInfo_Kind.EGRESS },
     });
 
     const res = await POST(req);
