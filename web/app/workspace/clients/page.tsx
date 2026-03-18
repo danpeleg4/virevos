@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
-import { Badge } from "@/app/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -25,18 +24,64 @@ import {
   ChevronLeft,
   FolderOpen,
   Trash2,
+  Globe,
+  ArrowUpDown,
+  SlidersHorizontal,
+  Building2,
+  Briefcase,
+  Target,
 } from "lucide-react";
 import axios from "axios";
 import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  addAClient,
-  deleteClient,
-  updateExistingClient,
-} from "@/lib/clients";
+import { addAClient, deleteClient, updateExistingClient } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 
 const ITEMS_PER_PAGE = 8;
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === "active") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+        Active
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+      Inactive
+    </span>
+  );
+}
+
+function DomainPill({ email }: { email: string }) {
+  const domain = email.includes("@") ? email.split("@")[1] : email;
+  return (
+    <span className="inline-flex items-center gap-1 text-xs border border-blue-200 bg-blue-50 text-blue-700 rounded-full px-2.5 py-0.5">
+      <Globe className="h-3 w-3 flex-shrink-0" />
+      {domain}
+    </span>
+  );
+}
+
+function IndustryPill({ industry }: { industry: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
+      <span className="w-2 h-2 rounded-full bg-gray-400 inline-block flex-shrink-0" />
+      {industry}
+    </span>
+  );
+}
+
+function ProjectsBadge({ active, total }: { active: number; total: number }) {
+  return (
+    <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+      {active} active · {total} total
+    </span>
+  );
+}
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,6 +95,7 @@ export default function Clients() {
   const [notes, setNotes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
 
   const getClients = useQuery({
@@ -96,6 +142,23 @@ export default function Clients() {
 
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginatedClients.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedClients.map((c) => c.id)));
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const addClient = useMutation({
@@ -162,17 +225,13 @@ export default function Clients() {
       const previousClients =
         queryClient.getQueryData<clients[]>(["clients"]) ?? [];
 
-      // Optimistically update the existing client
       queryClient.setQueryData<clients[]>(
         ["clients"],
         previousClients.map((c) =>
-          c.id === newClient.id
-            ? { ...c, ...newClient } // merge the updated fields
-            : c
+          c.id === newClient.id ? { ...c, ...newClient } : c
         )
       );
 
-      // Also update the selected client immediately
       setSelectedClient((prev) =>
         prev && prev.id === newClient.id ? { ...prev, ...newClient } : prev
       );
@@ -287,152 +346,135 @@ export default function Clients() {
         </Dialog>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Search clients..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Stats */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-6">
-          <p className="text-sm text-gray-600">Total Clients</p>
-          <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients.data) ? getClients?.data?.length : []}
-          </p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm text-gray-600">Active Clients</p>
-          <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients.data)
-              ? getClients?.data?.filter((c: clients) => c.status === "active")
-                  .length
-              : []}
-          </p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm text-gray-600">Active Projects</p>
-          <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients.data)
-              ? getClients?.data?.reduce(
-                  (sum, c) => sum + Number(c.activeProjects || 0),
-                  0
-                )
-              : []}
-          </p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm text-gray-600">Completed Projects</p>
-          <p className="text-3xl mt-2 text-gray-900">
-            {Array.isArray(getClients.data)
-              ? getClients?.data?.reduce(
-                  (sum, c) => sum + Number(c.completedProjects || 0),
-                  0
-                )
-              : []}
-          </p>
-        </Card>
-      </div>
-
-      {/* Clients List */}
+      {/* Clients Table */}
       <Card className="overflow-hidden">
+        {/* Toolbar */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input
+              placeholder="Search clients..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <ArrowUpDown className="h-3 w-3" />
+              Sort
+            </button>
+            <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <SlidersHorizontal className="h-3 w-3" />
+              Filter
+            </button>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="border-b border-gray-200">
               <tr>
-                <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-gray-600">
-                  Client
+                <th className="w-10 px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer"
+                    checked={
+                      paginatedClients.length > 0 &&
+                      selectedIds.size === paginatedClients.length
+                    }
+                    onChange={toggleSelectAll}
+                  />
                 </th>
-                <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-gray-600">
-                  Contact
+                <th className="text-left px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <Building2 className="h-3.5 w-3.5" />
+                    Client
+                  </div>
                 </th>
-                <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-gray-600">
-                  Industry
+                <th className="text-left px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <Globe className="h-3.5 w-3.5" />
+                    Email domain
+                  </div>
                 </th>
-                <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-gray-600">
-                  Projects
+                <th className="text-left px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Industry
+                  </div>
                 </th>
-                <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-gray-600">
-                  Status
+                <th className="text-left px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <Target className="h-3.5 w-3.5" />
+                    Status
+                  </div>
                 </th>
-                <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-gray-600">
-                  Joined
+                <th className="text-left px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    Projects
+                  </div>
+                </th>
+                <th className="text-left px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Joined
+                  </div>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {paginatedClients.map((client, index) => (
                 <tr
                   key={client?.id ?? `temp-${index}-${client.name}`}
                   onClick={() => handleClientClick(client)}
-                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                  className="cursor-pointer transition-colors hover:bg-gray-50 group"
                 >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                  <td
+                    className="px-3 py-2.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                      checked={selectedIds.has(client.id)}
+                      onChange={() => toggleSelect(client.id)}
+                    />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <Avatar className="h-7 w-7 flex-shrink-0">
+                        <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
                           {client.name[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="text-gray-900">{client.name}</p>
-                      </div>
+                      <span className="text-sm text-gray-900 font-medium">
+                        {client.name}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Mail className="h-3 w-3 mr-2 flex-shrink-0" />
-                        {client.email}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Phone className="h-3 w-3 mr-2 flex-shrink-0" />
-                        {client.phone}
-                      </div>
-                    </div>
+                  <td className="px-3 py-2.5">
+                    {client.email && <DomainPill email={client.email} />}
                   </td>
-                  <td className="px-6 py-4">
-                    <Badge className="bg-purple-100 text-purple-700">
-                      {client.industry}
-                    </Badge>
+                  <td className="px-3 py-2.5">
+                    {client.industry && (
+                      <IndustryPill industry={client.industry} />
+                    )}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <FolderOpen className="h-3 w-3 mr-2" />
-                        <span className="text-green-600">
-                          {client.completedProjects}
-                        </span>
-                        <span className="mx-1">/</span>
-                        <span className="text-gray-500">
-                          {client.totalProjects}
-                        </span>
-                      </div>
-                    </div>
+                  <td className="px-3 py-2.5">
+                    <StatusBadge status={client.status} />
                   </td>
-                  <td className="px-6 py-4">
-                    <Badge
-                      className={
-                        client.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
-                      }
-                    >
-                      {client.status}
-                    </Badge>
+                  <td className="px-3 py-2.5">
+                    <ProjectsBadge
+                      active={Number(client.activeProjects || 0)}
+                      total={Number(client.totalProjects || 0)}
+                    />
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-3 w-3 mr-2" />
-                      {client?.createdAt
-                        ? new Date(client.createdAt).toDateString()
-                        : "—"}
-                    </div>
+                  <td className="px-3 py-2.5 text-xs text-gray-500">
+                    {client?.createdAt
+                      ? new Date(client.createdAt).toLocaleDateString()
+                      : "—"}
                   </td>
                 </tr>
               ))}
@@ -441,9 +483,9 @@ export default function Clients() {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to{" "}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
+          <div className="text-xs text-gray-500">
+            Showing {startIndex + 1}–
             {Math.min(startIndex + ITEMS_PER_PAGE, filteredClients.length)} of{" "}
             {filteredClients.length} clients
           </div>
@@ -453,23 +495,23 @@ export default function Clients() {
               size="sm"
               onClick={handlePreviousPage}
               disabled={currentPage === 1}
-              className="flex items-center"
+              className="h-7 text-xs"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
+              <ChevronLeft className="h-3.5 w-3.5 mr-1" />
               Previous
             </Button>
-            <div className="px-3 py-1 text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
-            </div>
+            <span className="px-2 py-1 text-xs text-gray-600">
+              {currentPage} / {totalPages}
+            </span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="flex items-center"
+              className="h-7 text-xs"
             >
               Next
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <ChevronRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>
         </div>
@@ -494,7 +536,7 @@ export default function Clients() {
                         <Input
                           placeholder={selectedClient.name}
                           onChange={(e) => setName(e.target.value)}
-                        ></Input>
+                        />
                       ) : (
                         selectedClient.name
                       )}
@@ -511,8 +553,7 @@ export default function Clients() {
                   variant="outline"
                   onClick={() => {
                     setDetailsOpen(false);
-                    const a = { id: selectedClient?.id };
-                    deleteMutation.mutate(a);
+                    deleteMutation.mutate({ id: selectedClient?.id });
                   }}
                 >
                   <Trash2 className="text-red-500" />
@@ -521,19 +562,11 @@ export default function Clients() {
 
               <div className="space-y-6 mt-6">
                 {/* Status and Industry */}
-                <div className="flex items-center space-x-3">
-                  <Badge
-                    className={
-                      selectedClient.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-700"
-                    }
-                  >
-                    {selectedClient.status}
-                  </Badge>
-                  <Badge className="bg-purple-100 text-purple-700">
-                    {selectedClient.industry}
-                  </Badge>
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={selectedClient.status} />
+                  {selectedClient.industry && (
+                    <IndustryPill industry={selectedClient.industry} />
+                  )}
                 </div>
 
                 {/* Contact Information */}
@@ -543,12 +576,11 @@ export default function Clients() {
                     <div className="flex items-center text-gray-700">
                       <Mail className="h-4 w-4 mr-3 flex-shrink-0" />
                       <span>
-                        {" "}
                         {isEditing ? (
                           <Input
                             placeholder={selectedClient.email}
                             onChange={(e) => setEmail(e.target.value)}
-                          ></Input>
+                          />
                         ) : (
                           selectedClient.email
                         )}
@@ -561,7 +593,7 @@ export default function Clients() {
                           <Input
                             placeholder={selectedClient.phone}
                             onChange={(e) => setPhone(e.target.value)}
-                          ></Input>
+                          />
                         ) : (
                           selectedClient.phone
                         )}
@@ -593,18 +625,17 @@ export default function Clients() {
 
                 {/* Notes */}
                 <div>
-                  <div>
-                    <h3 className="mb-3 text-gray-900">Notes</h3>
-
-                    {isEditing ? (
-                      <Input
-                        placeholder={selectedClient.notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                      ></Input>
-                    ) : (
-                      selectedClient.notes
-                    )}
-                  </div>
+                  <h3 className="mb-3 text-gray-900">Notes</h3>
+                  {isEditing ? (
+                    <Input
+                      placeholder={selectedClient.notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
+                  ) : (
+                    <p className="text-gray-700 text-sm">
+                      {selectedClient.notes || "—"}
+                    </p>
+                  )}
                 </div>
 
                 {/* Actions */}
