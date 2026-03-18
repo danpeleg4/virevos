@@ -5,6 +5,12 @@ import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import {
   AlertCircle,
   CheckCircle,
   Clock,
@@ -18,6 +24,7 @@ import {
   SlidersHorizontal,
   Briefcase,
   Calendar,
+  CheckIcon,
 } from "lucide-react";
 import { task_percentage } from "@/lib/task_percentage";
 import { Progress } from "@/app/components/ui/progress";
@@ -91,6 +98,9 @@ interface ProjectListProps {
 export function ProjectList({ projects, onSelect }: ProjectListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
+  const [sortField, setSortField] = useState<"name" | "progress" | "dueDate" | "priority">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [healthFilter, setHealthFilter] = useState<"all" | "on-track" | "at-risk" | "completed">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -108,14 +118,34 @@ export function ProjectList({ projects, onSelect }: ProjectListProps) {
     return () => window.removeEventListener("resize", calculate);
   }, []);
 
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTab =
-      activeTab === "all" ||
-      (activeTab === "active" && project.status !== "completed") ||
-      (activeTab === "completed" && project.status === "completed");
-    return matchesSearch && matchesTab;
-  });
+  const PRIORITY_ORDER: Record<string, number> = { high: 3, medium: 2, low: 1 };
+
+  const filteredProjects = projects
+    .filter((project) => {
+      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTab =
+        activeTab === "all" ||
+        (activeTab === "active" && project.status !== "completed") ||
+        (activeTab === "completed" && project.status === "completed");
+      const matchesHealth = healthFilter === "all" || project.health === healthFilter;
+      return matchesSearch && matchesTab && matchesHealth;
+    })
+    .sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "name") cmp = a.name.localeCompare(b.name);
+      else if (sortField === "progress") {
+        const pctA = a.stats.totalTasks ? a.stats.completedTasks / a.stats.totalTasks : 0;
+        const pctB = b.stats.totalTasks ? b.stats.completedTasks / b.stats.totalTasks : 0;
+        cmp = pctA - pctB;
+      } else if (sortField === "dueDate") {
+        const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+        cmp = da - db;
+      } else if (sortField === "priority") {
+        cmp = (PRIORITY_ORDER[a.priority] ?? 0) - (PRIORITY_ORDER[b.priority] ?? 0);
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -183,14 +213,74 @@ export function ProjectList({ projects, onSelect }: ProjectListProps) {
               className="pl-8 h-8 text-sm"
             />
           </div>
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-            <ArrowUpDown className="h-3 w-3" />
-            Sort
-          </button>
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-            <SlidersHorizontal className="h-3 w-3" />
-            Filter
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <ArrowUpDown className="h-3 w-3" />
+                Sort
+                {sortField !== "name" || sortDir !== "asc" ? (
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {(
+                [
+                  { label: "Name (A–Z)", field: "name", dir: "asc" },
+                  { label: "Name (Z–A)", field: "name", dir: "desc" },
+                  { label: "Progress (Highest)", field: "progress", dir: "desc" },
+                  { label: "Progress (Lowest)", field: "progress", dir: "asc" },
+                  { label: "Due Date (Earliest)", field: "dueDate", dir: "asc" },
+                  { label: "Due Date (Latest)", field: "dueDate", dir: "desc" },
+                  { label: "Priority (Highest)", field: "priority", dir: "desc" },
+                  { label: "Priority (Lowest)", field: "priority", dir: "asc" },
+                ] as const
+              ).map(({ label, field, dir }) => (
+                <DropdownMenuItem
+                  key={label}
+                  onClick={() => { setSortField(field); setSortDir(dir); setCurrentPage(1); }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {sortField === field && sortDir === dir && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <SlidersHorizontal className="h-3 w-3" />
+                Filter
+                {healthFilter !== "all" ? (
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {(
+                [
+                  { label: "All Health", value: "all" },
+                  { label: "On Track", value: "on-track" },
+                  { label: "At Risk", value: "at-risk" },
+                  { label: "Completed", value: "completed" },
+                ] as const
+              ).map(({ label, value }) => (
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => { setHealthFilter(value); setCurrentPage(1); }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {healthFilter === value && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="overflow-x-auto">

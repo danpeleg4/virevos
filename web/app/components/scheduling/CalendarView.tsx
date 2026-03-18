@@ -130,9 +130,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
       await queryClient.cancelQueries({ queryKey: ["meetings"] });
       const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
       queryClient.setQueryData<Event[]>(["meetings"], (old = []) =>
-        old.map((m) =>
-          m.id === id ? { ...m, dateTime: dateTime } : m
-        )
+        old.map((m) => (m.id === id ? { ...m, dateTime: dateTime } : m))
       );
       return { previousMeetings };
     },
@@ -215,9 +213,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
         {tabNav && (
-          <div className="flex items-center gap-1 shrink-0">
-            {tabNav}
-          </div>
+          <div className="flex items-center gap-1 shrink-0">{tabNav}</div>
         )}
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
@@ -333,7 +329,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
                       right: 4,
                       opacity: dragState?.eventId === meeting.id ? 0.4 : 1,
                     }}
-                    className={`group rounded-lg border cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md overflow-hidden px-2 py-1 ${
+                    className={`group rounded-lg border cursor-pointer active:cursor-grabbing transition-shadow hover:shadow-md overflow-hidden px-2 py-1 ${
                       meeting.status === "active"
                         ? "bg-red-50 border-red-200 text-red-900"
                         : meeting.status === "upcoming"

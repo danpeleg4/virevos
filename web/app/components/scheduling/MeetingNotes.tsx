@@ -19,6 +19,12 @@ import {
   SelectValue,
 } from "../ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import {
   FileText,
   Mic,
   Search,
@@ -34,6 +40,7 @@ import {
   ChevronRight,
   ArrowUpDown,
   SlidersHorizontal,
+  CheckIcon,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -44,6 +51,8 @@ const ROW_HEIGHT = 52;
 export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sortField, setSortField] = useState<"date" | "title" | "duration" | "attendees">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedNote, setSelectedNote] = useState<Event | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -111,7 +120,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
     fn();
   }, [detailsOpen, selectedNote?.hasTranscript]);
 
-  const filteredNotes =
+  const filteredNotes = (
     meetings?.data?.filter((note) => {
       const matchesSearch =
         note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -120,7 +129,15 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
         filterStatus === "all" ||
         (filterStatus === "with-transcript" && note.hasTranscript);
       return matchesSearch && matchesFilter;
-    }) ?? [];
+    }) ?? []
+  ).sort((a, b) => {
+    let cmp = 0;
+    if (sortField === "date") cmp = new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+    else if (sortField === "title") cmp = a.title.localeCompare(b.title);
+    else if (sortField === "duration") cmp = (a.duration ?? 0) - (b.duration ?? 0);
+    else if (sortField === "attendees") cmp = (a.attendees?.length ?? 0) - (b.attendees?.length ?? 0);
+    return sortDir === "asc" ? cmp : -cmp;
+  });
 
   const totalPages = Math.max(
     1,
@@ -212,14 +229,72 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
           />
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-            <ArrowUpDown className="h-3 w-3" />
-            Sort
-          </button>
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-            <SlidersHorizontal className="h-3 w-3" />
-            Filter
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <ArrowUpDown className="h-3 w-3" />
+                Sort
+                {sortField !== "date" || sortDir !== "desc" ? (
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {(
+                [
+                  { label: "Date (Newest)", field: "date", dir: "desc" },
+                  { label: "Date (Oldest)", field: "date", dir: "asc" },
+                  { label: "Title (A–Z)", field: "title", dir: "asc" },
+                  { label: "Title (Z–A)", field: "title", dir: "desc" },
+                  { label: "Duration (Longest)", field: "duration", dir: "desc" },
+                  { label: "Duration (Shortest)", field: "duration", dir: "asc" },
+                  { label: "Attendees (Most)", field: "attendees", dir: "desc" },
+                  { label: "Attendees (Fewest)", field: "attendees", dir: "asc" },
+                ] as const
+              ).map(({ label, field, dir }) => (
+                <DropdownMenuItem
+                  key={label}
+                  onClick={() => { setSortField(field); setSortDir(dir); setPage(1); }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {sortField === field && sortDir === dir && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <SlidersHorizontal className="h-3 w-3" />
+                Filter
+                {filterStatus !== "all" ? (
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {(
+                [
+                  { label: "All Notes", value: "all" },
+                  { label: "With Transcript", value: "with-transcript" },
+                ] as const
+              ).map(({ label, value }) => (
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => { setFilterStatus(value); setPage(1); }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {filterStatus === value && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
