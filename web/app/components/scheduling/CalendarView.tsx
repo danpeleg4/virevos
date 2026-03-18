@@ -33,7 +33,7 @@ function formatHour(hour: number) {
   return `${h}:00 ${ampm}`;
 }
 
-function EventStatusPill({ status }: { status: string }) {
+function EventStatusPill({ status }: { status: string | undefined }) {
   if (status === "active") {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-red-100 text-red-700 border border-red-200">
