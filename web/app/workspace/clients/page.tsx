@@ -36,6 +36,7 @@ import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addAClient, deleteClient, updateExistingClient } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
+import { Checkbox } from "@/app/components/ui/checkbox";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -365,175 +366,173 @@ export default function Clients() {
 
       {/* Clients Table */}
       <div ref={tableRef}>
-      <Card className="overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-            <Input
-              placeholder="Search clients..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
+        <Card className="overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <Input
+                placeholder="Search clients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 ml-auto">
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <ArrowUpDown className="h-3 w-3" />
+                Sort
+              </button>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <SlidersHorizontal className="h-3 w-3" />
+                Filter
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 ml-auto">
-            <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-              <ArrowUpDown className="h-3 w-3" />
-              Sort
-            </button>
-            <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-              <SlidersHorizontal className="h-3 w-3" />
-              Filter
-            </button>
-          </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-gray-200">
-              <tr>
-                <th className="w-10 px-3 py-2.5">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer"
-                    checked={
-                      paginatedClients.length > 0 &&
-                      selectedIds.size === paginatedClients.length
-                    }
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th className="text-left px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                    <Building2 className="h-3.5 w-3.5" />
-                    Client
-                  </div>
-                </th>
-                <th className="text-left px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                    <Globe className="h-3.5 w-3.5" />
-                    Email domain
-                  </div>
-                </th>
-                <th className="text-left px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                    <Briefcase className="h-3.5 w-3.5" />
-                    Industry
-                  </div>
-                </th>
-                <th className="text-left px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                    <Target className="h-3.5 w-3.5" />
-                    Status
-                  </div>
-                </th>
-                <th className="text-left px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                    <FolderOpen className="h-3.5 w-3.5" />
-                    Projects
-                  </div>
-                </th>
-                <th className="text-left px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Joined
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {paginatedClients.map((client, index) => (
-                <tr
-                  key={client?.id ?? `temp-${index}-${client.name}`}
-                  onClick={() => handleClientClick(client)}
-                  className="cursor-pointer transition-colors hover:bg-gray-50 group"
-                >
-                  <td
-                    className="px-3 py-2.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                      checked={selectedIds.has(client.id)}
-                      onChange={() => toggleSelect(client.id)}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-gray-200">
+                <tr>
+                  <th className="w-10 px-3 py-2.5">
+                    <Checkbox
+                      className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer"
+                      checked={
+                        paginatedClients.length > 0 &&
+                        selectedIds.size === paginatedClients.length
+                      }
+                      onCheckedChange={toggleSelectAll}
                     />
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <Avatar className="h-7 w-7 flex-shrink-0">
-                        <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
-                          {client.name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-900 font-medium">
-                        {client.name}
-                      </span>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Building2 className="h-3.5 w-3.5" />
+                      Client
                     </div>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    {client.email && <DomainPill email={client.email} />}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    {client.industry && (
-                      <IndustryPill industry={client.industry} />
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={client.status} />
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <ProjectsBadge
-                      active={Number(client.activeProjects || 0)}
-                      total={Number(client.totalProjects || 0)}
-                    />
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-gray-500">
-                    {client?.createdAt
-                      ? new Date(client.createdAt).toLocaleDateString()
-                      : "—"}
-                  </td>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Globe className="h-3.5 w-3.5" />
+                      Email domain
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Briefcase className="h-3.5 w-3.5" />
+                      Industry
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Target className="h-3.5 w-3.5" />
+                      Status
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      Projects
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Joined
+                    </div>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedClients.map((client, index) => (
+                  <tr
+                    key={client?.id ?? `temp-${index}-${client.name}`}
+                    onClick={() => handleClientClick(client)}
+                    className="cursor-pointer transition-colors hover:bg-gray-50 group"
+                  >
+                    <td
+                      className="px-3 py-2.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer transition-opacity"
+                        checked={selectedIds.has(client.id)}
+                        onCheckedChange={() => toggleSelect(client.id)}
+                      />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-7 w-7 flex-shrink-0">
+                          <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
+                            {client.name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-gray-900 font-medium pl-3">
+                          {client.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {client.email && <DomainPill email={client.email} />}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {client.industry && (
+                        <IndustryPill industry={client.industry} />
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <StatusBadge status={client.status} />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <ProjectsBadge
+                        active={Number(client.activeProjects || 0)}
+                        total={Number(client.totalProjects || 0)}
+                      />
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-gray-500">
+                      {client?.createdAt
+                        ? new Date(client.createdAt).toLocaleDateString()
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Pagination */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
-          <div className="text-xs text-gray-500">
-            Showing {startIndex + 1}–
-            {Math.min(startIndex + itemsPerPage, filteredClients.length)} of{" "}
-            {filteredClients.length} clients
+          {/* Pagination */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
+            <div className="text-xs text-gray-500">
+              Showing {startIndex + 1}–
+              {Math.min(startIndex + itemsPerPage, filteredClients.length)} of{" "}
+              {filteredClients.length} clients
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                className="h-7 text-xs"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                Previous
+              </Button>
+              <span className="px-2 py-1 text-xs text-gray-600">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="h-7 text-xs"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-              className="h-7 text-xs"
-            >
-              <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-              Previous
-            </Button>
-            <span className="px-2 py-1 text-xs text-gray-600">
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="h-7 text-xs"
-            >
-              Next
-              <ChevronRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
-          </div>
-        </div>
-      </Card>
+        </Card>
       </div>
 
       {/* Client Details Modal */}
