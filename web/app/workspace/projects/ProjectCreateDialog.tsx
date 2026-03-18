@@ -60,11 +60,6 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 className="text-2xl sm:text-3xl text-gray-900">Projects</h1>
-        <p className="text-gray-600 mt-1">Track and manage all your projects</p>
-      </div>
-
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <Button className="cursor-pointer">
@@ -99,7 +94,9 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
                   (optional)
                 </span>
               </Label>
-              <Select onValueChange={(val) => setClient(val === "none" ? null : val)}>
+              <Select
+                onValueChange={(val) => setClient(val === "none" ? null : val)}
+              >
                 <SelectTrigger className="mt-2 cursor-pointer">
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>

@@ -73,10 +73,12 @@ function CalendarContent() {
           <MeetingNotes />
         </TabsContent>
 
-        <TabsContent value="preferences" className="flex-1 min-h-0 overflow-y-auto">
+        <TabsContent
+          value="preferences"
+          className="flex-1 min-h-0 overflow-y-auto"
+        >
           <VideoMeetingPreferences />
         </TabsContent>
-
       </Tabs>
     </div>
   );
