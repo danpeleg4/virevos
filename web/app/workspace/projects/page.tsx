@@ -79,9 +79,15 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {projectsQuery.isLoading ? null : (
-        <ProjectCreateDialog clients={projectsQuery.data?.allClients ?? []} />
-      )}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl text-gray-900">Projects</h1>
+          <p className="mt-1 text-gray-600">Track and manage your projects</p>
+        </div>
+        {!projectsQuery.isLoading && (
+          <ProjectCreateDialog clients={projectsQuery.data?.allClients ?? []} />
+        )}
+      </div>
 
       {projectsQuery.data && (
         <ProjectList

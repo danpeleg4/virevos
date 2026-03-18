@@ -3,13 +3,12 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Calendar, Flag, AlignLeft, FolderOpen } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -20,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { Separator } from "@/app/components/ui/separator";
 import { useState } from "react";
 import { addProjectTasksAction } from "@/lib/tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -63,7 +63,6 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
       ]);
       const prevAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
 
-      // optimistic update
       const optimisticTask = { ...newTask };
 
       queryClient.setQueryData(
@@ -79,7 +78,6 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
       return { prevProjectTasks, prevAllTasks };
     },
     onError: (_err, _newTask, context) => {
-      // rollback if mutation fails
       queryClient.setQueryData(
         ["projectsTasks", projectId],
         context?.prevProjectTasks
@@ -87,11 +85,18 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
       queryClient.setQueryData(["allTasks"], context?.prevAllTasks);
     },
     onSettled: () => {
-      // refetch to sync with server
       queryClient.invalidateQueries({ queryKey: ["projectsTasks", projectId] });
       queryClient.invalidateQueries({ queryKey: ["allTasks"] });
     },
   });
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setPriority("");
+    setDueDate("");
+    if (!projectId) setSelectedProjectId(null);
+  };
 
   const submitTask = async () => {
     setDialogOpen(false);
@@ -103,8 +108,8 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
       priority,
       projectName:
         projects?.data?.find((p) => p.id === selectedProjectId)?.name || "",
-      dueDate,
-      status: "success",
+      dueDate: dueDate || null,
+      status: "todo",
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -112,15 +117,17 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
     };
 
     addTask.mutate(payload);
-
-    setTitle("");
-    setDescription("");
-    setPriority("");
-    setDueDate("");
+    resetForm();
   };
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) resetForm();
+      }}
+    >
       <DialogTrigger asChild>
         <Button className="cursor-pointer">
           <Plus className="h-4 w-4 mr-2" />
@@ -128,42 +135,52 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
-          <DialogDescription>Add a task to your project</DialogDescription>
+          <DialogTitle className="text-xl">Create New Task</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
-          <div>
-            <Label>Task Title</Label>
+        <div className="space-y-5 mt-2">
+          {/* Title */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Task Title</Label>
             <Input
-              placeholder="Review designs"
-              className="mt-2"
+              placeholder="e.g. Review designs for TechCorp"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
-          <div>
-            <Label>Description</Label>
+          {/* Description */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium flex items-center gap-1.5">
+              <AlignLeft className="h-3.5 w-3.5 text-muted-foreground" />
+              Description
+              <span className="text-muted-foreground font-normal text-xs">
+                (optional)
+              </span>
+            </Label>
             <Textarea
-              placeholder="Review designs for TechCorp website and brand refresh"
-              className="mt-2"
+              placeholder="Add more details about this task..."
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className="resize-none"
             />
           </div>
 
+          {/* Project (only if no projectId provided) */}
           {!projectId && (
-            <div>
-              <Label>Project</Label>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                Project
+              </Label>
               <Select
                 onValueChange={(val) => setSelectedProjectId(Number(val))}
               >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select project" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
                   {projects?.data?.map((project: Project) => (
@@ -176,37 +193,68 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
             </div>
           )}
 
+          {/* Priority + Due Date */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Priority</Label>
-              <Select onValueChange={setPriority}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Priority" />
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Flag className="h-3.5 w-3.5 text-muted-foreground" />
+                Priority
+              </Label>
+              <Select onValueChange={setPriority} value={priority}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="high">
+                    <span className="flex items-center gap-2">
+                      <Flag className="h-3.5 w-3.5 text-red-500" />
+                      High
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <span className="flex items-center gap-2">
+                      <Flag className="h-3.5 w-3.5 text-yellow-500" />
+                      Medium
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="low">
+                    <span className="flex items-center gap-2">
+                      <Flag className="h-3.5 w-3.5 text-gray-400" />
+                      Low
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label>Due Date</Label>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                Due Date
+                <span className="text-muted-foreground font-normal text-xs">
+                  (optional)
+                </span>
+              </Label>
               <Input
                 type="date"
-                className="mt-2"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+          <Separator />
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={submitTask}>Create Task</Button>
+            <Button onClick={submitTask} disabled={!title.trim()}>
+              Create Task
+            </Button>
           </div>
         </div>
       </DialogContent>

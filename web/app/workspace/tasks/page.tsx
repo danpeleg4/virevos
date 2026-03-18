@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../components/ui/tabs";
-import { Search, Flag } from "lucide-react";
+  Search,
+  Flag,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  SlidersHorizontal,
+  ListTodo,
+  Briefcase,
+  Calendar,
+} from "lucide-react";
 import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
 import AddNewTask from "@/app/components/AddNewTask";
@@ -19,13 +23,85 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateTaskStatus } from "@/lib/tasks";
 import { Task } from "@/types/tasks";
 
+const ROW_HEIGHT = 48;
+
+const STATUS_TABS = ["all", "todo", "in-progress", "completed"] as const;
+type StatusTab = (typeof STATUS_TABS)[number];
+
+function PriorityBadge({ priority }: { priority: string }) {
+  const styles =
+    priority === "high"
+      ? "bg-red-50 text-red-700 border border-red-200"
+      : priority === "medium"
+        ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
+        : "bg-gray-50 text-gray-500 border border-gray-200";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${styles}`}
+    >
+      <Flag className="h-3 w-3" />
+      {priority}
+    </span>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === "completed") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+        Completed
+      </span>
+    );
+  }
+  if (status === "in-progress") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+        In Progress
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+      To Do
+    </span>
+  );
+}
+
+function ProjectPill({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
+      <span className="w-2 h-2 rounded-full bg-gray-400 inline-block flex-shrink-0" />
+      {name}
+    </span>
+  );
+}
+
 export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState<StatusTab>("all");
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const calculate = () => {
+      if (!tableRef.current) return;
+      const tableTop = tableRef.current.getBoundingClientRect().top;
+      const reserved = 40 + 50 + 50 + 24;
+      const available = window.innerHeight - tableTop - reserved;
+      setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
+    };
+    calculate();
+    window.addEventListener("resize", calculate);
+    return () => window.removeEventListener("resize", calculate);
+  }, []);
 
   const getTasks = useQuery({
     queryKey: ["allTasks"],
@@ -49,24 +125,15 @@ export default function Tasks() {
     }) => {
       await updateTaskStatus(status, taskId);
     },
-
     onMutate: async ({ status, taskId }) => {
-      await queryClient.cancelQueries({
-        queryKey: ["allTasks"],
-      });
-
+      await queryClient.cancelQueries({ queryKey: ["allTasks"] });
       const previousTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-
-      // Update ONLY the task, keep order
       queryClient.setQueryData<Task[]>(["allTasks"], (old) =>
         old?.map((task) => (task.id === taskId ? { ...task, status } : task))
       );
-
       return { previousTasks };
     },
-
     onError: (_err, _vars, context) => {
-      // rollback if API fails
       queryClient.setQueryData(["allTasks"], context?.previousTasks);
     },
   });
@@ -76,25 +143,41 @@ export default function Tasks() {
     setTaskDetailOpen(true);
   };
 
-  const filteredTasks = getTasks?.data?.filter((task: Task) => {
-    const matchesSearch = task.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesTab =
-      activeTab === "all" ||
-      (activeTab === "todo" && task.status === "todo") ||
-      (activeTab === "in-progress" && task.status === "in-progress") ||
-      (activeTab === "completed" && task.status === "completed");
-    return matchesSearch && matchesTab;
-  });
+  const filteredTasks =
+    getTasks?.data?.filter((task: Task) => {
+      const matchesSearch = task.title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesTab =
+        activeTab === "all" ||
+        (activeTab === "todo" && task.status === "todo") ||
+        (activeTab === "in-progress" && task.status === "in-progress") ||
+        (activeTab === "completed" && task.status === "completed");
+      return matchesSearch && matchesTab;
+    }) ?? [];
 
   const taskCounts = {
-    all: getTasks?.data?.length,
-    todo: getTasks?.data?.filter((t: Task) => t.status === "todo").length,
-    inProgress: getTasks?.data?.filter((t: Task) => t.status === "in-progress")
-      .length,
-    completed: getTasks?.data?.filter((t: Task) => t.status === "completed")
-      .length,
+    all: getTasks?.data?.length ?? 0,
+    todo: getTasks?.data?.filter((t: Task) => t.status === "todo").length ?? 0,
+    "in-progress":
+      getTasks?.data?.filter((t: Task) => t.status === "in-progress").length ??
+      0,
+    completed:
+      getTasks?.data?.filter((t: Task) => t.status === "completed").length ?? 0,
+  };
+
+  const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTasks = filteredTasks.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
+  const TAB_LABELS: Record<StatusTab, string> = {
+    all: "All",
+    todo: "To Do",
+    "in-progress": "In Progress",
+    completed: "Completed",
   };
 
   return (
@@ -109,114 +192,203 @@ export default function Tasks() {
           <AddNewTask />
         </div>
       </div>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Search tasks..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="min-w-max">
-            <TabsTrigger className="cursor-pointer" value="all">
-              All ({taskCounts.all})
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="todo">
-              To Do ({taskCounts.todo})
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="in-progress">
-              In Progress ({taskCounts.inProgress})
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="completed">
-              Completed ({taskCounts.completed})
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      {/* Tasks Table */}
+      <div ref={tableRef}>
+        <Card className="overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+            {/* Status tabs */}
+            <div className="flex items-center gap-1">
+              {STATUS_TABS.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    setCurrentPage(1);
+                  }}
+                  className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
+                    activeTab === tab
+                      ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {TAB_LABELS[tab]}
+                  <span
+                    className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                      activeTab === tab
+                        ? "bg-gray-100 text-gray-600"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {tab === "in-progress"
+                      ? taskCounts["in-progress"]
+                      : taskCounts[tab as keyof typeof taskCounts]}
+                  </span>
+                </button>
+              ))}
+            </div>
 
-        <TabsContent value={activeTab} className="mt-6">
-          <Card className="divide-y">
-            {filteredTasks?.map((task: Task) => (
-              <div
-                key={task.id}
-                className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => handleTaskClick(task)}
-              >
-                <div className="flex items-start space-x-4">
-                  <Checkbox
-                    checked={task.status === "completed"}
-                    onCheckedChange={(checked) =>
-                      changeTaskStatus.mutate({
-                        status: checked ? "completed" : "todo",
-                        taskId: task.id,
-                      })
-                    }
-                    className="mt-1"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3
-                          className={`text-gray-900 ${
-                            task.status === "completed"
-                              ? "line-through text-gray-500"
-                              : ""
-                          }`}
-                        >
-                          {task.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {task.projectName}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <Badge
-                          variant="outline"
-                          className={
-                            task.priority === "high"
-                              ? "border-red-200 text-red-700"
-                              : task.priority === "medium"
-                                ? "border-yellow-200 text-yellow-700"
-                                : "border-gray-200 text-gray-700"
-                          }
-                        >
-                          <Flag className="h-3 w-3 mr-1" />
-                          {task.priority}
-                        </Badge>
-                        <Badge
-                          className={
-                            task.status === "completed"
-                              ? "bg-green-100 text-green-700"
-                              : task.status === "in-progress"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-700"
-                          }
-                        >
-                          {task.status === "in-progress"
-                            ? "In Progress"
-                            : task.status === "completed"
-                              ? "Completed"
-                              : "To Do"}
-                        </Badge>
-                      </div>
+            <div className="relative flex-1 max-w-xs ml-auto">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+            <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <ArrowUpDown className="h-3 w-3" />
+              Sort
+            </button>
+            <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <SlidersHorizontal className="h-3 w-3" />
+              Filter
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-gray-200">
+                <tr>
+                  <th className="w-10 px-3 py-2.5" />
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <ListTodo className="h-3.5 w-3.5" />
+                      Task
                     </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {filteredTasks?.length === 0 && (
-              <div className="p-12 text-center">
-                <p className="text-gray-500">No tasks found</p>
-              </div>
-            )}
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Briefcase className="h-3.5 w-3.5" />
+                      Project
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Flag className="h-3.5 w-3.5" />
+                      Priority
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      Status
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Due date
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedTasks.map((task: Task) => (
+                  <tr
+                    key={task.id}
+                    onClick={() => handleTaskClick(task)}
+                    className="cursor-pointer transition-colors hover:bg-gray-50 group"
+                  >
+                    <td
+                      className="px-3 py-2.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        checked={task.status === "completed"}
+                        onCheckedChange={(checked) =>
+                          changeTaskStatus.mutate({
+                            status: checked ? "completed" : "todo",
+                            taskId: task.id,
+                          })
+                        }
+                        className="cursor-pointer h-3.5 w-3.5 data-[state=checked]:opacity-100 transition-opacity"
+                      />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span
+                        className={`text-sm font-medium ${
+                          task.status === "completed"
+                            ? "line-through text-gray-400"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {task.title}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {task.projectName && (
+                        <ProjectPill name={task.projectName} />
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <PriorityBadge priority={task.priority} />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <StatusBadge status={task.status} />
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-gray-500">
+                      {task.dueDate
+                        ? new Date(task.dueDate).toLocaleDateString()
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+                {paginatedTasks.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-3 py-12 text-center text-sm text-gray-400"
+                    >
+                      No tasks found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
+            <div className="text-xs text-gray-500">
+              Showing {filteredTasks.length === 0 ? 0 : startIndex + 1}–
+              {Math.min(startIndex + itemsPerPage, filteredTasks.length)} of{" "}
+              {filteredTasks.length} tasks
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-7 text-xs"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                Previous
+              </Button>
+              <span className="px-2 py-1 text-xs text-gray-600">
+                {currentPage} / {Math.max(1, totalPages)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="h-7 text-xs"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Task Detail Modal */}
       <TaskDetailModal

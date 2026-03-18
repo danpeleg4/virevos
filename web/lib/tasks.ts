@@ -47,7 +47,7 @@ export async function changePriorityStatus(taskId: number, priority: string) {
     .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 }
 
-export async function updateTaskDueDate(taskId: number, dueDate: string) {
+export async function updateTaskDueDate(taskId: number, dueDate: string | null) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
   await db

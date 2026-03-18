@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Separator } from "./ui/separator";
-import { Calendar, Flag, Trash2, FileText } from "lucide-react";
+import { Calendar, Flag, Trash2, AlignLeft, Clock } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   changePriorityStatus,
@@ -23,6 +23,18 @@ import {
   updateTaskStatus,
 } from "@/lib/tasks";
 import { Task, TaskDetailModalProps } from "@/types/tasks";
+
+const STATUS_CONFIG = {
+  completed: { label: "Completed", className: "bg-green-100 text-green-700 border-green-200" },
+  "in-progress": { label: "In Progress", className: "bg-blue-100 text-blue-700 border-blue-200" },
+  todo: { label: "To Do", className: "bg-gray-100 text-gray-600 border-gray-200" },
+} as const;
+
+const PRIORITY_CONFIG = {
+  high: { label: "High", color: "text-red-500" },
+  medium: { label: "Medium", color: "text-yellow-500" },
+  low: { label: "Low", color: "text-gray-400" },
+} as const;
 
 export function TaskDetailModal({
   projectId,
@@ -37,12 +49,8 @@ export function TaskDetailModal({
   const queryKey = ["projectsTasks", projectId];
 
   useEffect(() => {
-    if (task?.dueDate) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDueDate(task.dueDate.slice(0, 10)); // ISO → yyyy-mm-dd
-    } else {
-      setDueDate("");
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDueDate(task?.dueDate ? task.dueDate.slice(0, 10) : "");
   }, [task?.id, task?.dueDate]);
 
   useEffect(() => {
@@ -91,7 +99,6 @@ export function TaskDetailModal({
   const changeTaskStatus = useMutation({
     mutationFn: ({ status, taskId }: { status: string; taskId: number }) =>
       updateTaskStatus(status, taskId),
-
     onMutate: async ({ status, taskId }) => {
       await queryClient.cancelQueries({ queryKey });
       await queryClient.cancelQueries({ queryKey: ["allTasks"] });
@@ -99,24 +106,19 @@ export function TaskDetailModal({
       const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
       const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
 
-      // Optimistic update for project-specific tasks
       queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
         old.map((t) => (t.id === taskId ? { ...t, status } : t))
       );
-
-      // Optimistic update for allTasks
       queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
         old.map((t) => (t.id === taskId ? { ...t, status } : t))
       );
 
       return { previousProjectTasks, previousAllTasks };
     },
-
     onError: (_err, _vars, context) => {
       queryClient.setQueryData(queryKey, context?.previousProjectTasks);
       queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
     },
-
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ["allTasks"] });
@@ -158,7 +160,7 @@ export function TaskDetailModal({
   });
 
   const changeDueDate = useMutation({
-    mutationFn: ({ taskId, dueDate }: { taskId: number; dueDate: string }) =>
+    mutationFn: ({ taskId, dueDate }: { taskId: number; dueDate: string | null }) =>
       updateTaskDueDate(taskId, dueDate),
     onMutate: async ({ taskId, dueDate }) => {
       await queryClient.cancelQueries({ queryKey });
@@ -218,75 +220,77 @@ export function TaskDetailModal({
     return "just now";
   }
 
+  const statusConfig =
+    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.todo;
+  const priorityConfig =
+    PRIORITY_CONFIG[priority as keyof typeof PRIORITY_CONFIG];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="m-4 max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <DialogTitle className="text-2xl mb-2">{task?.title}</DialogTitle>
-              <div className="flex items-center space-x-2">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b">
+          <DialogHeader>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-xl font-semibold leading-snug mb-2">
+                  {task?.title}
+                </DialogTitle>
                 <Badge
-                  className={
-                    status === "completed"
-                      ? "bg-green-100 text-green-700"
-                      : status === "in-progress"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-gray-100 text-gray-700"
-                  }
+                  variant="outline"
+                  className={`text-xs font-medium ${statusConfig.className}`}
                 >
-                  {status === "in-progress"
-                    ? "In Progress"
-                    : status === "completed"
-                      ? "Completed"
-                      : "To Do"}
+                  {statusConfig.label}
                 </Badge>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
               <Button
-                className="cursor-pointer"
-                variant="outline"
+                variant="ghost"
                 size="sm"
+                className="text-muted-foreground hover:text-red-500 hover:bg-red-50 cursor-pointer shrink-0"
                 onClick={() => deleteSomeTask.mutate()}
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
+        {/* Body */}
+        <div className="grid grid-cols-1 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x">
+          {/* Main content */}
+          <div className="sm:col-span-3 px-6 py-5 space-y-4">
             <div>
-              <Label className="flex items-center mb-2">
-                <FileText className="h-4 w-4 mr-2" />
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
+                <AlignLeft className="h-3.5 w-3.5" />
                 Description
               </Label>
-              <p className="text-sm text-gray-700">{task?.description}</p>
+              {task?.description ? (
+                <p className="text-sm text-foreground leading-relaxed">
+                  {task.description}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  No description provided.
+                </p>
+              )}
             </div>
-
-            <Separator />
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-4">
+          <div className="sm:col-span-2 px-6 py-5 space-y-5 bg-muted/20">
             {/* Status */}
-            <div>
-              <Label className="mb-2 block">Status</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Status
+              </Label>
               <Select
                 value={status}
                 onValueChange={(newStatus) => {
                   setStatus(newStatus);
-                  changeTaskStatus.mutate({
-                    status: newStatus,
-                    taskId: task.id,
-                  });
+                  changeTaskStatus.mutate({ status: newStatus, taskId: task.id });
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-sm bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -298,41 +302,47 @@ export function TaskDetailModal({
             </div>
 
             {/* Priority */}
-            <div>
-              <Label className="flex items-center mb-2">
-                <Flag className="h-4 w-4 mr-2" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Flag className="h-3 w-3" />
                 Priority
               </Label>
               <Select
                 value={priority}
-                defaultValue={task?.priority}
-                onValueChange={(newStatus) => {
-                  setPriority(newStatus);
+                onValueChange={(newPriority) => {
+                  setPriority(newPriority);
                   changeThePriorityStatus.mutate({
-                    priority: newStatus,
+                    priority: newPriority,
                     taskId: task.id,
                   });
                 }}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className="h-8 text-sm bg-background">
+                  <SelectValue>
+                    {priorityConfig && (
+                      <span className="flex items-center gap-2">
+                        <Flag className={`h-3.5 w-3.5 ${priorityConfig.color}`} />
+                        {priorityConfig.label}
+                      </span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="high">
-                    <span className="flex items-center">
-                      <Flag className="h-4 w-4 mr-2 text-red-500" />
+                    <span className="flex items-center gap-2">
+                      <Flag className="h-3.5 w-3.5 text-red-500" />
                       High
                     </span>
                   </SelectItem>
                   <SelectItem value="medium">
-                    <span className="flex items-center">
-                      <Flag className="h-4 w-4 mr-2 text-yellow-500" />
+                    <span className="flex items-center gap-2">
+                      <Flag className="h-3.5 w-3.5 text-yellow-500" />
                       Medium
                     </span>
                   </SelectItem>
                   <SelectItem value="low">
-                    <span className="flex items-center">
-                      <Flag className="h-4 w-4 mr-2 text-gray-500" />
+                    <span className="flex items-center gap-2">
+                      <Flag className="h-3.5 w-3.5 text-gray-400" />
                       Low
                     </span>
                   </SelectItem>
@@ -341,19 +351,20 @@ export function TaskDetailModal({
             </div>
 
             {/* Due Date */}
-            <div>
-              <Label className="flex items-center mb-2">
-                <Calendar className="h-4 w-4 mr-2" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Calendar className="h-3 w-3" />
                 Due Date
               </Label>
               <Input
                 type="date"
                 value={dueDate}
+                className="h-8 text-sm bg-background"
                 onChange={(e) => setDueDate(e.target.value)}
                 onBlur={() =>
                   changeDueDate.mutate({
                     taskId: task.id,
-                    dueDate: dueDate,
+                    dueDate: dueDate || null,
                   })
                 }
               />
@@ -361,14 +372,15 @@ export function TaskDetailModal({
 
             <Separator />
 
-            {/* Activity */}
-            <div>
-              <Label className="mb-2 block text-xs text-gray-600">
+            {/* Timestamps */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Clock className="h-3 w-3" />
                 Activity
               </Label>
-              <div className="space-y-2 text-xs text-gray-600">
+              <div className="space-y-1 text-xs text-muted-foreground">
                 <p>Created {timeAgo(task?.createdAt)}</p>
-                <p>Last updated {timeAgo(task?.updatedAt)}</p>
+                <p>Updated {timeAgo(task?.updatedAt)}</p>
               </div>
             </div>
           </div>

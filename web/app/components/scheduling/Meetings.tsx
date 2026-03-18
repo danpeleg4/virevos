@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
+import { CardContent, Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import {
   Dialog,
@@ -25,14 +24,42 @@ import {
   ChevronRight,
   Search,
   FileText,
+  ArrowUpDown,
+  SlidersHorizontal,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
+
+const ROW_HEIGHT = 48;
+
+function StatusBadge({ status }: { status: string | undefined }) {
+  if (status === "active") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 text-red-700 border border-red-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+        Live
+      </span>
+    );
+  }
+  if (status === "upcoming") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+        Upcoming
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+      Ended
+    </span>
+  );
+}
 
 export function Meetings() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,14 +68,26 @@ export function Meetings() {
   const [meetingName, setMeetingName] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [copied, setCopied] = useState(false);
-  const [activeView, setActiveView] = useState<
-    "home" | "in-meeting" | "summary" | "transcription"
-  >("home");
+  const [activeView, setActiveView] = useState<"home" | "summary">("home");
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const tableRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const PAGE_SIZE = 4;
+
+  useEffect(() => {
+    const calculate = () => {
+      if (!tableRef.current) return;
+      const tableTop = tableRef.current.getBoundingClientRect().top;
+      const reserved = 40 + 50 + 50 + 24;
+      const available = window.innerHeight - tableTop - reserved;
+      setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
+    };
+    calculate();
+    window.addEventListener("resize", calculate);
+    return () => window.removeEventListener("resize", calculate);
+  }, []);
 
   const meetings = useQuery({
     queryKey: ["meetings"],
@@ -98,192 +137,218 @@ export function Meetings() {
     );
   }
 
-  const filteredMeetings = meetings?.data?.filter(
-    (event) =>
-      event.isMeeting &&
-      (!searchQuery ||
-        decodeURIComponent(event.title)
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()))
-  );
+  const filteredMeetings =
+    meetings?.data?.filter(
+      (event) =>
+        event.isMeeting &&
+        (!searchQuery ||
+          decodeURIComponent(event.title)
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()))
+    ) ?? [];
+
   const totalPages = Math.max(
     1,
-    Math.ceil((filteredMeetings?.length ?? 0) / PAGE_SIZE)
+    Math.ceil(filteredMeetings.length / itemsPerPage)
   );
-  const paginatedMeetings = filteredMeetings?.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
+  const startIndex = (page - 1) * itemsPerPage;
+  const paginatedMeetings = filteredMeetings.slice(
+    startIndex,
+    startIndex + itemsPerPage
   );
-
-  const color = (meeting: Event) => {
-    switch (meeting.status) {
-      case "active":
-        return "text-red-600";
-      case "upcoming":
-        return "text-blue-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
-  const bgColor = (meeting: Event) => {
-    switch (meeting.status) {
-      case "active":
-        return "bg-red-100";
-      case "upcoming":
-        return "bg-blue-100";
-      default:
-        return "bg-gray-100";
-    }
-  };
 
   return (
-    <div className={`px-6 pt-3 pb-6 space-y-4`}>
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search meetings..."
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Meetings List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl">Your Meetings</h2>
-          <Button onClick={() => setStartModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Start New Meeting
+    <div ref={tableRef}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Input
+            placeholder="Search meetings..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 ml-auto">
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+            <ArrowUpDown className="h-3 w-3" />
+            Sort
+          </button>
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+            <SlidersHorizontal className="h-3 w-3" />
+            Filter
+          </button>
+          <Button
+            size="sm"
+            className="h-8"
+            onClick={() => setStartModalOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            New Meeting
           </Button>
         </div>
-        <div className="space-y-3">
-          {paginatedMeetings?.map((meeting) => (
-            <motion.div
-              key={meeting.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card className={`p-5 hover:shadow-md transition-shadow`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className={`p-3 rounded-lg ${bgColor(meeting)}`}>
-                      <Video className={`h-5 w-5 ${color(meeting)}`} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-1">
-                        <h3 className={`text-gray-900`}>
-                          {decodeURIComponent(meeting.title)}
-                        </h3>
-                        <Badge
-                          className={
-                            meeting.status === "active"
-                              ? "bg-red-100 text-red-700 border-red-200"
-                              : meeting.status === "upcoming"
-                                ? "bg-blue-100 text-blue-700 border-blue-200"
-                                : "bg-gray-100 text-gray-700 border-gray-200"
-                          }
-                        >
-                          {meeting.status}
-                        </Badge>
-                      </div>
-                      <div
-                        className={`flex items-center space-x-4 text-sm text-gray-600`}
-                      >
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            {formatDateOnly(new Date(meeting.dateTime))}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {formatTimeOnly(new Date(meeting.dateTime))}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-3 w-3" />
-                          <span>{meeting?.attendees?.length} participants</span>
-                        </div>
-                        {meeting.duration && (
-                          <span>• Duration: {meeting.duration}m</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="border-b border-gray-200">
+            <tr>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Video className="h-3.5 w-3.5" />
+                  Meeting
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  Status
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Date
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Clock className="h-3.5 w-3.5" />
+                  Time
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Users className="h-3.5 w-3.5" />
+                  Participants
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  Duration
+                </div>
+              </th>
+              <th className="px-4 py-2.5" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {paginatedMeetings.map((meeting) => (
+              <tr
+                key={meeting.id}
+                className="hover:bg-gray-50 transition-colors group"
+              >
+                <td className="px-4 py-2.5">
+                  <span className="text-sm font-medium text-gray-900">
+                    {decodeURIComponent(meeting.title)}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5">
+                  <StatusBadge status={meeting.status} />
+                </td>
+                <td className="px-4 py-2.5 text-xs text-gray-500">
+                  {formatDateOnly(new Date(meeting.dateTime))}
+                </td>
+                <td className="px-4 py-2.5 text-xs text-gray-500">
+                  {formatTimeOnly(new Date(meeting.dateTime))}
+                </td>
+                <td className="px-4 py-2.5">
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+                    <Users className="h-3 w-3" />
+                    {meeting?.attendees?.length ?? 0}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-xs text-gray-500">
+                  {meeting.duration ? `${meeting.duration}m` : "—"}
+                </td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                     {meeting.status === "active" && (
-                      <Button onClick={() => handleJoinMeeting(meeting)}>
-                        <Video className="h-4 w-4 mr-2" />
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => handleJoinMeeting(meeting)}
+                      >
+                        <Video className="h-3 w-3 mr-1" />
                         Join Now
                       </Button>
                     )}
                     {meeting.status === "ended" && meeting.hasTranscript && (
                       <Button
+                        size="sm"
                         variant="outline"
+                        className="h-7 text-xs"
                         onClick={() => handleViewSummary(meeting)}
                       >
-                        <PlayCircle className="h-4 w-4 mr-2" />
-                        View Recording
+                        <PlayCircle className="h-3 w-3 mr-1" />
+                        Recording
                       </Button>
                     )}
                     {meeting.status === "upcoming" && (
-                      <Button variant="outline">
-                        <Calendar className="h-4 w-4 mr-2" />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
                         Details
                       </Button>
                     )}
                   </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-gray-600">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+                </td>
+              </tr>
+            ))}
+            {filteredMeetings.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center">
+                  <FileText className="h-8 w-8 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm text-gray-400">
+                    {searchQuery
+                      ? "No meetings match your search"
+                      : "No meetings found"}
+                  </p>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {filteredMeetings?.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-600">No meetings found</p>
-            <p className="text-sm mt-1 text-gray-500">
-              {searchQuery
-                ? "Try adjusting your search"
-                : "Start a new meeting or check back when you have upcoming meetings"}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
+        <div className="text-xs text-gray-500">
+          Showing {filteredMeetings.length === 0 ? 0 : startIndex + 1}–
+          {Math.min(startIndex + itemsPerPage, filteredMeetings.length)} of{" "}
+          {filteredMeetings.length} meetings
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-7 text-xs"
+          >
+            <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+            Previous
+          </Button>
+          <span className="px-2 py-1 text-xs text-gray-600">
+            {page} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="h-7 text-xs"
+          >
+            Next
+            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+          </Button>
+        </div>
+      </div>
 
       {/* Start Meeting Modal */}
       <Dialog open={startModalOpen} onOpenChange={setStartModalOpen}>
@@ -316,12 +381,10 @@ export function Meetings() {
               </Button>
             ) : (
               <div className="space-y-3">
-                <div
-                  className={`p-3 rounded-lg border bg-gray-50 border-gray-200`}
-                >
-                  <p className={`text-xs mb-2 text-gray-600`}>Meeting Link</p>
+                <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
+                  <p className="text-xs mb-2 text-gray-600">Meeting Link</p>
                   <div className="flex items-center justify-between">
-                    <p className={`text-sm text-gray-700 truncate flex-1`}>
+                    <p className="text-sm text-gray-700 truncate flex-1">
                       {meetingLink}
                     </p>
                     <Button
@@ -342,9 +405,8 @@ export function Meetings() {
                   className="w-full"
                   onClick={() => {
                     setStartModalOpen(false);
-                    if (createdMeetingId) {
+                    if (createdMeetingId)
                       router.push(`/meet/${createdMeetingId}`);
-                    }
                   }}
                 >
                   <Video className="h-4 w-4 mr-2" />
@@ -374,7 +436,6 @@ export function Meetings() {
                 className="mt-2"
               />
             </div>
-
             <Button className="w-full">Join Meeting</Button>
           </div>
         </DialogContent>
@@ -383,7 +444,7 @@ export function Meetings() {
   );
 }
 
-// Transcription View Component
+// Transcription View — unchanged
 function TranscriptionView({
   meeting,
   onBack,
@@ -414,12 +475,10 @@ function TranscriptionView({
     if (typeof currentChunkIndex !== "number") return;
     const container = containerRef.current;
     if (!container) return;
-
     const children = Array.from(container.children) as HTMLElement[];
     const activeElem = children[currentChunkIndex];
-    if (activeElem) {
+    if (activeElem)
       activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
   }, [currentChunkIndex]);
 
   useEffect(() => {
@@ -436,7 +495,6 @@ function TranscriptionView({
     fn();
   }, [meeting.id]);
 
-  // Fetch signed URLs from API
   useEffect(() => {
     const fetchRecording = async () => {
       try {
@@ -451,25 +509,19 @@ function TranscriptionView({
     fetchRecording();
   }, [meeting.id]);
 
-  // Sync video playback
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleTimeUpdate = () => setCurrentTime(video.currentTime);
     const handleLoadedMetadata = () => {
-      if (!isNaN(video.duration)) {
-        setDuration(video.duration);
-      }
+      if (!isNaN(video.duration)) setDuration(video.duration);
     };
-
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
     video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
-
     return () => {
       video.removeEventListener("play", handlePlay);
       video.removeEventListener("pause", handlePause);
@@ -480,26 +532,20 @@ function TranscriptionView({
 
   useEffect(() => {
     if (!formattedData.length) return;
-
     const index = formattedData.findIndex(
       (chunk, i) =>
-        currentTime >= chunk.startTime && // numeric seconds
+        currentTime >= chunk.startTime &&
         (i === formattedData.length - 1 ||
           currentTime < formattedData[i + 1].startTime)
     );
-
     setCurrentChunkIndex(index !== -1 ? index : null);
   }, [currentTime, formattedData]);
 
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
-
-    if (video.paused || video.ended) {
-      video.play();
-    } else {
-      video.pause();
-    }
+    if (video.paused || video.ended) video.play();
+    else video.pause();
   };
 
   const formatClock = (seconds: number) => {
@@ -516,11 +562,7 @@ function TranscriptionView({
     const clickX = e.clientX - rect.left;
     const percent = Math.max(0, Math.min(clickX / rect.width, 1));
     const newTime = percent * duration;
-
-    if (videoRef.current) {
-      videoRef.current.currentTime = newTime;
-    }
-
+    if (videoRef.current) videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
 
@@ -543,9 +585,7 @@ function TranscriptionView({
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
-        {/* LEFT COLUMN: Video */}
         <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
-          {/* Video Card */}
           <Card className="p-6 flex flex-col min-h-0 shadow-sm">
             <div className="aspect-video relative bg-black rounded-lg overflow-hidden mb-4">
               <div className="h-full w-full">
@@ -562,8 +602,6 @@ function TranscriptionView({
                 )}
               </div>
             </div>
-
-            {/* Video Controls */}
             <div className="flex items-center space-x-4">
               <Button size="sm" onClick={togglePlay} className="shrink-0">
                 {isPlaying ? (
@@ -591,7 +629,6 @@ function TranscriptionView({
           </Card>
         </div>
 
-        {/* RIGHT COLUMN: Transcription (Scrolls independently) */}
         <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
           <CardContent className="flex-1 min-h-0 p-0 overflow-y-auto">
             <div className="p-4 border-b bg-gray-50/50">
@@ -612,8 +649,11 @@ function TranscriptionView({
                   return (
                     <div
                       key={index}
-                      className={`p-3 rounded-xl transition-all duration-200 border border-transparent 
-                                            ${isActive ? "bg-blue-50 border-blue-100 shadow-sm" : "hover:bg-gray-50"}`}
+                      className={`p-3 rounded-xl transition-all duration-200 border border-transparent ${
+                        isActive
+                          ? "bg-blue-50 border-blue-100 shadow-sm"
+                          : "hover:bg-gray-50"
+                      }`}
                     >
                       <div className="flex gap-3">
                         <span className="text-[10px] font-mono text-gray-400 mt-1 tabular-nums">

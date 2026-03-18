@@ -28,7 +28,7 @@ import { Project } from "@/types/projects";
 export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
-  const [client, setClient] = useState("");
+  const [client, setClient] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("");
 
@@ -47,9 +47,9 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
     createNewProject.mutate({
       id: 1,
       name: projectName,
-      clientId: Number(client),
+      clientId: client ? Number(client) : null,
       priority,
-      dueDate,
+      dueDate: dueDate || null,
       status: "in-progress",
       health: "on-track",
       stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
@@ -60,11 +60,6 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 className="text-2xl sm:text-3xl text-gray-900">Projects</h1>
-        <p className="text-gray-600 mt-1">Track and manage all your projects</p>
-      </div>
-
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <Button className="cursor-pointer">
@@ -77,7 +72,7 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
             <DialogDescription>
-              Start a new project for your client
+              Track tasks, files, and progress for a new project
             </DialogDescription>
           </DialogHeader>
 
@@ -93,12 +88,20 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
             </div>
 
             <div>
-              <Label>Client</Label>
-              <Select onValueChange={setClient}>
+              <Label>
+                Client{" "}
+                <span className="text-muted-foreground font-normal text-xs">
+                  (optional)
+                </span>
+              </Label>
+              <Select
+                onValueChange={(val) => setClient(val === "none" ? null : val)}
+              >
                 <SelectTrigger className="mt-2 cursor-pointer">
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">No client</SelectItem>
                   {(clients ?? []).map((c) => (
                     <SelectItem key={c.id} value={c.id.toString()}>
                       {c.name}
