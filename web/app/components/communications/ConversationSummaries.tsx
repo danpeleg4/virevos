@@ -14,6 +14,12 @@ import {
   SelectValue,
 } from "../ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import {
   FileText,
   Search,
   Sparkles,
@@ -23,6 +29,8 @@ import {
   ExternalLink,
   Loader2,
   Trash2,
+  SlidersHorizontal,
+  CheckIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -136,17 +144,25 @@ export function ConversationSummaries() {
     switch (sentiment) {
       case "positive":
         return (
-          <Badge className="bg-green-100 text-green-700">
-            <TrendingUp className="h-3 w-3 mr-1" />
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+            <TrendingUp className="h-3 w-3" />
             Positive
-          </Badge>
+          </span>
         );
       case "needs-attention":
         return (
-          <Badge className="bg-red-100 text-red-700">Needs Attention</Badge>
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 text-red-700 border border-red-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            Needs Attention
+          </span>
         );
       default:
-        return <Badge variant="outline">Neutral</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+            Neutral
+          </span>
+        );
     }
   };
 
@@ -165,71 +181,7 @@ export function ConversationSummaries() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Clients</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {summaries.length}
-                </p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Positive Sentiment</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {summaries.filter((s) => s.sentiment === "positive").length}
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Need Attention</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {
-                    summaries.filter((s) => s.sentiment === "needs-attention")
-                      .length
-                  }
-                </p>
-              </div>
-              <Badge className="h-8 w-8 bg-red-100 text-red-600 flex items-center justify-center">
-                !
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Emails</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {summaries.reduce((sum, s) => sum + (s.emailCount || 0), 0)}
-                </p>
-              </div>
-              <MessageSquare className="h-8 w-8 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+    <div className="space-y-6 overflow-y-auto h-full p-4 sm:p-6">
       {/* Generate New Summary */}
       {clientsWithoutSummary.length > 0 && (
         <Card>
@@ -280,32 +232,53 @@ export function ConversationSummaries() {
       )}
 
       {/* Search and Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search summaries..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterSentiment} onValueChange={setFilterSentiment}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sentiments</SelectItem>
-                <SelectItem value="positive">Positive</SelectItem>
-                <SelectItem value="neutral">Neutral</SelectItem>
-                <SelectItem value="needs-attention">Needs Attention</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Input
+            placeholder="Search summaries..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              {filterSentiment === "all"
+                ? "All Sentiments"
+                : filterSentiment === "positive"
+                  ? "Positive"
+                  : filterSentiment === "neutral"
+                    ? "Neutral"
+                    : "Needs Attention"}
+              {filterSentiment !== "all" && (
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {[
+              ["all", "All Sentiments"],
+              ["positive", "Positive"],
+              ["neutral", "Neutral"],
+              ["needs-attention", "Needs Attention"],
+            ].map(([value, label]) => (
+              <DropdownMenuItem
+                key={value}
+                onClick={() => setFilterSentiment(value)}
+                className="flex items-center justify-between cursor-pointer"
+              >
+                {label}
+                {filterSentiment === value && (
+                  <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* Summaries List */}
       {isLoading ? (
@@ -336,10 +309,10 @@ export function ConversationSummaries() {
                             {summary.clientName || "Unknown Client"}
                           </CardTitle>
                           {getSentimentBadge(summary.sentiment)}
-                          <Badge className="bg-purple-100 text-purple-700">
-                            <Sparkles className="h-3 w-3 mr-1" />
+                          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                            <Sparkles className="h-3 w-3" />
                             AI Summary
-                          </Badge>
+                          </span>
                         </div>
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <div className="flex items-center">
@@ -377,9 +350,12 @@ export function ConversationSummaries() {
                       <h4 className="text-sm text-gray-700 mb-2">Key Topics</h4>
                       <div className="flex flex-wrap gap-2">
                         {(summary.keyTopics || []).map((topic) => (
-                          <Badge key={topic} variant="secondary">
+                          <span
+                            key={topic}
+                            className="inline-flex items-center text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5"
+                          >
                             {topic}
-                          </Badge>
+                          </span>
                         ))}
                       </div>
                     </div>
