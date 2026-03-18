@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
@@ -37,7 +37,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addAClient, deleteClient, updateExistingClient } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 
-const ITEMS_PER_PAGE = 8;
+const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "active") {
@@ -96,7 +96,24 @@ export default function Clients() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const tableRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const calculateItemsPerPage = () => {
+      if (!tableRef.current) return;
+      const tableTop = tableRef.current.getBoundingClientRect().top;
+      // Reserve space for: table header row (~40px), toolbar (~50px), pagination (~50px), bottom padding (24px)
+      const reserved = 40 + 50 + 50 + 24;
+      const available = window.innerHeight - tableTop - reserved;
+      setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
+    };
+
+    calculateItemsPerPage();
+    window.addEventListener("resize", calculateItemsPerPage);
+    return () => window.removeEventListener("resize", calculateItemsPerPage);
+  }, []);
 
   const getClients = useQuery({
     queryKey: ["clients"],
@@ -124,11 +141,11 @@ export default function Clients() {
       )
     : [];
 
-  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedClients = filteredClients.slice(
     startIndex,
-    startIndex + ITEMS_PER_PAGE
+    startIndex + itemsPerPage
   );
 
   const handleClientClick = (client: clients) => {
@@ -347,6 +364,7 @@ export default function Clients() {
       </div>
 
       {/* Clients Table */}
+      <div ref={tableRef}>
       <Card className="overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
@@ -486,7 +504,7 @@ export default function Clients() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
           <div className="text-xs text-gray-500">
             Showing {startIndex + 1}–
-            {Math.min(startIndex + ITEMS_PER_PAGE, filteredClients.length)} of{" "}
+            {Math.min(startIndex + itemsPerPage, filteredClients.length)} of{" "}
             {filteredClients.length} clients
           </div>
           <div className="flex items-center space-x-2">
@@ -516,6 +534,7 @@ export default function Clients() {
           </div>
         </div>
       </Card>
+      </div>
 
       {/* Client Details Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
