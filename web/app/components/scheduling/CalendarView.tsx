@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import {
@@ -68,7 +67,7 @@ export function CalendarView() {
       if (!gridRef.current) return;
       const top = gridRef.current.getBoundingClientRect().top;
       const available = window.innerHeight - top - 16;
-      setRowHeight(Math.max(48, Math.floor(available / 24)));
+      setRowHeight(Math.max(64, Math.floor(available / 24)));
     };
     calculate();
     window.addEventListener("resize", calculate);
@@ -137,7 +136,6 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 flex-wrap">
           <div className="flex items-center gap-1.5">
@@ -186,7 +184,7 @@ export function CalendarView() {
         </div>
 
         {/* Calendar grid */}
-        <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <div ref={gridRef} className="h-full overflow-y-auto">
             {/* Grid: hour rows + absolutely positioned events */}
             <div className="relative" style={{ height: rowHeight * 24 }}>
@@ -204,8 +202,8 @@ export function CalendarView() {
                 </div>
               ))}
 
-              {/* Events overlay */}
-              <div className="absolute inset-0 left-20 pr-2">
+              {/* Events overlay — starts after the 80px time column */}
+              <div className="absolute top-0 bottom-0 right-0 pr-2" style={{ left: 84 }}>
                 {dayMeetings?.map((meeting) => {
                   const start = new Date(meeting.dateTime);
                   const startMinutes = start.getHours() * 60 + start.getMinutes();
@@ -221,7 +219,7 @@ export function CalendarView() {
                         setSelectedMeeting(meeting);
                         setShowMeetingDetails(true);
                       }}
-                      style={{ top, height, position: "absolute", left: 4, right: 4 }}
+                      style={{ top, height, position: "absolute", left: 0, right: 4 }}
                       className={`group rounded-lg border cursor-pointer transition-shadow hover:shadow-md overflow-hidden px-2 py-1 ${
                         meeting.status === "active"
                           ? "bg-red-50 border-red-200 text-red-900"
@@ -232,8 +230,10 @@ export function CalendarView() {
                     >
                       {/* Title row — always visible */}
                       <div className="flex items-center justify-between gap-1 min-w-0">
-                        <div className="flex items-center gap-1 min-w-0 flex-1">
-                          <CalendarIcon className="h-3 w-3 shrink-0 opacity-50" />
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span className="text-[10px] font-mono opacity-60 shrink-0">
+                            {new Date(meeting.dateTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                          </span>
                           <span className="text-xs font-medium truncate">
                             {decodeURIComponent(meeting.title)}
                           </span>
@@ -315,8 +315,7 @@ export function CalendarView() {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
       {selectedMeeting && (
         <EventDetailsDialog

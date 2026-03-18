@@ -2,84 +2,78 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
+import { Card } from "@/app/components/ui/card";
 import { CalendarView } from "@/app/components/scheduling/CalendarView";
 import { MeetingNotes } from "@/app/components/scheduling/MeetingNotes";
 import { Meetings } from "@/app/components/scheduling/Meetings";
 import { VideoMeetingPreferences } from "@/app/components/scheduling/IntegrationSettings";
 
+const TABS = ["calendar", "meetings", "notes", "preferences"] as const;
+type Tab = (typeof TABS)[number];
+
+const TAB_LABELS: Record<Tab, string> = {
+  calendar: "Calendar",
+  meetings: "Meetings",
+  notes: "Meeting Notes",
+  preferences: "Preferences",
+};
+
 function CalendarContent() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") ?? "calendar"
+  const [activeTab, setActiveTab] = useState<Tab>(
+    (searchParams.get("tab") as Tab) ?? "calendar"
   );
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto overflow-hidden">
-      <div className="mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">
-            Smart Scheduling
-          </h1>
-          <p className="text-gray-600">
-            AI-powered scheduling that adapts to your workload and automatically
-            manages conflicts
-          </p>
-        </div>
+    <div className="flex flex-col h-full p-4 sm:p-6 gap-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="shrink-0">
+        <h1 className="text-2xl sm:text-3xl text-gray-900">Smart Scheduling</h1>
+        <p className="text-gray-600 mt-1">
+          AI-powered scheduling that adapts to your workload and automatically
+          manages conflicts
+        </p>
       </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex-1 flex flex-col min-h-0 overflow-hidden"
-      >
-        <div className="overflow-x-auto pb-1 shrink-0">
-          <TabsList className="mb-6 min-w-max">
-            <TabsTrigger className="cursor-pointer" value="calendar">
-              Calendar
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="meetings">
-              Meetings
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="notes">
-              Meeting Notes
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="preferences">
-              Preferences
-            </TabsTrigger>
-          </TabsList>
+      {/* Main Card */}
+      <Card className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Tab toolbar */}
+        <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`cursor-pointer whitespace-nowrap text-xs px-3 py-1.5 rounded-md transition-colors ${
+                activeTab === tab
+                  ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {TAB_LABELS[tab]}
+            </button>
+          ))}
         </div>
 
-        <TabsContent
-          value="calendar"
-          className="flex-1 min-h-0 overflow-hidden"
-        >
-          <CalendarView />
-        </TabsContent>
-
-        <TabsContent
-          value="meetings"
-          className="flex-1 min-h-0 overflow-y-auto"
-        >
-          <Meetings></Meetings>
-        </TabsContent>
-
-        <TabsContent value="notes" className="flex-1 min-h-0 overflow-y-auto">
-          <MeetingNotes />
-        </TabsContent>
-
-        <TabsContent
-          value="preferences"
-          className="flex-1 min-h-0 overflow-y-auto"
-        >
-          <VideoMeetingPreferences />
-        </TabsContent>
-      </Tabs>
+        {/* Content */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {activeTab === "calendar" && <CalendarView />}
+          {activeTab === "meetings" && (
+            <div className="h-full overflow-y-auto">
+              <Meetings />
+            </div>
+          )}
+          {activeTab === "notes" && (
+            <div className="h-full overflow-y-auto">
+              <MeetingNotes />
+            </div>
+          )}
+          {activeTab === "preferences" && (
+            <div className="h-full overflow-y-auto">
+              <VideoMeetingPreferences />
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

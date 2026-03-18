@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
+import { CardContent, Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import {
   Dialog,
@@ -147,183 +147,207 @@ export function Meetings() {
             .includes(searchQuery.toLowerCase()))
     ) ?? [];
 
-  const totalPages = Math.max(1, Math.ceil(filteredMeetings.length / itemsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredMeetings.length / itemsPerPage)
+  );
   const startIndex = (page - 1) * itemsPerPage;
-  const paginatedMeetings = filteredMeetings.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedMeetings = filteredMeetings.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   return (
-    <div className="space-y-4">
-      <div ref={tableRef}>
-        <Card className="overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <Input
-                placeholder="Search meetings..."
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                className="pl-8 h-8 text-sm"
-              />
-            </div>
-            <div className="flex items-center gap-1.5 ml-auto">
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-                <ArrowUpDown className="h-3 w-3" />
-                Sort
-              </button>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-                <SlidersHorizontal className="h-3 w-3" />
-                Filter
-              </button>
-              <Button size="sm" className="h-8" onClick={() => setStartModalOpen(true)}>
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                New Meeting
-              </Button>
-            </div>
-          </div>
+    <div ref={tableRef}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Input
+            placeholder="Search meetings..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 ml-auto">
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+            <ArrowUpDown className="h-3 w-3" />
+            Sort
+          </button>
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+            <SlidersHorizontal className="h-3 w-3" />
+            Filter
+          </button>
+          <Button
+            size="sm"
+            className="h-8"
+            onClick={() => setStartModalOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            New Meeting
+          </Button>
+        </div>
+      </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Video className="h-3.5 w-3.5" />
-                      Meeting
-                    </div>
-                  </th>
-                  <th className="text-left px-4 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      Status
-                    </div>
-                  </th>
-                  <th className="text-left px-4 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Calendar className="h-3.5 w-3.5" />
-                      Date
-                    </div>
-                  </th>
-                  <th className="text-left px-4 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Clock className="h-3.5 w-3.5" />
-                      Time
-                    </div>
-                  </th>
-                  <th className="text-left px-4 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Users className="h-3.5 w-3.5" />
-                      Participants
-                    </div>
-                  </th>
-                  <th className="text-left px-4 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      Duration
-                    </div>
-                  </th>
-                  <th className="px-4 py-2.5" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedMeetings.map((meeting) => (
-                  <tr
-                    key={meeting.id}
-                    className="hover:bg-gray-50 transition-colors group"
-                  >
-                    <td className="px-4 py-2.5">
-                      <span className="text-sm font-medium text-gray-900">
-                        {decodeURIComponent(meeting.title)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <StatusBadge status={meeting.status} />
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">
-                      {formatDateOnly(new Date(meeting.dateTime))}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">
-                      {formatTimeOnly(new Date(meeting.dateTime))}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
-                        <Users className="h-3 w-3" />
-                        {meeting?.attendees?.length ?? 0}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">
-                      {meeting.duration ? `${meeting.duration}m` : "—"}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        {meeting.status === "active" && (
-                          <Button size="sm" className="h-7 text-xs" onClick={() => handleJoinMeeting(meeting)}>
-                            <Video className="h-3 w-3 mr-1" />
-                            Join Now
-                          </Button>
-                        )}
-                        {meeting.status === "ended" && meeting.hasTranscript && (
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleViewSummary(meeting)}>
-                            <PlayCircle className="h-3 w-3 mr-1" />
-                            Recording
-                          </Button>
-                        )}
-                        {meeting.status === "upcoming" && (
-                          <Button size="sm" variant="outline" className="h-7 text-xs">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Details
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredMeetings.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center">
-                      <FileText className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-                      <p className="text-sm text-gray-400">
-                        {searchQuery ? "No meetings match your search" : "No meetings found"}
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="border-b border-gray-200">
+            <tr>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Video className="h-3.5 w-3.5" />
+                  Meeting
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  Status
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Date
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Clock className="h-3.5 w-3.5" />
+                  Time
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Users className="h-3.5 w-3.5" />
+                  Participants
+                </div>
+              </th>
+              <th className="text-left px-4 py-2.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  Duration
+                </div>
+              </th>
+              <th className="px-4 py-2.5" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {paginatedMeetings.map((meeting) => (
+              <tr
+                key={meeting.id}
+                className="hover:bg-gray-50 transition-colors group"
+              >
+                <td className="px-4 py-2.5">
+                  <span className="text-sm font-medium text-gray-900">
+                    {decodeURIComponent(meeting.title)}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5">
+                  <StatusBadge status={meeting.status} />
+                </td>
+                <td className="px-4 py-2.5 text-xs text-gray-500">
+                  {formatDateOnly(new Date(meeting.dateTime))}
+                </td>
+                <td className="px-4 py-2.5 text-xs text-gray-500">
+                  {formatTimeOnly(new Date(meeting.dateTime))}
+                </td>
+                <td className="px-4 py-2.5">
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+                    <Users className="h-3 w-3" />
+                    {meeting?.attendees?.length ?? 0}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-xs text-gray-500">
+                  {meeting.duration ? `${meeting.duration}m` : "—"}
+                </td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    {meeting.status === "active" && (
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => handleJoinMeeting(meeting)}
+                      >
+                        <Video className="h-3 w-3 mr-1" />
+                        Join Now
+                      </Button>
+                    )}
+                    {meeting.status === "ended" && meeting.hasTranscript && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => handleViewSummary(meeting)}
+                      >
+                        <PlayCircle className="h-3 w-3 mr-1" />
+                        Recording
+                      </Button>
+                    )}
+                    {meeting.status === "upcoming" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Details
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filteredMeetings.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center">
+                  <FileText className="h-8 w-8 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm text-gray-400">
+                    {searchQuery
+                      ? "No meetings match your search"
+                      : "No meetings found"}
+                  </p>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
-            <div className="text-xs text-gray-500">
-              Showing {filteredMeetings.length === 0 ? 0 : startIndex + 1}–
-              {Math.min(startIndex + itemsPerPage, filteredMeetings.length)} of{" "}
-              {filteredMeetings.length} meetings
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="h-7 text-xs"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                Previous
-              </Button>
-              <span className="px-2 py-1 text-xs text-gray-600">
-                {page} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="h-7 text-xs"
-              >
-                Next
-                <ChevronRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </div>
-          </div>
-        </Card>
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
+        <div className="text-xs text-gray-500">
+          Showing {filteredMeetings.length === 0 ? 0 : startIndex + 1}–
+          {Math.min(startIndex + itemsPerPage, filteredMeetings.length)} of{" "}
+          {filteredMeetings.length} meetings
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-7 text-xs"
+          >
+            <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+            Previous
+          </Button>
+          <span className="px-2 py-1 text-xs text-gray-600">
+            {page} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="h-7 text-xs"
+          >
+            Next
+            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+          </Button>
+        </div>
       </div>
 
       {/* Start Meeting Modal */}
@@ -363,7 +387,12 @@ export function Meetings() {
                     <p className="text-sm text-gray-700 truncate flex-1">
                       {meetingLink}
                     </p>
-                    <Button size="sm" variant="ghost" onClick={handleCopyLink} className="ml-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCopyLink}
+                      className="ml-2"
+                    >
                       {copied ? (
                         <Check className="h-4 w-4 text-green-600" />
                       ) : (
@@ -376,7 +405,8 @@ export function Meetings() {
                   className="w-full"
                   onClick={() => {
                     setStartModalOpen(false);
-                    if (createdMeetingId) router.push(`/meet/${createdMeetingId}`);
+                    if (createdMeetingId)
+                      router.push(`/meet/${createdMeetingId}`);
                   }}
                 >
                   <Video className="h-4 w-4 mr-2" />
@@ -429,7 +459,9 @@ function TranscriptionView({
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [currentChunkIndex, setCurrentChunkIndex] = useState<number | null | string>(null);
+  const [currentChunkIndex, setCurrentChunkIndex] = useState<
+    number | null | string
+  >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -445,7 +477,8 @@ function TranscriptionView({
     if (!container) return;
     const children = Array.from(container.children) as HTMLElement[];
     const activeElem = children[currentChunkIndex];
-    if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (activeElem)
+      activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [currentChunkIndex]);
 
   useEffect(() => {
@@ -502,7 +535,8 @@ function TranscriptionView({
     const index = formattedData.findIndex(
       (chunk, i) =>
         currentTime >= chunk.startTime &&
-        (i === formattedData.length - 1 || currentTime < formattedData[i + 1].startTime)
+        (i === formattedData.length - 1 ||
+          currentTime < formattedData[i + 1].startTime)
     );
     setCurrentChunkIndex(index !== -1 ? index : null);
   }, [currentTime, formattedData]);
@@ -520,7 +554,8 @@ function TranscriptionView({
     return `${m}:${String(s).padStart(2, "0")}`;
   };
 
-  const progressPercent = duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
+  const progressPercent =
+    duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
   const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const bar = e.currentTarget;
     const rect = bar.getBoundingClientRect();
@@ -555,7 +590,11 @@ function TranscriptionView({
             <div className="aspect-video relative bg-black rounded-lg overflow-hidden mb-4">
               <div className="h-full w-full">
                 {videoUrl ? (
-                  <video ref={videoRef} src={videoUrl} className="w-full h-full object-contain" />
+                  <video
+                    ref={videoRef}
+                    src={videoUrl}
+                    className="w-full h-full object-contain"
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-full text-white">
                     No video found
@@ -565,11 +604,18 @@ function TranscriptionView({
             </div>
             <div className="flex items-center space-x-4">
               <Button size="sm" onClick={togglePlay} className="shrink-0">
-                {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <PlayCircle className="h-4 w-4 mr-2" />}
+                {isPlaying ? (
+                  <Pause className="h-4 w-4 mr-2" />
+                ) : (
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                )}
                 {isPlaying ? "Pause" : "Play"}
               </Button>
               <div className="flex-1">
-                <div className="h-2 rounded-full bg-gray-100 cursor-pointer" onClick={onSeek}>
+                <div
+                  className="h-2 rounded-full bg-gray-100 cursor-pointer"
+                  onClick={onSeek}
+                >
                   <div
                     className="h-2 bg-blue-600 rounded-full transition-all"
                     style={{ width: `${progressPercent}%` }}
@@ -593,7 +639,10 @@ function TranscriptionView({
                 className="bg-white"
               />
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth" ref={containerRef}>
+            <div
+              className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+              ref={containerRef}
+            >
               {formattedData.length > 0 ? (
                 formattedData.map((entry, index) => {
                   const isActive = index === currentChunkIndex;
@@ -601,7 +650,9 @@ function TranscriptionView({
                     <div
                       key={index}
                       className={`p-3 rounded-xl transition-all duration-200 border border-transparent ${
-                        isActive ? "bg-blue-50 border-blue-100 shadow-sm" : "hover:bg-gray-50"
+                        isActive
+                          ? "bg-blue-50 border-blue-100 shadow-sm"
+                          : "hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex gap-3">
@@ -609,10 +660,14 @@ function TranscriptionView({
                           {entry.time}
                         </span>
                         <div>
-                          <p className={`text-xs font-bold mb-0.5 ${isActive ? "text-blue-600" : "text-gray-900"}`}>
+                          <p
+                            className={`text-xs font-bold mb-0.5 ${isActive ? "text-blue-600" : "text-gray-900"}`}
+                          >
                             {entry.speaker}
                           </p>
-                          <p className="text-sm text-gray-600 leading-relaxed">{entry.text}</p>
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            {entry.text}
+                          </p>
                         </div>
                       </div>
                     </div>
