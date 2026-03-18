@@ -6,11 +6,14 @@ import { clients, projects } from "@db/schema";
 import { eq, count } from "drizzle-orm";
 import { getUserSubscriptionByUserId } from "./billing";
 
-const PLAN_LIMITS = {
-  starter: { maxClients: 5, maxProjects: 10, aiAssistant: true },
-  professional: { maxClients: 100, maxProjects: 50, aiAssistant: true },
-  business: { maxClients: 500, maxProjects: 1000, aiAssistant: true },
-} as const;
+const PLAN_LIMITS: Record<
+  PlanId,
+  { maxClients: number | null; maxProjects: number | null; aiAssistant: boolean }
+> = {
+  starter: { maxClients: 5, maxProjects: 1, aiAssistant: false },
+  professional: { maxClients: null, maxProjects: null, aiAssistant: true },
+  business: { maxClients: null, maxProjects: null, aiAssistant: true },
+};
 
 export async function getUserPlan(userId: string): Promise<PlanId> {
   const sub = await getUserSubscriptionByUserId(userId);

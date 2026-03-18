@@ -35,7 +35,7 @@ function mockClientCount(count: number) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockDbFrom.mockReturnValue({ where: mockDbWhere });
-  mockDbWhere.mockResolvedValue([]);
+  mockDbWhere.mockResolvedValue([{ count: 1 }]);
 });
 
 // ─── getUserPlan ──────────────────────────────────────────────────────────
