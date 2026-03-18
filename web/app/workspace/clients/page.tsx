@@ -390,6 +390,17 @@ export default function Clients() {
             </div>
           </div>
 
+          {getClients.data?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="rounded-full bg-gray-100 p-5 mb-4">
+                <Building2 className="h-10 w-10 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No clients yet</h3>
+              <p className="text-sm text-gray-500 max-w-xs">
+                Add your first client to start managing relationships, projects, and communications.
+              </p>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-gray-200">
@@ -498,6 +509,7 @@ export default function Clients() {
               </tbody>
             </table>
           </div>
+          )}
 
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">

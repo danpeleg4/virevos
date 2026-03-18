@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  Calendar as CalendarIcon,
   MoreVertical,
   FileText,
   Sparkles,
@@ -90,7 +89,11 @@ export function CalendarView() {
       const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
       queryClient.setQueryData<Event[]>(["meetings"], (old = []) => [
         ...old,
-        { ...newMeeting, id: `temp-${Date.now()}`, attendees: newMeeting.attendees ?? [] },
+        {
+          ...newMeeting,
+          id: `temp-${Date.now()}`,
+          attendees: newMeeting.attendees ?? [],
+        },
       ]);
       return { previousMeetings };
     },
@@ -136,186 +139,206 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={handlePrevDay}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={handleNextDay}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900">{formattedDate}</span>
-            {isToday && (
-              <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
-                Today
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 ml-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setCurrentDate(new Date())}
-            >
-              Go to Today
-            </Button>
-            <BookEventDialog
-              dialogOpen={dialogOpen}
-              setDialogOpen={setDialogOpen}
-              addMeeting={(meeting) => mutation.mutate(meeting)}
-            />
-          </div>
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={handlePrevDay}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={handleNextDay}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Calendar grid */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div ref={gridRef} className="h-full overflow-y-auto">
-            {/* Grid: hour rows + absolutely positioned events */}
-            <div className="relative" style={{ height: rowHeight * 24 }}>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-900">
+            {formattedDate}
+          </span>
+          {isToday && (
+            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+              Today
+            </span>
+          )}
+        </div>
 
-              {/* Hour lines */}
-              {hours.map((hour) => (
-                <div
-                  key={hour}
-                  className="absolute left-0 right-0 flex border-b border-gray-100 hover:bg-gray-50/40 transition-colors"
-                  style={{ top: hour * rowHeight, height: rowHeight }}
-                >
-                  <div className="w-20 shrink-0 px-3 pt-2 text-xs text-gray-400 border-r border-gray-100 text-right">
-                    {formatHour(hour)}
-                  </div>
+        <div className="flex items-center gap-1.5 ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setCurrentDate(new Date())}
+          >
+            Go to Today
+          </Button>
+          <BookEventDialog
+            dialogOpen={dialogOpen}
+            setDialogOpen={setDialogOpen}
+            addMeeting={(meeting) => mutation.mutate(meeting)}
+          />
+        </div>
+      </div>
+
+      {/* Calendar grid */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div ref={gridRef} className="h-full overflow-y-auto">
+          {/* Grid: hour rows + absolutely positioned events */}
+          <div className="relative" style={{ height: rowHeight * 24 }}>
+            {/* Hour lines */}
+            {hours.map((hour) => (
+              <div
+                key={hour}
+                className="absolute left-0 right-0 flex border-b border-gray-100 hover:bg-gray-50/40 transition-colors"
+                style={{ top: hour * rowHeight, height: rowHeight }}
+              >
+                <div className="w-20 shrink-0 px-3 pt-2 text-xs text-gray-400 border-r border-gray-100 text-right">
+                  {formatHour(hour)}
                 </div>
-              ))}
+              </div>
+            ))}
 
-              {/* Events overlay — starts after the 80px time column */}
-              <div className="absolute top-0 bottom-0 right-0 pr-2" style={{ left: 84 }}>
-                {dayMeetings?.map((meeting) => {
-                  const start = new Date(meeting.dateTime);
-                  const startMinutes = start.getHours() * 60 + start.getMinutes();
-                  const duration = Math.max(15, meeting.duration ?? 60);
-                  const top = (startMinutes / 60) * rowHeight;
-                  const height = Math.max(24, (duration / 60) * rowHeight) - 2;
-                  const isCompact = height < 44;
+            {/* Events overlay — starts after the 80px time column */}
+            <div
+              className="absolute top-0 bottom-0 right-0 pr-2"
+              style={{ left: 84 }}
+            >
+              {dayMeetings?.map((meeting) => {
+                const start = new Date(meeting.dateTime);
+                const startMinutes = start.getHours() * 60 + start.getMinutes();
+                const duration = Math.max(15, meeting.duration ?? 60);
+                const top = (startMinutes / 60) * rowHeight;
+                const height = Math.max(24, (duration / 60) * rowHeight) - 2;
+                const isCompact = height < 44;
 
-                  return (
-                    <div
-                      key={meeting.id}
-                      onClick={() => {
-                        setSelectedMeeting(meeting);
-                        setShowMeetingDetails(true);
-                      }}
-                      style={{ top, height, position: "absolute", left: 0, right: 4 }}
-                      className={`group rounded-lg border cursor-pointer transition-shadow hover:shadow-md overflow-hidden px-2 py-1 ${
-                        meeting.status === "active"
-                          ? "bg-red-50 border-red-200 text-red-900"
-                          : meeting.status === "upcoming"
-                            ? "bg-blue-50 border-blue-200 text-blue-900"
-                            : "bg-gray-50 border-gray-200 text-gray-900"
-                      }`}
-                    >
-                      {/* Title row — always visible */}
-                      <div className="flex items-center justify-between gap-1 min-w-0">
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                          <span className="text-[10px] font-mono opacity-60 shrink-0">
-                            {new Date(meeting.dateTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                          </span>
-                          <span className="text-xs font-medium truncate">
-                            {decodeURIComponent(meeting.title)}
-                          </span>
-                          {!isCompact && <EventStatusPill status={meeting.status} />}
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreVertical className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteEvent.mutate(meeting.id);
-                              }}
-                              className="text-red-600"
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-
-                      {/* Detail row — only if enough height */}
-                      {!isCompact && (
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {meeting.duration && (
-                            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">
-                              {meeting.duration}m
-                            </span>
+                return (
+                  <div
+                    key={meeting.id}
+                    onClick={() => {
+                      setSelectedMeeting(meeting);
+                      setShowMeetingDetails(true);
+                    }}
+                    style={{
+                      top,
+                      height,
+                      position: "absolute",
+                      left: 0,
+                      right: 4,
+                    }}
+                    className={`group rounded-lg border cursor-pointer transition-shadow hover:shadow-md overflow-hidden px-2 py-1 ${
+                      meeting.status === "active"
+                        ? "bg-red-50 border-red-200 text-red-900"
+                        : meeting.status === "upcoming"
+                          ? "bg-blue-50 border-blue-200 text-blue-900"
+                          : "bg-gray-50 border-gray-200 text-gray-900"
+                    }`}
+                  >
+                    {/* Title row — always visible */}
+                    <div className="flex items-center justify-between gap-1 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <span className="text-[10px] font-mono opacity-60 shrink-0">
+                          {new Date(meeting.dateTime).toLocaleTimeString(
+                            "en-US",
+                            { hour: "numeric", minute: "2-digit" }
                           )}
-                          {meeting.attendees && meeting.attendees.length > 0 && (
-                            <div className="flex -space-x-1">
-                              {meeting.attendees.slice(0, 3).map((attendee, i) => (
-                                <Avatar key={i} className="h-4 w-4 border border-white ring-0">
+                        </span>
+                        <span className="text-xs font-medium truncate">
+                          {decodeURIComponent(meeting.title)}
+                        </span>
+                        {!isCompact && (
+                          <EventStatusPill status={meeting.status} />
+                        )}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteEvent.mutate(meeting.id);
+                            }}
+                            className="text-red-600"
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Detail row — only if enough height */}
+                    {!isCompact && (
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {meeting.duration && (
+                          <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+                            {meeting.duration}m
+                          </span>
+                        )}
+                        {meeting.attendees && meeting.attendees.length > 0 && (
+                          <div className="flex -space-x-1">
+                            {meeting.attendees
+                              .slice(0, 3)
+                              .map((attendee, i) => (
+                                <Avatar
+                                  key={i}
+                                  className="h-4 w-4 border border-white ring-0"
+                                >
                                   <AvatarFallback className="text-[8px] bg-blue-100 text-blue-600">
                                     {attendee.initials}
                                   </AvatarFallback>
                                 </Avatar>
                               ))}
-                              {meeting.attendees.length > 3 && (
-                                <div className="h-4 w-4 rounded-full border border-white bg-gray-100 flex items-center justify-center text-[8px] text-gray-600">
-                                  +{meeting.attendees.length - 3}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {meeting.autoRescheduled && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
-                              <Sparkles className="h-2.5 w-2.5" />
-                              Auto
-                            </span>
-                          )}
-                          {meeting.hasNotes && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                              <FileText className="h-2.5 w-2.5" />
-                              Notes
-                            </span>
-                          )}
-                        </div>
-                      )}
+                            {meeting.attendees.length > 3 && (
+                              <div className="h-4 w-4 rounded-full border border-white bg-gray-100 flex items-center justify-center text-[8px] text-gray-600">
+                                +{meeting.attendees.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {meeting.autoRescheduled && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            Auto
+                          </span>
+                        )}
+                        {meeting.hasNotes && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                            <FileText className="h-2.5 w-2.5" />
+                            Notes
+                          </span>
+                        )}
+                      </div>
+                    )}
 
-                      {meeting.conflictReason && !isCompact && (
-                        <div className="mt-1 flex items-center gap-1 text-[10px] text-orange-600">
-                          <AlertCircle className="h-3 w-3 shrink-0" />
-                          {meeting.conflictReason}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    {meeting.conflictReason && !isCompact && (
+                      <div className="mt-1 flex items-center gap-1 text-[10px] text-orange-600">
+                        <AlertCircle className="h-3 w-3 shrink-0" />
+                        {meeting.conflictReason}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
+      </div>
 
       {selectedMeeting && (
         <EventDetailsDialog
