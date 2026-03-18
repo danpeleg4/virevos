@@ -42,7 +42,7 @@ const plans = [
   {
     name: "Business",
     price: "79",
-    description: "For large organizations with advanced needs",
+    description: "For bigger organizations with advanced needs and necessities",
     features: [
       "Everything in Professional plan +",
       "Unlimited everything",
@@ -52,7 +52,7 @@ const plans = [
       "Dedicated account manager",
       "Custom contracts",
     ],
-    cta: "Contact sales",
+    cta: "Start free trial",
     popular: false,
   },
 ];
@@ -155,11 +155,7 @@ export function Pricing() {
                       : "bg-gray-900 hover:bg-gray-800 text-white"
                   }`}
                   size="lg"
-                  onClick={() =>
-                    plan.name === "Enterprise"
-                      ? router.push("/contact")
-                      : router.push("/onboarding")
-                  }
+                  onClick={() => router.push("/onboard")}
                 >
                   {plan.cta}
                   <ArrowRight className="ml-2 h-5 w-5" />

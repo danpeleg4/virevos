@@ -70,7 +70,7 @@ export function CTA() {
             <Button
               size="lg"
               className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all group"
-              onClick={() => router.push("/onboarding")}
+              onClick={() => router.push("/onboard")}
             >
               Get started for free
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
