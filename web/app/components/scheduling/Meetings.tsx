@@ -36,7 +36,7 @@ import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 const ROW_HEIGHT = 48;
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: string | undefined }) {
   if (status === "active") {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 text-red-700 border border-red-200">
