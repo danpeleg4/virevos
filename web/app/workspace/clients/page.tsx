@@ -69,7 +69,7 @@ function DomainPill({ email }: { email: string }) {
 
 function IndustryPill({ industry }: { industry: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
+    <span className="inline-flex items-center text-xs bg-gray-100 text-gray-700 rounded-full py-0.5">
       <span className="w-2 h-2 rounded-full bg-gray-400 inline-block flex-shrink-0" />
       {industry}
     </span>
@@ -412,8 +412,8 @@ export default function Clients() {
                   </th>
                   <th className="text-left px-3 py-2.5">
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Globe className="h-3.5 w-3.5" />
-                      Email domain
+                      <Mail className="h-3.5 w-3.5" />
+                      Email
                     </div>
                   </th>
                   <th className="text-left px-3 py-2.5">
@@ -471,8 +471,8 @@ export default function Clients() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 py-2.5">
-                      {client.email && <DomainPill email={client.email} />}
+                    <td className="px-3 py-2.5 text-sm text-gray-700">
+                      {client.email || "—"}
                     </td>
                     <td className="px-3 py-2.5">
                       {client.industry && (

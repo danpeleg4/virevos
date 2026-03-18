@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
+import { Card } from "@/app/components/ui/card";
 import { UnifiedInbox } from "@/app/components/communications/UnifiedInbox";
 import { ScheduledMessages } from "@/app/components/communications/ScheduledMessages";
 import { ClientPortal } from "@/app/components/communications/ClientPortal";
 import { ConversationSummaries } from "@/app/components/communications/ConversationSummaries";
+
+const TABS = [
+  { value: "inbox", label: "Inbox" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "summaries", label: "Summaries" },
+  { value: "portal", label: "Client Portal" },
+] as const;
+
+type TabValue = (typeof TABS)[number]["value"];
 
 const fillStyle: React.CSSProperties = {
   flex: "1 1 0%",
@@ -20,13 +24,15 @@ const fillStyle: React.CSSProperties = {
 };
 
 export default function Communications() {
-  const [activeTab, setActiveTab] = useState("inbox");
+  const [activeTab, setActiveTab] = useState<TabValue>("inbox");
+
   return (
     <div
       className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex flex-col overflow-hidden"
       style={{ height: "calc(100dvh - 65px)" }}
     >
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 className="text-2xl sm:text-3xl text-gray-900 mb-2">
             Communications
@@ -38,40 +44,33 @@ export default function Communications() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} style={fillStyle}>
-        <div className="overflow-x-auto pb-1 shrink-0">
-          <TabsList className="mb-4 min-w-max">
-            <TabsTrigger value="inbox" className="relative cursor-pointer">
-              Inbox
-            </TabsTrigger>
-            <TabsTrigger value="scheduled" className="cursor-pointer">
-              Scheduled
-            </TabsTrigger>
-            <TabsTrigger value="summaries" className="cursor-pointer">
-              Summaries
-            </TabsTrigger>
-            <TabsTrigger value="portal" className="cursor-pointer">
-              Client Portal
-            </TabsTrigger>
-          </TabsList>
+      {/* Card with embedded tabs */}
+      <Card className="flex flex-col overflow-hidden" style={fillStyle}>
+        {/* Tab nav */}
+        <div className="flex border-b border-gray-200 px-4 shrink-0 overflow-x-auto">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`cursor-pointer px-4 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors ${
+                activeTab === tab.value
+                  ? "border-black text-black"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <TabsContent value="inbox" style={fillStyle}>
-          <UnifiedInbox />
-        </TabsContent>
-
-        <TabsContent value="scheduled">
-          <ScheduledMessages />
-        </TabsContent>
-
-        <TabsContent value="summaries">
-          <ConversationSummaries />
-        </TabsContent>
-
-        <TabsContent value="portal" style={fillStyle}>
-          <ClientPortal />
-        </TabsContent>
-      </Tabs>
+        {/* Tab content */}
+        <div style={fillStyle} className="overflow-hidden">
+          {activeTab === "inbox" && <UnifiedInbox />}
+          {activeTab === "scheduled" && <ScheduledMessages />}
+          {activeTab === "summaries" && <ConversationSummaries />}
+          {activeTab === "portal" && <ClientPortal />}
+        </div>
+      </Card>
     </div>
   );
 }
