@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import {
@@ -21,7 +21,11 @@ import { EventDetailsDialog } from "./EventDetailsDialog";
 import { BookEventDialog } from "@/app/components/BookEventDialog";
 import type { Event } from "@/types/meeting";
 import axios from "axios";
-import { addMeetingToCalendar, deleteEventFromCalendar } from "@/lib/calendar";
+import {
+  addMeetingToCalendar,
+  deleteEventFromCalendar,
+  updateEventDateTime,
+} from "@/lib/calendar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -52,13 +56,20 @@ function EventStatusPill({ status }: { status: string | undefined }) {
   return null;
 }
 
-export function CalendarView() {
+interface DragState {
+  eventId: string;
+  offsetMinutes: number;
+}
+
+export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [showMeetingDetails, setShowMeetingDetails] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rowHeight, setRowHeight] = useState(64);
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [dropMinutes, setDropMinutes] = useState<number | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -112,6 +123,68 @@ export function CalendarView() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
   });
 
+  const updateEvent = useMutation({
+    mutationFn: async ({ id, dateTime }: { id: string; dateTime: Date }) =>
+      updateEventDateTime(id, dateTime),
+    onMutate: async ({ id, dateTime }) => {
+      await queryClient.cancelQueries({ queryKey: ["meetings"] });
+      const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
+      queryClient.setQueryData<Event[]>(["meetings"], (old = []) =>
+        old.map((m) =>
+          m.id === id ? { ...m, dateTime: dateTime } : m
+        )
+      );
+      return { previousMeetings };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousMeetings) {
+        queryClient.setQueryData(["meetings"], context.previousMeetings);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
+  });
+
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    meeting: Event
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const offsetMinutes = Math.round((offsetY / rowHeight) * 60);
+    setDragState({ eventId: meeting.id, offsetMinutes });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDragState(null);
+    setDropMinutes(null);
+  };
+
+  const handleGridDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!dragState) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const rawMinutes =
+      Math.round((y / rowHeight) * 60) - dragState.offsetMinutes;
+    const snapped = Math.max(
+      0,
+      Math.min(23 * 60 + 45, Math.round(rawMinutes / 15) * 15)
+    );
+    setDropMinutes(snapped);
+  };
+
+  const handleGridDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!dragState || dropMinutes === null) return;
+    const newDate = new Date(currentDate);
+    newDate.setHours(Math.floor(dropMinutes / 60), dropMinutes % 60, 0, 0);
+    updateEvent.mutate({ id: dragState.eventId, dateTime: newDate });
+    setDragState(null);
+    setDropMinutes(null);
+  };
+
   const dayMeetings = meetings?.data?.filter(
     (m) => new Date(m.dateTime).toDateString() === currentDate.toDateString()
   );
@@ -140,38 +213,44 @@ export function CalendarView() {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handlePrevDay}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handleNextDay}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+      <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
+        {tabNav && (
+          <div className="flex items-center gap-1 shrink-0">
+            {tabNav}
+          </div>
+        )}
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-900">
-            {formattedDate}
-          </span>
-          {isToday && (
-            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
-              Today
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={handlePrevDay}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={handleNextDay}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-900">
+              {formattedDate}
             </span>
-          )}
-        </div>
+            {isToday && (
+              <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+                Today
+              </span>
+            )}
+          </div>
 
-        <div className="flex items-center gap-1.5 ml-auto">
           <Button
             variant="outline"
             size="sm"
@@ -192,7 +271,12 @@ export function CalendarView() {
       <div className="flex-1 min-h-0 overflow-hidden">
         <div ref={gridRef} className="h-full overflow-y-auto">
           {/* Grid: hour rows + absolutely positioned events */}
-          <div className="relative" style={{ height: rowHeight * 24 }}>
+          <div
+            className="relative"
+            style={{ height: rowHeight * 24 }}
+            onDragOver={handleGridDragOver}
+            onDrop={handleGridDrop}
+          >
             {/* Hour lines */}
             {hours.map((hour) => (
               <div
@@ -205,6 +289,18 @@ export function CalendarView() {
                 </div>
               </div>
             ))}
+
+            {/* Drop indicator */}
+            {dragState && dropMinutes !== null && (
+              <div
+                className="absolute left-20 right-0 h-0.5 bg-blue-500 z-10 pointer-events-none"
+                style={{ top: (dropMinutes / 60) * rowHeight }}
+              >
+                <span className="absolute left-0 -top-2.5 text-[10px] text-blue-600 font-medium bg-white px-1 rounded">
+                  {`${Math.floor(dropMinutes / 60) % 12 || 12}:${String(dropMinutes % 60).padStart(2, "0")} ${Math.floor(dropMinutes / 60) >= 12 ? "PM" : "AM"}`}
+                </span>
+              </div>
+            )}
 
             {/* Events overlay — starts after the 80px time column */}
             <div
@@ -222,6 +318,9 @@ export function CalendarView() {
                 return (
                   <div
                     key={meeting.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, meeting)}
+                    onDragEnd={handleDragEnd}
                     onClick={() => {
                       setSelectedMeeting(meeting);
                       setShowMeetingDetails(true);
@@ -232,8 +331,9 @@ export function CalendarView() {
                       position: "absolute",
                       left: 0,
                       right: 4,
+                      opacity: dragState?.eventId === meeting.id ? 0.4 : 1,
                     }}
-                    className={`group rounded-lg border cursor-pointer transition-shadow hover:shadow-md overflow-hidden px-2 py-1 ${
+                    className={`group rounded-lg border cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md overflow-hidden px-2 py-1 ${
                       meeting.status === "active"
                         ? "bg-red-50 border-red-200 text-red-900"
                         : meeting.status === "upcoming"

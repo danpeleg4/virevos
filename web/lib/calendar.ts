@@ -185,3 +185,15 @@ export async function deleteEventFromCalendar(id: string) {
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
   return { success: true };
 }
+
+export async function updateEventDateTime(id: string, newDateTime: Date) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  await db
+    .update(events)
+    .set({ dateTime: newDateTime })
+    .where(and(eq(events.id, id), eq(events.userId, user.id)));
+
+  return { success: true };
+}

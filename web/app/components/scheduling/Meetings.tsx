@@ -61,7 +61,7 @@ function StatusBadge({ status }: { status: string | undefined }) {
   );
 }
 
-export function Meetings() {
+export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
@@ -161,6 +161,11 @@ export function Meetings() {
     <div ref={tableRef}>
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+        {tabNav && (
+          <div className="flex items-center gap-1 shrink-0 mr-2">
+            {tabNav}
+          </div>
+        )}
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <Input

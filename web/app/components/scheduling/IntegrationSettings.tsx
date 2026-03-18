@@ -73,14 +73,14 @@ export function VideoMeetingPreferences() {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Video Meeting Preferences</CardTitle>
-        <CardDescription>
-          Configure how virevos handles video meetings
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-lg text-gray-900">Video Meeting Preferences</h2>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Configure how Virevos handles video meetings
+        </p>
+      </div>
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <Label>Auto-Record Meetings</Label>
@@ -119,8 +119,8 @@ export function VideoMeetingPreferences() {
             </ul>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

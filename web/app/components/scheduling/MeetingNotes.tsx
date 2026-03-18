@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -41,7 +41,7 @@ import type { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 
 const ROW_HEIGHT = 52;
 
-export function MeetingNotes() {
+export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedNote, setSelectedNote] = useState<Event | null>(null);
@@ -199,6 +199,9 @@ export function MeetingNotes() {
     <div ref={tableRef}>
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+        {tabNav && (
+          <div className="flex items-center gap-1 shrink-0 mr-2">{tabNav}</div>
+        )}
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <Input
@@ -209,21 +212,6 @@ export function MeetingNotes() {
           />
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <Select
-            value={filterStatus}
-            onValueChange={(v) => {
-              setFilterStatus(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-36 bg-white border-gray-200">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Notes</SelectItem>
-              <SelectItem value="with-transcript">With Transcript</SelectItem>
-            </SelectContent>
-          </Select>
           <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
             <ArrowUpDown className="h-3 w-3" />
             Sort
