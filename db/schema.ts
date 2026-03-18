@@ -47,7 +47,7 @@ export const projects = pgTable("projects", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
 
   clientId: integer("client_id").references(() => clients.id, {
-    onDelete: "cascade",
+    onDelete: "set null",
   }),
 
   name: text("title").notNull(),
