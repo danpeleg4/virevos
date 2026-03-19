@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { changeRecordingStatus } from "@/lib/user";
 import type { ComponentType, SVGProps } from "react";
 import type { Integration } from "@/types/integrations";
+import { Separator } from "@/app/components/ui/separator";
 
 const INITIAL_INTEGRATIONS: Integration[] = [
   {
@@ -183,8 +184,8 @@ export function IntegrationSettings() {
       <div className="grid grid-cols-1 gap-4">
         {integrations.map((integration) => {
           return (
-            <Card key={integration.id}>
-              <CardHeader>
+            <div className="p-2" key={integration.id}>
+              <div className="p-2">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-start space-x-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
@@ -229,11 +230,11 @@ export function IntegrationSettings() {
                     onCheckedChange={() => toggleConnection(integration.id)}
                   />
                 </div>
-              </CardHeader>
+              </div>
 
               {integration.connected && (
                 <CardContent className="space-y-4">
-                  <div>
+                  <div className="mb-4">
                     <h4 className="text-sm text-gray-700 mb-2">Features</h4>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {integration.features.map((feature, i) => (
@@ -247,20 +248,10 @@ export function IntegrationSettings() {
                       ))}
                     </ul>
                   </div>
-
-                  <div className="flex items-center space-x-2 pt-3 border-t border-gray-200">
-                    <Button size="sm" variant="outline">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configure
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View in {integration.name}
-                    </Button>
-                  </div>
                 </CardContent>
               )}
-            </Card>
+              <Separator />
+            </div>
           );
         })}
       </div>

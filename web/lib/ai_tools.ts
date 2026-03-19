@@ -7,7 +7,7 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export const MODEL = "gpt-4o";
+export const MODEL = "gpt-5";
 export const MAX_STEPS = 5;
 
 export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
