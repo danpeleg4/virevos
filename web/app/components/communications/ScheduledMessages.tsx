@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "../ui/card";
+import { createPortal } from "react-dom";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Input } from "../ui/input";
@@ -22,7 +22,6 @@ import {
 import {
   Clock,
   Plus,
-  Calendar,
   Mail,
   Trash2,
   Send,
@@ -37,7 +36,11 @@ import { toast } from "sonner";
 import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
 
-export function ScheduledMessages() {
+interface ScheduledMessagesProps {
+  navContainer: HTMLDivElement | null;
+}
+
+export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [messages, setMessages] = useState<ScheduledEmail[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -189,37 +192,19 @@ export function ScheduledMessages() {
     return matchesSearch && matchesStatus;
   });
 
-  const scheduledCount = messages.filter((m) => m.status === "pending").length;
-  const sentThisWeek = messages.filter((m) => {
-    if (m.status !== "sent" || !m.sentAt) return false;
-    const sentDate = new Date(m.sentAt);
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    return sentDate >= oneWeekAgo;
-  }).length;
-
-  const nextScheduled = messages
-    .filter((m) => m.status === "pending")
-    .sort(
-      (a, b) =>
-        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
-    )[0];
-
   if (isConnected === false) {
     return (
-      <Card>
-        <CardContent className="py-24 text-center">
-          <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-          <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Connect your Google account to sync emails and use the inbox.
-          </p>
-          <Button onClick={() => (window.location.href = "/api/google")}>
-            <Mail className="h-4 w-4 mr-2" />
-            Connect Gmail
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="py-24 text-center">
+        <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+        <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
+        <p className="text-sm text-gray-500 mb-6">
+          Connect your Google account to sync emails and use the inbox.
+        </p>
+        <Button onClick={() => (window.location.href = "/api/google")}>
+          <Mail className="h-4 w-4 mr-2" />
+          Connect Gmail
+        </Button>
+      </div>
     );
   }
 
@@ -232,266 +217,257 @@ export function ScheduledMessages() {
           ? "Sent"
           : "Failed";
 
-  return (
-    <div className="space-y-6 overflow-y-auto h-full p-4 sm:p-6">
-      {/* Messages Card with toolbar */}
-      <Card className="overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-            <Input
-              placeholder="Search scheduled..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                {statusFilterLabel}
-                {statusFilter !== "all" && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+  const navActions = (
+    <>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+        <Input
+          placeholder="Search scheduled..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-8 h-8 text-sm w-48"
+        />
+      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {statusFilterLabel}
+            {statusFilter !== "all" && (
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            )}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {(["all", "pending", "sent", "failed"] as const).map((v) => (
+            <DropdownMenuItem
+              key={v}
+              onClick={() => setStatusFilter(v)}
+              className="flex items-center justify-between cursor-pointer"
+            >
+              {v === "all"
+                ? "All Status"
+                : v === "pending"
+                  ? "Scheduled"
+                  : v === "sent"
+                    ? "Sent"
+                    : "Failed"}
+              {statusFilter === v && (
+                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogTrigger asChild>
+          <Button size="sm" className="h-8">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Schedule Message
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Schedule New Message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm text-gray-700">
+                  Recipient Email *
+                </label>
+                <Input
+                  placeholder="recipient@example.com"
+                  value={formToEmail}
+                  onChange={(e) => setFormToEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-700">Recipient Name</label>
+                <Input
+                  placeholder="John Doe"
+                  value={formToName}
+                  onChange={(e) => setFormToName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-gray-700">Subject *</label>
+              <Input
+                placeholder="Email subject..."
+                value={formSubject}
+                onChange={(e) => setFormSubject(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-gray-700">Message *</label>
+              <Textarea
+                placeholder="Type your message..."
+                rows={6}
+                value={formBody}
+                onChange={(e) => setFormBody(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm text-gray-700">Date *</label>
+                <Input
+                  type="date"
+                  value={formDate}
+                  onChange={(e) => setFormDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-700">Time</label>
+                <Input
+                  type="time"
+                  value={formTime}
+                  onChange={(e) => setFormTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
+              <Button variant="outline" onClick={() => setIsCreating(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSchedule} disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Clock className="h-4 w-4 mr-2" />
                 )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {(["all", "pending", "sent", "failed"] as const).map((v) => (
-                <DropdownMenuItem
-                  key={v}
-                  onClick={() => setStatusFilter(v)}
-                  className="flex items-center justify-between cursor-pointer"
-                >
-                  {v === "all"
-                    ? "All Status"
-                    : v === "pending"
-                      ? "Scheduled"
-                      : v === "sent"
-                        ? "Sent"
-                        : "Failed"}
-                  {statusFilter === v && (
-                    <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div className="flex-1" />
-          <Dialog open={isCreating} onOpenChange={setIsCreating}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
                 Schedule Message
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Schedule New Message</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-700">
-                      Recipient Email *
-                    </label>
-                    <Input
-                      placeholder="recipient@example.com"
-                      value={formToEmail}
-                      onChange={(e) => setFormToEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-700">
-                      Recipient Name
-                    </label>
-                    <Input
-                      placeholder="John Doe"
-                      value={formToName}
-                      onChange={(e) => setFormToName(e.target.value)}
-                    />
-                  </div>
-                </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-700">Subject *</label>
-                  <Input
-                    placeholder="Email subject..."
-                    value={formSubject}
-                    onChange={(e) => setFormSubject(e.target.value)}
-                  />
-                </div>
+  return (
+    <div className="overflow-y-auto h-full p-4 sm:p-6">
+      {navContainer && createPortal(navActions, navContainer)}
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-700">Message *</label>
-                  <Textarea
-                    placeholder="Type your message..."
-                    rows={6}
-                    value={formBody}
-                    onChange={(e) => setFormBody(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-700">Date *</label>
-                    <Input
-                      type="date"
-                      value={formDate}
-                      onChange={(e) => setFormDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-700">Time</label>
-                    <Input
-                      type="time"
-                      value={formTime}
-                      onChange={(e) => setFormTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsCreating(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSchedule} disabled={isSaving}>
-                    {isSaving ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Clock className="h-4 w-4 mr-2" />
-                    )}
-                    Schedule Message
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
         </div>
-
-        {/* Content */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        ) : filteredMessages.length === 0 ? (
-          <div className="py-24 text-center">
-            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">
-              {messages.length === 0
-                ? "No scheduled messages"
-                : "No messages match your filters"}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              {messages.length === 0
-                ? "Schedule messages to be sent at the perfect time"
-                : "Try adjusting your search or filter"}
-            </p>
-            {messages.length === 0 && (
-              <Button className="mt-4" onClick={() => setIsCreating(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Schedule Your First Message
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="p-4 space-y-4">
-            {filteredMessages.map((message, index) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <Avatar className="h-12 w-12">
-                          <AvatarFallback>
-                            {(message.toName || message.toEmail)
-                              .split(" ")
-                              .slice(0, 2)
-                              .map((w) => w[0]?.toUpperCase())
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-sm text-gray-900">
-                              {message.toName || message.toEmail}
-                            </h3>
-                            <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
-                              {message.toEmail}
-                            </span>
-                            <Mail className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <p className="text-sm text-gray-900 mb-2">
-                            {message.subject}
-                          </p>
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                            {message.bodyText ||
-                              message.bodyHtml
-                                .replace(/<[^>]*>/g, "")
-                                .slice(0, 200)}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
-                            <div className="flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {new Date(message.scheduledAt).toLocaleString(
-                                undefined,
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </div>
-                            {getStatusBadge(message.status)}
-                            {message.errorMessage && (
-                              <span className="text-red-500 text-xs">
-                                {message.errorMessage}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+      ) : filteredMessages.length === 0 ? (
+        <div className="py-24 text-center">
+          <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">
+            {messages.length === 0
+              ? "No scheduled messages"
+              : "No messages match your filters"}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {messages.length === 0
+              ? "Schedule messages to be sent at the perfect time"
+              : "Try adjusting your search or filter"}
+          </p>
+          {messages.length === 0 && (
+            <Button className="mt-4" onClick={() => setIsCreating(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Schedule Your First Message
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredMessages.map((message, index) => (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-4 flex-1">
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback>
+                        {(message.toName || message.toEmail)
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((w) => w[0]?.toUpperCase())
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-sm text-gray-900">
+                          {message.toName || message.toEmail}
+                        </h3>
+                        <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
+                          {message.toEmail}
+                        </span>
+                        <Mail className="h-4 w-4 text-gray-400" />
                       </div>
-
-                      <div className="flex items-center space-x-2 ml-4">
-                        {message.status === "pending" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => sendNow(message)}
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Send Now
-                          </Button>
-                        )}
-                        {message.status === "pending" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteMessage(message.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                      <p className="text-sm text-gray-900 mb-2">
+                        {message.subject}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {message.bodyText ||
+                          message.bodyHtml
+                            .replace(/<[^>]*>/g, "")
+                            .slice(0, 200)}
+                      </p>
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {new Date(message.scheduledAt).toLocaleString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </div>
+                        {getStatusBadge(message.status)}
+                        {message.errorMessage && (
+                          <span className="text-red-500 text-xs">
+                            {message.errorMessage}
+                          </span>
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </Card>
+                  </div>
+
+                  <div className="flex items-center space-x-2 ml-4">
+                    {message.status === "pending" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => sendNow(message)}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Now
+                      </Button>
+                    )}
+                    {message.status === "pending" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteMessage(message.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

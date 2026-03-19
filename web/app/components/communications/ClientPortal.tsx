@@ -196,7 +196,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
   return (
     <>
       {navContainer && createPortal(navActions, navContainer)}
-      <div className="space-y-6 overflow-y-auto h-full">
+      <div className="overflow-y-auto h-full">
         {/* Client Selector */}
         <div>
           <CardContent className="pt-6">

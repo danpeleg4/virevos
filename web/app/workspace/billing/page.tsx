@@ -49,6 +49,7 @@ import {
   TrendingUp,
   AlertCircle,
   Star,
+  FolderOpen,
 } from "lucide-react";
 import {
   changePlan,
@@ -199,6 +200,11 @@ export default function Billing() {
     queryFn: () => axios.get("/api/clients").then((r) => r.data),
   });
 
+  const { data: projectList } = useQuery<{ id: number }[]>({
+    queryKey: ["projects"],
+    queryFn: () => axios.get("/api/projects/get-projects").then((r) => r.data),
+  });
+
   const { data: setupSecret } = useQuery<string>({
     queryKey: ["setup-intent-billing"],
     queryFn: createSetupIntent,
@@ -235,6 +241,8 @@ export default function Billing() {
     STATUS_BADGE.active;
   const clientCount = clientList?.length ?? 0;
   const clientLimit = currentPlan === "starter" ? 5 : null;
+  const projectCount = projectList?.length ?? 0;
+  const projectLimit = currentPlan === "starter" ? 1 : null;
 
   const formatDate = (val: Date | string | null | undefined) => {
     if (!val) return "—";
@@ -579,6 +587,29 @@ export default function Billing() {
               }
             />
             {currentPlan === "starter" && clientCount >= 5 && (
+              <p className="text-[11px] text-red-500 mt-1">
+                Limit reached — upgrade to add more
+              </p>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <FolderOpen className="h-4 w-4 text-gray-400" />
+                <p className="text-sm text-gray-600">Projects</p>
+              </div>
+              <p className="text-sm text-gray-900">
+                {projectCount} / {projectLimit ?? "Unlimited"}
+              </p>
+            </div>
+            <Progress
+              value={
+                projectLimit
+                  ? Math.min((projectCount / projectLimit) * 100, 100)
+                  : 100
+              }
+            />
+            {currentPlan === "starter" && projectCount >= 1 && (
               <p className="text-[11px] text-red-500 mt-1">
                 Limit reached — upgrade to add more
               </p>

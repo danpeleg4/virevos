@@ -25,6 +25,8 @@ export default function Communications() {
   const [activeTab, setActiveTab] = useState<TabValue>("inbox");
   const [portalNavContainer, setPortalNavContainer] =
     useState<HTMLDivElement | null>(null);
+  const [scheduledNavContainer, setScheduledNavContainer] =
+    useState<HTMLDivElement | null>(null);
 
   return (
     <div
@@ -61,6 +63,12 @@ export default function Communications() {
               {tab.label}
             </button>
           ))}
+          {activeTab === "scheduled" && (
+            <div
+              ref={setScheduledNavContainer}
+              className="ml-auto flex items-center gap-2"
+            />
+          )}
           {activeTab === "portal" && (
             <div
               ref={setPortalNavContainer}
@@ -72,7 +80,9 @@ export default function Communications() {
         {/* Tab content */}
         <div style={fillStyle} className="overflow-hidden">
           {activeTab === "inbox" && <UnifiedInbox />}
-          {activeTab === "scheduled" && <ScheduledMessages />}
+          {activeTab === "scheduled" && (
+            <ScheduledMessages navContainer={scheduledNavContainer} />
+          )}
           {activeTab === "portal" && (
             <ClientPortal navContainer={portalNavContainer} />
           )}
