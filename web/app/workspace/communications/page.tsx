@@ -5,12 +5,10 @@ import { Card } from "@/app/components/ui/card";
 import { UnifiedInbox } from "@/app/components/communications/UnifiedInbox";
 import { ScheduledMessages } from "@/app/components/communications/ScheduledMessages";
 import { ClientPortal } from "@/app/components/communications/ClientPortal";
-import { ConversationSummaries } from "@/app/components/communications/ConversationSummaries";
 
 const TABS = [
   { value: "inbox", label: "Inbox" },
   { value: "scheduled", label: "Scheduled" },
-  { value: "summaries", label: "Summaries" },
   { value: "portal", label: "Client Portal" },
 ] as const;
 
@@ -67,7 +65,6 @@ export default function Communications() {
         <div style={fillStyle} className="overflow-hidden">
           {activeTab === "inbox" && <UnifiedInbox />}
           {activeTab === "scheduled" && <ScheduledMessages />}
-          {activeTab === "summaries" && <ConversationSummaries />}
           {activeTab === "portal" && <ClientPortal />}
         </div>
       </Card>

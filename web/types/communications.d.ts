@@ -53,18 +53,6 @@ export interface ActionItem {
   tags: string[];
 }
 
-export interface ConversationSummary {
-  id: number;
-  clientId: number;
-  clientName: string | null;
-  summary: string;
-  keyTopics: string[] | null;
-  actionItems: string[] | null;
-  sentiment: string | null;
-  emailCount: number | null;
-  generatedAt: string | null;
-}
-
 export interface ScheduledEmail {
   id: number;
   toEmail: string;
