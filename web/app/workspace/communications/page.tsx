@@ -23,6 +23,8 @@ const fillStyle: React.CSSProperties = {
 
 export default function Communications() {
   const [activeTab, setActiveTab] = useState<TabValue>("inbox");
+  const [portalNavContainer, setPortalNavContainer] =
+    useState<HTMLDivElement | null>(null);
 
   return (
     <div
@@ -59,13 +61,21 @@ export default function Communications() {
               {tab.label}
             </button>
           ))}
+          {activeTab === "portal" && (
+            <div
+              ref={setPortalNavContainer}
+              className="ml-auto flex items-center"
+            />
+          )}
         </div>
 
         {/* Tab content */}
         <div style={fillStyle} className="overflow-hidden">
           {activeTab === "inbox" && <UnifiedInbox />}
           {activeTab === "scheduled" && <ScheduledMessages />}
-          {activeTab === "portal" && <ClientPortal />}
+          {activeTab === "portal" && (
+            <ClientPortal navContainer={portalNavContainer} />
+          )}
         </div>
       </Card>
     </div>

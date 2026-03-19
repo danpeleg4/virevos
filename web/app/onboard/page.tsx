@@ -771,7 +771,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
       </div>
 
       <Button
-        onClick={verifyEmail}
+        onClick={() => verifyEmail()}
         disabled={!isComplete || loading}
         className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >

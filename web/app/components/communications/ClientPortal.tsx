@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Card,
   CardContent,
@@ -14,7 +15,6 @@ import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import {
   Select,
   SelectContent,
@@ -38,7 +38,11 @@ import { toast } from "sonner";
 import type { PortalRecord } from "@/types/portal";
 import type { ClientSummary } from "@/types/clients";
 
-export function ClientPortal() {
+interface ClientPortalProps {
+  navContainer: HTMLDivElement | null;
+}
+
+export function ClientPortal({ navContainer }: ClientPortalProps) {
   const [portals, setPortals] = useState<PortalRecord[]>([]);
   const [clients, setClients] = useState<ClientSummary[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
@@ -88,7 +92,6 @@ export function ClientPortal() {
     }
   };
 
-  // When client selection changes, load their portal settings
   const handleClientChange = (clientId: string) => {
     setSelectedClientId(clientId);
     const portal = portals.find((p) => String(p.clientId) === clientId);
@@ -100,7 +103,6 @@ export function ClientPortal() {
       setAiChatBot(portal.settings?.aiChatBot ?? true);
       setEmailNotifications(portal.settings?.emailNotifications ?? true);
     } else {
-      // Reset to defaults for new portal
       setPortalEnabled(true);
       setTitle("");
       setWelcomeMessage(
@@ -168,146 +170,161 @@ export function ClientPortal() {
   );
   const portalUrl = currentPortal?.portalUrl || "";
 
+  const navActions = (
+    <div className="flex items-center gap-2">
+      {currentPortal && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.open(currentPortal.portalUrl, "_blank")}
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Preview Portal
+        </Button>
+      )}
+      <Button
+        size="sm"
+        onClick={handleSave}
+        disabled={isSaving || !selectedClientId}
+      >
+        {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+        Save Changes
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="space-y-6 overflow-y-auto h-full">
-      {/* Client Selector */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <Label className="mb-2 block">Select Client</Label>
-              <Select
-                value={selectedClientId}
-                onValueChange={handleClientChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a client to configure portal..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                      {portals.find((p) => p.clientId === c.id) && (
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          Active
-                        </Badge>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {isLoading && (
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Overview */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="flex items-center">
-                <Globe className="h-5 w-5 mr-2 text-blue-600" />
-                Client Portal
-              </CardTitle>
-              <CardDescription className="mt-2">
-                White-labeled portal for your clients to track projects,
-                communicate, and access files
-              </CardDescription>
-            </div>
-            <Switch
-              checked={portalEnabled}
-              onCheckedChange={setPortalEnabled}
-            />
-          </div>
-        </CardHeader>
-        {selectedClientId && portalEnabled && (
-          <CardContent className="space-y-4">
-            {currentPortal ? (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-blue-900">
-                    <strong>Portal URL:</strong>
-                  </p>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(portalUrl);
-                        toast.success("URL copied to clipboard");
-                      }}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(portalUrl, "_blank")}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Preview
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-sm text-blue-800 font-mono break-all">
-                  {portalUrl}
-                </p>
-                {currentPortal.lastAccessedAt && (
-                  <p className="text-xs text-blue-600 mt-2">
-                    Last accessed:{" "}
-                    {new Date(currentPortal.lastAccessedAt).toLocaleString()}
-                  </p>
-                )}
+    <>
+      {navContainer && createPortal(navActions, navContainer)}
+      <div className="space-y-6 overflow-y-auto h-full">
+        {/* Client Selector */}
+        <div>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <Label className="mb-2 block">Select Client</Label>
+                <Select
+                  value={selectedClientId}
+                  onValueChange={handleClientChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a client to configure portal..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                        {portals.find((p) => p.clientId === c.id) && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Active
+                          </Badge>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                <p className="text-sm text-gray-600">
-                  Save settings to generate a portal URL for this client
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl text-gray-900">
-                  {portals.filter((p) => p.enabled).length}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">Active Portals</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl text-gray-900">{portals.length}</p>
-                <p className="text-sm text-gray-600 mt-1">Total Portals</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl text-gray-900">
-                  {portals.filter((p) => p.lastAccessedAt).length}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">Accessed</p>
-              </div>
+              {isLoading && (
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+              )}
             </div>
           </CardContent>
-        )}
-      </Card>
+        </div>
 
-      {selectedClientId && portalEnabled && (
-        <Tabs defaultValue="branding">
-          <TabsList>
-            <TabsTrigger className="cursor-pointer" value="branding">
-              Branding
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="chat">
-              Chat Features
-            </TabsTrigger>
-          </TabsList>
+        {/* Overview */}
+        <div>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Globe className="h-5 w-5 mr-2 text-blue-600" />
+                  Client Portal
+                </CardTitle>
+                <CardDescription className="mt-2">
+                  White-labeled portal for your clients to track projects,
+                  communicate, and access files
+                </CardDescription>
+              </div>
+              <Switch
+                checked={portalEnabled}
+                onCheckedChange={setPortalEnabled}
+              />
+            </div>
+          </CardHeader>
+          {selectedClientId && portalEnabled && (
+            <CardContent className="space-y-4">
+              {currentPortal ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-blue-900">
+                      <strong>Portal URL:</strong>
+                    </p>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(portalUrl);
+                          toast.success("URL copied to clipboard");
+                        }}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(portalUrl, "_blank")}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Preview
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-blue-800 font-mono break-all">
+                    {portalUrl}
+                  </p>
+                  {currentPortal.lastAccessedAt && (
+                    <p className="text-xs text-blue-600 mt-2">
+                      Last accessed:{" "}
+                      {new Date(currentPortal.lastAccessedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Save settings to generate a portal URL for this client
+                  </p>
+                </div>
+              )}
 
-          {/* Branding Tab */}
-          <TabsContent value="branding" className="space-y-6">
-            <Card>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-2xl text-gray-900">
+                    {portals.filter((p) => p.enabled).length}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Active Portals</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-2xl text-gray-900">{portals.length}</p>
+                  <p className="text-sm text-gray-600 mt-1">Total Portals</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-2xl text-gray-900">
+                    {portals.filter((p) => p.lastAccessedAt).length}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Accessed</p>
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </div>
+
+        {selectedClientId && portalEnabled && (
+          <>
+            {/* Branding */}
+            <div>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Palette className="h-5 w-5 mr-2 text-purple-600" />
@@ -318,7 +335,7 @@ export function ClientPortal() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
+                <div className="space-y-2 py-6">
                   <Label htmlFor="portal-title">Portal Title</Label>
                   <Input
                     id="portal-title"
@@ -346,12 +363,10 @@ export function ClientPortal() {
                   </p>
                 </div>
               </CardContent>
-            </Card>
-          </TabsContent>
+            </div>
 
-          {/* Chat Features Tab */}
-          <TabsContent value="chat" className="space-y-6">
-            <Card>
+            {/* Chat Features */}
+            <div>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MessageSquare className="h-5 w-5 mr-2 text-green-600" />
@@ -363,7 +378,7 @@ export function ClientPortal() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-1 py-6">
                     <Label>Enable Portal Chat</Label>
                     <p className="text-sm text-gray-600">
                       Allow clients to send messages directly through the portal
@@ -448,9 +463,10 @@ export function ClientPortal() {
                   </>
                 )}
               </CardContent>
-            </Card>
+            </div>
 
-            <Card>
+            {/* Notification Settings */}
+            <div>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Bell className="h-5 w-5 mr-2 text-orange-600" />
@@ -459,7 +475,7 @@ export function ClientPortal() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-1 py-6">
                     <Label>Email Notifications</Label>
                     <p className="text-sm text-gray-600">
                       Get notified when clients send messages
@@ -471,27 +487,10 @@ export function ClientPortal() {
                   />
                 </div>
               </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
-
-      {/* Actions */}
-      <div className="flex justify-end space-x-2">
-        {currentPortal && (
-          <Button
-            variant="outline"
-            onClick={() => window.open(currentPortal.portalUrl, "_blank")}
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Preview Portal
-          </Button>
+            </div>
+          </>
         )}
-        <Button onClick={handleSave} disabled={isSaving || !selectedClientId}>
-          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-          Save Changes
-        </Button>
       </div>
-    </div>
+    </>
   );
 }
