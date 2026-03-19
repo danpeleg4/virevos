@@ -1,6 +1,5 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { clients, projects } from "@db/schema";
 import { eq, count } from "drizzle-orm";
@@ -56,19 +55,4 @@ export async function assertCanAddProject(userId: string): Promise<void> {
       `Project limit reached. The ${plan} plan allows up to ${limit} projects. Please upgrade to add more.`
     );
   }
-}
-
-export async function assertHasAiAssistant(userId: string): Promise<void> {
-  const plan = await getUserPlan(userId);
-  if (!PLAN_LIMITS[plan].aiAssistant) {
-    throw new Error(
-      `The AI assistant is not available on the ${plan} plan. Please upgrade to Professional or Business.`
-    );
-  }
-}
-
-export async function getCurrentUserPlan(): Promise<PlanId> {
-  const user = await currentUser();
-  if (!user?.id) throw new Error("Unauthorized");
-  return getUserPlan(user.id);
 }

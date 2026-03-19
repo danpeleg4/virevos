@@ -1,7 +1,6 @@
 import {
   assertCanAddClient,
   assertCanAddProject,
-  assertHasAiAssistant,
   getUserPlan,
 } from "@/lib/plan_limits";
 
@@ -109,19 +108,5 @@ describe("assertCanAddProject", () => {
     await expect(assertCanAddProject("user_1")).rejects.toThrow(
       /Project limit reached/
     );
-  });
-});
-
-// ─── assertHasAiAssistant ─────────────────────────────────────────────────
-
-describe("assertHasAiAssistant", () => {
-  it("does not throw for professional plan", async () => {
-    mockSubscription("professional");
-    await expect(assertHasAiAssistant("user_1")).resolves.toBeUndefined();
-  });
-
-  it("does not throw for business plan", async () => {
-    mockSubscription("business");
-    await expect(assertHasAiAssistant("user_1")).resolves.toBeUndefined();
   });
 });

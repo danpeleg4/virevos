@@ -94,7 +94,9 @@ export function AttachmentDialog({
   const { data: appFilesData, isLoading: isLoadingFiles } = useQuery({
     queryKey: ["user-files"],
     queryFn: async () => {
-      const res = await axios.get<{ files: AppFile[] }>("/api/files/user-files");
+      const res = await axios.get<{ files: AppFile[] }>(
+        "/api/files/user-files"
+      );
       return res.data.files;
     },
     enabled: open,
@@ -192,7 +194,7 @@ export function AttachmentDialog({
             Attach Files
           </DialogTitle>
           <DialogDescription>
-            Upload files, add links, or select from your project files
+            Upload files or select from your project files
           </DialogDescription>
         </DialogHeader>
 
@@ -201,18 +203,20 @@ export function AttachmentDialog({
           onValueChange={setActiveTab}
           className="flex flex-col"
         >
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="upload" className={activeTab == "upload" ? "" : "cursor-pointer"}>
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger
+              value="upload"
+              className={activeTab == "upload" ? "" : "cursor-pointer"}
+            >
               <Upload className="h-4 w-4 mr-2" />
               Upload
             </TabsTrigger>
-            <TabsTrigger value="recent" className={activeTab == "recent" ? "" : "cursor-pointer"}>
+            <TabsTrigger
+              value="recent"
+              className={activeTab == "recent" ? "" : "cursor-pointer"}
+            >
               <Folder className="h-4 w-4 mr-2" />
               App Files
-            </TabsTrigger>
-            <TabsTrigger value="link" className={activeTab == "link" ? "" : "cursor-pointer"}>
-              <Link2 className="h-4 w-4 mr-2" />
-              Add Link
             </TabsTrigger>
           </TabsList>
 
@@ -322,52 +326,6 @@ export function AttachmentDialog({
                   </div>
                 )}
               </ScrollArea>
-            </TabsContent>
-
-            <TabsContent
-              value="link"
-              className="absolute inset-0 space-y-4 overflow-y-auto data-[state=inactive]:hidden"
-            >
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm text-gray-700 mb-2 block">
-                    File URL
-                  </label>
-                  <Input
-                    placeholder="https://example.com/file.pdf"
-                    value={linkUrl}
-                    onChange={(e) => setLinkUrl(e.target.value)}
-                  />
-                </div>
-                <p className="text-xs text-gray-500">
-                  Add a link to a file stored in cloud storage or external
-                  website
-                </p>
-                {linkUrl && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3">
-                        <Link2 className="h-5 w-5 text-blue-500 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-blue-900 font-medium">
-                            Link Preview
-                          </p>
-                          <p className="text-xs text-blue-700 mt-1 break-all">
-                            {linkUrl}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setLinkUrl("")}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </TabsContent>
           </div>
         </Tabs>
