@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       | "status"
       | "completed"
     > = {
-      dueDate: Date.now().toString(),
+      dueDate: new Date().toISOString(),
       title: title.trim(),
       description,
       priority,

@@ -9,11 +9,13 @@ jest.mock("@clerk/nextjs/server", () => ({
 jest.mock("@db/db", () => {
   const where = jest.fn();
   const returning = jest.fn();
+  const values = jest.fn().mockReturnValue({ returning });
 
   return {
     __esModule: true,
     where,
     returning,
+    values,
     db: {
       select: jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
@@ -24,17 +26,16 @@ jest.mock("@db/db", () => {
         }),
       }),
       insert: jest.fn().mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          returning,
-        }),
+        values,
       }),
     },
   };
 });
 
-const { where, returning } = jest.requireMock("@db/db") as {
+const { where, returning, values: dbValues } = jest.requireMock("@db/db") as {
   where: jest.Mock;
   returning: jest.Mock;
+  values: jest.Mock;
 };
 
 function req(body: unknown): NextRequest {
@@ -105,6 +106,19 @@ describe("POST /tasks", () => {
       success: true,
       task: { id: 1, title: "Task", userId: "user_1" },
     });
+  });
+
+  it("uses ISO string as default dueDate when none provided", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+
+    returning.mockResolvedValueOnce([{ id: 1, title: "Task", userId: "user_1" }]);
+
+    await POST(req({ title: "Task" }));
+
+    const insertedValues = dbValues.mock.calls[0][0] as { dueDate: string };
+    expect(insertedValues.dueDate).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+    );
   });
 
   it("500 error", async () => {

@@ -32,16 +32,14 @@ export async function POST(req: NextRequest) {
     .from(users)
     .where(eq(users.user_id, user.id));
 
-  if (res.ai_credits > 0) {
-    await db
-      .update(users)
-      .set({ ai_credits: res.ai_credits - 1 })
-      .where(eq(users.user_id, user.id));
-  }
-
-  if (res.ai_credits <= 0) {
+  if (!res || res.ai_credits <= 0) {
     return NextResponse.json("No AI Credits", { status: 401 });
   }
+
+  await db
+    .update(users)
+    .set({ ai_credits: res.ai_credits - 1 })
+    .where(eq(users.user_id, user.id));
 
   const encoder = new TextEncoder();
 
@@ -129,7 +127,8 @@ export async function POST(req: NextRequest) {
             });
           }
         }
-      } catch {
+      } catch (err) {
+        console.error("[api/chat] stream error:", err);
         send({ type: "error", message: "An error occurred" });
       } finally {
         send({ type: "done" });

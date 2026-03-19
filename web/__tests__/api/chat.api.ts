@@ -82,6 +82,20 @@ describe("POST /api/chat", () => {
     expect(await res.json()).toBe("No AI Credits");
   });
 
+  it("returns 401 if user is not found in DB", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as jest.Mock).mockReturnValue({
+      from: () => ({
+        where: () => Promise.resolve([]),
+      }),
+    });
+
+    const res = await POST(mockRequest({ messages: [] }));
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toBe("No AI Credits");
+  });
+
   it("decrements AI credits and streams a response", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     (db.select as jest.Mock).mockReturnValue({

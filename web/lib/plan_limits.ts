@@ -8,9 +8,13 @@ import { getUserSubscriptionByUserId } from "./billing";
 
 const PLAN_LIMITS: Record<
   PlanId,
-  { maxClients: number | null; maxProjects: number | null; aiAssistant: boolean }
+  {
+    maxClients: number | null;
+    maxProjects: number | null;
+    aiAssistant: boolean;
+  }
 > = {
-  starter: { maxClients: 5, maxProjects: 1, aiAssistant: false },
+  starter: { maxClients: 5, maxProjects: 1, aiAssistant: true },
   professional: { maxClients: null, maxProjects: null, aiAssistant: true },
   business: { maxClients: null, maxProjects: null, aiAssistant: true },
 };

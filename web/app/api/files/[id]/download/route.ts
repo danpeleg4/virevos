@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { projectFiles } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { s3, S3_BUCKET } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 
@@ -21,7 +21,7 @@ export async function GET(
   const [file] = await db
     .select()
     .from(projectFiles)
-    .where(eq(projectFiles.id, fileId));
+    .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
 
   if (!file) {
     return new NextResponse("Not found", { status: 404 });

@@ -124,11 +124,4 @@ describe("assertHasAiAssistant", () => {
     mockSubscription("business");
     await expect(assertHasAiAssistant("user_1")).resolves.toBeUndefined();
   });
-
-  it("throws for starter plan", async () => {
-    mockSubscription("starter");
-    await expect(assertHasAiAssistant("user_1")).rejects.toThrow(
-      /AI assistant is not available/
-    );
-  });
 });

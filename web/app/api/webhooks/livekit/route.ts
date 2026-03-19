@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
           target: [meetingAttendees.meetingId, meetingAttendees.name],
         });
 
-      const [event] = await db
+      const [dbEvent] = await db
         .select()
         .from(events)
         .where(eq(events.id, roomName));
@@ -89,11 +89,11 @@ export async function POST(req: NextRequest) {
           recordingStatus: users.recordingStatus,
         })
         .from(users)
-        .where(eq(users.user_id, event.userId));
+        .where(eq(users.user_id, dbEvent.userId));
 
       const outputs: EncodedOutputs = {
         file: new EncodedFileOutput({
-          filepath: `recordings/${event.userId}/${event.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
+          filepath: `recordings/${dbEvent.userId}/${dbEvent.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
           output: {
             case: "s3",
             value: {
