@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "../ui/card";
+import { createPortal } from "react-dom";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
@@ -68,7 +68,11 @@ function formatTimestamp(ts: Date | string): string {
   return date.toLocaleDateString();
 }
 
-export function UnifiedInbox() {
+interface UnifiedInboxProps {
+  navContainer: HTMLDivElement | null;
+}
+
+export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const [messages, setMessages] = useState<InboxMessage[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<InboxMessage | null>(
     null
@@ -155,7 +159,6 @@ export function UnifiedInbox() {
     try {
       await axios.patch(`/api/gmail/messages/${id}`, { action });
 
-      // Update local state
       setMessages((prev) =>
         prev.map((msg) => {
           if (msg.id !== id) return msg;
@@ -265,135 +268,131 @@ export function UnifiedInbox() {
 
   if (isConnected === false) {
     return (
-      <Card>
-        <CardContent className="py-24 text-center">
-          <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-          <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Connect your Google account to sync emails and use the inbox.
-          </p>
-          <Button onClick={() => (window.location.href = "/api/google")}>
-            <Mail className="h-4 w-4 mr-2" />
-            Connect Gmail
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="py-24 text-center">
+        <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+        <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
+        <p className="text-sm text-gray-500 mb-6">
+          Connect your Google account to sync emails and use the inbox.
+        </p>
+        <Button onClick={() => (window.location.href = "/api/google")}>
+          <Mail className="h-4 w-4 mr-2" />
+          Connect Gmail
+        </Button>
+      </div>
     );
   }
 
+  const navActions = (
+    <>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+        <Input
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && fetchEmails()}
+          className="pl-8 h-8 text-sm w-44"
+        />
+      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {filterType === "all"
+              ? "Type"
+              : filterType === "email"
+                ? "Email"
+                : "Chat"}
+            {filterType !== "all" && (
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            )}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {(["all", "email", "chat"] as const).map((v) => (
+            <DropdownMenuItem
+              key={v}
+              onClick={() => setFilterType(v)}
+              className="flex items-center justify-between cursor-pointer"
+            >
+              {v === "all"
+                ? "All Messages"
+                : v === "email"
+                  ? "Email Only"
+                  : "Chat Only"}
+              {filterType === v && (
+                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
+            <ArrowUpDown className="h-3.5 w-3.5" />
+            {filterStatus === "all"
+              ? "Status"
+              : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
+            {filterStatus !== "all" && (
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            )}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {(["all", "unread", "starred", "archived"] as const).map((v) => (
+            <DropdownMenuItem
+              key={v}
+              onClick={() => setFilterStatus(v)}
+              className="flex items-center justify-between cursor-pointer"
+            >
+              {v === "all" ? "All" : v.charAt(0).toUpperCase() + v.slice(1)}
+              {filterStatus === v && (
+                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button
+        size="icon"
+        variant="outline"
+        onClick={handleSync}
+        disabled={isSyncing}
+        title="Sync Gmail"
+        className="h-8 w-8 flex-shrink-0"
+      >
+        {isSyncing ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <RefreshCw className="h-3.5 w-3.5" />
+        )}
+      </Button>
+      <Button
+        size="icon"
+        variant="outline"
+        onClick={() => setShowComposeDialog(true)}
+        title="Compose new message"
+        className="h-8 w-8 flex-shrink-0"
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </Button>
+    </>
+  );
+
   return (
     <div className="flex gap-6" style={{ flex: "1 1 0%", minHeight: 0 }}>
+      {navContainer && createPortal(navActions, navContainer)}
+
       {/* Message List */}
       <div
         className="flex flex-col"
         style={{ width: "33.333%", minHeight: 0, flexShrink: 0 }}
       >
-        <Card
+        <div
           className="flex flex-col overflow-hidden"
           style={{ flex: "1 1 0%", minHeight: 0 }}
         >
-          {/* Toolbar */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 flex-wrap">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && fetchEmails()}
-                className="pl-8 h-8 text-sm"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  {filterType === "all"
-                    ? "Type"
-                    : filterType === "email"
-                      ? "Email"
-                      : "Chat"}
-                  {filterType !== "all" && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(["all", "email", "chat"] as const).map((v) => (
-                  <DropdownMenuItem
-                    key={v}
-                    onClick={() => setFilterType(v)}
-                    className="flex items-center justify-between cursor-pointer"
-                  >
-                    {v === "all"
-                      ? "All Messages"
-                      : v === "email"
-                        ? "Email Only"
-                        : "Chat Only"}
-                    {filterType === v && (
-                      <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
-                  <ArrowUpDown className="h-3.5 w-3.5" />
-                  {filterStatus === "all"
-                    ? "Status"
-                    : filterStatus.charAt(0).toUpperCase() +
-                      filterStatus.slice(1)}
-                  {filterStatus !== "all" && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(["all", "unread", "starred", "archived"] as const).map(
-                  (v) => (
-                    <DropdownMenuItem
-                      key={v}
-                      onClick={() => setFilterStatus(v)}
-                      className="flex items-center justify-between cursor-pointer"
-                    >
-                      {v === "all"
-                        ? "All"
-                        : v.charAt(0).toUpperCase() + v.slice(1)}
-                      {filterStatus === v && (
-                        <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
-                      )}
-                    </DropdownMenuItem>
-                  )
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={handleSync}
-              disabled={isSyncing}
-              title="Sync Gmail"
-              className="h-8 w-8 flex-shrink-0"
-            >
-              {isSyncing ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3.5 w-3.5" />
-              )}
-            </Button>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setShowComposeDialog(true)}
-              title="Compose new message"
-              className="h-8 w-8 flex-shrink-0"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
           {/* Message List */}
           <div
             className="overflow-y-auto overflow-x-hidden p-3 space-y-2"
@@ -503,7 +502,7 @@ export function UnifiedInbox() {
               ))
             )}
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Message Detail & Reply */}
@@ -512,11 +511,11 @@ export function UnifiedInbox() {
         style={{ flex: "1 1 0%", minHeight: 0 }}
       >
         {selectedMessage ? (
-          <Card
+          <div
             className="flex flex-col"
             style={{ flex: "1 1 0%", minHeight: 0 }}
           >
-            <CardContent className="p-6 flex flex-col flex-1 gap-6">
+            <div className="p-6 flex flex-col flex-1 gap-6">
               {/* Message Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-4">
@@ -865,11 +864,11 @@ export function UnifiedInbox() {
                   }}
                 />
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : (
-          <Card className="flex-1 flex flex-col justify-center">
-            <CardContent className="py-24 text-center">
+          <div className="flex-1 flex flex-col justify-center">
+            <div className="py-24 text-center">
               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">Select a message to view</p>
               <p className="text-sm text-gray-500 mt-1">
@@ -891,8 +890,8 @@ export function UnifiedInbox() {
                   Sync Gmail
                 </Button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
 
