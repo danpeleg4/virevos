@@ -4,19 +4,16 @@ const footerLinks: Record<string, { label: string; href: string }[]> = {
   Product: [
     { label: "Features", href: "/features" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Roadmap", href: "/roadmap" },
     { label: "Changelog", href: "/changelog" },
   ],
   Company: [
     { label: "About", href: "/about" },
     { label: "Blog", href: "/blog" },
-    { label: "Careers", href: "/careers" },
     { label: "Partners", href: "/partners" },
   ],
   Resources: [
     { label: "Documentation", href: "/learn" },
     { label: "Help Center", href: "/resources" },
-    { label: "Community", href: "/community" },
     { label: "Contact", href: "/contact" },
   ],
   Legal: [
