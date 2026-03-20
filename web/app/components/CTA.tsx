@@ -55,8 +55,7 @@ export function CTA() {
             transition={{ delay: 0.2 }}
             className="text-xl text-white/90 mb-12 max-w-2xl mx-auto"
           >
-            Start your free 14-day trial today. No credit card required, cancel
-            anytime.
+            Start your free Plan today. No credit card required, cancel anytime.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -95,7 +94,7 @@ export function CTA() {
           >
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-green-300" />
-              <span>14-day free trial</span>
+              <span>Free Plan</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-green-300" />

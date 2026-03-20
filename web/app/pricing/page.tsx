@@ -144,11 +144,6 @@ const faqs = [
       "We accept all major credit cards (Visa, Mastercard, Amex) and bank transfers for annual Business plans. Payments are processed securely through Stripe.",
   },
   {
-    question: "Is there a free trial?",
-    answer:
-      "Yes — all paid plans include a 14-day free trial. No credit card required. Cancel anytime during the trial without being charged.",
-  },
-  {
     question: "How do AI credits work?",
     answer:
       "AI credits power the AI assistant features — things like chatting with your assistant, generating meeting summaries, and transcript searches. Each plan includes a set number of credits per month. The Business plan includes unlimited credits.",

@@ -36,7 +36,7 @@ const plans = [
       "Priority support",
       "Full integrations",
     ],
-    cta: "Start free trial",
+    cta: "Start Pro Plan",
     popular: true,
   },
   {
@@ -52,7 +52,7 @@ const plans = [
       "Dedicated account manager",
       "Custom contracts",
     ],
-    cta: "Start free trial",
+    cta: "Start Business Plan",
     popular: false,
   },
 ];
@@ -177,7 +177,7 @@ export function Pricing() {
                 <div className="flex items-start space-x-3">
                   <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-gray-900 mb-1">14-day free trial</p>
+                    <p className="text-gray-900 mb-1">Free Plan</p>
                     <p className="text-sm text-gray-600">
                       No credit card required
                     </p>

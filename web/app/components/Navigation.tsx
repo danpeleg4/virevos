@@ -1,22 +1,20 @@
 "use client";
 
 import { Button } from "./ui/button";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
-import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
+import { SignOutButton, useUser } from "@clerk/nextjs";
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const router = useRouter();
   const { isSignedIn } = useUser();
 
   const handleNavigation = (path: string) => {
     router.push(path);
     setMobileMenuOpen(false);
-    setOpenDropdown(null);
   };
 
   return (

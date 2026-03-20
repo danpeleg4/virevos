@@ -526,7 +526,7 @@ export default function FeaturesPage() {
               </span>
             </h2>
             <p className="text-xl text-gray-500 mb-10">
-              Start your free 14-day trial. No credit card required.
+              Start your free Plan. No credit card required.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
@@ -549,7 +549,7 @@ export default function FeaturesPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Free 14-day trial
+                Free Plan
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
