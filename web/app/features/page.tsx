@@ -1,325 +1,569 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Card } from "../components/ui/card";
 import {
-  Zap,
+  Bot,
   Users,
   Calendar,
+  Zap,
   BarChart3,
-  Lock,
-  CheckCircle,
-  Smartphone,
-  Globe,
-  Workflow,
-  Bell,
+  Video,
+  CheckCircle2,
+  ArrowRight,
+  Sparkles,
+  MessageSquare,
   FileText,
-  Archive,
+  Bell,
+  Lock,
+  Globe,
+  Brain,
+  Mic,
+  TrendingUp,
+  Clock,
+  Target,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
+import { useRouter } from "next/navigation";
 
-const featureCategories = [
+const mainFeatures = [
   {
-    category: "Core Features",
-    description: "Everything you need to manage tasks and projects effectively",
-    features: [
+    icon: Bot,
+    title: "AI Assistant",
+    description:
+      "AI powered assistant that understands your business context. Add clients, search past meetings, and get instant help — all through natural conversation.",
+    gradient: "from-pink-500 to-rose-600",
+    benefits: [
+      "Add clients via chat",
+      "Search meeting transcripts",
+      "Project context aware",
+      "Streaming responses",
+    ],
+  },
+  {
+    icon: Users,
+    title: "Client Management",
+    description:
+      "A full CRM built for freelancers. Organize every client, track project history, and keep all communications in one centralized workspace.",
+    gradient: "from-blue-500 to-blue-700",
+    benefits: [
+      "Client profiles & history",
+      "Project tracking",
+      "Shared portals",
+      "Contact management",
+    ],
+  },
+  {
+    icon: Video,
+    title: "Built-In Video Meetings",
+    description:
+      "Run client calls directly inside Virevos with AI-powered video. Meetings are automatically transcribed, summarized, and linked to your projects.",
+    gradient: "from-purple-500 to-violet-700",
+    benefits: [
+      "HD video & audio",
+      "Auto transcription",
+      "AI meeting summaries",
+      "Action item capture",
+    ],
+  },
+  {
+    icon: Zap,
+    title: "Workflow Automation",
+    description:
+      "Build no-code automations to handle client onboarding, follow-ups, and repetitive tasks. Set triggers once and let Virevos do the work.",
+    gradient: "from-yellow-400 to-orange-500",
+    benefits: [
+      "No-code builder",
+      "Custom triggers & actions",
+      "Email & task automation",
+      "Templates library",
+    ],
+  },
+  {
+    icon: Calendar,
+    title: "Google Calendar Sync",
+    description:
+      "Two-way Google Calendar integration with real-time push notifications. Your schedule stays in sync whether you book inside the app or directly in Google.",
+    gradient: "from-green-400 to-emerald-600",
+    benefits: [
+      "Two-way sync",
+      "Real-time push updates",
+      "Meeting scheduling",
+      "Deadline reminders",
+    ],
+  },
+  {
+    icon: BarChart3,
+    title: "Analytics & Insights",
+    description:
+      "Track revenue, client activity, and productivity trends. Get the data you need to grow your freelance business and make smarter decisions.",
+    gradient: "from-teal-400 to-cyan-600",
+    benefits: [
+      "Revenue tracking",
+      "Client activity reports",
+      "Productivity metrics",
+      "Export capabilities",
+    ],
+  },
+];
+
+const spotlights = [
+  {
+    badge: "AI-Powered",
+    badgeColor: "bg-pink-50 border-pink-100 text-pink-700",
+    icon: Brain,
+    iconGradient: "from-pink-500 to-rose-600",
+    title: "Your AI assistant that actually knows your business",
+    description:
+      "Ask Virevos to add a new client, pull up notes from last week's meeting, or draft a follow-up email. The AI understands your workspace context and takes real action — not just suggestions.",
+    highlights: [
       {
-        icon: Zap,
-        title: "Lightning Fast Performance",
-        description:
-          "Experience blazing-fast performance with real-time updates and instant synchronization across all devices. Our optimized infrastructure ensures zero lag.",
-        benefits: [
-          "Real-time sync",
-          "Instant updates",
-          "Offline mode",
-          "Cloud backup",
-        ],
+        icon: Bot,
+        label: "Natural language actions",
+        detail:
+          "Add clients, search transcripts, and update records through conversation",
       },
       {
-        icon: Workflow,
-        title: "Custom Workflows",
-        description:
-          "Create custom workflows that match your team's unique process. Automate repetitive tasks and focus on what matters most.",
-        benefits: [
-          "Drag-and-drop builder",
-          "Automation rules",
-          "Custom statuses",
-          "Templates library",
-        ],
+        icon: Mic,
+        label: "Meeting intelligence",
+        detail:
+          "Semantic search across all your past meeting transcripts instantly",
       },
       {
-        icon: Calendar,
-        title: "Smart Scheduling",
-        description:
-          "AI-powered scheduling that learns your patterns and helps you plan your day more effectively. Never miss a deadline again.",
-        benefits: [
-          "AI suggestions",
-          "Calendar integration",
-          "Time blocking",
-          "Deadline tracking",
-        ],
+        icon: Sparkles,
+        label: "Streaming responses",
+        detail:
+          "Get answers in real-time as the AI thinks through your request",
       },
     ],
   },
   {
-    category: "Collaboration",
-    description: "Work together seamlessly with your team",
-    features: [
+    badge: "Communications",
+    badgeColor: "bg-purple-50 border-purple-100 text-purple-700",
+    icon: Video,
+    iconGradient: "from-purple-500 to-violet-700",
+    title: "Client meetings with everything captured automatically",
+    description:
+      "Stop juggling Zoom, Google Meet, and note-taking apps. Virevos has video meetings built in — powered by LiveKit — with automatic transcription and AI summaries so nothing falls through the cracks.",
+    highlights: [
       {
-        icon: Users,
-        title: "Team Collaboration",
-        description:
-          "Work together seamlessly with shared workspaces, comments, and real-time collaboration features. Keep everyone on the same page.",
-        benefits: [
-          "Shared workspaces",
-          "Real-time comments",
-          "@mentions",
-          "Activity feeds",
-        ],
-      },
-      {
-        icon: Bell,
-        title: "Smart Notifications",
-        description:
-          "Stay informed without being overwhelmed. Customize notifications to receive only what matters to you.",
-        benefits: [
-          "Custom notification rules",
-          "Digest emails",
-          "Mobile push",
-          "Slack integration",
-        ],
+        icon: Video,
+        label: "In-app video calls",
+        detail:
+          "HD meetings without leaving your workspace, no extra tools needed",
       },
       {
         icon: FileText,
-        title: "Document Management",
-        description:
-          "Attach files, create documents, and keep all project resources in one place. Full-text search makes finding anything easy.",
-        benefits: [
-          "File attachments",
-          "Version control",
-          "Full-text search",
-          "Preview support",
-        ],
+        label: "Auto transcription",
+        detail:
+          "Full meeting transcripts stored and searchable in your project timeline",
+      },
+      {
+        icon: Target,
+        label: "AI summaries & action items",
+        detail: "GPT-4o distills key decisions and next steps after every call",
       },
     ],
   },
   {
-    category: "Analytics & Insights",
-    description: "Make data-driven decisions with powerful analytics",
-    features: [
+    badge: "Automation",
+    badgeColor: "bg-yellow-50 border-yellow-100 text-yellow-700",
+    icon: Zap,
+    iconGradient: "from-yellow-400 to-orange-500",
+    title: "Automate the busywork, focus on what matters",
+    description:
+      "Build trigger-based workflows without writing code. When a new client is added, automatically send a welcome email, create a project, and schedule an onboarding call — all in one flow.",
+    highlights: [
       {
-        icon: BarChart3,
-        title: "Advanced Analytics",
-        description:
-          "Track your productivity with detailed analytics and actionable insights to improve your workflow and team performance.",
-        benefits: [
-          "Custom reports",
-          "Performance metrics",
-          "Time tracking",
-          "Export capabilities",
-        ],
+        icon: Zap,
+        label: "Trigger-based workflows",
+        detail:
+          "React to events like new clients, completed tasks, or calendar changes",
       },
       {
-        icon: Archive,
-        title: "Project Archives",
-        description:
-          "Keep a complete history of all your projects. Search and reference past work anytime you need it.",
-        benefits: [
-          "Unlimited history",
-          "Advanced search",
-          "Data export",
-          "Audit logs",
-        ],
-      },
-    ],
-  },
-  {
-    category: "Security & Compliance",
-    description: "Enterprise-grade security for your peace of mind",
-    features: [
-      {
-        icon: Lock,
-        title: "Enterprise Security",
-        description:
-          "Bank-level encryption and security measures to keep your data safe and compliant with industry standards.",
-        benefits: [
-          "256-bit encryption",
-          "SOC 2 compliant",
-          "GDPR ready",
-          "2FA authentication",
-        ],
+        icon: Bell,
+        label: "Smart notifications",
+        detail: "Get alerted at the right time, not every time",
       },
       {
-        icon: CheckCircle,
-        title: "Access Controls",
-        description:
-          "Granular permission settings to control who can see and edit what. Perfect for teams of any size.",
-        benefits: [
-          "Role-based access",
-          "Guest permissions",
-          "SSO support",
-          "Team management",
-        ],
-      },
-    ],
-  },
-  {
-    category: "Integrations",
-    description: "Connect with your favorite tools",
-    features: [
-      {
-        icon: Globe,
-        title: "100+ Integrations",
-        description:
-          "Connect with your favorite tools like Slack, Google Calendar, Zoom, GitHub, and 100+ other apps.",
-        benefits: [
-          "Slack integration",
-          "Calendar sync",
-          "API access",
-          "Webhooks",
-        ],
-      },
-      {
-        icon: Smartphone,
-        title: "Mobile Apps",
-        description:
-          "Native iOS and Android apps that work seamlessly with the web version. Work from anywhere, on any device.",
-        benefits: [
-          "iOS app",
-          "Android app",
-          "Offline support",
-          "Push notifications",
-        ],
+        icon: Clock,
+        label: "Save hours weekly",
+        detail:
+          "Automate follow-ups, reminders, and status updates across your pipeline",
       },
     ],
   },
 ];
 
+const additionalFeatures = [
+  {
+    icon: Globe,
+    title: "Google Calendar",
+    description: "Real-time two-way sync with push notifications",
+  },
+  {
+    icon: Lock,
+    title: "Secure by default",
+    description: "Clerk-powered auth with SSO and 2FA support",
+  },
+  {
+    icon: MessageSquare,
+    title: "Unified inbox",
+    description: "All client communications in one place",
+  },
+  {
+    icon: TrendingUp,
+    title: "Revenue tracking",
+    description: "Monitor earnings and business growth over time",
+  },
+  {
+    icon: FileText,
+    title: "Project archives",
+    description: "Full history of every project and client interaction",
+  },
+  {
+    icon: Users,
+    title: "Client portal",
+    description: "Shareable project views for your clients",
+  },
+];
+
 const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-export default function AllFeatures() {
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+export default function FeaturesPage() {
+  const router = useRouter();
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       <Navigation />
-      {/* Hero Section */}
-      <motion.section
-        initial="hidden"
-        animate="visible"
-        variants={fadeInUp}
-        className="py-20 sm:py-32"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
+
+      {/* Hero */}
+      <section className="relative bg-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 opacity-70" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-center mb-8"
+          >
+            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm">
+              <Sparkles className="h-4 w-4 text-purple-600" />
+              <span className="text-sm text-gray-700">
+                Built for freelancers & service pros
+              </span>
+            </div>
+          </motion.div>
+
+          <div className="text-center max-w-4xl mx-auto">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-5xl sm:text-6xl text-gray-900 mb-6"
+              transition={{ delay: 0.1 }}
+              className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 mb-6 leading-tight"
             >
-              Powerful features for modern teams
+              Everything your business{" "}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                needs to grow
+              </span>
             </motion.h1>
+
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-xl text-gray-600"
+              transition={{ delay: 0.2 }}
+              className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
-              Discover all the tools and capabilities that make Virevos the
-              ultimate productivity platform.
+              Client management, AI assistance, video meetings, and workflow
+              automation — all in one platform designed for how you actually
+              work.
             </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            >
+              <Button
+                size="lg"
+                className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all group"
+                onClick={() => router.push("/onboard")}
+              >
+                Start for free
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg rounded-xl"
+                onClick={() => router.push("/pricing")}
+              >
+                View pricing
+              </Button>
+            </motion.div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Feature Categories */}
-      {featureCategories.map((category, categoryIndex) => (
-        <motion.section
-          key={categoryIndex}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={{
-            hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: {
-                staggerChildren: 0.1,
-              },
-            },
-          }}
-          className="py-16 sm:py-20"
+      {/* Main Features Grid */}
+      <section className="py-24 sm:py-32 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center max-w-2xl mx-auto mb-16"
+          >
+            <h2 className="text-4xl sm:text-5xl text-gray-900 mb-4">
+              Six tools. One workspace.
+            </h2>
+            <p className="text-xl text-gray-500">
+              Replace the stack of apps you're juggling with a single platform
+              that connects every part of your business.
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {mainFeatures.map((feature, index) => (
+              <motion.div key={index} variants={fadeInUp}>
+                <div className="h-full bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-gray-300 transition-all duration-300 group">
+                  <div className="mb-6">
+                    <div
+                      className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-r ${feature.gradient} shadow-lg`}
+                    >
+                      <feature.icon className="h-7 w-7 text-white" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-medium text-gray-900 mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-500 mb-6 leading-relaxed text-sm">
+                    {feature.description}
+                  </p>
+                  <ul className="space-y-2">
+                    {feature.benefits.map((benefit, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-center text-sm text-gray-600"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Feature Spotlights */}
+      {spotlights.map((spotlight, index) => (
+        <section
+          key={index}
+          className={`py-20 sm:py-28 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div variants={fadeInUp} className="mb-12">
-              <h2 className="text-3xl sm:text-4xl text-gray-900 mb-3">
-                {category.category}
-              </h2>
-              <p className="text-xl text-gray-600">{category.description}</p>
-            </motion.div>
-
-            <div className="grid gap-8 lg:grid-cols-2">
-              {category.features.map((feature, featureIndex) => (
-                <motion.div key={featureIndex} variants={fadeInUp}>
-                  <Card className="p-8 h-full hover:shadow-xl transition-all duration-300 border-gray-200">
-                    <div className="flex flex-col h-full">
-                      <div className="bg-blue-100 rounded-lg w-14 h-14 flex items-center justify-center mb-6">
-                        <feature.icon className="h-7 w-7 text-blue-600" />
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.5 }}
+              className={`grid lg:grid-cols-2 gap-12 lg:gap-20 items-center ${
+                index % 2 !== 0 ? "lg:[&>*:first-child]:order-2" : ""
+              }`}
+            >
+              {/* Text */}
+              <div>
+                <div
+                  className={`inline-flex items-center gap-2 border rounded-full px-3 py-1 text-sm font-medium mb-6 ${spotlight.badgeColor}`}
+                >
+                  <spotlight.icon className="h-3.5 w-3.5" />
+                  {spotlight.badge}
+                </div>
+                <h2 className="text-3xl sm:text-4xl text-gray-900 mb-5 leading-snug">
+                  {spotlight.title}
+                </h2>
+                <p className="text-lg text-gray-500 mb-10 leading-relaxed">
+                  {spotlight.description}
+                </p>
+                <div className="space-y-6">
+                  {spotlight.highlights.map((h, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div
+                        className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${spotlight.iconGradient} flex items-center justify-center shadow-md`}
+                      >
+                        <h.icon className="h-5 w-5 text-white" />
                       </div>
-
-                      <h3 className="text-2xl text-gray-900 mb-3">
-                        {feature.title}
-                      </h3>
-
-                      <p className="text-gray-600 mb-6 flex-grow">
-                        {feature.description}
-                      </p>
-
-                      <div className="space-y-2">
-                        {feature.benefits.map((benefit, benefitIndex) => (
-                          <div
-                            key={benefitIndex}
-                            className="flex items-center text-sm text-gray-700"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                            <span>{benefit}</span>
-                          </div>
-                        ))}
+                      <div>
+                        <p className="font-medium text-gray-900 mb-0.5">
+                          {h.label}
+                        </p>
+                        <p className="text-sm text-gray-500">{h.detail}</p>
                       </div>
                     </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Visual Card */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+                className="relative"
+              >
+                <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl">
+                  <div
+                    className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${spotlight.iconGradient} flex items-center justify-center shadow-lg mb-6`}
+                  >
+                    <spotlight.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-medium text-gray-900 mb-3">
+                    {spotlight.badge}
+                  </h3>
+                  <div className="space-y-3">
+                    {spotlight.highlights.map((h, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm text-gray-600">{h.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Subtle glow */}
+                <div
+                  className={`absolute -inset-px rounded-2xl bg-gradient-to-r ${spotlight.iconGradient} opacity-10 blur-xl -z-10`}
+                />
+              </motion.div>
+            </motion.div>
           </div>
-        </motion.section>
+        </section>
       ))}
 
-      {/* CTA Section */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={fadeInUp}
-        className="py-20 sm:py-32 bg-gray-50"
-      >
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl sm:text-5xl text-gray-900 mb-6">
-            Ready to experience all these features?
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Start your free 14-day trial and see how Virevos can transform your
-            workflow.
-          </p>
-          <Button size="lg" className="text-lg px-8 py-6">
-            Start Free Trial
-          </Button>
+      {/* Additional Features */}
+      <section className="py-20 sm:py-28 bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <h2 className="text-3xl sm:text-4xl text-gray-900 mb-4">
+              And much more
+            </h2>
+            <p className="text-lg text-gray-500">
+              Every detail you need to run a professional freelance business.
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+          >
+            {additionalFeatures.map((item, index) => (
+              <motion.div key={index} variants={fadeInUp}>
+                <div className="flex items-start gap-4 bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <item.icon className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 mb-1">
+                      {item.title}
+                    </p>
+                    <p className="text-sm text-gray-500">{item.description}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-      </motion.section>
+      </section>
+
+      {/* CTA */}
+      <section className="py-24 sm:py-32 relative overflow-hidden bg-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 opacity-70" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]" />
+        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl sm:text-5xl text-gray-900 mb-6 leading-tight">
+              Ready to run your business{" "}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                smarter?
+              </span>
+            </h2>
+            <p className="text-xl text-gray-500 mb-10">
+              Start your free 14-day trial. No credit card required.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all group"
+                onClick={() => router.push("/onboard")}
+              >
+                Get started free
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg rounded-xl"
+                onClick={() => router.push("/pricing")}
+              >
+                See pricing
+              </Button>
+            </div>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                Free 14-day trial
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                No credit card required
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                Cancel anytime
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );

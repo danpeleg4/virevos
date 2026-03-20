@@ -288,15 +288,15 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 }`}
               >
                 <div
-                  className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}
+                  className={`max-w-[90%] min-w-0 ${message.role === "assistant" ? "w-full" : ""}`}
                 >
                   {message.role === "user" ? (
-                    <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
+                    <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5 break-words">
                       <p>{message.content}</p>
                     </div>
                   ) : (
-                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                      <div className="prose prose-sm max-w-none text-sm text-gray-800">
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 overflow-hidden">
+                      <div className="prose prose-sm max-w-none text-sm text-gray-800 break-words overflow-wrap-anywhere">
                         {message.content ? (
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         ) : (
