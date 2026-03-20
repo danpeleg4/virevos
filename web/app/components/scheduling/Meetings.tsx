@@ -11,6 +11,12 @@ import {
 } from "../../components/ui/dialog";
 import { Label } from "../../components/ui/label";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu";
+import {
   Video,
   Plus,
   Calendar,
@@ -26,6 +32,7 @@ import {
   FileText,
   ArrowUpDown,
   SlidersHorizontal,
+  CheckIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -61,8 +68,11 @@ function StatusBadge({ status }: { status: string | undefined }) {
   );
 }
 
-export function Meetings() {
+export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<"date" | "title" | "duration" | "participants">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "upcoming" | "ended">("all");
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [meetingName, setMeetingName] = useState("");
@@ -137,15 +147,29 @@ export function Meetings() {
     );
   }
 
-  const filteredMeetings =
+  const filteredMeetings = (
     meetings?.data?.filter(
       (event) =>
         event.isMeeting &&
+        (statusFilter === "all" || event.status === statusFilter) &&
         (!searchQuery ||
           decodeURIComponent(event.title)
             .toLowerCase()
             .includes(searchQuery.toLowerCase()))
-    ) ?? [];
+    ) ?? []
+  ).sort((a, b) => {
+    let cmp = 0;
+    if (sortField === "date") {
+      cmp = new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+    } else if (sortField === "title") {
+      cmp = decodeURIComponent(a.title).localeCompare(decodeURIComponent(b.title));
+    } else if (sortField === "duration") {
+      cmp = (a.duration ?? 0) - (b.duration ?? 0);
+    } else if (sortField === "participants") {
+      cmp = (a.attendees?.length ?? 0) - (b.attendees?.length ?? 0);
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
 
   const totalPages = Math.max(
     1,
@@ -161,6 +185,11 @@ export function Meetings() {
     <div ref={tableRef}>
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+        {tabNav && (
+          <div className="flex items-center gap-1 shrink-0 mr-2">
+            {tabNav}
+          </div>
+        )}
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <Input
@@ -174,14 +203,74 @@ export function Meetings() {
           />
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-            <ArrowUpDown className="h-3 w-3" />
-            Sort
-          </button>
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-            <SlidersHorizontal className="h-3 w-3" />
-            Filter
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <ArrowUpDown className="h-3 w-3" />
+                Sort
+                {sortField !== "date" || sortDir !== "desc" ? (
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {(
+                [
+                  { label: "Date (Newest)", field: "date", dir: "desc" },
+                  { label: "Date (Oldest)", field: "date", dir: "asc" },
+                  { label: "Title (A–Z)", field: "title", dir: "asc" },
+                  { label: "Title (Z–A)", field: "title", dir: "desc" },
+                  { label: "Duration (Longest)", field: "duration", dir: "desc" },
+                  { label: "Duration (Shortest)", field: "duration", dir: "asc" },
+                  { label: "Participants (Most)", field: "participants", dir: "desc" },
+                  { label: "Participants (Fewest)", field: "participants", dir: "asc" },
+                ] as const
+              ).map(({ label, field, dir }) => (
+                <DropdownMenuItem
+                  key={label}
+                  onClick={() => { setSortField(field); setSortDir(dir); setPage(1); }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {sortField === field && sortDir === dir && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <SlidersHorizontal className="h-3 w-3" />
+                Filter
+                {statusFilter !== "all" ? (
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              {(
+                [
+                  { label: "All", value: "all" },
+                  { label: "Live", value: "active" },
+                  { label: "Upcoming", value: "upcoming" },
+                  { label: "Ended", value: "ended" },
+                ] as const
+              ).map(({ label, value }) => (
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => { setStatusFilter(value); setPage(1); }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {statusFilter === value && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             size="sm"
             className="h-8"

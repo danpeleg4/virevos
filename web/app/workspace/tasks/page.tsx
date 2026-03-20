@@ -6,6 +6,12 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu";
+import {
   Search,
   Flag,
   ChevronLeft,
@@ -15,6 +21,7 @@ import {
   ListTodo,
   Briefcase,
   Calendar,
+  CheckIcon,
 } from "lucide-react";
 import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
@@ -82,6 +89,9 @@ function ProjectPill({ name }: { name: string }) {
 export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
+  const [sortField, setSortField] = useState<"title" | "dueDate" | "priority">("dueDate");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [priorityFilter, setPriorityFilter] = useState<"all" | "high" | "medium" | "low">("all");
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -143,18 +153,31 @@ export default function Tasks() {
     setTaskDetailOpen(true);
   };
 
-  const filteredTasks =
+  const PRIORITY_ORDER: Record<string, number> = { high: 3, medium: 2, low: 1 };
+
+  const filteredTasks = (
     getTasks?.data?.filter((task: Task) => {
-      const matchesSearch = task.title
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTab =
         activeTab === "all" ||
         (activeTab === "todo" && task.status === "todo") ||
         (activeTab === "in-progress" && task.status === "in-progress") ||
         (activeTab === "completed" && task.status === "completed");
-      return matchesSearch && matchesTab;
-    }) ?? [];
+      const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
+      return matchesSearch && matchesTab && matchesPriority;
+    }) ?? []
+  ).sort((a: Task, b: Task) => {
+    let cmp = 0;
+    if (sortField === "title") cmp = a.title.localeCompare(b.title);
+    else if (sortField === "dueDate") {
+      const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      cmp = da - db;
+    } else if (sortField === "priority") {
+      cmp = (PRIORITY_ORDER[a.priority] ?? 0) - (PRIORITY_ORDER[b.priority] ?? 0);
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
 
   const taskCounts = {
     all: getTasks?.data?.length ?? 0,
@@ -241,14 +264,72 @@ export default function Tasks() {
                 className="pl-8 h-8 text-sm"
               />
             </div>
-            <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-              <ArrowUpDown className="h-3 w-3" />
-              Sort
-            </button>
-            <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-              <SlidersHorizontal className="h-3 w-3" />
-              Filter
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                  <ArrowUpDown className="h-3 w-3" />
+                  Sort
+                  {sortField !== "dueDate" || sortDir !== "asc" ? (
+                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                  ) : null}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {(
+                  [
+                    { label: "Due Date (Earliest)", field: "dueDate", dir: "asc" },
+                    { label: "Due Date (Latest)", field: "dueDate", dir: "desc" },
+                    { label: "Title (A–Z)", field: "title", dir: "asc" },
+                    { label: "Title (Z–A)", field: "title", dir: "desc" },
+                    { label: "Priority (Highest)", field: "priority", dir: "desc" },
+                    { label: "Priority (Lowest)", field: "priority", dir: "asc" },
+                  ] as const
+                ).map(({ label, field, dir }) => (
+                  <DropdownMenuItem
+                    key={label}
+                    onClick={() => { setSortField(field); setSortDir(dir); setCurrentPage(1); }}
+                    className="flex items-center justify-between"
+                  >
+                    {label}
+                    {sortField === field && sortDir === dir && (
+                      <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                  <SlidersHorizontal className="h-3 w-3" />
+                  Filter
+                  {priorityFilter !== "all" ? (
+                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                  ) : null}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                {(
+                  [
+                    { label: "All Priorities", value: "all" },
+                    { label: "High", value: "high" },
+                    { label: "Medium", value: "medium" },
+                    { label: "Low", value: "low" },
+                  ] as const
+                ).map(({ label, value }) => (
+                  <DropdownMenuItem
+                    key={value}
+                    onClick={() => { setPriorityFilter(value); setCurrentPage(1); }}
+                    className="flex items-center justify-between"
+                  >
+                    {label}
+                    {priorityFilter === value && (
+                      <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="overflow-x-auto">

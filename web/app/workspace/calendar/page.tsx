@@ -24,6 +24,24 @@ function CalendarContent() {
     (searchParams.get("tab") as Tab) ?? "calendar"
   );
 
+  const tabNav = (
+    <>
+      {TABS.map((tab) => (
+        <button
+          key={tab}
+          onClick={() => setActiveTab(tab)}
+          className={`cursor-pointer whitespace-nowrap text-xs px-3 py-1.5 rounded-md transition-colors ${
+            activeTab === tab
+              ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {TAB_LABELS[tab]}
+        </button>
+      ))}
+    </>
+  );
+
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 gap-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -37,39 +55,27 @@ function CalendarContent() {
 
       {/* Main Card */}
       <Card className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {/* Tab toolbar */}
-        <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`cursor-pointer whitespace-nowrap text-xs px-3 py-1.5 rounded-md transition-colors ${
-                activeTab === tab
-                  ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
+        {/* Content — each tab component owns its own toolbar row with tabNav on the left */}
         <div className="flex-1 min-h-0 overflow-hidden">
-          {activeTab === "calendar" && <CalendarView />}
+          {activeTab === "calendar" && <CalendarView tabNav={tabNav} />}
           {activeTab === "meetings" && (
             <div className="h-full overflow-y-auto">
-              <Meetings />
+              <Meetings tabNav={tabNav} />
             </div>
           )}
           {activeTab === "notes" && (
             <div className="h-full overflow-y-auto">
-              <MeetingNotes />
+              <MeetingNotes tabNav={tabNav} />
             </div>
           )}
           {activeTab === "preferences" && (
-            <div className="h-full overflow-y-auto">
-              <VideoMeetingPreferences />
+            <div className="h-full flex flex-col">
+              <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
+                {tabNav}
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <VideoMeetingPreferences />
+              </div>
             </div>
           )}
         </div>

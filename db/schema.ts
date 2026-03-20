@@ -253,23 +253,6 @@ export const scheduledEmails = pgTable("scheduled_emails", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// CONVERSATION SUMMARIES
-export const conversationSummaries = pgTable("conversation_summaries", {
-  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-  clientId: integer("client_id")
-    .notNull()
-    .references(() => clients.id, { onDelete: "cascade" }),
-  summary: text("summary").notNull(),
-  keyTopics: text("key_topics").array().default([]),
-  actionItems: text("action_items").array().default([]),
-  sentiment: text("sentiment").default("neutral"),
-  emailCount: integer("email_count").default(0),
-  generatedAt: timestamp("generated_at").defaultNow(),
-  userId: varchar("user_id")
-    .notNull()
-    .references(() => users.user_id, { onDelete: "cascade" }),
-});
-
 // CLIENT PORTAL TOKENS
 export const clientPortalTokens = pgTable("client_portal_tokens", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
@@ -327,7 +310,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
   emails: many(emails),
   scheduledEmails: many(scheduledEmails),
-  conversationSummaries: many(conversationSummaries),
   clientPortalTokens: many(clientPortalTokens),
 }));
 
@@ -339,10 +321,6 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   projects: many(projects),
   emails: many(emails),
   scheduledEmails: many(scheduledEmails),
-  conversationSummary: one(conversationSummaries, {
-    fields: [clients.id],
-    references: [conversationSummaries.clientId],
-  }),
   portalToken: one(clientPortalTokens, {
     fields: [clients.id],
     references: [clientPortalTokens.clientId],
@@ -456,20 +434,6 @@ export const scheduledEmailsRelations = relations(
     }),
     client: one(clients, {
       fields: [scheduledEmails.clientId],
-      references: [clients.id],
-    }),
-  })
-);
-
-export const conversationSummariesRelations = relations(
-  conversationSummaries,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [conversationSummaries.userId],
-      references: [users.user_id],
-    }),
-    client: one(clients, {
-      fields: [conversationSummaries.clientId],
       references: [clients.id],
     }),
   })

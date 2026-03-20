@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { projectFiles } from "@db/schema";
 import { db } from "@db/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
@@ -23,7 +23,7 @@ export async function GET(
   const files = await db
     .select()
     .from(projectFiles)
-    .where(eq(projectFiles.projectId, projectId));
+    .where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
 
   return NextResponse.json(files);
 }

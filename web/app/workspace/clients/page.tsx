@@ -15,6 +15,12 @@ import {
 } from "@/app/components/ui/dialog";
 import { Label } from "@/app/components/ui/label";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import {
   Plus,
   Search,
   Mail,
@@ -30,6 +36,7 @@ import {
   Building2,
   Briefcase,
   Target,
+  CheckIcon,
 } from "lucide-react";
 import axios from "axios";
 import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
@@ -86,6 +93,9 @@ function ProjectsBadge({ active, total }: { active: number; total: number }) {
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<"name" | "status" | "projects">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -133,14 +143,23 @@ export default function Clients() {
     },
   });
 
-  const filteredClients = Array.isArray(getClients.data)
-    ? getClients.data.filter(
-        (client) =>
-          client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          client?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          client?.industry?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  const filteredClients = (
+    Array.isArray(getClients.data)
+      ? getClients.data.filter(
+          (client) =>
+            (statusFilter === "all" || client.status === statusFilter) &&
+            (client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              client?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              client?.industry?.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      : []
+  ).sort((a, b) => {
+    let cmp = 0;
+    if (sortField === "name") cmp = (a.name ?? "").localeCompare(b.name ?? "");
+    else if (sortField === "status") cmp = (a.status ?? "").localeCompare(b.status ?? "");
+    else if (sortField === "projects") cmp = (Number(a.totalProjects) || 0) - (Number(b.totalProjects) || 0);
+    return sortDir === "asc" ? cmp : -cmp;
+  });
 
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -379,14 +398,71 @@ export default function Clients() {
               />
             </div>
             <div className="flex items-center gap-1.5 ml-auto">
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-                <ArrowUpDown className="h-3 w-3" />
-                Sort
-              </button>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
-                <SlidersHorizontal className="h-3 w-3" />
-                Filter
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                    <ArrowUpDown className="h-3 w-3" />
+                    Sort
+                    {sortField !== "name" || sortDir !== "asc" ? (
+                      <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                    ) : null}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  {(
+                    [
+                      { label: "Name (A–Z)", field: "name", dir: "asc" },
+                      { label: "Name (Z–A)", field: "name", dir: "desc" },
+                      { label: "Status (Active first)", field: "status", dir: "asc" },
+                      { label: "Status (Inactive first)", field: "status", dir: "desc" },
+                      { label: "Projects (Most)", field: "projects", dir: "desc" },
+                      { label: "Projects (Fewest)", field: "projects", dir: "asc" },
+                    ] as const
+                  ).map(({ label, field, dir }) => (
+                    <DropdownMenuItem
+                      key={label}
+                      onClick={() => { setSortField(field); setSortDir(dir); setCurrentPage(1); }}
+                      className="flex items-center justify-between"
+                    >
+                      {label}
+                      {sortField === field && sortDir === dir && (
+                        <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                    <SlidersHorizontal className="h-3 w-3" />
+                    Filter
+                    {statusFilter !== "all" ? (
+                      <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                    ) : null}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-36">
+                  {(
+                    [
+                      { label: "All", value: "all" },
+                      { label: "Active", value: "active" },
+                      { label: "Inactive", value: "inactive" },
+                    ] as const
+                  ).map(({ label, value }) => (
+                    <DropdownMenuItem
+                      key={value}
+                      onClick={() => { setStatusFilter(value); setCurrentPage(1); }}
+                      className="flex items-center justify-between"
+                    >
+                      {label}
+                      {statusFilter === value && (
+                        <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 

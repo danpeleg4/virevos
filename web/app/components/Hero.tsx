@@ -103,55 +103,13 @@ export function Hero() {
             </motion.div>
           </div>
 
-          {/* Product Screenshot */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-20 max-w-6xl mx-auto"
-          >
-            <div className="relative">
-              {/* Glow effect */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl opacity-20 blur-3xl"></div>
-
-              {/* Screenshot container */}
-              <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center space-x-2">
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  </div>
-                  <div className="flex-1 text-center">
-                    <div className="inline-block bg-white border border-gray-200 rounded px-3 py-1 text-xs text-gray-600">
-                      app.virevos.com
-                    </div>
-                  </div>
-                </div>
-
-                {/* Screenshot placeholder with gradient */}
-                <div className="aspect-[16/10] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
-                  <div className="w-full h-full bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
-                        <Sparkles className="h-8 w-8 text-white" />
-                      </div>
-                      <p className="text-gray-400">Dashboard Preview</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
           {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className="mt-24 grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto"
-          >
-          </motion.div>
+          ></motion.div>
         </div>
       </div>
     </section>

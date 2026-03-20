@@ -643,14 +643,14 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
     return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
   };
 
-  const verifyEmail = async () => {
+  const verifyEmail = async (overrideCode?: string) => {
     if (!isLoaded) return;
     setError(null);
     setLoading(true);
 
     try {
       const result = await signUp.attemptEmailAddressVerification({
-        code: code.join(""),
+        code: overrideCode ?? code.join(""),
       });
 
       if (result.status === "complete") {
@@ -703,6 +703,25 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!digits) return;
+
+    const newCode = ["", "", "", "", "", ""];
+    digits.split("").forEach((char, idx) => {
+      newCode[idx] = char;
+    });
+    setCode(newCode);
+
+    const focusIndex = Math.min(digits.length, 5);
+    document.getElementById(`code-${focusIndex}`)?.focus();
+
+    if (digits.length === 6) {
+      verifyEmail(digits);
+    }
+  };
+
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === "Backspace" && !code[index] && index > 0) {
       const prevInput = document.getElementById(`code-${index - 1}`);
@@ -730,6 +749,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
             value={digit}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
+            onPaste={handlePaste}
             className="w-14 h-16 text-center text-2xl font-bold bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-blue-600 focus:bg-white focus:outline-none transition-all"
           />
         ))}
@@ -751,7 +771,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
       </div>
 
       <Button
-        onClick={verifyEmail}
+        onClick={() => verifyEmail()}
         disabled={!isComplete || loading}
         className="w-full bg-gradient-to-r from-blue-600 to-[#3D4AE0] hover:opacity-90 text-white h-12 rounded-xl text-[14px] font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >

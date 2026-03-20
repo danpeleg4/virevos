@@ -1,7 +1,6 @@
 import {
   assertCanAddClient,
   assertCanAddProject,
-  assertHasAiAssistant,
   getUserPlan,
 } from "@/lib/plan_limits";
 
@@ -35,7 +34,7 @@ function mockClientCount(count: number) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockDbFrom.mockReturnValue({ where: mockDbWhere });
-  mockDbWhere.mockResolvedValue([]);
+  mockDbWhere.mockResolvedValue([{ count: 1 }]);
 });
 
 // ─── getUserPlan ──────────────────────────────────────────────────────────
@@ -108,27 +107,6 @@ describe("assertCanAddProject", () => {
     mockSubscription("starter");
     await expect(assertCanAddProject("user_1")).rejects.toThrow(
       /Project limit reached/
-    );
-  });
-});
-
-// ─── assertHasAiAssistant ─────────────────────────────────────────────────
-
-describe("assertHasAiAssistant", () => {
-  it("does not throw for professional plan", async () => {
-    mockSubscription("professional");
-    await expect(assertHasAiAssistant("user_1")).resolves.toBeUndefined();
-  });
-
-  it("does not throw for business plan", async () => {
-    mockSubscription("business");
-    await expect(assertHasAiAssistant("user_1")).resolves.toBeUndefined();
-  });
-
-  it("throws for starter plan", async () => {
-    mockSubscription("starter");
-    await expect(assertHasAiAssistant("user_1")).rejects.toThrow(
-      /AI assistant is not available/
     );
   });
 });

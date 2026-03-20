@@ -197,7 +197,9 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
               </div>
               <div>
                 <h3 className="text-gray-900">Virevos AI</h3>
-                <p className="text-xs text-gray-500">Powered by GPT-4o</p>
+                <p className="text-xs text-gray-500">
+                  Powered by Virevos Brain
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
