@@ -100,9 +100,9 @@ export function Navigation() {
             <Button
               variant="ghost"
               className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
-              onClick={() => handleNavigation("/customers")}
+              onClick={() => handleNavigation("/blog")}
             >
-              Customers
+              Blog
             </Button>
           </motion.div>
 
@@ -281,10 +281,10 @@ export function Navigation() {
                   Pricing
                 </button>
                 <button
-                  onClick={() => handleNavigation("/customers")}
+                  onClick={() => handleNavigation("/blog")}
                   className="block w-full text-left text-sm text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"
                 >
-                  Customers
+                  Blog
                 </button>
 
                 <div className="pt-4 space-y-2 border-t border-gray-200">
