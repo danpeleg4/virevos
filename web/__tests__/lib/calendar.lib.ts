@@ -1,6 +1,7 @@
 import {
   addMeetingToCalendar,
   deleteEventFromCalendar,
+  updateEvent,
 } from "@/lib/calendar";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
@@ -29,12 +30,17 @@ jest.mock("@aws-sdk/client-scheduler", () => {
   };
 });
 
+/* eslint-disable no-var */
+var mockEventsPatch: jest.Mock;
+/* eslint-enable no-var */
+
 jest.mock("googleapis", () => {
   mockEventsInsert = jest.fn();
   mockEventsDelete = jest.fn();
+  mockEventsPatch = jest.fn();
   mockSetCredentials = jest.fn();
   mockCalendar = jest.fn(() => ({
-    events: { insert: mockEventsInsert, delete: mockEventsDelete },
+    events: { insert: mockEventsInsert, delete: mockEventsDelete, patch: mockEventsPatch },
   }));
   return {
     google: {
@@ -63,6 +69,8 @@ const mockSelect = jest.fn(() => ({ from: mockSelectFrom }));
 const mockDeleteWhere = jest.fn();
 const mockReturning = jest.fn();
 const mockValues = jest.fn(() => ({ returning: mockReturning }));
+const mockUpdateWhere = jest.fn();
+const mockUpdateSet = jest.fn(() => ({ where: mockUpdateWhere }));
 
 jest.mock("@db/db", () => ({
   db: {
@@ -70,6 +78,7 @@ jest.mock("@db/db", () => ({
     select: (...args: never[]) => mockSelect.apply(null, args),
     insert: jest.fn(() => ({ values: mockValues })),
     delete: jest.fn(() => ({ where: mockDeleteWhere })),
+    update: jest.fn(() => ({ set: mockUpdateSet })),
   },
 }));
 
@@ -106,6 +115,8 @@ beforeEach(() => {
   mockEventsInsert.mockResolvedValue({ data: { id: "google-event-id" } });
   mockEventsDelete.mockResolvedValue({});
   mockSchedulerSend.mockResolvedValue(undefined);
+  mockUpdateWhere.mockResolvedValue(undefined);
+  mockUpdateSet.mockReturnValue({ where: mockUpdateWhere });
 });
 
 afterEach(() => {
@@ -248,5 +259,61 @@ describe("deleteEventFromCalendar", () => {
 
     expect(mockDeleteWhere).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ success: true });
+  });
+});
+
+// ─── updateEvent ──────────────────────────────────────────────────────────
+
+describe("updateEvent", () => {
+  it("throws when unauthenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+    await expect(updateEvent({ id: "event-1", title: "X" })).rejects.toThrow(
+      "Unauthorized"
+    );
+  });
+
+  it("does nothing when no fields provided", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateEvent({ id: "event-1" });
+    expect(mockUpdateSet).not.toHaveBeenCalled();
+  });
+
+  it("updates provided fields with correct where clause", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateEvent({ id: "event-1", title: "New Title", duration: 90 });
+    expect(mockUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "New Title", duration: 90 })
+    );
+    expect(mockUpdateWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it("converts dateTime string to a Date when updating", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateEvent({ id: "event-1", dateTime: "2026-06-01T10:00:00Z" });
+    expect(mockUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ dateTime: new Date("2026-06-01T10:00:00Z") })
+    );
+  });
+
+  it("patches Google Calendar when token is available and dateTime is updated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
+    mockSelectLimit.mockResolvedValueOnce([{ id: "event-1", googleEventId: "gcal-id" }]);
+    mockEventsPatch.mockResolvedValueOnce({});
+
+    await updateEvent({ id: "event-1", dateTime: "2026-06-01T10:00:00Z" });
+
+    expect(mockEventsPatch).toHaveBeenCalledWith(
+      expect.objectContaining({ calendarId: "primary", eventId: "gcal-id" })
+    );
+  });
+
+  it("does not call Google Calendar patch when dateTime is not updated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
+
+    await updateEvent({ id: "event-1", title: "New Title" });
+
+    expect(mockEventsPatch).not.toHaveBeenCalled();
   });
 });

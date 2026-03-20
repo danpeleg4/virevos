@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Check, Sparkles, ArrowRight } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useRouter } from "next/navigation";
@@ -13,7 +13,7 @@ const plans = [
     description: "Perfect for individuals and small teams getting started",
     features: [
       "Free forever",
-      "10 AI Credits/month",
+      "50 AI Credits/month",
       "Limited integrations",
       "1GB storage",
       "Email support",
@@ -29,7 +29,7 @@ const plans = [
     description: "For growing teams that need more power and flexibility",
     features: [
       "Everything in Starter plan +",
-      "35 AI Credits/month",
+      "250 AI Credits/month",
       "Unlimited projects",
       "Unlimited meetings",
       "50GB storage",

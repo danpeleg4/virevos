@@ -4,6 +4,7 @@ import {
   createProject,
   addNotes,
   changeProjectStatus,
+  updateProject,
 } from "@/lib/projects";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -195,6 +196,51 @@ describe("addNotes", () => {
       })
     );
     expect(result).toEqual(noteRecord);
+  });
+});
+
+// ─── updateProject ────────────────────────────────────────────────────────
+
+describe("updateProject", () => {
+  it("throws when unauthenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+    await expect(updateProject({ id: 1, name: "X" })).rejects.toThrow("No user");
+  });
+
+  it("does nothing when no fields provided", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateProject({ id: 1 });
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  it("updates provided fields with correct where clause", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateProject({ id: 3, name: "New Name", priority: "high" });
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "New Name", priority: "high" })
+    );
+    expect(mockUpdateWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates all optional fields when provided", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateProject({
+      id: 2,
+      name: "P",
+      description: "D",
+      status: "completed",
+      dueDate: "2026-12-31",
+      priority: "low",
+      health: "good",
+    });
+    expect(mockSet).toHaveBeenCalledWith({
+      name: "P",
+      description: "D",
+      status: "completed",
+      dueDate: "2026-12-31",
+      priority: "low",
+      health: "good",
+    });
   });
 });
 

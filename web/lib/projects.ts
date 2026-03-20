@@ -117,6 +117,34 @@ export async function addNotes(
   return inserted[0];
 }
 
+export async function updateProject(input: {
+  id: number;
+  name?: string;
+  description?: string;
+  status?: string;
+  dueDate?: string;
+  priority?: string;
+  health?: string;
+}) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("No user");
+
+  const updateData: Record<string, unknown> = {};
+  if (input.name !== undefined) updateData.name = input.name;
+  if (input.description !== undefined) updateData.description = input.description;
+  if (input.status !== undefined) updateData.status = input.status;
+  if (input.dueDate !== undefined) updateData.dueDate = input.dueDate;
+  if (input.priority !== undefined) updateData.priority = input.priority;
+  if (input.health !== undefined) updateData.health = input.health;
+
+  if (Object.keys(updateData).length === 0) return;
+
+  await db
+    .update(projects)
+    .set(updateData)
+    .where(and(eq(projects.id, input.id), eq(projects.userId, user.id)));
+}
+
 export async function changeProjectStatus(project: Project, newStatus: string) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");

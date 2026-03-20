@@ -35,15 +35,59 @@ jest.mock("@/lib/plan_limits", () => ({
 
 jest.mock("@/lib/clients", () => ({
   addAClient: jest.fn(),
+  updateExistingClient: jest.fn(),
 }));
 
 jest.mock("@/lib/meetings", () => ({
   getPastMeetingTranscript: jest.fn(),
 }));
 
+jest.mock("@/lib/projects", () => ({
+  createProject: jest.fn(),
+  updateProject: jest.fn(),
+}));
+
+jest.mock("@/lib/tasks", () => ({
+  addProjectTasksAction: jest.fn(),
+  updateTask: jest.fn(),
+}));
+
+jest.mock("@/lib/calendar", () => ({
+  addMeetingToCalendar: jest.fn(),
+  updateEvent: jest.fn(),
+}));
+
 async function* mockStreamChunks(content: string) {
   yield { choices: [{ delta: { content }, finish_reason: null }] };
   yield { choices: [{ delta: {}, finish_reason: "stop" }] };
+}
+
+async function* mockStreamToolCall(toolName: string, toolArgs: object) {
+  yield {
+    choices: [
+      {
+        delta: {
+          tool_calls: [
+            { index: 0, id: "tc_1", function: { name: toolName, arguments: "" } },
+          ],
+        },
+        finish_reason: null,
+      },
+    ],
+  };
+  yield {
+    choices: [
+      {
+        delta: {
+          tool_calls: [
+            { index: 0, function: { arguments: JSON.stringify(toolArgs) } },
+          ],
+        },
+        finish_reason: null,
+      },
+    ],
+  };
+  yield { choices: [{ delta: {}, finish_reason: "tool_calls" }] };
 }
 
 describe("POST /api/chat", () => {
@@ -132,4 +176,50 @@ describe("POST /api/chat", () => {
     expect(events).toContainEqual({ type: "text_delta", delta: "Hello!" });
     expect(events.at(-1)).toEqual({ type: "done" });
   });
+
+  const toolTestCases: Array<{ toolName: string; args: object; resultKind: string }> = [
+    { toolName: "createProject", args: { name: "Test Project" }, resultKind: "project_created" },
+    { toolName: "updateClient", args: { id: 1, name: "Updated" }, resultKind: "client_updated" },
+    { toolName: "updateProject", args: { id: 1, status: "completed" }, resultKind: "project_updated" },
+    { toolName: "createTask", args: { title: "New Task" }, resultKind: "task_created" },
+    { toolName: "updateTask", args: { id: 1, status: "completed" }, resultKind: "task_updated" },
+    { toolName: "createEvent", args: { title: "Meeting", dateTime: "2026-06-01T10:00:00Z", duration: 60 }, resultKind: "event_created" },
+    { toolName: "updateEvent", args: { id: "ev-1", title: "Updated" }, resultKind: "event_updated" },
+  ];
+
+  it.each(toolTestCases)(
+    "executes $toolName tool and streams tool_result event",
+    async ({ toolName, args, resultKind }) => {
+      (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+      (db.select as jest.Mock).mockReturnValue({
+        from: () => ({
+          where: () => Promise.resolve([{ ai_credits: 5 }]),
+        }),
+      });
+      const updateWhere = jest.fn();
+      const updateSet = jest.fn(() => ({ where: updateWhere }));
+      (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+
+      const { executeTool: mockExecuteTool } = await import("@/lib/ai_tools");
+      (mockExecuteTool as jest.Mock).mockResolvedValueOnce({ kind: resultKind, message: "ok" });
+
+      // First call returns tool call stream, second call returns a stop stream
+      (openai.chat.completions.create as jest.Mock)
+        .mockReturnValueOnce(mockStreamToolCall(toolName, args))
+        .mockReturnValueOnce(mockStreamChunks("Done."));
+
+      const res = await POST(mockRequest({ messages: [] }));
+      expect(res.status).toBe(200);
+
+      const text = await res.text();
+      const lines = text.trim().split("\n").filter(Boolean);
+      const events = lines.map((l) => JSON.parse(l));
+
+      expect(mockExecuteTool).toHaveBeenCalledWith(toolName, args);
+      expect(events).toContainEqual(
+        expect.objectContaining({ type: "tool_result", name: toolName })
+      );
+      expect(events.at(-1)).toEqual({ type: "done" });
+    }
+  );
 });

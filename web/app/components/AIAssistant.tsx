@@ -18,7 +18,18 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { clients } from "@/types/clients";
-import type { AIMessage, AddClientToolResult, StreamEvent } from "@/types/ai";
+import type {
+  AIMessage,
+  AddClientToolResult,
+  StreamEvent,
+  CreateProjectToolResult,
+  UpdateClientToolResult,
+  UpdateProjectToolResult,
+  CreateTaskToolResult,
+  UpdateTaskToolResult,
+  CreateEventToolResult,
+  UpdateEventToolResult,
+} from "@/types/ai";
 
 interface AIAssistantProps {
   isOpen: boolean;
@@ -133,6 +144,62 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                     avatar: newClient.name[0],
                   },
                 ]);
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "createProject"
+            ) {
+              const data = event.result as CreateProjectToolResult;
+              if (data.kind === "project_created") {
+                queryClient.invalidateQueries({ queryKey: ["projects"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateClient"
+            ) {
+              const data = event.result as UpdateClientToolResult;
+              if (data.kind === "client_updated") {
+                queryClient.invalidateQueries({ queryKey: ["clients"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateProject"
+            ) {
+              const data = event.result as UpdateProjectToolResult;
+              if (data.kind === "project_updated") {
+                queryClient.invalidateQueries({ queryKey: ["projects"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "createTask"
+            ) {
+              const data = event.result as CreateTaskToolResult;
+              if (data.kind === "task_created") {
+                queryClient.invalidateQueries({ queryKey: ["tasks"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateTask"
+            ) {
+              const data = event.result as UpdateTaskToolResult;
+              if (data.kind === "task_updated") {
+                queryClient.invalidateQueries({ queryKey: ["tasks"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "createEvent"
+            ) {
+              const data = event.result as CreateEventToolResult;
+              if (data.kind === "event_created") {
+                queryClient.invalidateQueries({ queryKey: ["events"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateEvent"
+            ) {
+              const data = event.result as UpdateEventToolResult;
+              if (data.kind === "event_updated") {
+                queryClient.invalidateQueries({ queryKey: ["events"] });
               }
             } else if (event.type === "error") {
               setMessages((prev) =>
@@ -333,12 +400,6 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                   <Send className="h-4 w-4" />
                 )}
               </Button>
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-gray-500">
-                <Sparkles className="h-3 w-3 inline mr-1" />
-                Agent
-              </p>
             </div>
           </div>
         </motion.div>

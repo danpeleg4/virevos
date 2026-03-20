@@ -1,7 +1,13 @@
 import OpenAI from "openai";
-import { CreateClientInput } from "@/types/clients";
-import { addAClient } from "@/lib/clients";
+import { CreateClientInput, UpdateClientInput } from "@/types/clients";
+import { addAClient, updateExistingClient } from "@/lib/clients";
 import { getPastMeetingTranscript } from "@/lib/meetings";
+import { createProject, updateProject } from "@/lib/projects";
+import { addProjectTasksAction, updateTask } from "@/lib/tasks";
+import { addMeetingToCalendar, updateEvent } from "@/lib/calendar";
+import { Project } from "@/types/projects";
+import { Task } from "@/types/tasks";
+import { Event } from "@/types/meeting";
 
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -56,6 +62,139 @@ export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "createProject",
+      description: "Create a new project",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "The name of the project" },
+          description: { type: "string", description: "Project description" },
+          status: { type: "string", description: "Project status" },
+          dueDate: { type: "string", description: "Due date as ISO string" },
+          priority: { type: "string", description: "Project priority" },
+          clientId: { type: "number", description: "Associated client ID" },
+        },
+        required: ["name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "updateClient",
+      description: "Update an existing client",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "The ID of the client to update" },
+          name: { type: "string", description: "New name" },
+          email: { type: "string", description: "New email" },
+          phone: { type: "string", description: "New phone number" },
+          industry: { type: "string", description: "New industry" },
+          notes: { type: "string", description: "New notes" },
+        },
+        required: ["id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "updateProject",
+      description: "Update an existing project",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "The ID of the project to update" },
+          name: { type: "string", description: "New name" },
+          description: { type: "string", description: "New description" },
+          status: { type: "string", description: "New status" },
+          dueDate: { type: "string", description: "New due date as ISO string" },
+          priority: { type: "string", description: "New priority" },
+          health: { type: "string", description: "New health status" },
+        },
+        required: ["id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "createTask",
+      description: "Create a new task",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "The title of the task" },
+          description: { type: "string", description: "Task description" },
+          projectId: { type: "number", description: "Associated project ID" },
+          priority: { type: "string", description: "Task priority" },
+          dueDate: { type: "string", description: "Due date as ISO string" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "updateTask",
+      description: "Update an existing task",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "The ID of the task to update" },
+          title: { type: "string", description: "New title" },
+          description: { type: "string", description: "New description" },
+          priority: { type: "string", description: "New priority" },
+          status: { type: "string", description: "New status" },
+          dueDate: { type: "string", description: "New due date as ISO string or null" },
+        },
+        required: ["id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "createEvent",
+      description: "Create a new calendar event or meeting",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Event title" },
+          dateTime: { type: "string", description: "Start date/time as ISO string" },
+          duration: { type: "number", description: "Duration in minutes" },
+          description: { type: "string", description: "Event description" },
+          isMeeting: { type: "boolean", description: "Whether this is a video meeting" },
+          link: { type: "string", description: "Meeting link" },
+        },
+        required: ["title", "dateTime", "duration"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "updateEvent",
+      description: "Update an existing calendar event",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "The ID of the event to update" },
+          title: { type: "string", description: "New title" },
+          description: { type: "string", description: "New description" },
+          dateTime: { type: "string", description: "New start date/time as ISO string" },
+          duration: { type: "number", description: "New duration in minutes" },
+          status: { type: "string", description: "New status" },
+        },
+        required: ["id"],
+      },
+    },
+  },
 ];
 
 export async function executeTool(
@@ -75,6 +214,86 @@ export async function executeTool(
     return {
       kind: "meeting_data",
       message: res.join("\n"),
+    };
+  }
+  if (name === "createProject") {
+    const res = await createProject(args as unknown as Project);
+    return {
+      kind: "project_created",
+      project: res,
+      message: "Project created successfully",
+    };
+  }
+  if (name === "updateClient") {
+    await updateExistingClient(args as unknown as UpdateClientInput);
+    return {
+      kind: "client_updated",
+      message: "Client updated successfully",
+    };
+  }
+  if (name === "updateProject") {
+    await updateProject(
+      args as unknown as {
+        id: number;
+        name?: string;
+        description?: string;
+        status?: string;
+        dueDate?: string;
+        priority?: string;
+        health?: string;
+      }
+    );
+    return {
+      kind: "project_updated",
+      message: "Project updated successfully",
+    };
+  }
+  if (name === "createTask") {
+    const res = await addProjectTasksAction(args as unknown as Task);
+    return {
+      kind: "task_created",
+      task: res,
+      message: "Task created successfully",
+    };
+  }
+  if (name === "updateTask") {
+    await updateTask(
+      args as unknown as {
+        id: number;
+        title?: string;
+        description?: string;
+        priority?: string;
+        status?: string;
+        dueDate?: string | null;
+      }
+    );
+    return {
+      kind: "task_updated",
+      message: "Task updated successfully",
+    };
+  }
+  if (name === "createEvent") {
+    const res = await addMeetingToCalendar(args as unknown as Event);
+    return {
+      kind: "event_created",
+      event: res,
+      message: "Event created successfully",
+    };
+  }
+  if (name === "updateEvent") {
+    await updateEvent(
+      args as unknown as {
+        id: string;
+        title?: string;
+        description?: string;
+        dateTime?: string;
+        duration?: number;
+        status?: string;
+      }
+    );
+    return {
+      kind: "event_updated",
+      message: "Event updated successfully",
     };
   }
   throw new Error(`Unknown tool: ${name}`);

@@ -56,6 +56,35 @@ export async function updateTaskDueDate(taskId: number, dueDate: string | null) 
     .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 }
 
+export async function updateTask(input: {
+  id: number;
+  title?: string;
+  description?: string;
+  priority?: string;
+  status?: string;
+  dueDate?: string | null;
+}) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("No user");
+
+  const updateData: Record<string, unknown> = {};
+  if (input.title !== undefined) updateData.title = input.title;
+  if (input.description !== undefined) updateData.description = input.description;
+  if (input.priority !== undefined) updateData.priority = input.priority;
+  if (input.status !== undefined) {
+    updateData.status = input.status;
+    updateData.completed = input.status === "completed";
+  }
+  if (input.dueDate !== undefined) updateData.dueDate = input.dueDate;
+
+  if (Object.keys(updateData).length === 0) return;
+
+  await db
+    .update(tasks)
+    .set(updateData)
+    .where(and(eq(tasks.id, input.id), eq(tasks.userId, user.id)));
+}
+
 export async function addProjectTasksAction(task: Task): Promise<Task> {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");

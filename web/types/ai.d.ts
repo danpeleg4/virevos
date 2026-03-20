@@ -24,3 +24,41 @@ export type AddClientToolResult = {
   };
   message: string;
 };
+
+export type CreateProjectToolResult = {
+  kind: "project_created";
+  project: import("./projects").Project;
+  message: string;
+};
+
+export type UpdateClientToolResult = {
+  kind: "client_updated";
+  message: string;
+};
+
+export type UpdateProjectToolResult = {
+  kind: "project_updated";
+  message: string;
+};
+
+export type CreateTaskToolResult = {
+  kind: "task_created";
+  task: import("./tasks").Task;
+  message: string;
+};
+
+export type UpdateTaskToolResult = {
+  kind: "task_updated";
+  message: string;
+};
+
+export type CreateEventToolResult = {
+  kind: "event_created";
+  event: import("./meeting").Event;
+  message: string;
+};
+
+export type UpdateEventToolResult = {
+  kind: "event_updated";
+  message: string;
+};
