@@ -7,37 +7,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 
-// Product dropdown templates
-const productTemplates = [
-  {
-    icon: "📋",
-    title: "Project Management",
-    description:
-      "Manage roadmaps, backlogs, bugs, agile dev, and documentation.",
-    color: "bg-blue-100",
-  },
-  {
-    icon: "💼",
-    title: "Sales/CRM",
-    description: "Manage leads, deals, and contacts.",
-    color: "bg-orange-100",
-  },
-  {
-    icon: "📊",
-    title: "Marketing",
-    description: "Plan campaigns, organize assets, and create wikis.",
-    color: "bg-purple-100",
-  },
-];
-
-const learnItems = [
-  { label: "Documentation", path: "/learn/docs" },
-  { label: "Guides & Tutorials", path: "/learn/guides" },
-  { label: "Webinars", path: "/learn/webinars" },
-  { label: "Blog", path: "/learn/blog" },
-  { label: "Community", path: "/learn/community" },
-];
-
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -82,13 +51,6 @@ export function Navigation() {
               className="text-sm text-gray-700 hover:text-gray-900 transition-colors hover:bg-transparent"
             >
               Product
-            </Button>
-            <Button
-              onClick={() => handleNavigation("/learn")}
-              variant="ghost"
-              className="text-sm text-gray-700 hover:text-gray-900 transition-colors hover:bg-transparent"
-            >
-              Learn
             </Button>
             <Button
               variant="ghost"
@@ -176,104 +138,13 @@ export function Navigation() {
               className="md:hidden overflow-hidden"
             >
               <div className="py-4 space-y-2">
-                {/* Product */}
-                <div className="space-y-1">
-                  <button
-                    onClick={() =>
-                      setOpenDropdown(
-                        openDropdown === "product" ? null : "product"
-                      )
-                    }
-                    className="flex items-center justify-between w-full text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"
-                  >
-                    <span className="text-sm">Product</span>
-                    <motion.div
-                      animate={{ rotate: openDropdown === "product" ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </motion.div>
-                  </button>
-
-                  <AnimatePresence>
-                    {openDropdown === "product" && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden pl-4 space-y-2"
-                      >
-                        <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">
-                          TEMPLATES
-                        </p>
-                        {productTemplates.map((template, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleNavigation("/features")}
-                            className="flex items-start space-x-2 w-full text-left py-2"
-                          >
-                            <div
-                              className={`${template.color} w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0`}
-                            >
-                              {template.icon}
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-900">
-                                {template.title}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {template.description}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Learn */}
-                <div className="space-y-1">
-                  <button
-                    onClick={() =>
-                      setOpenDropdown(openDropdown === "learn" ? null : "learn")
-                    }
-                    className="flex items-center justify-between w-full text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"
-                  >
-                    <span className="text-sm">Learn</span>
-                    <motion.div
-                      animate={{ rotate: openDropdown === "learn" ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </motion.div>
-                  </button>
-
-                  <AnimatePresence>
-                    {openDropdown === "learn" && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden pl-4 space-y-1"
-                      >
-                        {learnItems.map((item, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleNavigation(item.path)}
-                            className="block w-full text-left text-sm text-gray-700 hover:text-gray-900 transition-colors py-2"
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
                 {/* Simple Links */}
+                <button
+                  onClick={() => handleNavigation("/features")}
+                  className="block w-full text-left text-sm text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"
+                >
+                  Product
+                </button>
                 <button
                   onClick={() => handleNavigation("/pricing")}
                   className="block w-full text-left text-sm text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"
@@ -286,35 +157,6 @@ export function Navigation() {
                 >
                   Blog
                 </button>
-
-                <div className="pt-4 space-y-2 border-t border-gray-200">
-                  {isSignedIn ? (
-                    <>
-                      <SignOutButton>
-                        <Button variant="outline" className="w-full text-sm">
-                          Logout
-                        </Button>
-                      </SignOutButton>
-                      <Button
-                        onClick={() => router.push("/workspace/dashboard")}
-                        className="w-full bg-gray-900 hover:bg-gray-800 text-sm"
-                      >
-                        Go to Dashboard
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <SignInButton>
-                        <Button variant="outline" className="w-full text-sm">
-                          Login
-                        </Button>
-                      </SignInButton>
-                      <Button className="w-full bg-gray-900 hover:bg-gray-800 text-sm">
-                        Sign Up
-                      </Button>
-                    </>
-                  )}
-                </div>
               </div>
             </motion.div>
           )}
