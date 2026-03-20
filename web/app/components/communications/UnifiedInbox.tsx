@@ -106,6 +106,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     useState<ScheduleDetails | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const emailIframeRef = useRef<HTMLIFrameElement>(null);
+  const [emailIframeHeight, setEmailIframeHeight] = useState(400);
 
   // Debounce search query
   useEffect(() => {
@@ -265,6 +267,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
   const handleSelectMessage = (message: InboxMessage) => {
     setSelectedMessage(message);
+    setEmailIframeHeight(400);
     setReplyText("");
     setPendingAttachments([]);
     setPendingSchedule(null);
@@ -356,7 +359,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && setDebouncedSearch(searchQuery)}
+          onKeyDown={(e) =>
+            e.key === "Enter" && setDebouncedSearch(searchQuery)
+          }
           className="pl-8 h-8 text-sm w-44"
         />
       </div>
@@ -712,12 +717,24 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
               <Separator />
 
-              {/* Message Content */}
-              <div className="prose prose-sm max-w-none">
+              {/* Message Content — rendered in a sandboxed iframe so email
+                  <style> blocks cannot get into the parent page */}
+              <div className="text-gray-700">
                 {selectedMessage.body ? (
-                  <div
-                    className="text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: selectedMessage.body }}
+                  <iframe
+                    ref={emailIframeRef}
+                    srcDoc={selectedMessage.body}
+                    sandbox="allow-same-origin"
+                    title="Email content"
+                    className="w-full border-0 block"
+                    style={{ height: emailIframeHeight }}
+                    onLoad={() => {
+                      const body =
+                        emailIframeRef.current?.contentDocument?.body;
+                      if (body) {
+                        setEmailIframeHeight(body.scrollHeight + 32);
+                      }
+                    }}
                   />
                 ) : (
                   <p className="text-gray-700">{selectedMessage.preview}</p>
@@ -947,7 +964,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">Select a message to view</p>
               <p className="text-sm text-gray-500 mt-1">
-                Choose from {filteredMessages.length} loaded message{filteredMessages.length !== 1 ? "s" : ""} in your inbox
+                Choose from {filteredMessages.length} loaded message
+                {filteredMessages.length !== 1 ? "s" : ""} in your inbox
               </p>
               {filteredMessages.length === 0 && !isLoading && (
                 <Button
