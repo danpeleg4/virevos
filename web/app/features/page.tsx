@@ -145,7 +145,7 @@ const spotlights = [
     iconGradient: "from-purple-500 to-violet-700",
     title: "Client meetings with everything captured automatically",
     description:
-      "Stop juggling Zoom, Google Meet, and note-taking apps. Virevos has video meetings built in — powered by LiveKit — with automatic transcription and AI summaries so nothing falls through the cracks.",
+      "Stop juggling Zoom, Google Meet, and note-taking apps. Virevos has video meetings built in — powered by AI — with automatic transcription and AI summaries so nothing falls through the cracks.",
     highlights: [
       {
         icon: Video,
@@ -162,7 +162,7 @@ const spotlights = [
       {
         icon: Target,
         label: "AI summaries & action items",
-        detail: "GPT-4o distills key decisions and next steps after every call",
+        detail: "AI distills key decisions and next steps after every call",
       },
     ],
   },

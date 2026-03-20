@@ -21,35 +21,90 @@ const comparisonFeatures = [
   {
     category: "Core",
     features: [
-      { name: "Projects", starter: "Up to 3", pro: "Unlimited", business: "Unlimited" },
-      { name: "Tasks per project", starter: "Up to 5", pro: "Unlimited", business: "Unlimited" },
-      { name: "Clients", starter: "Up to 5", pro: "Unlimited", business: "Unlimited" },
+      {
+        name: "Projects",
+        starter: "Up to 3",
+        pro: "Unlimited",
+        business: "Unlimited",
+      },
+      {
+        name: "Tasks per project",
+        starter: "Up to 5",
+        pro: "Unlimited",
+        business: "Unlimited",
+      },
+      {
+        name: "Clients",
+        starter: "Up to 5",
+        pro: "Unlimited",
+        business: "Unlimited",
+      },
       { name: "Storage", starter: "1 GB", pro: "50 GB", business: "250 GB" },
     ],
   },
   {
     category: "AI & Automation",
     features: [
-      { name: "AI credits / month", starter: "10", pro: "35", business: "Unlimited" },
+      {
+        name: "AI credits / month",
+        starter: "10",
+        pro: "35",
+        business: "Unlimited",
+      },
       { name: "AI assistant (chat)", starter: true, pro: true, business: true },
-      { name: "Meeting transcription & summaries", starter: false, pro: true, business: true },
-      { name: "Workflow automations", starter: false, pro: true, business: true },
-      { name: "Custom automation triggers", starter: false, pro: false, business: true },
+      {
+        name: "Meeting transcription & summaries",
+        starter: false,
+        pro: true,
+        business: true,
+      },
+      {
+        name: "Workflow automations",
+        starter: false,
+        pro: true,
+        business: true,
+      },
+      {
+        name: "Custom automation triggers",
+        starter: false,
+        pro: false,
+        business: true,
+      },
     ],
   },
   {
     category: "Meetings & Communications",
     features: [
-      { name: "Built-in video meetings", starter: "3 / month", pro: "Unlimited", business: "Unlimited" },
-      { name: "AI meeting summaries", starter: false, pro: true, business: true },
-      { name: "Auto action item capture", starter: false, pro: true, business: true },
+      {
+        name: "Built-in video meetings",
+        starter: "3 / month",
+        pro: "Unlimited",
+        business: "Unlimited",
+      },
+      {
+        name: "AI meeting summaries",
+        starter: false,
+        pro: true,
+        business: true,
+      },
+      {
+        name: "Auto action item capture",
+        starter: false,
+        pro: true,
+        business: true,
+      },
       { name: "Transcript search", starter: false, pro: true, business: true },
     ],
   },
   {
     category: "Integrations",
     features: [
-      { name: "Google Calendar sync", starter: true, pro: true, business: true },
+      {
+        name: "Google Calendar sync",
+        starter: true,
+        pro: true,
+        business: true,
+      },
       { name: "Full integrations", starter: false, pro: true, business: true },
       { name: "API access", starter: false, pro: true, business: true },
       { name: "Webhooks", starter: false, pro: true, business: true },
@@ -60,8 +115,18 @@ const comparisonFeatures = [
     features: [
       { name: "Email support", starter: true, pro: true, business: true },
       { name: "Priority support", starter: false, pro: true, business: true },
-      { name: "24/7 phone support", starter: false, pro: false, business: true },
-      { name: "Dedicated account manager", starter: false, pro: false, business: true },
+      {
+        name: "24/7 phone support",
+        starter: false,
+        pro: false,
+        business: true,
+      },
+      {
+        name: "Dedicated account manager",
+        starter: false,
+        pro: false,
+        business: true,
+      },
       { name: "Custom contracts", starter: false, pro: false, business: true },
     ],
   },
@@ -138,7 +203,9 @@ export default function PricingPage() {
           >
             <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm">
               <Sparkles className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-gray-700">Simple, transparent pricing</span>
+              <span className="text-sm text-gray-700">
+                Simple, transparent pricing
+              </span>
             </div>
           </motion.div>
 
@@ -177,8 +244,12 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-14"
           >
-            <h2 className="text-3xl sm:text-4xl text-gray-900 mb-4">Compare plans</h2>
-            <p className="text-lg text-gray-500">Everything, side by side</p>
+            <h2 className="text-3xl sm:text-4xl text-gray-900 mb-2">
+              Compare plans
+            </h2>
+            <p className="text-lg text-gray-500 pb-4">
+              Everything, side by side
+            </p>
           </motion.div>
 
           <motion.div
@@ -253,10 +324,10 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-14"
           >
-            <h2 className="text-3xl sm:text-4xl text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl text-gray-900 mb-2">
               Frequently asked questions
             </h2>
-            <p className="text-lg text-gray-500">
+            <p className="text-lg text-gray-500 pb-4">
               Everything you need to know about pricing and billing.
             </p>
           </motion.div>
@@ -303,7 +374,8 @@ export default function PricingPage() {
               </span>
             </h2>
             <p className="text-xl text-gray-500 mb-10">
-              Talk to our team and we'll help you find the right plan for your business.
+              Talk to our team and we'll help you find the right plan for your
+              business.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
