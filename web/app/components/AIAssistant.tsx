@@ -63,6 +63,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
+  const previousResponseIdRef = useRef<string | undefined>(undefined);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || status === "streaming") return;
@@ -90,10 +91,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         headers: { "Content-Type": "application/json" },
         signal: abortRef.current.signal,
         body: JSON.stringify({
-          messages: updatedMessages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          messages: [{ role: userMessage.role, content: userMessage.content }],
+          ...(previousResponseIdRef.current && {
+            previousResponseId: previousResponseIdRef.current,
+          }),
         }),
       });
 
@@ -114,10 +115,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
+          // Check if line is empty
           if (!line.trim()) continue;
           try {
             const event: StreamEvent = JSON.parse(line);
-
             if (event.type === "text_delta") {
               setMessages((prev) =>
                 prev.map((m) =>
@@ -200,6 +201,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
               const data = event.result as UpdateEventToolResult;
               if (data.kind === "event_updated") {
                 queryClient.invalidateQueries({ queryKey: ["events"] });
+              }
+            } else if (event.type === "done") {
+              if (event.response_id) {
+                previousResponseIdRef.current = event.response_id;
               }
             } else if (event.type === "error") {
               setMessages((prev) =>

@@ -97,6 +97,7 @@ describe("POST /api/chat", () => {
 
   function mockRequest(body: {
     messages: { role: string; content: string }[];
+    previousResponseId?: string;
   }) {
     return {
       json: jest.fn().mockResolvedValue(body),
@@ -172,7 +173,39 @@ describe("POST /api/chat", () => {
     const events = lines.map((l) => JSON.parse(l));
 
     expect(events).toContainEqual({ type: "text_delta", delta: "Hello!" });
-    expect(events.at(-1)).toEqual({ type: "done" });
+    expect(events.at(-1)).toEqual({ type: "done", response_id: "resp_1" });
+  });
+
+  it("uses previousResponseId from request for conversation chaining", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as jest.Mock).mockReturnValue({
+      from: () => ({
+        where: () => Promise.resolve([{ ai_credits: 5 }]),
+      }),
+    });
+    const updateWhere = jest.fn();
+    const updateSet = jest.fn(() => ({ where: updateWhere }));
+    (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+
+    (openai.responses.stream as jest.Mock).mockReturnValue(
+      createTextStreamMock("Follow-up response.", "resp_2")
+    );
+
+    const res = await POST(
+      mockRequest({
+        messages: [{ role: "user", content: "Follow up" }],
+        previousResponseId: "resp_1",
+      })
+    );
+
+    expect(openai.responses.stream).toHaveBeenCalledWith(
+      expect.objectContaining({ previous_response_id: "resp_1" })
+    );
+    expect(res.status).toBe(200);
+
+    const text = await res.text();
+    const events = text.trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    expect(events.at(-1)).toEqual({ type: "done", response_id: "resp_2" });
   });
 
   const toolTestCases: Array<{ toolName: string; args: object; resultKind: string }> = [
@@ -217,7 +250,7 @@ describe("POST /api/chat", () => {
       expect(events).toContainEqual(
         expect.objectContaining({ type: "tool_result", name: toolName })
       );
-      expect(events.at(-1)).toEqual({ type: "done" });
+      expect(events.at(-1)).toMatchObject({ type: "done" });
     }
   );
 });

@@ -15,7 +15,11 @@ function encodeEvent(event: StreamEvent, encoder: TextEncoder): Uint8Array {
 }
 
 export async function POST(req: NextRequest) {
-  const { messages }: { messages: ChatMessage[] } = await req.json();
+  const {
+    messages,
+    previousResponseId,
+  }: { messages: ChatMessage[]; previousResponseId?: string } =
+    await req.json();
 
   const user = await currentUser();
   if (!user?.id) {
@@ -37,12 +41,13 @@ export async function POST(req: NextRequest) {
     .where(eq(users.user_id, user.id));
 
   const encoder = new TextEncoder();
-
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: StreamEvent) => {
         controller.enqueue(encodeEvent(event, encoder));
       };
+
+      let finalResponseId: string | undefined;
 
       try {
         const initialInput: OpenAI.Responses.ResponseInputItem[] = messages.map(
@@ -50,15 +55,15 @@ export async function POST(req: NextRequest) {
         );
 
         let currentInput: OpenAI.Responses.ResponseInputItem[] = initialInput;
-        let previousResponseId: string | undefined;
+        let currentResponseId: string | undefined = previousResponseId;
 
         for (let step = 0; step < MAX_STEPS; step++) {
           const responseStream = openai.responses.stream({
             model: MODEL,
             instructions: SYSTEM_INSTRUCTIONS,
             input: currentInput,
-            ...(previousResponseId && {
-              previous_response_id: previousResponseId,
+            ...(currentResponseId && {
+              previous_response_id: currentResponseId,
             }),
             tools,
           });
@@ -70,7 +75,8 @@ export async function POST(req: NextRequest) {
           }
 
           const response = await responseStream.finalResponse();
-          previousResponseId = response.id;
+          currentResponseId = response.id;
+          finalResponseId = response.id;
 
           const functionCalls = response.output.filter(
             (item) => item.type === "function_call"
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest) {
         console.error("[api/chat] stream error:", err);
         send({ type: "error", message: "An error occurred" });
       } finally {
-        send({ type: "done" });
+        send({ type: "done", response_id: finalResponseId });
         controller.close();
       }
     },
