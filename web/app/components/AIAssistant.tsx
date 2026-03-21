@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -64,6 +64,19 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const queryClient = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
   const previousResponseIdRef = useRef<string | undefined>(undefined);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (isOpen) scrollToBottom();
+  }, [isOpen]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || status === "streaming") return;
@@ -381,6 +394,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 </div>
               </motion.div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
