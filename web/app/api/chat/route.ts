@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
           (m) => ({ role: m.role, content: m.content })
         );
 
-        let currentInput: OpenAI.Responses.ResponseInputItem[] = initialInput;
+        const currentInput: OpenAI.Responses.ResponseInputItem[] = initialInput;
         let currentResponseId: string | undefined = previousResponseId;
 
         for (let step = 0; step < MAX_STEPS; step++) {
@@ -74,34 +74,35 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          const response = await responseStream.finalResponse();
-          currentResponseId = response.id;
-          finalResponseId = response.id;
+          const finalResponse = await responseStream.finalResponse();
+          finalResponseId = finalResponse.id;
+          currentResponseId = finalResponse.id;
 
-          const functionCalls = response.output.filter(
-            (item) => item.type === "function_call"
+          const toolCalls = finalResponse.output.filter(
+            (o) => o.type === "function_call"
           );
 
-          if (functionCalls.length === 0) break;
+          if (toolCalls.length === 0) break;
 
-          currentInput = [];
-          for (const fc of functionCalls) {
-            const args = JSON.parse(fc.arguments) as Record<string, unknown>;
-            const result = await executeTool(fc.name, args);
-
+          const toolResults: OpenAI.Responses.ResponseInputItem[] = [];
+          for (const call of toolCalls) {
+            const output = await executeTool(
+              call.name,
+              JSON.parse(call.arguments) as Record<string, unknown>
+            );
             send({
               type: "tool_result",
-              id: fc.call_id,
-              name: fc.name,
-              result,
+              id: call.call_id,
+              name: call.name,
+              result: output,
             });
-
-            currentInput.push({
+            toolResults.push({
               type: "function_call_output",
-              call_id: fc.call_id,
-              output: JSON.stringify(result),
+              call_id: call.call_id,
+              output: JSON.stringify(output),
             });
           }
+          currentInput.push(...toolResults);
         }
       } catch (err) {
         console.error("[api/chat] stream error:", err);
