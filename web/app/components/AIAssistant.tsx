@@ -254,7 +254,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="fixed right-0 top-0 h-screen w-[min(100%,320px)] sm:w-96 bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
+          className="fixed right-0 top-0 h-screen w-[min(100%,320px)] sm:w-96 bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl overflow-x-hidden"
         >
           {/* Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
@@ -343,7 +343,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50">
             {messages.map((message, msgIndex) => (
               <motion.div
                 key={message.id}
@@ -362,8 +362,8 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                       <p>{message.content}</p>
                     </div>
                   ) : (
-                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 overflow-hidden">
-                      <div className="prose prose-sm max-w-none text-sm text-gray-800 break-words overflow-wrap-anywhere">
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 overflow-hidden w-full min-w-0">
+                      <div className="prose prose-sm max-w-none text-sm text-gray-800 break-words overflow-wrap-anywhere overflow-x-hidden [&_pre]:whitespace-pre-wrap [&_code]:break-all [&_*]:max-w-full">
                         {message.content ? (
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         ) : (

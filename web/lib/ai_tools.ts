@@ -16,184 +16,196 @@ export const openai = new OpenAI({
 export const MODEL = "gpt-5";
 export const MAX_STEPS = 5;
 
-export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+export const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
-    function: {
-      name: "addClient",
-      description: "Create a new client",
-      parameters: {
-        type: "object",
-        properties: {
-          name: { type: "string", description: "The name of the client" },
-          email: { type: "string", description: "The email of the client" },
-          phone: {
-            type: "string",
-            description: "The phone number of the client",
-          },
-          industry: {
-            type: "string",
-            description: "The industry of the client",
-          },
-          notes: {
-            type: "string",
-            description: "Notes that can be added to the client",
-          },
+    name: "addClient",
+    description: "Create a new client",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "The name of the client" },
+        email: { type: "string", description: "The email of the client" },
+        phone: {
+          type: "string",
+          description: "The phone number of the client",
         },
-        required: ["name", "email", "phone", "industry"],
+        industry: {
+          type: "string",
+          description: "The industry of the client",
+        },
+        notes: {
+          type: ["string", "null"],
+          description: "Notes that can be added to the client",
+        },
       },
+      required: ["name", "email", "phone", "industry", "notes"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "getPastMeetingData",
-      description:
-        "Get meeting transcript data and does semantic search to find relevant info",
-      parameters: {
-        type: "object",
-        properties: {
-          text: {
-            type: "string",
-            description: "Text to apply semantic search",
-          },
+    name: "getPastMeetingData",
+    description:
+      "Get meeting transcript data and does semantic search to find relevant info",
+    parameters: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string",
+          description: "Text to apply semantic search",
         },
-        required: ["text"],
       },
+      required: ["text"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "createProject",
-      description: "Create a new project",
-      parameters: {
-        type: "object",
-        properties: {
-          name: { type: "string", description: "The name of the project" },
-          description: { type: "string", description: "Project description" },
-          status: { type: "string", description: "Project status" },
-          dueDate: { type: "string", description: "Due date as ISO string" },
-          priority: { type: "string", description: "Project priority" },
-          clientId: { type: "number", description: "Associated client ID" },
-        },
-        required: ["name"],
+    name: "createProject",
+    description: "Create a new project",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "The name of the project" },
+        description: { type: ["string", "null"], description: "Project description" },
+        status: { type: ["string", "null"], description: "Project status" },
+        dueDate: { type: ["string", "null"], description: "Due date as ISO string" },
+        priority: { type: ["string", "null"], description: "Project priority" },
+        clientId: { type: ["number", "null"], description: "Associated client ID" },
       },
+      required: ["name", "description", "status", "dueDate", "priority", "clientId"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "updateClient",
-      description: "Update an existing client",
-      parameters: {
-        type: "object",
-        properties: {
-          id: { type: "number", description: "The ID of the client to update" },
-          name: { type: "string", description: "New name" },
-          email: { type: "string", description: "New email" },
-          phone: { type: "string", description: "New phone number" },
-          industry: { type: "string", description: "New industry" },
-          notes: { type: "string", description: "New notes" },
-        },
-        required: ["id"],
+    name: "updateClient",
+    description: "Update an existing client",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "The ID of the client to update" },
+        name: { type: ["string", "null"], description: "New name" },
+        email: { type: ["string", "null"], description: "New email" },
+        phone: { type: ["string", "null"], description: "New phone number" },
+        industry: { type: ["string", "null"], description: "New industry" },
+        notes: { type: ["string", "null"], description: "New notes" },
       },
+      required: ["id", "name", "email", "phone", "industry", "notes"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "updateProject",
-      description: "Update an existing project",
-      parameters: {
-        type: "object",
-        properties: {
-          id: { type: "number", description: "The ID of the project to update" },
-          name: { type: "string", description: "New name" },
-          description: { type: "string", description: "New description" },
-          status: { type: "string", description: "New status" },
-          dueDate: { type: "string", description: "New due date as ISO string" },
-          priority: { type: "string", description: "New priority" },
-          health: { type: "string", description: "New health status" },
-        },
-        required: ["id"],
+    name: "updateProject",
+    description: "Update an existing project",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "The ID of the project to update" },
+        name: { type: ["string", "null"], description: "New name" },
+        description: { type: ["string", "null"], description: "New description" },
+        status: { type: ["string", "null"], description: "New status" },
+        dueDate: { type: ["string", "null"], description: "New due date as ISO string" },
+        priority: { type: ["string", "null"], description: "New priority" },
+        health: { type: ["string", "null"], description: "New health status" },
       },
+      required: ["id", "name", "description", "status", "dueDate", "priority", "health"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "createTask",
-      description: "Create a new task",
-      parameters: {
-        type: "object",
-        properties: {
-          title: { type: "string", description: "The title of the task" },
-          description: { type: "string", description: "Task description" },
-          projectId: { type: "number", description: "Associated project ID" },
-          priority: { type: "string", description: "Task priority" },
-          dueDate: { type: "string", description: "Due date as ISO string" },
-        },
-        required: ["title"],
+    name: "createTask",
+    description: "Create a new task",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "The title of the task" },
+        description: { type: ["string", "null"], description: "Task description" },
+        projectId: { type: ["number", "null"], description: "Associated project ID" },
+        priority: { type: ["string", "null"], description: "Task priority" },
+        dueDate: { type: ["string", "null"], description: "Due date as ISO string" },
       },
+      required: ["title", "description", "projectId", "priority", "dueDate"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "updateTask",
-      description: "Update an existing task",
-      parameters: {
-        type: "object",
-        properties: {
-          id: { type: "number", description: "The ID of the task to update" },
-          title: { type: "string", description: "New title" },
-          description: { type: "string", description: "New description" },
-          priority: { type: "string", description: "New priority" },
-          status: { type: "string", description: "New status" },
-          dueDate: { type: "string", description: "New due date as ISO string or null" },
+    name: "updateTask",
+    description: "Update an existing task",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "The ID of the task to update" },
+        title: { type: ["string", "null"], description: "New title" },
+        description: { type: ["string", "null"], description: "New description" },
+        priority: { type: ["string", "null"], description: "New priority" },
+        status: { type: ["string", "null"], description: "New status" },
+        dueDate: {
+          type: ["string", "null"],
+          description: "New due date as ISO string or null",
         },
-        required: ["id"],
       },
+      required: ["id", "title", "description", "priority", "status", "dueDate"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "createEvent",
-      description: "Create a new calendar event or meeting",
-      parameters: {
-        type: "object",
-        properties: {
-          title: { type: "string", description: "Event title" },
-          dateTime: { type: "string", description: "Start date/time as ISO string" },
-          duration: { type: "number", description: "Duration in minutes" },
-          description: { type: "string", description: "Event description" },
-          isMeeting: { type: "boolean", description: "Whether this is a video meeting" },
-          link: { type: "string", description: "Meeting link" },
+    name: "createEvent",
+    description: "Create a new calendar event or meeting",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Event title" },
+        dateTime: {
+          type: "string",
+          description: "Start date/time as ISO string",
         },
-        required: ["title", "dateTime", "duration"],
+        duration: { type: "number", description: "Duration in minutes" },
+        description: { type: ["string", "null"], description: "Event description" },
+        isMeeting: {
+          type: ["boolean", "null"],
+          description: "Whether this is a video meeting",
+        },
+        link: { type: ["string", "null"], description: "Meeting link" },
       },
+      required: ["title", "dateTime", "duration", "description", "isMeeting", "link"],
+      additionalProperties: false,
     },
+    strict: true,
   },
   {
     type: "function",
-    function: {
-      name: "updateEvent",
-      description: "Update an existing calendar event",
-      parameters: {
-        type: "object",
-        properties: {
-          id: { type: "string", description: "The ID of the event to update" },
-          title: { type: "string", description: "New title" },
-          description: { type: "string", description: "New description" },
-          dateTime: { type: "string", description: "New start date/time as ISO string" },
-          duration: { type: "number", description: "New duration in minutes" },
-          status: { type: "string", description: "New status" },
+    name: "updateEvent",
+    description: "Update an existing calendar event",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "The ID of the event to update" },
+        title: { type: ["string", "null"], description: "New title" },
+        description: { type: ["string", "null"], description: "New description" },
+        dateTime: {
+          type: ["string", "null"],
+          description: "New start date/time as ISO string",
         },
-        required: ["id"],
+        duration: { type: ["number", "null"], description: "New duration in minutes" },
+        status: { type: ["string", "null"], description: "New status" },
       },
+      required: ["id", "title", "description", "dateTime", "duration", "status"],
+      additionalProperties: false,
     },
+    strict: true,
   },
 ];
 

@@ -32,7 +32,7 @@ describe("GET /api/billing", () => {
 
   it("returns 200 with BillingOverview when authenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    const overview: BillingOverview = {
+    const overview = {
       subscription: {
         plan: "professional",
         status: "active",

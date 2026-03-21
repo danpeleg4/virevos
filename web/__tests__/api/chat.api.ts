@@ -17,10 +17,8 @@ jest.mock("@db/db", () => ({
 
 jest.mock("@/lib/ai_tools", () => ({
   openai: {
-    chat: {
-      completions: {
-        create: jest.fn(),
-      },
+    responses: {
+      stream: jest.fn(),
     },
   },
   tools: [],
@@ -57,37 +55,39 @@ jest.mock("@/lib/calendar", () => ({
   updateEvent: jest.fn(),
 }));
 
-async function* mockStreamChunks(content: string) {
-  yield { choices: [{ delta: { content }, finish_reason: null }] };
-  yield { choices: [{ delta: {}, finish_reason: "stop" }] };
+function createTextStreamMock(textContent: string, responseId = "resp_1") {
+  async function* eventIterator() {
+    if (textContent) {
+      yield { type: "response.output_text.delta", delta: textContent };
+    }
+  }
+  return {
+    [Symbol.asyncIterator]: eventIterator,
+    finalResponse: jest.fn().mockResolvedValue({
+      id: responseId,
+      output: [],
+    }),
+  };
 }
 
-async function* mockStreamToolCall(toolName: string, toolArgs: object) {
-  yield {
-    choices: [
-      {
-        delta: {
-          tool_calls: [
-            { index: 0, id: "tc_1", function: { name: toolName, arguments: "" } },
-          ],
+function createToolCallStreamMock(toolName: string, toolArgs: object) {
+  async function* eventIterator() {
+    // No text events for tool call responses
+  }
+  return {
+    [Symbol.asyncIterator]: eventIterator,
+    finalResponse: jest.fn().mockResolvedValue({
+      id: "resp_1",
+      output: [
+        {
+          type: "function_call",
+          call_id: "call_1",
+          name: toolName,
+          arguments: JSON.stringify(toolArgs),
         },
-        finish_reason: null,
-      },
-    ],
+      ],
+    }),
   };
-  yield {
-    choices: [
-      {
-        delta: {
-          tool_calls: [
-            { index: 0, function: { arguments: JSON.stringify(toolArgs) } },
-          ],
-        },
-        finish_reason: null,
-      },
-    ],
-  };
-  yield { choices: [{ delta: {}, finish_reason: "tool_calls" }] };
 }
 
 describe("POST /api/chat", () => {
@@ -152,23 +152,21 @@ describe("POST /api/chat", () => {
     const updateSet = jest.fn(() => ({ where: updateWhere }));
     (db.update as jest.Mock).mockReturnValue({ set: updateSet });
 
-    (openai.chat.completions.create as jest.Mock).mockReturnValue(
-      mockStreamChunks("Hello!")
+    (openai.responses.stream as jest.Mock).mockReturnValue(
+      createTextStreamMock("Hello!")
     );
 
     const res = await POST(mockRequest({ messages: [] }));
 
     expect(db.update).toHaveBeenCalled();
-    expect(openai.chat.completions.create).toHaveBeenCalledWith(
+    expect(openai.responses.stream).toHaveBeenCalledWith(
       expect.objectContaining({
         model: "gpt-4o",
         tools,
-        stream: true,
       })
     );
     expect(res.status).toBe(200);
 
-    // Verify the streamed body contains text_delta and done events
     const text = await res.text();
     const lines = text.trim().split("\n").filter(Boolean);
     const events = lines.map((l) => JSON.parse(l));
@@ -203,10 +201,10 @@ describe("POST /api/chat", () => {
       const { executeTool: mockExecuteTool } = await import("@/lib/ai_tools");
       (mockExecuteTool as jest.Mock).mockResolvedValueOnce({ kind: resultKind, message: "ok" });
 
-      // First call returns tool call stream, second call returns a stop stream
-      (openai.chat.completions.create as jest.Mock)
-        .mockReturnValueOnce(mockStreamToolCall(toolName, args))
-        .mockReturnValueOnce(mockStreamChunks("Done."));
+      // First call returns tool call stream, second call returns a text completion
+      (openai.responses.stream as jest.Mock)
+        .mockReturnValueOnce(createToolCallStreamMock(toolName, args))
+        .mockReturnValueOnce(createTextStreamMock("Done."));
 
       const res = await POST(mockRequest({ messages: [] }));
       expect(res.status).toBe(200);

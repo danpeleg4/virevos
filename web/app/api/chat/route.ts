@@ -7,6 +7,9 @@ import OpenAI from "openai";
 import { openai, tools, executeTool, MODEL, MAX_STEPS } from "@/lib/ai_tools";
 import type { ChatMessage, StreamEvent } from "@/types/ai";
 
+const SYSTEM_INSTRUCTIONS =
+  "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows.";
+
 function encodeEvent(event: StreamEvent, encoder: TextEncoder): Uint8Array {
   return encoder.encode(JSON.stringify(event) + "\n");
 }
@@ -42,80 +45,55 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
-          [
-            {
-              role: "system",
-              content:
-                "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows.",
-            },
-            ...messages.map((m) => ({ role: m.role, content: m.content })),
-          ];
+        const initialInput: OpenAI.Responses.ResponseInputItem[] = messages.map(
+          (m) => ({ role: m.role, content: m.content })
+        );
+
+        let currentInput: OpenAI.Responses.ResponseInputItem[] = initialInput;
+        let previousResponseId: string | undefined;
 
         for (let step = 0; step < MAX_STEPS; step++) {
-          const completion = await openai.chat.completions.create({
+          const responseStream = openai.responses.stream({
             model: MODEL,
-            messages: openaiMessages,
+            instructions: SYSTEM_INSTRUCTIONS,
+            input: currentInput,
+            ...(previousResponseId && {
+              previous_response_id: previousResponseId,
+            }),
             tools,
-            tool_choice: "auto",
-            stream: true,
           });
 
-          let assistantContent = "";
-          const toolCalls: Array<{
-            id: string;
-            name: string;
-            arguments: string;
-          }> = [];
-
-          for await (const chunk of completion) {
-            const delta = chunk.choices[0]?.delta;
-            if (!delta) continue;
-
-            if (delta.content) {
-              assistantContent += delta.content;
-              send({ type: "text_delta", delta: delta.content });
-            }
-
-            if (delta.tool_calls) {
-              for (const tc of delta.tool_calls) {
-                const idx = tc.index ?? 0;
-                if (!toolCalls[idx]) {
-                  toolCalls[idx] = { id: "", name: "", arguments: "" };
-                }
-                if (tc.id) toolCalls[idx].id = tc.id;
-                if (tc.function?.name) toolCalls[idx].name = tc.function.name;
-                if (tc.function?.arguments)
-                  toolCalls[idx].arguments += tc.function.arguments;
-              }
+          for await (const event of responseStream) {
+            if (event.type === "response.output_text.delta") {
+              send({ type: "text_delta", delta: event.delta });
             }
           }
 
-          openaiMessages.push({
-            role: "assistant",
-            content: assistantContent || null,
-            tool_calls:
-              toolCalls.length > 0
-                ? toolCalls.map((tc) => ({
-                    id: tc.id,
-                    type: "function" as const,
-                    function: { name: tc.name, arguments: tc.arguments },
-                  }))
-                : undefined,
-          });
+          const response = await responseStream.finalResponse();
+          previousResponseId = response.id;
 
-          if (toolCalls.length === 0) break;
+          const functionCalls = response.output.filter(
+            (item) => item.type === "function_call"
+          );
 
-          for (const tc of toolCalls) {
-            const args = JSON.parse(tc.arguments) as Record<string, unknown>;
-            const result = await executeTool(tc.name, args);
+          if (functionCalls.length === 0) break;
 
-            send({ type: "tool_result", id: tc.id, name: tc.name, result });
+          currentInput = [];
+          for (const fc of functionCalls) {
+            const args = JSON.parse(fc.arguments) as Record<string, unknown>;
+            const result = await executeTool(fc.name, args);
 
-            openaiMessages.push({
-              role: "tool",
-              tool_call_id: tc.id,
-              content: JSON.stringify(result),
+            send({
+              type: "tool_result",
+              id: fc.call_id,
+              name: fc.name,
+              result,
+            });
+
+            currentInput.push({
+              type: "function_call_output",
+              call_id: fc.call_id,
+              output: JSON.stringify(result),
             });
           }
         }
