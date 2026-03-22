@@ -47,111 +47,13 @@ const tonePresets = [
   },
 ];
 
-const mockDrafts: Record<string, string> = {
-  professional: `Dear Sarah,
-
-Thank you for reaching out regarding the Q4 project timeline. I appreciate your attention to this matter.
-
-Based on our previous discussions and the current project scope, I propose the following timeline for the Q4 rollout:
-
-• Phase 1 (Weeks 1-2): Requirements finalization and design approval
-• Phase 2 (Weeks 3-6): Development and testing
-• Phase 3 (Weeks 7-8): Deployment and monitoring
-
-I'd be happy to schedule a call this week to discuss this in more detail and address any concerns you may have. Please let me know what time works best for you.
-
-Best regards,
-John`,
-
-  friendly: `Hi Sarah!
-
-Thanks for following up on the Q4 timeline - great timing! 😊
-
-I've been working on a detailed schedule that I think will work perfectly for what we discussed. The rollout will happen in three main phases over the next 8 weeks, and I'm confident we can hit all our targets.
-
-Would love to jump on a quick call this week to walk you through everything. How does your calendar look?
-
-Looking forward to chatting!
-John`,
-
-  concise: `Hi Sarah,
-
-Q4 rollout timeline: 8 weeks total, 3 phases.
-
-Phase 1: Requirements & Design (2 weeks)
-Phase 2: Development & Testing (4 weeks)  
-Phase 3: Deployment (2 weeks)
-
-Available this week for a call to discuss details.
-
-Best,
-John`,
-
-  detailed: `Dear Sarah,
-
-Thank you for your inquiry about the Q4 project timeline. I've prepared a comprehensive breakdown to ensure we're aligned on all aspects of the rollout.
-
-PROJECT OVERVIEW:
-The Q4 rollout encompasses the implementation of the new automation features we discussed, along with the integration updates required by your team.
-
-DETAILED TIMELINE:
-
-Phase 1: Requirements Finalization & Design (Weeks 1-2)
-- Review and finalize all technical requirements
-- Complete UX/UI design mockups
-- Obtain stakeholder approval
-- Deliverable: Approved design documentation
-
-Phase 2: Development & Quality Assurance (Weeks 3-6)
-- Core feature development
-- Integration implementation
-- Comprehensive testing (unit, integration, UAT)
-- Deliverable: Fully tested application ready for deployment
-
-Phase 3: Deployment & Stabilization (Weeks 7-8)
-- Staged production deployment
-- Performance monitoring
-- User training and documentation
-- Post-launch support
-
-DEPENDENCIES & RISKS:
-- Requires timely feedback on design mockups (Week 2)
-- Third-party API availability may impact integration timeline
-- Resource allocation confirmed with the development team
-
-I recommend scheduling a detailed planning session this week to review this timeline and address any questions or adjustments needed. I have availability Tuesday afternoon or Thursday morning.
-
-Please let me know your preferred time, and I'll send over a calendar invitation.
-
-Best regards,
-John Doe
-Project Manager, Virevos`,
-
-  empathetic: `Hi Sarah,
-
-I completely understand your concern about the Q4 timeline - I know how important this rollout is for your team, and I want to make sure we get it right.
-
-I've been carefully working through the schedule to balance speed with quality, because I know you need this delivered on time but also need it to work flawlessly for your users.
-
-Here's what I'm proposing: we break this into three manageable phases over 8 weeks. This gives us enough time to build it right, test thoroughly, and make sure your team feels confident with the new features.
-
-I'd really love to walk you through this together and hear your thoughts. I want to make sure this timeline works for your team's needs and that we're on the same page about priorities.
-
-Can we find some time this week to chat? I'm flexible and happy to work around your schedule.
-
-Thanks for your patience and partnership on this!
-
-Best,
-John`,
-};
-
 export function AIReplyComposer({
   message,
   onClose,
   onSend,
 }: AIReplyComposerProps) {
   const [tone, setTone] = useState("professional");
-  const [draft, setDraft] = useState(mockDrafts.professional);
+  const [draft, setDraft] = useState<string>();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [customInstructions, setCustomInstructions] = useState("");
@@ -201,19 +103,8 @@ Return only the email body text, no subject line.`;
           }
         }
       }
-
-      if (!fullText) {
-        // Fall back to mock if AI returns nothing
-        setDraft(
-          mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional
-        );
-      }
     } catch (err) {
       console.error("AI generation error:", err);
-      // Fall back to mock drafts
-      setDraft(
-        mockDrafts[tone as keyof typeof mockDrafts] || mockDrafts.professional
-      );
     } finally {
       setIsGenerating(false);
     }
@@ -221,9 +112,6 @@ Return only the email body text, no subject line.`;
 
   const handleToneChange = (newTone: string) => {
     setTone(newTone);
-    setDraft(
-      mockDrafts[newTone as keyof typeof mockDrafts] || mockDrafts.professional
-    );
   };
 
   const handleSend = async () => {

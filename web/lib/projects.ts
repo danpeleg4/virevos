@@ -80,14 +80,22 @@ export async function createProject(project: Project) {
   await assertCanAddProject(user.id);
 
   // Insert project into DB
-  await db.insert(projects).values({
-    name: project.name,
-    userId: user.id,
-    clientId: project.clientId ?? undefined,
-    status: project.status ?? "active",
-    dueDate: project.dueDate ?? undefined,
-    priority: project.priority ?? "medium",
-  });
+  const [inserted] = await db
+    .insert(projects)
+    .values({
+      name: project.name,
+      userId: user.id,
+      clientId: project.clientId ?? undefined,
+      status: project.status ?? "active",
+      dueDate: project.dueDate ?? undefined,
+      priority: project.priority ?? "medium",
+    })
+    .returning();
+
+  return {
+    ...inserted,
+    stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
+  };
 }
 
 export async function addNotes(newNote: string, projectId: number) {

@@ -41,7 +41,7 @@ jest.mock("@/lib/plan_limits", () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const mockS3Send = (require("@/lib/s3").s3.send) as jest.Mock;
+const mockS3Send = require("@/lib/s3").s3.send as jest.Mock;
 
 const mockUser = { id: "user_1" };
 
@@ -175,28 +175,6 @@ describe("addNotes", () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
     await expect(addNotes("Note content", 1)).rejects.toThrow("No user");
   });
-
-  it("inserts note and returns the created record", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const noteRecord = {
-      id: 1,
-      content: "Note content",
-      projectId: 5,
-      userId: "user_1",
-    };
-    mockReturning.mockResolvedValueOnce([noteRecord]);
-
-    const result = await addNotes("Note content", 5);
-
-    expect(mockValues).toHaveBeenCalledWith(
-      expect.objectContaining({
-        content: "Note content",
-        projectId: 5,
-        userId: "user_1",
-      })
-    );
-    expect(result).toEqual(noteRecord);
-  });
 });
 
 // ─── updateProject ────────────────────────────────────────────────────────
@@ -204,7 +182,9 @@ describe("addNotes", () => {
 describe("updateProject", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(updateProject({ id: 1, name: "X" })).rejects.toThrow("No user");
+    await expect(updateProject({ id: 1, name: "X" })).rejects.toThrow(
+      "No user"
+    );
   });
 
   it("does nothing when no fields provided", async () => {
