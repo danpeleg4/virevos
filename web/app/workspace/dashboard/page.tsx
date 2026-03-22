@@ -62,7 +62,6 @@ export default function Dashboard() {
         return {
           ...p,
           status: isCompleted ? "completed" : "active",
-          health: isCompleted ? "completed" : p.health,
         };
       })
     : [];
