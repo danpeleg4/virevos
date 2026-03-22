@@ -33,7 +33,9 @@ const mainFeatures = [
     title: "AI Assistant",
     description:
       "AI powered assistant that understands your business context. Add clients, search past meetings, and get instant help — all through natural conversation.",
-    gradient: "from-pink-500 to-rose-600",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #ec4899, #e11d48)",
+    },
     benefits: [
       "Add clients via chat",
       "Search meeting transcripts",
@@ -46,7 +48,9 @@ const mainFeatures = [
     title: "Client Management",
     description:
       "A full CRM built for freelancers. Organize every client, track project history, and keep all communications in one centralized workspace.",
-    gradient: "from-blue-500 to-blue-700",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #3b82f6, #1d4ed8)",
+    },
     benefits: [
       "Client profiles & history",
       "Project tracking",
@@ -59,7 +63,9 @@ const mainFeatures = [
     title: "Built-In Video Meetings",
     description:
       "Run client calls directly inside Virevos with AI-powered video. Meetings are automatically transcribed, summarized, and linked to your projects.",
-    gradient: "from-purple-500 to-violet-700",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #a855f7, #6d28d9)",
+    },
     benefits: [
       "HD video & audio",
       "Auto transcription",
@@ -72,7 +78,9 @@ const mainFeatures = [
     title: "Workflow Automation",
     description:
       "Build no-code automations to handle client onboarding, follow-ups, and repetitive tasks. Set triggers once and let Virevos do the work.",
-    gradient: "from-yellow-400 to-orange-500",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #facc15, #f97316)",
+    },
     benefits: [
       "No-code builder",
       "Custom triggers & actions",
@@ -82,10 +90,12 @@ const mainFeatures = [
   },
   {
     icon: Calendar,
-    title: "Google Calendar Sync",
+    title: "Calendar Sync",
     description:
-      "Two-way Google Calendar integration with real-time push notifications. Your schedule stays in sync whether you book inside the app or directly in Google.",
-    gradient: "from-green-400 to-emerald-600",
+      "Two-way Calendar integration with real-time push notifications. Your schedule stays in sync whether you book inside the app or directly in Google or Outlook.",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #4ade80, #059669)",
+    },
     benefits: [
       "Two-way sync",
       "Real-time push updates",
@@ -98,7 +108,9 @@ const mainFeatures = [
     title: "Analytics & Insights",
     description:
       "Track revenue, client activity, and productivity trends. Get the data you need to grow your freelance business and make smarter decisions.",
-    gradient: "from-teal-400 to-cyan-600",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #2dd4bf, #0891b2)",
+    },
     benefits: [
       "Revenue tracking",
       "Client activity reports",
@@ -113,7 +125,9 @@ const spotlights = [
     badge: "AI-Powered",
     badgeColor: "bg-pink-50 border-pink-100 text-pink-700",
     icon: Brain,
-    iconGradient: "from-pink-500 to-rose-600",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #ec4899, #e11d48)",
+    },
     title: "Your AI assistant that actually knows your business",
     description:
       "Ask Virevos to add a new client, pull up notes from last week's meeting, or draft a follow-up email. The AI understands your workspace context and takes real action — not just suggestions.",
@@ -142,7 +156,9 @@ const spotlights = [
     badge: "Communications",
     badgeColor: "bg-purple-50 border-purple-100 text-purple-700",
     icon: Video,
-    iconGradient: "from-purple-500 to-violet-700",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #a855f7, #6d28d9)",
+    },
     title: "Client meetings with everything captured automatically",
     description:
       "Stop juggling Zoom, Google Meet, and note-taking apps. Virevos has video meetings built in — powered by AI — with automatic transcription and AI summaries so nothing falls through the cracks.",
@@ -170,7 +186,9 @@ const spotlights = [
     badge: "Automation",
     badgeColor: "bg-yellow-50 border-yellow-100 text-yellow-700",
     icon: Zap,
-    iconGradient: "from-yellow-400 to-orange-500",
+    iconStyle: {
+      backgroundImage: "linear-gradient(to right, #facc15, #f97316)",
+    },
     title: "Automate the busywork, focus on what matters",
     description:
       "Build trigger-based workflows without writing code. When a new client is added, automatically send a welcome email, create a project, and schedule an onboarding call — all in one flow.",
@@ -349,7 +367,8 @@ export default function FeaturesPage() {
                 <div className="h-full bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-gray-300 transition-all duration-300 group">
                   <div className="mb-6">
                     <div
-                      className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-r ${feature.gradient} shadow-lg`}
+                      className="inline-flex items-center justify-center w-14 h-14 rounded-xl shadow-lg"
+                      style={feature.iconStyle}
                     >
                       <feature.icon className="h-7 w-7 text-white" />
                     </div>
@@ -412,7 +431,8 @@ export default function FeaturesPage() {
                   {spotlight.highlights.map((h, i) => (
                     <div key={i} className="flex gap-4">
                       <div
-                        className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r ${spotlight.iconGradient} flex items-center justify-center shadow-md`}
+                        className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                        style={spotlight.iconStyle}
                       >
                         <h.icon className="h-5 w-5 text-white" />
                       </div>
@@ -437,7 +457,8 @@ export default function FeaturesPage() {
               >
                 <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl">
                   <div
-                    className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${spotlight.iconGradient} flex items-center justify-center shadow-lg mb-6`}
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg mb-6"
+                    style={spotlight.iconStyle}
                   >
                     <spotlight.icon className="h-8 w-8 text-white" />
                   </div>
@@ -458,7 +479,8 @@ export default function FeaturesPage() {
                 </div>
                 {/* Subtle glow */}
                 <div
-                  className={`absolute -inset-px rounded-2xl bg-gradient-to-r ${spotlight.iconGradient} opacity-10 blur-xl -z-10`}
+                  className="absolute -inset-px rounded-2xl opacity-10 blur-xl -z-10"
+                  style={spotlight.iconStyle}
                 />
               </motion.div>
             </motion.div>

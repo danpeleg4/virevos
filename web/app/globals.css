@@ -3,6 +3,18 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer utilities {
+  .feature-icon-blue {
+    background-image: linear-gradient(to right, #3b82f6, #1d4ed8);
+  }
+  .feature-icon-purple {
+    background-image: linear-gradient(to right, #a855f7, #6d28d9);
+  }
+  .feature-icon-teal {
+    background-image: linear-gradient(to right, #2dd4bf, #0891b2);
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

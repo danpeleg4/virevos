@@ -52,7 +52,7 @@ export const projects = pgTable("projects", {
 
   name: text("title").notNull(),
   description: text("description"),
-  status: text("status").notNull().default("in-progress"),
+  status: text("status").notNull().default("active"),
   dueDate: date("due_date"),
   priority: text("priority").notNull().default("low"),
 
