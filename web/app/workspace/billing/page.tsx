@@ -50,6 +50,7 @@ import {
   AlertCircle,
   Star,
   FolderOpen,
+  Sparkles,
 } from "lucide-react";
 import {
   changePlan,
@@ -63,6 +64,12 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 );
 
+const AI_CREDIT_LIMITS: Record<string, number> = {
+  starter: 50,
+  professional: 250,
+  business: 500,
+};
+
 const PLAN_DETAILS: Record<
   string,
   { name: string; price: number; features: string[] }
@@ -73,7 +80,7 @@ const PLAN_DETAILS: Record<
     features: [
       "Up to 5 clients",
       "1 project",
-      "10 AI credits/month",
+      "50 AI credits/month",
       "Basic automation",
     ],
   },
@@ -83,7 +90,7 @@ const PLAN_DETAILS: Record<
     features: [
       "Unlimited clients",
       "Unlimited projects",
-      "50 AI credits/month",
+      "250 AI credits/month",
       "Advanced automation",
       "AI Assistant",
       "Priority support",
@@ -243,6 +250,8 @@ export default function Billing() {
   const clientLimit = currentPlan === "starter" ? 5 : null;
   const projectCount = projectList?.length ?? 0;
   const projectLimit = currentPlan === "starter" ? 1 : null;
+  const aiCredits = billing?.aiCredits ?? 0;
+  const aiCreditLimit = AI_CREDIT_LIMITS[currentPlan] ?? 50;
 
   const formatDate = (val: Date | string | null | undefined) => {
     if (!val) return "—";
@@ -259,13 +268,7 @@ export default function Billing() {
       currency: currency.toUpperCase(),
     }).format(cents / 100);
 
-  if (isLoading) {
-    return (
-      <div className="p-4 sm:p-6 flex items-center justify-center min-h-64">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (isLoading) return;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -612,6 +615,25 @@ export default function Billing() {
             {currentPlan === "starter" && projectCount >= 1 && (
               <p className="text-[11px] text-red-500 mt-1">
                 Limit reached — upgrade to add more
+              </p>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="h-4 w-4 text-gray-400" />
+                <p className="text-sm text-gray-600">AI Credits</p>
+              </div>
+              <p className="text-sm text-gray-900">
+                {aiCredits} / {aiCreditLimit}
+              </p>
+            </div>
+            <Progress
+              value={Math.min((aiCredits / aiCreditLimit) * 100, 100)}
+            />
+            {aiCredits === 0 && (
+              <p className="text-[11px] text-red-500 mt-1">
+                No credits left — upgrade to get more
               </p>
             )}
           </div>

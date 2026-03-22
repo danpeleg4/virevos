@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Check, Sparkles, ArrowRight } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useRouter } from "next/navigation";
@@ -13,7 +13,7 @@ const plans = [
     description: "Perfect for individuals and small teams getting started",
     features: [
       "Free forever",
-      "10 AI Credits/month",
+      "50 AI Credits/month",
       "Limited integrations",
       "1GB storage",
       "Email support",
@@ -29,14 +29,14 @@ const plans = [
     description: "For growing teams that need more power and flexibility",
     features: [
       "Everything in Starter plan +",
-      "35 AI Credits/month",
+      "250 AI Credits/month",
       "Unlimited projects",
       "Unlimited meetings",
       "50GB storage",
       "Priority support",
       "Full integrations",
     ],
-    cta: "Start free trial",
+    cta: "Start Pro Plan",
     popular: true,
   },
   {
@@ -52,7 +52,7 @@ const plans = [
       "Dedicated account manager",
       "Custom contracts",
     ],
-    cta: "Start free trial",
+    cta: "Start Business Plan",
     popular: false,
   },
 ];
@@ -63,41 +63,6 @@ export function Pricing() {
   return (
     <section className="relative bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center space-x-2 bg-green-50 border border-green-100 rounded-full px-4 py-2 mb-6"
-          >
-            <Sparkles className="h-4 w-4 text-green-600" />
-            <span className="text-sm text-green-900">
-              Simple, transparent pricing
-            </span>
-          </motion.div>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl text-gray-900 mb-6"
-          >
-            Plans that scale with you
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-gray-600"
-          >
-            Start free, upgrade when you need to. No hidden fees.
-          </motion.p>
-        </div>
-
         {/* Pricing Cards */}
         <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
@@ -212,7 +177,7 @@ export function Pricing() {
                 <div className="flex items-start space-x-3">
                   <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-gray-900 mb-1">14-day free trial</p>
+                    <p className="text-gray-900 mb-1">Free Plan</p>
                     <p className="text-sm text-gray-600">
                       No credit card required
                     </p>

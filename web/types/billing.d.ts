@@ -39,6 +39,7 @@ type BillingOverview = {
   subscription: UserSubscription;
   invoices: StripeInvoiceSummary[];
   paymentMethod: StripePaymentMethodSummary | null;
+  aiCredits: number;
 };
 
 type CreateSubscriptionInput = {

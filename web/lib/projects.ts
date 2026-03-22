@@ -4,7 +4,11 @@ import { db } from "@db/db";
 import { notes, projectFiles, projects, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import { AddFileMetadataInput, Project, ProjectNote, UploadedAttachment } from "@/types/projects";
+import {
+  AddFileMetadataInput,
+  Project,
+  UploadedAttachment,
+} from "@/types/projects";
 import { s3, S3_BUCKET } from "./s3";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -67,7 +71,7 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
   return { path: filePath, name: file.name, size: file.size };
 }
 
-export async function createProject(project: Project): Promise<Project> {
+export async function createProject(project: Project) {
   const user = await currentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
@@ -76,45 +80,54 @@ export async function createProject(project: Project): Promise<Project> {
   await assertCanAddProject(user.id);
 
   // Insert project into DB
-  const inserted = await db
-    .insert(projects)
-    .values({
-      name: project.name,
-      userId: user.id,
-      clientId: project.clientId ?? undefined,
-      status: project.status,
-      dueDate: project.dueDate ?? undefined,
-      priority: project.priority,
-      health: project.health,
-    })
-    .returning();
-
-  // Add default stats before returning
-  const newProject: Project = {
-    ...inserted[0],
-    stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
-  };
-
-  return newProject;
+  await db.insert(projects).values({
+    name: project.name,
+    userId: user.id,
+    clientId: project.clientId ?? undefined,
+    status: project.status ?? "active",
+    dueDate: project.dueDate ?? undefined,
+    priority: project.priority ?? "medium",
+  });
 }
 
-export async function addNotes(
-  newNote: string,
-  projectId: number
-): Promise<ProjectNote> {
+export async function addNotes(newNote: string, projectId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  const inserted = await db
-    .insert(notes)
-    .values({
-      content: newNote,
-      userId: user.id,
-      projectId,
-    })
-    .returning();
+  await db.insert(notes).values({
+    content: newNote,
+    userId: user.id,
+    projectId,
+  });
+}
 
-  return inserted[0];
+export async function updateProject(input: {
+  id: number;
+  name?: string;
+  description?: string;
+  status?: string;
+  dueDate?: string | null;
+  priority?: string;
+  clientId?: number | null;
+}) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("No user");
+
+  const updateData: Record<string, unknown> = {};
+  if (input.name !== undefined) updateData.name = input.name;
+  if (input.description !== undefined)
+    updateData.description = input.description;
+  if (input.status !== undefined) updateData.status = input.status;
+  if (input.dueDate !== undefined) updateData.dueDate = input.dueDate;
+  if (input.priority !== undefined) updateData.priority = input.priority;
+  if (input.clientId !== undefined) updateData.clientId = input.clientId;
+
+  if (Object.keys(updateData).length === 0) return;
+
+  await db
+    .update(projects)
+    .set(updateData)
+    .where(and(eq(projects.id, input.id), eq(projects.userId, user.id)));
 }
 
 export async function changeProjectStatus(project: Project, newStatus: string) {
@@ -159,4 +172,3 @@ export async function uploadCommunicationAttachment(
 
   return { path: filePath, url, name: file.name, size: file.size };
 }
-

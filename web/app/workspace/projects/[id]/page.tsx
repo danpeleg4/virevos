@@ -36,11 +36,7 @@ import { TaskDetailModal } from "@/app/components/TaskDetailModal";
 import { task_percentage } from "@/lib/task_percentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  addFileMetadata,
-  addNotes,
-  deleteProject,
-} from "@/lib/projects";
+import { addFileMetadata, addNotes, deleteProject } from "@/lib/projects";
 import { deleteTask, updateTaskStatus } from "@/lib/tasks";
 import { Project, ProjectFile, ProjectNote } from "@/types/projects";
 import { Task } from "@/types/tasks";
@@ -373,6 +369,7 @@ export function ProjectDetailView({
                     }`}
                   >
                     <Checkbox
+                      className="cursor-pointer"
                       checked={task.status === "completed"}
                       onCheckedChange={() => toggleTaskStatus(task.id)}
                     />

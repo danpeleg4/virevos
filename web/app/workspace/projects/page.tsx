@@ -49,7 +49,7 @@ export default function ProjectsPage() {
         completedMutation.mutate({ project: p, newStatus: "completed" });
         queryClient.invalidateQueries({ queryKey: ["clients"] });
       } else if (!isCompleted && p.status === "completed") {
-        completedMutation.mutate({ project: p, newStatus: "in-progress" });
+        completedMutation.mutate({ project: p, newStatus: "active" });
         queryClient.invalidateQueries({ queryKey: ["clients"] });
       }
     });
@@ -63,7 +63,6 @@ export default function ProjectsPage() {
       return {
         ...p,
         status: isCompleted ? "completed" : p.status,
-        health: isCompleted ? "completed" : p.health,
       };
     }) ?? [];
 
@@ -92,6 +91,7 @@ export default function ProjectsPage() {
       {projectsQuery.data && (
         <ProjectList
           projects={filtered}
+          clients={projectsQuery.data?.allClients ?? []}
           onSelect={(project) =>
             router.push(`/workspace/projects/${project.id}`)
           }

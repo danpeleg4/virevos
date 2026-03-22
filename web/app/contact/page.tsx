@@ -20,49 +20,10 @@ export default function ContactPage() {
           <p>
             Email us at{" "}
             <a
-              href="mailto:hello@virevos.com"
-              className="text-blue-600 hover:underline"
-            >
-              hello@virevos.com
-            </a>
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-medium mb-2">Support</h2>
-          <p>
-            For product support, email{" "}
-            <a
               href="mailto:support@virevos.com"
               className="text-blue-600 hover:underline"
             >
               support@virevos.com
-            </a>
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-medium mb-2">Sales</h2>
-          <p>
-            Interested in Virevos for your team? Email{" "}
-            <a
-              href="mailto:sales@virevos.com"
-              className="text-blue-600 hover:underline"
-            >
-              sales@virevos.com
-            </a>
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-medium mb-2">Press</h2>
-          <p>
-            For media inquiries, email{" "}
-            <a
-              href="mailto:press@virevos.com"
-              className="text-blue-600 hover:underline"
-            >
-              press@virevos.com
             </a>
           </p>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -18,7 +18,18 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { clients } from "@/types/clients";
-import type { AIMessage, AddClientToolResult, StreamEvent } from "@/types/ai";
+import type {
+  AIMessage,
+  AddClientToolResult,
+  StreamEvent,
+  CreateProjectToolResult,
+  UpdateClientToolResult,
+  UpdateProjectToolResult,
+  CreateTaskToolResult,
+  UpdateTaskToolResult,
+  CreateEventToolResult,
+  UpdateEventToolResult,
+} from "@/types/ai";
 
 interface AIAssistantProps {
   isOpen: boolean;
@@ -52,6 +63,20 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
+  const previousResponseIdRef = useRef<string | undefined>(undefined);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (isOpen) scrollToBottom();
+  }, [isOpen]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || status === "streaming") return;
@@ -79,10 +104,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         headers: { "Content-Type": "application/json" },
         signal: abortRef.current.signal,
         body: JSON.stringify({
-          messages: updatedMessages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          messages: [{ role: userMessage.role, content: userMessage.content }],
+          ...(previousResponseIdRef.current && {
+            previousResponseId: previousResponseIdRef.current,
+          }),
         }),
       });
 
@@ -103,10 +128,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
+          // Check if line is empty
           if (!line.trim()) continue;
           try {
             const event: StreamEvent = JSON.parse(line);
-
             if (event.type === "text_delta") {
               setMessages((prev) =>
                 prev.map((m) =>
@@ -133,6 +158,66 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                     avatar: newClient.name[0],
                   },
                 ]);
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "createProject"
+            ) {
+              const data = event.result as CreateProjectToolResult;
+              if (data.kind === "project_created") {
+                queryClient.invalidateQueries({ queryKey: ["projects"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateClient"
+            ) {
+              const data = event.result as UpdateClientToolResult;
+              if (data.kind === "client_updated") {
+                queryClient.invalidateQueries({ queryKey: ["clients"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateProject"
+            ) {
+              const data = event.result as UpdateProjectToolResult;
+              if (data.kind === "project_updated") {
+                queryClient.invalidateQueries({ queryKey: ["projects"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "createTask"
+            ) {
+              const data = event.result as CreateTaskToolResult;
+              if (data.kind === "task_created") {
+                queryClient.invalidateQueries({ queryKey: ["tasks"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateTask"
+            ) {
+              const data = event.result as UpdateTaskToolResult;
+              if (data.kind === "task_updated") {
+                queryClient.invalidateQueries({ queryKey: ["tasks"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "createEvent"
+            ) {
+              const data = event.result as CreateEventToolResult;
+              if (data.kind === "event_created") {
+                queryClient.invalidateQueries({ queryKey: ["events"] });
+              }
+            } else if (
+              event.type === "tool_result" &&
+              event.name === "updateEvent"
+            ) {
+              const data = event.result as UpdateEventToolResult;
+              if (data.kind === "event_updated") {
+                queryClient.invalidateQueries({ queryKey: ["events"] });
+              }
+            } else if (event.type === "done") {
+              if (event.response_id) {
+                previousResponseIdRef.current = event.response_id;
               }
             } else if (event.type === "error") {
               setMessages((prev) =>
@@ -179,7 +264,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   };
 
   return (
-    <AnimatePresence>
+    <div>
       {isOpen && (
         <motion.div
           key="ai-assistant-panel"
@@ -187,7 +272,8 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="fixed right-0 top-0 h-screen w-[min(100%,320px)] sm:w-96 bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl"
+          className="fixed right-0 top-0 h-screen bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl overflow-hidden"
+          style={{ width: '420px' }}
         >
           {/* Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
@@ -288,15 +374,15 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 }`}
               >
                 <div
-                  className={`max-w-[90%] ${message.role === "assistant" ? "w-full" : ""}`}
+                  className={`${message.role === "assistant" ? "w-full min-w-0" : ""}`}
                 >
                   {message.role === "user" ? (
                     <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5">
                       <p>{message.content}</p>
                     </div>
                   ) : (
-                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                      <div className="prose prose-sm max-w-none text-sm text-gray-800">
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 overflow-hidden min-w-0">
+                      <div className="text-sm text-gray-800 break-words overflow-hidden">
                         {message.content ? (
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         ) : (
@@ -308,6 +394,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 </div>
               </motion.div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
@@ -334,15 +421,9 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 )}
               </Button>
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-gray-500">
-                <Sparkles className="h-3 w-3 inline mr-1" />
-                Agent
-              </p>
-            </div>
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </div>
   );
 }

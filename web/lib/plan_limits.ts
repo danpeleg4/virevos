@@ -13,7 +13,7 @@ const PLAN_LIMITS: Record<
     aiAssistant: boolean;
   }
 > = {
-  starter: { maxClients: 5, maxProjects: 1, aiAssistant: true },
+  starter: { maxClients: 5, maxProjects: 5, aiAssistant: true },
   professional: { maxClients: null, maxProjects: null, aiAssistant: true },
   business: { maxClients: null, maxProjects: null, aiAssistant: true },
 };

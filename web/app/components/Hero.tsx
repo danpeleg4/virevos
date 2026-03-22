@@ -90,7 +90,7 @@ export function Hero() {
             >
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <span>Free 14-day trial</span>
+                <span>Free Plan</span>
               </div>
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />

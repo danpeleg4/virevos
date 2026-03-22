@@ -136,8 +136,16 @@ export async function getBillingOverview(): Promise<BillingOverview> {
 
   const subscription = await getUserSubscription();
 
+  const [userRow] = await db
+    .select({ ai_credits: users.ai_credits })
+    .from(users)
+    .where(eq(users.user_id, user.id))
+    .limit(1);
+
+  const aiCredits = userRow?.ai_credits ?? 0;
+
   if (!subscription.stripeCustomerId) {
-    return { subscription, invoices: [], paymentMethod: null };
+    return { subscription, invoices: [], paymentMethod: null, aiCredits };
   }
 
   const [invoiceList, customer] = await Promise.all([
@@ -177,7 +185,7 @@ export async function getBillingOverview(): Promise<BillingOverview> {
     }
   }
 
-  return { subscription, invoices, paymentMethod };
+  return { subscription, invoices, paymentMethod, aiCredits };
 }
 
 export async function changePlan(input: ChangePlanInput): Promise<void> {

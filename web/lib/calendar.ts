@@ -144,6 +144,71 @@ export async function addMeetingToCalendar(meeting: Event) {
   return inserted;
 }
 
+export async function updateEvent(input: {
+  id: string;
+  title?: string;
+  description?: string;
+  dateTime?: string;
+  duration?: number;
+  status?: string;
+}) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const updateData: Record<string, unknown> = {};
+  if (input.title !== undefined) updateData.title = input.title;
+  if (input.description !== undefined) updateData.description = input.description;
+  if (input.dateTime !== undefined) updateData.dateTime = new Date(input.dateTime);
+  if (input.duration !== undefined) updateData.duration = input.duration;
+  if (input.status !== undefined) updateData.status = input.status;
+
+  if (Object.keys(updateData).length === 0) return;
+
+  await db
+    .update(events)
+    .set(updateData)
+    .where(and(eq(events.id, input.id), eq(events.userId, user.id)));
+
+  if (input.dateTime !== undefined) {
+    const googleToken = await getFreshGoogleAccessToken(user.id);
+    if (googleToken) {
+      const eventRow = await db
+        .select()
+        .from(events)
+        .where(and(eq(events.id, input.id), eq(events.userId, user.id)))
+        .limit(1);
+
+      if (eventRow.length > 0) {
+        const oauth2Client = new google.auth.OAuth2();
+        oauth2Client.setCredentials({ access_token: googleToken });
+        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+        const googleEventId = eventRow[0].googleEventId || input.id;
+
+        try {
+          await calendar.events.patch({
+            calendarId: "primary",
+            eventId: googleEventId,
+            requestBody: {
+              ...(input.title ? { summary: input.title } : {}),
+              ...(input.description ? { description: input.description } : {}),
+              ...(input.dateTime
+                ? {
+                    start: {
+                      dateTime: new Date(input.dateTime).toISOString(),
+                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    },
+                  }
+                : {}),
+            },
+          });
+        } catch (error) {
+          console.error("Google Calendar update error:", error);
+        }
+      }
+    }
+  }
+}
+
 export async function deleteEventFromCalendar(id: string) {
   const user = await currentUser();
   if (!user?.id) {

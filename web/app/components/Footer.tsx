@@ -1,33 +1,20 @@
-import { Facebook, Twitter, Linkedin, Instagram, Github } from "lucide-react";
+import { Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 
 const footerLinks: Record<string, { label: string; href: string }[]> = {
   Product: [
     { label: "Features", href: "/features" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Security", href: "/security" },
-    { label: "Roadmap", href: "/roadmap" },
     { label: "Changelog", href: "/changelog" },
   ],
   Company: [
     { label: "About", href: "/about" },
     { label: "Blog", href: "/blog" },
-    { label: "Careers", href: "/careers" },
-    { label: "Press", href: "/press" },
-    { label: "Partners", href: "/partners" },
-  ],
-  Resources: [
-    { label: "Documentation", href: "/learn" },
-    { label: "Help Center", href: "/resources" },
-    { label: "Community", href: "/community" },
     { label: "Contact", href: "/contact" },
-    { label: "Status", href: "/status" },
   ],
   Legal: [
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },
     { label: "Cookie Policy", href: "/cookie-policy" },
-    { label: "Licenses", href: "/licenses" },
-    { label: "GDPR", href: "/gdpr" },
   ],
 };
 
@@ -57,9 +44,6 @@ export function Footer() {
               </a>
               <a href="#" className="hover:text-white transition-colors">
                 <Instagram className="h-5 w-5" />
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                <Github className="h-5 w-5" />
               </a>
             </div>
           </div>

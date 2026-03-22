@@ -43,6 +43,27 @@
       "when": 1773938932966,
       "tag": "0005_yielding_runaways",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774034949920,
+      "tag": "0006_goofy_ultragirl",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774146538589,
+      "tag": "0007_petite_prism",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774186057848,
+      "tag": "0008_useful_millenium_guard",
+      "breakpoints": true
     }
   ]
 }

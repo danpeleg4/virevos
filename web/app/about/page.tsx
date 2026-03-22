@@ -40,10 +40,10 @@ export default function AboutPage() {
           <p>
             Have questions? Reach us at{" "}
             <a
-              href="mailto:hello@virevos.com"
+              href="mailto:support@virevos.com"
               className="text-blue-600 hover:underline"
             >
-              hello@virevos.com
+              support@virevos.com
             </a>
           </p>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -72,19 +73,28 @@ interface UnifiedInboxProps {
   navContainer: HTMLDivElement | null;
 }
 
+const PAGE_LIMIT = 50;
+
+interface EmailsPage {
+  messages: InboxMessage[];
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
-  const [messages, setMessages] = useState<InboxMessage[]>([]);
+  const queryClient = useQueryClient();
   const [selectedMessage, setSelectedMessage] = useState<InboxMessage | null>(
     null
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showAIComposer, setShowAIComposer] = useState(false);
   const [showAttachmentDialog, setShowAttachmentDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -95,9 +105,64 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const [pendingSchedule, setPendingSchedule] =
     useState<ScheduleDetails | null>(null);
 
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const emailIframeRef = useRef<HTMLIFrameElement>(null);
+  const [emailIframeHeight, setEmailIframeHeight] = useState(400);
+
+  // Debounce search query
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const emailsQueryKey = ["emails", debouncedSearch, filterStatus] as const;
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery<EmailsPage>({
+    queryKey: emailsQueryKey,
+    queryFn: async ({ pageParam }) => {
+      const params = new URLSearchParams({
+        page: String(pageParam),
+        limit: String(PAGE_LIMIT),
+      });
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (filterStatus !== "all") params.set("filter", filterStatus);
+      const { data } = await axios.get<EmailsPage>(`/api/gmail/sync?${params}`);
+      return data;
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.page + 1 : undefined,
+    initialPageParam: 1,
+  });
+
+  const allMessages = data?.pages.flatMap((p) => p.messages) ?? [];
+
+  // Intersection observer to load next page when sentinel is visible
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage]
+  );
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(handleObserver, {
+      threshold: 0.1,
+    });
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [handleObserver]);
+
   useEffect(() => {
     checkGoogleConnection();
-    fetchEmails();
   }, []);
 
   const checkGoogleConnection = async () => {
@@ -109,29 +174,52 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
   };
 
-  const fetchEmails = async () => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "100" });
-      if (searchQuery) params.set("search", searchQuery);
-      if (filterStatus !== "all") params.set("filter", filterStatus);
+  const updateMessageInCache = useCallback(
+    (id: string, updater: (msg: InboxMessage) => InboxMessage) => {
+      queryClient.setQueryData<{ pages: EmailsPage[]; pageParams: unknown[] }>(
+        emailsQueryKey,
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              messages: page.messages.map((msg) =>
+                msg.id === id ? updater(msg) : msg
+              ),
+            })),
+          };
+        }
+      );
+    },
+    [queryClient, emailsQueryKey]
+  );
 
-      const { data } = await axios.get(`/api/gmail/sync?${params}`);
-      console.log(data.messages);
-      setMessages(data.messages || []);
-    } catch (err) {
-      console.error("Failed to fetch emails:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const removeMessageFromCache = useCallback(
+    (id: string) => {
+      queryClient.setQueryData<{ pages: EmailsPage[]; pageParams: unknown[] }>(
+        emailsQueryKey,
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              messages: page.messages.filter((msg) => msg.id !== id),
+            })),
+          };
+        }
+      );
+    },
+    [queryClient, emailsQueryKey]
+  );
 
   const handleSync = async () => {
     setIsSyncing(true);
     try {
       const { data } = await axios.post("/api/gmail/sync");
       toast.success(`Synced ${data.synced} emails`);
-      await fetchEmails();
+      await refetch();
     } catch {
       toast.error("Sync failed");
     } finally {
@@ -139,49 +227,29 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
   };
 
-  const filteredMessages = messages.filter((msg) => {
-    const matchesSearch =
-      msg.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      msg.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      msg.preview.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesType = filterType === "all" || msg.type === filterType;
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "unread" && msg.unread) ||
-      (filterStatus === "starred" && msg.starred) ||
-      (filterStatus === "archived" && msg.archived === true);
-
-    return matchesSearch && matchesType && matchesStatus;
+  const filteredMessages = allMessages.filter((msg) => {
+    return filterType === "all" || msg.type === filterType;
   });
 
   const applyAction = async (id: string, action: string) => {
     try {
       await axios.patch(`/api/gmail/messages/${id}`, { action });
 
-      setMessages((prev) =>
-        prev.map((msg) => {
-          if (msg.id !== id) return msg;
-          const updated = { ...msg };
-          if (action === "star") updated.starred = true;
-          if (action === "unstar") updated.starred = false;
-          if (action === "archive") updated.archived = true;
-          if (action === "unarchive") updated.archived = false;
-          if (action === "markRead") updated.unread = false;
-          if (action === "markUnread") updated.unread = true;
-          return updated;
-        })
-      );
+      const updater = (msg: InboxMessage): InboxMessage => {
+        const updated = { ...msg };
+        if (action === "star") updated.starred = true;
+        if (action === "unstar") updated.starred = false;
+        if (action === "archive") updated.archived = true;
+        if (action === "unarchive") updated.archived = false;
+        if (action === "markRead") updated.unread = false;
+        if (action === "markUnread") updated.unread = true;
+        return updated;
+      };
+
+      updateMessageInCache(id, updater);
+
       if (selectedMessage?.id === id) {
-        setSelectedMessage((prev) => {
-          if (!prev) return prev;
-          const updated = { ...prev };
-          if (action === "star") updated.starred = true;
-          if (action === "unstar") updated.starred = false;
-          if (action === "markRead") updated.unread = false;
-          if (action === "markUnread") updated.unread = true;
-          return updated;
-        });
+        setSelectedMessage((prev) => (prev ? updater(prev) : prev));
       }
     } catch {
       toast.error("Action failed");
@@ -193,12 +261,13 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   };
 
   const markAsRead = (id: string) => {
-    const msg = messages.find((m) => m.id === id);
+    const msg = allMessages.find((m) => m.id === id);
     if (msg?.unread) applyAction(id, "markRead");
   };
 
   const handleSelectMessage = (message: InboxMessage) => {
     setSelectedMessage(message);
+    setEmailIframeHeight(400);
     setReplyText("");
     setPendingAttachments([]);
     setPendingSchedule(null);
@@ -209,7 +278,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const handleDeleteMessage = async (id: string) => {
     try {
       await axios.delete(`/api/gmail/messages/${id}`);
-      setMessages((prev) => prev.filter((m) => m.id !== id));
+      removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
       toast.success("Message deleted");
     } catch {
@@ -256,7 +325,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         toast.success("Reply sent successfully");
         setReplyText("");
         setPendingAttachments([]);
-        await fetchEmails();
+        await refetch();
       }
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
@@ -290,7 +359,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && fetchEmails()}
+          onKeyDown={(e) =>
+            e.key === "Enter" && setDebouncedSearch(searchQuery)
+          }
           className="pl-8 h-8 text-sm w-44"
         />
       </div>
@@ -422,84 +493,93 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                 </Button>
               </div>
             ) : (
-              filteredMessages.map((message, index) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  onClick={() => handleSelectMessage(message)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedMessage?.id === message.id
-                      ? "bg-blue-50 border-blue-200 border"
-                      : message.unread
-                        ? "bg-gray-50 hover:bg-gray-100"
-                        : "hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarFallback>{message.initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`text-sm ${
-                              message.unread ? "font-semibold" : ""
-                            } text-gray-900 truncate`}
+              <>
+                {filteredMessages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.03, 0.3) }}
+                    onClick={() => handleSelectMessage(message)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedMessage?.id === message.id
+                        ? "bg-blue-50 border-blue-200 border"
+                        : message.unread
+                          ? "bg-gray-50 hover:bg-gray-100"
+                          : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarFallback>{message.initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`text-sm ${
+                                message.unread ? "font-semibold" : ""
+                              } text-gray-900 truncate`}
+                            >
+                              {message.from}
+                            </span>
+                            {message.type === "email" ? (
+                              <Mail className="h-3 w-3 text-gray-400" />
+                            ) : (
+                              <MessageSquare className="h-3 w-3 text-gray-400" />
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStar(message.id, message.starred);
+                            }}
                           >
-                            {message.from}
-                          </span>
-                          {message.type === "email" ? (
-                            <Mail className="h-3 w-3 text-gray-400" />
-                          ) : (
-                            <MessageSquare className="h-3 w-3 text-gray-400" />
-                          )}
+                            <Star
+                              className={`h-4 w-4 cursor-pointer ${
+                                message.starred
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-400"
+                              }`}
+                            />
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleStar(message.id, message.starred);
-                          }}
-                        >
-                          <Star
-                            className={`h-4 w-4 cursor-pointer ${
-                              message.starred
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-400"
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      {message.subject && (
-                        <p
-                          className={`text-sm ${
-                            message.unread ? "font-medium" : ""
-                          } text-gray-700 truncate mb-1`}
-                        >
-                          {message.subject}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 truncate mb-2">
-                        {message.preview}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        {message.client ? (
-                          <Badge variant="outline" className="text-xs">
-                            {message.client}
-                          </Badge>
-                        ) : (
-                          <span />
+                        {message.subject && (
+                          <p
+                            className={`text-sm ${
+                              message.unread ? "font-medium" : ""
+                            } text-gray-700 truncate mb-1`}
+                          >
+                            {message.subject}
+                          </p>
                         )}
-                        <span className="text-xs text-gray-400">
-                          {formatTimestamp(message.timestamp)}
-                        </span>
+                        <p className="text-xs text-gray-500 truncate mb-2">
+                          {message.preview}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          {message.client ? (
+                            <Badge variant="outline" className="text-xs">
+                              {message.client}
+                            </Badge>
+                          ) : (
+                            <span />
+                          )}
+                          <span className="text-xs text-gray-400">
+                            {formatTimestamp(message.timestamp)}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  </motion.div>
+                ))}
+                {/* Infinite scroll sentinel */}
+                <div ref={sentinelRef} className="py-1" />
+                {isFetchingNextPage && (
+                  <div className="flex justify-center py-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                   </div>
-                </motion.div>
-              ))
+                )}
+              </>
             )}
           </div>
         </div>
@@ -637,12 +717,24 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
               <Separator />
 
-              {/* Message Content */}
-              <div className="prose prose-sm max-w-none">
+              {/* Message Content — rendered in a sandboxed iframe so email
+                  <style> blocks cannot get into the parent page */}
+              <div className="text-gray-700">
                 {selectedMessage.body ? (
-                  <div
-                    className="text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: selectedMessage.body }}
+                  <iframe
+                    ref={emailIframeRef}
+                    srcDoc={selectedMessage.body}
+                    sandbox="allow-same-origin"
+                    title="Email content"
+                    className="w-full border-0 block"
+                    style={{ height: emailIframeHeight }}
+                    onLoad={() => {
+                      const body =
+                        emailIframeRef.current?.contentDocument?.body;
+                      if (body) {
+                        setEmailIframeHeight(body.scrollHeight + 32);
+                      }
+                    }}
                   />
                 ) : (
                   <p className="text-gray-700">{selectedMessage.preview}</p>
@@ -664,7 +756,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
               {/* Conversation History */}
               {(() => {
                 const threadMessages = selectedMessage.threadId
-                  ? messages
+                  ? allMessages
                       .filter(
                         (m) =>
                           m.threadId === selectedMessage.threadId &&
@@ -850,7 +942,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       });
                       toast.success("Reply sent successfully");
                       setShowAIComposer(false);
-                      await fetchEmails();
+                      await refetch();
                     } catch (err) {
                       const error = err as {
                         response?: { data?: { error?: string } };
@@ -872,7 +964,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">Select a message to view</p>
               <p className="text-sm text-gray-500 mt-1">
-                Choose from {filteredMessages.length} messages in your inbox
+                Choose from {filteredMessages.length} loaded message
+                {filteredMessages.length !== 1 ? "s" : ""} in your inbox
               </p>
               {filteredMessages.length === 0 && !isLoading && (
                 <Button
@@ -899,7 +992,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       <ComposeMessageDialog
         open={showComposeDialog}
         onOpenChange={setShowComposeDialog}
-        onSent={fetchEmails}
+        onSent={() => refetch()}
       />
       <AttachmentDialog
         open={showAttachmentDialog}

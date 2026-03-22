@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { emails, clients } from "@db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, or, ilike, and, SQL } from "drizzle-orm";
 import { performGmailSync } from "@/lib/gmail_sync";
 
 export async function POST() {
@@ -34,7 +34,25 @@ export async function GET(req: NextRequest) {
     const filter = searchParams.get("filter") || "all"; // all | unread | starred | sent | archived
     const offset = (page - 1) * limit;
 
-    const query = db
+    const conditions: SQL[] = [eq(emails.userId, user.id)];
+
+    if (search) {
+      conditions.push(
+        or(
+          ilike(emails.fromName, `%${search}%`),
+          ilike(emails.fromEmail, `%${search}%`),
+          ilike(emails.subject, `%${search}%`),
+          ilike(emails.snippet, `%${search}%`)
+        ) as SQL
+      );
+    }
+
+    if (filter === "unread") conditions.push(eq(emails.isRead, false));
+    else if (filter === "starred") conditions.push(eq(emails.isStarred, true));
+    else if (filter === "sent") conditions.push(eq(emails.isSent, true));
+    else if (filter === "archived") conditions.push(eq(emails.isArchived, true));
+
+    const rows = await db
       .select({
         id: emails.id,
         gmailId: emails.gmailId,
@@ -57,14 +75,15 @@ export async function GET(req: NextRequest) {
       })
       .from(emails)
       .leftJoin(clients, eq(emails.clientId, clients.id))
-      .where(eq(emails.userId, user.id))
+      .where(and(...conditions))
       .orderBy(desc(emails.sentAt))
-      .limit(limit)
+      .limit(limit + 1)
       .offset(offset);
 
-    const rows = await query;
+    const hasMore = rows.length > limit;
+    const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
-    const messages = rows.map((email) => ({
+    const messages = pageRows.map((email) => ({
       id: String(email.id),
       gmailId: email.gmailId,
       threadId: email.threadId,
@@ -91,23 +110,7 @@ export async function GET(req: NextRequest) {
       tags: [] as string[],
     }));
 
-    // Filter client-side for simplicity (search and filter are on small result sets)
-    let filtered = messages;
-    if (search) {
-      const q = search.toLowerCase();
-      filtered = filtered.filter(
-        (m) =>
-          m.from.toLowerCase().includes(q) ||
-          (m.subject || "").toLowerCase().includes(q) ||
-          m.preview.toLowerCase().includes(q)
-      );
-    }
-    if (filter === "unread") filtered = filtered.filter((m) => m.unread);
-    if (filter === "starred") filtered = filtered.filter((m) => m.starred);
-    if (filter === "sent") filtered = filtered.filter((m) => m.sent);
-    if (filter === "archived") filtered = filtered.filter((m) => m.archived);
-
-    return NextResponse.json({ messages: filtered, page, limit });
+    return NextResponse.json({ messages, page, limit, hasMore });
   } catch (err) {
     console.error("[api/gmail/sync GET]", err);
     return NextResponse.json(

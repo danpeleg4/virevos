@@ -4,6 +4,7 @@ import {
   changePriorityStatus,
   updateTaskDueDate,
   addProjectTasksAction,
+  updateTask,
 } from "@/lib/tasks";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -141,6 +142,52 @@ describe("updateTaskDueDate", () => {
     await updateTaskDueDate(7, "2026-03-01");
     expect(mockSet).toHaveBeenCalledWith({ dueDate: "2026-03-01" });
     expect(mockWhere).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── updateTask ───────────────────────────────────────────────────────────
+
+describe("updateTask", () => {
+  it("throws when unauthenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+    await expect(updateTask({ id: 1, title: "X" })).rejects.toThrow("No user");
+  });
+
+  it("does nothing when no fields provided", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateTask({ id: 1 });
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  it("updates provided fields with correct where clause", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateTask({ id: 5, title: "New Title", priority: "high" });
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "New Title", priority: "high" })
+    );
+    expect(mockWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it("sets completed=true when status is 'completed'", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateTask({ id: 5, status: "completed" });
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "completed", completed: true })
+    );
+  });
+
+  it("sets completed=false when status is not 'completed'", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateTask({ id: 5, status: "in-progress" });
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "in-progress", completed: false })
+    );
+  });
+
+  it("updates dueDate to null", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateTask({ id: 5, dueDate: null });
+    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ dueDate: null }));
   });
 });
 

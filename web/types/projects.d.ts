@@ -22,7 +22,6 @@ export interface Project {
   dueDate: string | null;
   priority: string;
   stats: ProjectStats;
-  health: string;
 }
 
 export interface ProjectNote {
