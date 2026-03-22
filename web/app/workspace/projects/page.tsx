@@ -92,6 +92,7 @@ export default function ProjectsPage() {
       {projectsQuery.data && (
         <ProjectList
           projects={filtered}
+          clients={projectsQuery.data?.allClients ?? []}
           onSelect={(project) =>
             router.push(`/workspace/projects/${project.id}`)
           }
