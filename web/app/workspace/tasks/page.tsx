@@ -22,6 +22,7 @@ import {
   Briefcase,
   Calendar,
   CheckIcon,
+  Target,
 } from "lucide-react";
 import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
@@ -357,6 +358,7 @@ export default function Tasks() {
                   </th>
                   <th className="text-left px-3 py-2.5">
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Target className="h-3.5 w-3.5" />
                       Status
                     </div>
                   </th>

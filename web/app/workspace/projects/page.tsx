@@ -49,7 +49,7 @@ export default function ProjectsPage() {
         completedMutation.mutate({ project: p, newStatus: "completed" });
         queryClient.invalidateQueries({ queryKey: ["clients"] });
       } else if (!isCompleted && p.status === "completed") {
-        completedMutation.mutate({ project: p, newStatus: "in-progress" });
+        completedMutation.mutate({ project: p, newStatus: "active" });
         queryClient.invalidateQueries({ queryKey: ["clients"] });
       }
     });

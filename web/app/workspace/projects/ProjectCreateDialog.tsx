@@ -50,7 +50,7 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
       clientId: client ? Number(client) : null,
       priority,
       dueDate: dueDate || null,
-      status: "in-progress",
+      status: "active",
       stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
     });
 

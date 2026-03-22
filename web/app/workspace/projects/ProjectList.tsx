@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,8 @@ import {
   Calendar,
   CheckIcon,
   MoreVertical,
+  Target,
+  ListChecks,
 } from "lucide-react";
 import { task_percentage } from "@/lib/task_percentage";
 import { Progress } from "@/app/components/ui/progress";
@@ -349,16 +352,19 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                 </th>
                 <th className="text-left px-4 py-2.5">
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <Target className="h-3.5 w-3.5" />
                     Status
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5 min-w-[140px]">
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <TrendingUp className="h-3.5 w-3.5" />
                     Progress
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5">
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <ListChecks className="h-3.5 w-3.5" />
                     Tasks
                   </div>
                 </th>
@@ -390,9 +396,11 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                     className="cursor-pointer transition-colors hover:bg-gray-50 group"
                   >
                     <td className="px-4 py-3 align-middle">
-                      <span className="text-sm font-medium text-gray-900">
-                        {project.name}
-                      </span>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sm font-medium text-gray-900">
+                          {project.name}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-3 align-middle">
                       {project.clientName && (
