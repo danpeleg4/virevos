@@ -231,7 +231,6 @@ describe("updateProject", () => {
       status: "completed",
       dueDate: "2026-12-31",
       priority: "low",
-      health: "good",
     });
     expect(mockSet).toHaveBeenCalledWith({
       name: "P",
@@ -239,7 +238,6 @@ describe("updateProject", () => {
       status: "completed",
       dueDate: "2026-12-31",
       priority: "low",
-      health: "good",
     });
   });
 });

@@ -113,9 +113,8 @@ export const tools: OpenAI.Responses.Tool[] = [
         status: { type: ["string", "null"], description: "New status" },
         dueDate: { type: ["string", "null"], description: "New due date as ISO string" },
         priority: { type: ["string", "null"], description: "New priority" },
-        health: { type: ["string", "null"], description: "New health status" },
       },
-      required: ["id", "name", "description", "status", "dueDate", "priority", "health"],
+      required: ["id", "name", "description", "status", "dueDate", "priority"],
       additionalProperties: false,
     },
     strict: true,
@@ -252,7 +251,6 @@ export async function executeTool(
         status?: string;
         dueDate?: string;
         priority?: string;
-        health?: string;
       }
     );
     return {

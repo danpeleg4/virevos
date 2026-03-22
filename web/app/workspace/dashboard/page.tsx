@@ -10,9 +10,7 @@ import {
   FolderKanban,
   CheckSquare,
   Zap,
-  TrendingUp,
   Clock,
-  AlertCircle,
   CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -228,27 +226,21 @@ export default function Dashboard() {
                         <Badge
                           variant="outline"
                           className={
-                            project.health === "on-track"
-                              ? "border-green-200 text-green-700"
-                              : project.health === "at-risk"
-                                ? "border-orange-200 text-orange-700"
-                                : "border-blue-200 text-blue-700"
+                            project.status === "completed"
+                              ? "border-blue-200 text-blue-700"
+                              : project.status === "inactive"
+                                ? "border-gray-200 text-gray-500"
+                                : "border-green-200 text-green-700"
                           }
                         >
-                          {project.health === "on-track" && (
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                          )}
-                          {project.health === "at-risk" && (
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                          )}
-                          {project.health === "completed" && (
+                          {project.status === "completed" && (
                             <CheckCircle className="h-3 w-3 mr-1" />
                           )}
-                          {project.health === "on-track"
-                            ? "On Track"
-                            : project.health === "at-risk"
-                              ? "At Risk"
-                              : "Completed"}
+                          {project.status === "inactive"
+                            ? "Inactive"
+                            : project.status === "completed"
+                              ? "Completed"
+                              : "Active"}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600">

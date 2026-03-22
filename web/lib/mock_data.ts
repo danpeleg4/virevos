@@ -41,7 +41,6 @@ export interface Project {
   tasksCompleted: number;
   totalTasks: number;
   priority: string;
-  health: string;
 }
 
 export const integrations: Integration[] = [

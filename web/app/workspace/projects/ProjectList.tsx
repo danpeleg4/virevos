@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import {
-  AlertCircle,
   CheckCircle,
   Clock,
   FolderOpen,
@@ -53,11 +52,11 @@ function StatusBadge({ status }: { status: string }) {
       </span>
     );
   }
-  if (status === "at-risk") {
+  if (status === "inactive") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-orange-50 text-orange-700 border border-orange-200">
-        <AlertCircle className="h-3 w-3" />
-        At Risk
+      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+        <Clock className="h-3 w-3" />
+        Inactive
       </span>
     );
   }
@@ -109,7 +108,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
   >("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "at-risk" | "completed"
+    "all" | "active" | "inactive" | "completed"
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -141,12 +140,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
         (activeTab === "active" && project.status !== "completed") ||
         (activeTab === "completed" && project.status === "completed");
       const matchesHealth =
-        statusFilter === "all" ||
-        (statusFilter === "active" &&
-          project.status !== "completed" &&
-          project.health !== "at-risk") ||
-        (statusFilter === "at-risk" && project.health === "at-risk") ||
-        (statusFilter === "completed" && project.status === "completed");
+        statusFilter === "all" || project.status === statusFilter;
       return matchesSearch && matchesTab && matchesHealth;
     })
     .sort((a, b) => {
@@ -315,7 +309,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                 [
                   { label: "All Status", value: "all" },
                   { label: "Active", value: "active" },
-                  { label: "At Risk", value: "at-risk" },
+                  { label: "Inactive", value: "inactive" },
                   { label: "Completed", value: "completed" },
                 ] as const
               ).map(({ label, value }) => (

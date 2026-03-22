@@ -64,6 +64,7 @@ export function ProjectEditDialog({
         dueDate: dueDate || undefined,
         priority,
         status,
+        clientId: clientId === "none" ? null : Number(clientId),
       });
     },
     onSuccess: () => {
@@ -152,7 +153,6 @@ export function ProjectEditDialog({
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
           </div>

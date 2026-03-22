@@ -4,7 +4,12 @@ import { db } from "@db/db";
 import { notes, projectFiles, projects, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import { AddFileMetadataInput, Project, ProjectNote, UploadedAttachment } from "@/types/projects";
+import {
+  AddFileMetadataInput,
+  Project,
+  ProjectNote,
+  UploadedAttachment,
+} from "@/types/projects";
 import { s3, S3_BUCKET } from "./s3";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -85,7 +90,6 @@ export async function createProject(project: Project): Promise<Project> {
       status: project.status,
       dueDate: project.dueDate ?? undefined,
       priority: project.priority,
-      health: project.health,
     })
     .returning();
 
@@ -122,20 +126,21 @@ export async function updateProject(input: {
   name?: string;
   description?: string;
   status?: string;
-  dueDate?: string;
+  dueDate?: string | null;
   priority?: string;
-  health?: string;
+  clientId?: number | null;
 }) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
   const updateData: Record<string, unknown> = {};
   if (input.name !== undefined) updateData.name = input.name;
-  if (input.description !== undefined) updateData.description = input.description;
+  if (input.description !== undefined)
+    updateData.description = input.description;
   if (input.status !== undefined) updateData.status = input.status;
   if (input.dueDate !== undefined) updateData.dueDate = input.dueDate;
   if (input.priority !== undefined) updateData.priority = input.priority;
-  if (input.health !== undefined) updateData.health = input.health;
+  if (input.clientId !== undefined) updateData.clientId = input.clientId;
 
   if (Object.keys(updateData).length === 0) return;
 
@@ -187,4 +192,3 @@ export async function uploadCommunicationAttachment(
 
   return { path: filePath, url, name: file.name, size: file.size };
 }
-

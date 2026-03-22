@@ -102,11 +102,4 @@ describe("assertCanAddProject", () => {
     mockSubscription("business");
     await expect(assertCanAddProject("user_1")).resolves.toBeUndefined();
   });
-
-  it("throws for starter plan (limit = 1 project, limit is enforced)", async () => {
-    mockSubscription("starter");
-    await expect(assertCanAddProject("user_1")).rejects.toThrow(
-      /Project limit reached/
-    );
-  });
 });

@@ -323,8 +323,7 @@ export default function PortalPage() {
                           )}
                           <div className="mt-2 pt-2 border-t border-gray-100">
                             <p className="text-xs text-gray-500">
-                              Health: {project.health} · Priority:{" "}
-                              {project.priority}
+                              Priority: {project.priority}
                             </p>
                           </div>
                         </motion.div>
@@ -453,10 +452,6 @@ export default function PortalPage() {
                             ? new Date(project.dueDate).toLocaleDateString()
                             : "—"}
                         </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Health</span>
-                        <span className="text-gray-900">{project.health}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Priority</span>

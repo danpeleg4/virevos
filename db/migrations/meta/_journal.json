@@ -50,6 +50,13 @@
       "when": 1774034949920,
       "tag": "0006_goofy_ultragirl",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774146538589,
+      "tag": "0007_petite_prism",
+      "breakpoints": true
     }
   ]
 }

@@ -107,7 +107,6 @@ export async function GET(
         name: p.name,
         status: p.status,
         dueDate: p.dueDate,
-        health: p.health,
         priority: p.priority,
         description: p.description,
       })),

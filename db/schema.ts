@@ -53,9 +53,8 @@ export const projects = pgTable("projects", {
   name: text("title").notNull(),
   description: text("description"),
   status: text("status").notNull().default("in-progress"),
-  dueDate: date("due_date").notNull().default("2025-01-01"),
+  dueDate: date("due_date"),
   priority: text("priority").notNull().default("low"),
-  health: text("health").notNull().default("On Track"),
 
   userId: varchar("user_id")
     .notNull()

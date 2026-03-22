@@ -63,7 +63,6 @@ export default function ProjectsPage() {
       return {
         ...p,
         status: isCompleted ? "completed" : p.status,
-        health: isCompleted ? "completed" : p.health,
       };
     }) ?? [];
 

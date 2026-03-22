@@ -37,7 +37,6 @@ export interface PortalData {
     name: string;
     status: string;
     dueDate: string;
-    health: string;
     priority: string;
     description: string | null;
   }>;
