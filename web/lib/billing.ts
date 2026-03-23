@@ -137,15 +137,22 @@ export async function getBillingOverview(): Promise<BillingOverview> {
   const subscription = await getUserSubscription();
 
   const [userRow] = await db
-    .select({ ai_credits: users.ai_credits })
+    .select({ ai_credits: users.ai_credits, storage: users.storage })
     .from(users)
     .where(eq(users.user_id, user.id))
     .limit(1);
 
   const aiCredits = userRow?.ai_credits ?? 0;
+  const storage = userRow?.storage ?? 1;
 
   if (!subscription.stripeCustomerId) {
-    return { subscription, invoices: [], paymentMethod: null, aiCredits };
+    return {
+      subscription,
+      invoices: [],
+      paymentMethod: null,
+      aiCredits,
+      storage,
+    };
   }
 
   const [invoiceList, customer] = await Promise.all([
@@ -185,7 +192,7 @@ export async function getBillingOverview(): Promise<BillingOverview> {
     }
   }
 
-  return { subscription, invoices, paymentMethod, aiCredits };
+  return { subscription, invoices, paymentMethod, aiCredits, storage };
 }
 
 export async function changePlan(input: ChangePlanInput): Promise<void> {

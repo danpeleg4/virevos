@@ -10,12 +10,23 @@ const PLAN_LIMITS: Record<
   {
     maxClients: number | null;
     maxProjects: number | null;
-    aiAssistant: boolean;
+    aiCredits: number;
+    storage: string;
   }
 > = {
-  starter: { maxClients: 5, maxProjects: 5, aiAssistant: true },
-  professional: { maxClients: null, maxProjects: null, aiAssistant: true },
-  business: { maxClients: null, maxProjects: null, aiAssistant: true },
+  starter: { maxClients: 5, maxProjects: 5, aiCredits: 50, storage: "1GB" },
+  professional: {
+    maxClients: null,
+    maxProjects: null,
+    aiCredits: 250,
+    storage: "50GB",
+  },
+  business: {
+    maxClients: null,
+    maxProjects: null,
+    aiCredits: 250,
+    storage: "250GB",
+  },
 };
 
 export async function getUserPlan(userId: string): Promise<PlanId> {

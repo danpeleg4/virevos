@@ -64,6 +64,20 @@
       "when": 1774186057848,
       "tag": "0008_useful_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774275137073,
+      "tag": "0009_skinny_husk",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774275423432,
+      "tag": "0010_wise_brother_voodoo",
+      "breakpoints": true
     }
   ]
 }

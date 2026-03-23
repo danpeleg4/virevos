@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "storage" text DEFAULT '1GB' NOT NULL;

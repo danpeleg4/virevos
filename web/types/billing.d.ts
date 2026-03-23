@@ -40,6 +40,7 @@ type BillingOverview = {
   invoices: StripeInvoiceSummary[];
   paymentMethod: StripePaymentMethodSummary | null;
   aiCredits: number;
+  storage: number;
 };
 
 type CreateSubscriptionInput = {
