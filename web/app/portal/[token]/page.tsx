@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
 import {
   Tabs,
   TabsContent,
@@ -25,9 +24,11 @@ import {
   Download,
   Send,
   Paperclip,
-  Bell,
   Loader2,
   AlertCircle,
+  CheckCircle,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -39,16 +40,36 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getStatusColor(status: string): string {
+function PortalStatusBadge({ status }: { status: string }) {
   switch (status.toLowerCase()) {
     case "completed":
-      return "bg-green-100 text-green-700";
+      return (
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+          <CheckCircle className="h-3 w-3" />
+          Completed
+        </span>
+      );
     case "in-progress":
-      return "bg-blue-100 text-blue-700";
+      return (
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+          <TrendingUp className="h-3 w-3" />
+          In Progress
+        </span>
+      );
     case "on-hold":
-      return "bg-yellow-100 text-yellow-700";
+      return (
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+          <Clock className="h-3 w-3" />
+          On Hold
+        </span>
+      );
     default:
-      return "bg-gray-100 text-gray-700";
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+          {status}
+        </span>
+      );
   }
 }
 
@@ -209,58 +230,44 @@ export default function PortalPage() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active Projects</p>
-                  <p className="text-2xl text-gray-900 mt-1">
-                    {data.projects.length}
-                  </p>
-                </div>
-                <FileText className="h-8 w-8 text-blue-500" />
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 rounded-lg bg-blue-100">
+                <FileText className="h-6 w-6 text-blue-600" />
               </div>
-            </CardContent>
+            </div>
+            <p className="text-2xl text-gray-900 mb-1">{data.projects.length}</p>
+            <p className="text-sm text-gray-600">Active Projects</p>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Unread Messages</p>
-                  <p className="text-2xl text-gray-900 mt-1">{unreadCount}</p>
-                </div>
-                <MessageSquare className="h-8 w-8 text-green-500" />
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 rounded-lg bg-green-100">
+                <MessageSquare className="h-6 w-6 text-green-600" />
               </div>
-            </CardContent>
+            </div>
+            <p className="text-2xl text-gray-900 mb-1">{unreadCount}</p>
+            <p className="text-sm text-gray-600">Unread Messages</p>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Messages</p>
-                  <p className="text-2xl text-gray-900 mt-1">
-                    {localMessages.length}
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-purple-500" />
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 rounded-lg bg-purple-100">
+                <Calendar className="h-6 w-6 text-purple-600" />
               </div>
-            </CardContent>
+            </div>
+            <p className="text-2xl text-gray-900 mb-1">{localMessages.length}</p>
+            <p className="text-sm text-gray-600">Total Messages</p>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Files Shared</p>
-                  <p className="text-2xl text-gray-900 mt-1">
-                    {data.files.length}
-                  </p>
-                </div>
-                <Paperclip className="h-8 w-8 text-orange-500" />
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 rounded-lg bg-orange-100">
+                <Paperclip className="h-6 w-6 text-orange-600" />
               </div>
-            </CardContent>
+            </div>
+            <p className="text-2xl text-gray-900 mb-1">{data.files.length}</p>
+            <p className="text-sm text-gray-600">Files Shared</p>
           </Card>
         </div>
 
@@ -312,9 +319,7 @@ export default function PortalPage() {
                                 </p>
                               )}
                             </div>
-                            <Badge className={getStatusColor(project.status)}>
-                              {project.status}
-                            </Badge>
+                            <PortalStatusBadge status={project.status} />
                           </div>
                           {project.description && (
                             <p className="text-sm text-gray-600 mb-3">
@@ -434,9 +439,7 @@ export default function PortalPage() {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <CardTitle>{project.name}</CardTitle>
-                        <Badge className={getStatusColor(project.status)}>
-                          {project.status}
-                        </Badge>
+                        <PortalStatusBadge status={project.status} />
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -568,7 +571,9 @@ export default function PortalPage() {
                         className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                       >
                         <div className="flex items-center space-x-3">
-                          <FileText className="h-10 w-10 text-blue-500" />
+                          <div className="p-2 rounded-lg bg-blue-50 flex-shrink-0">
+                            <FileText className="h-5 w-5 text-blue-500" />
+                          </div>
                           <div>
                             <p className="text-sm text-gray-900">{file.name}</p>
                             <p className="text-xs text-gray-500">

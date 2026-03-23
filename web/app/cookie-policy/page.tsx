@@ -54,10 +54,10 @@ export default function CookiePolicyPage() {
           <p>
             Questions about our cookie use? Email{" "}
             <a
-              href="mailto:privacy@virevos.com"
+              href="mailto:support@virevos.com"
               className="text-blue-600 hover:underline"
             >
-              privacy@virevos.com
+              support@virevos.com
             </a>
           </p>
         </div>

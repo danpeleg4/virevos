@@ -1,6 +1,10 @@
 import { google } from "googleapis";
 import { getFreshGoogleAccessToken } from "./google_access";
-import type { GmailMessagePart, GmailAttachment, EmailAttachment } from "@/types/gmail";
+import type {
+  GmailMessagePart,
+  GmailAttachment,
+  EmailAttachment,
+} from "@/types/gmail";
 export type { GmailMessagePart, GmailAttachment, EmailAttachment };
 
 export async function getGmailClient(userId: string) {
@@ -38,7 +42,7 @@ export function parseEmailBody(payload: GmailMessagePart): {
       return { html, text: decode(part.body.data) };
     }
     if (part.parts) {
-      let result = { html, text };
+      const result = { html, text };
       for (const subpart of part.parts) {
         const sub = findParts(subpart, result.html, result.text);
         if (!result.html && sub.html) result.html = sub.html;
@@ -90,7 +94,6 @@ export function getHeader(
     ""
   );
 }
-
 
 // Build RFC 2822 email message for Gmail API
 export function buildRawEmail({
@@ -158,7 +161,8 @@ export function buildRawEmail({
           `Content-Transfer-Encoding: base64`,
           `Content-Disposition: attachment; filename="${att.name}"`,
           ``,
-          att.contentBase64.match(/.{1,76}/g)?.join("\r\n") ?? att.contentBase64,
+          att.contentBase64.match(/.{1,76}/g)?.join("\r\n") ??
+            att.contentBase64,
           ``,
         ].join("\r\n")
       )
@@ -182,7 +186,10 @@ export function buildRawEmail({
 }
 
 // List attachments from a message payload
-export function listAttachments(payload: GmailMessagePart, attachments: GmailAttachment[] = []): GmailAttachment[] {
+export function listAttachments(
+  payload: GmailMessagePart,
+  attachments: GmailAttachment[] = []
+): GmailAttachment[] {
   if (!payload) return attachments;
   if (payload.filename && payload.body?.attachmentId) {
     attachments.push({

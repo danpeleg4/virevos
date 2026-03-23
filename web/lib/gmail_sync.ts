@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@db/db";
 import { emails, emailAttachments, clients } from "@db/schema";
 import { and, eq } from "drizzle-orm";
@@ -10,6 +12,45 @@ import {
   parseHeaderValue,
   listAttachments,
 } from "./gmail_client";
+import { Pinecone } from "@pinecone-database/pinecone";
+import { currentUser } from "@clerk/nextjs/server";
+
+const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
+
+const EMAILS_INDEX = "emails";
+
+interface EmailPineconeRecord {
+  id: string;
+  text: string;
+  subject: string;
+  fromEmail: string;
+  fromName: string;
+  toEmails: string;
+  ccEmails: string;
+  sentAt: number;
+  isSent: boolean;
+  isRead: boolean;
+  isStarred: boolean;
+  isArchived: boolean;
+  clientId?: number;
+  gmailId: string;
+  threadId: string;
+}
+
+async function upsertEmailToPinecone(
+  record: EmailPineconeRecord,
+  userId: string
+): Promise<void> {
+  try {
+    const index = pc.index(EMAILS_INDEX).namespace(userId);
+    await index.upsertRecords([record as unknown as Parameters<typeof index.upsertRecords>[0][0]]);
+  } catch (err) {
+    console.error(
+      `[gmail_sync] Failed to upsert email ${record.gmailId} to Pinecone:`,
+      err
+    );
+  }
+}
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,7 +94,10 @@ async function processMessage(
   const msg = await fetchMessageWithRetry(gmail, messageId);
   if (!msg) return;
 
-  const headers = (msg.payload?.headers ?? []) as Array<{ name: string; value: string }>;
+  const headers = (msg.payload?.headers ?? []) as Array<{
+    name: string;
+    value: string;
+  }>;
   const fromRaw = parseHeaderValue(getHeader(headers, "From"));
   const toRaw = parseHeaderValue(getHeader(headers, "To"));
   const ccRaw = parseHeaderValue(getHeader(headers, "CC"));
@@ -77,7 +121,9 @@ async function processMessage(
 
   const sentAt = dateRaw ? new Date(dateRaw) : new Date();
 
-  const { html: bodyHtml, text: bodyText } = parseEmailBody((msg.payload ?? {}) as import("@/types/gmail").GmailMessagePart);
+  const { html: bodyHtml, text: bodyText } = parseEmailBody(
+    (msg.payload ?? {}) as import("@/types/gmail").GmailMessagePart
+  );
 
   const labelIds: string[] = msg.labelIds ?? [];
   const isRead = !labelIds.includes("UNREAD");
@@ -122,6 +168,24 @@ async function processMessage(
 
   let emailId: number;
 
+  const pineconeRecord: EmailPineconeRecord = {
+    id: `${userId}_${msg.id!}`,
+    text: `${subjectRaw || "(no subject)"}\n\n${bodyText ?? ""}`.trim(),
+    subject: subjectRaw || "(no subject)",
+    fromEmail: fromEmail || "",
+    fromName: fromName || "",
+    toEmails: JSON.stringify(toEmails),
+    ccEmails: JSON.stringify(ccEmails),
+    sentAt: sentAt.getTime(),
+    isSent,
+    isRead,
+    isStarred,
+    isArchived,
+    ...(clientId !== null && { clientId }),
+    gmailId: msg.id!,
+    threadId: msg.threadId!,
+  };
+
   if (existing.length > 0) {
     await db
       .update(emails)
@@ -135,6 +199,7 @@ async function processMessage(
       })
       .where(eq(emails.id, existing[0].id));
     emailId = existing[0].id;
+    await upsertEmailToPinecone(pineconeRecord, userId);
   } else {
     const [inserted] = await db
       .insert(emails)
@@ -143,7 +208,9 @@ async function processMessage(
     emailId = inserted.id;
 
     // Save attachment metadata for new emails
-    const attachmentMeta = listAttachments((msg.payload ?? {}) as import("@/types/gmail").GmailMessagePart);
+    const attachmentMeta = listAttachments(
+      (msg.payload ?? {}) as import("@/types/gmail").GmailMessagePart
+    );
     if (attachmentMeta.length > 0) {
       await db.insert(emailAttachments).values(
         attachmentMeta.map((att) => ({
@@ -156,6 +223,7 @@ async function processMessage(
         }))
       );
     }
+    await upsertEmailToPinecone(pineconeRecord, userId);
   }
 }
 
@@ -245,4 +313,19 @@ export async function syncSingleMessage(
   }
 
   await processMessage(gmail, gmailId, userId, clientsMap);
+}
+
+export async function searchEmails(text: string): Promise<EmailPineconeRecord[]> {
+  const user = await currentUser();
+  if (!user?.id) return [];
+
+  const index = pc.index(EMAILS_INDEX).namespace(user.id);
+  const results = await index.searchRecords({
+    query: {
+      topK: 10,
+      inputs: { text },
+    },
+  });
+
+  return results.result.hits.map((hit) => hit.fields as EmailPineconeRecord);
 }

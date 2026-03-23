@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { addAClient, updateExistingClient } from "@/lib/clients";
 import { getPastMeetingTranscript } from "@/lib/meetings";
+import { searchEmails } from "@/lib/gmail_sync";
 import { createProject, updateProject } from "@/lib/projects";
 import { addProjectTasksAction, updateTask } from "@/lib/tasks";
 import { addMeetingToCalendar, updateEvent } from "@/lib/calendar";
@@ -186,6 +187,24 @@ export const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
+    name: "searchEmails",
+    description:
+      "Search emails using semantic similarity to find relevant email threads and conversations",
+    parameters: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string",
+          description: "Text to apply semantic search against the emails index",
+        },
+      },
+      required: ["text"],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: "function",
     name: "updateEvent",
     description: "Update an existing calendar event",
     parameters: {
@@ -225,6 +244,13 @@ export async function executeTool(
     return {
       kind: "meeting_data",
       message: res.join("\n"),
+    };
+  }
+  if (name === "searchEmails") {
+    const res = await searchEmails(args.text as string);
+    return {
+      kind: "email_search_results",
+      emails: res,
     };
   }
   if (name === "createProject") {

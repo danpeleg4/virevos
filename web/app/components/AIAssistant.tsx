@@ -273,7 +273,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
           className="fixed right-0 top-0 h-screen bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl overflow-hidden"
-          style={{ width: '420px' }}
+          style={{ width: "420px" }}
         >
           {/* Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
@@ -300,7 +300,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
             </div>
           </div>
 
-          {/* Next Best Actions */}
+          {/* Next Best Actions
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <h4 className="text-sm text-gray-700 mb-3">Next Best Actions</h4>
             <div className="space-y-2">
@@ -360,6 +360,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
               ))}
             </div>
           </div>
+          */}
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
