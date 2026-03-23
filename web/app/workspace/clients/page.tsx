@@ -37,6 +37,8 @@ import {
   Briefcase,
   Target,
   CheckIcon,
+  CheckCircle,
+  TrendingUp,
 } from "lucide-react";
 import axios from "axios";
 import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
@@ -624,147 +626,168 @@ export default function Clients() {
       </div>
 
       {/* Client Details Modal */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+      <Dialog open={detailsOpen} onOpenChange={(open) => { setDetailsOpen(open); if (!open) setIsEditing(false); }}>
         <DialogContent className="max-w-2xl">
           {selectedClient && (
             <>
-              <DialogHeader className="flex flex-row items-start justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
-                      {selectedClient.name[0]}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div>
-                    <DialogTitle className="text-2xl">
-                      {isEditing ? (
-                        <Input
-                          placeholder={selectedClient.name}
-                          onChange={(e) => setName(e.target.value)}
-                        />
-                      ) : (
-                        selectedClient.name
-                      )}
-                    </DialogTitle>
-                    <DialogDescription className="mt-1">
-                      Client since{" "}
-                      {selectedClient?.createdAt
-                        ? new Date(selectedClient.createdAt).toDateString()
-                        : "—"}
-                    </DialogDescription>
+              {/* Header */}
+              <DialogHeader className="pb-4 border-b border-gray-100">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-14 w-14 flex-shrink-0">
+                      <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
+                        {selectedClient.name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <DialogTitle className="text-xl text-gray-900">
+                        {isEditing ? (
+                          <Input
+                            defaultValue={selectedClient.name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="h-8 text-base"
+                          />
+                        ) : (
+                          selectedClient.name
+                        )}
+                      </DialogTitle>
+                      <DialogDescription className="mt-1 flex items-center gap-2">
+                        <span>
+                          Client since{" "}
+                          {selectedClient?.createdAt
+                            ? new Date(selectedClient.createdAt).toDateString()
+                            : "—"}
+                        </span>
+                        <StatusBadge status={selectedClient.status} />
+                        {selectedClient.industry && (
+                          <IndustryPill industry={selectedClient.industry} />
+                        )}
+                      </DialogDescription>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="cursor-pointer flex-shrink-0"
+                    onClick={() => {
+                      setDetailsOpen(false);
+                      deleteMutation.mutate({ id: selectedClient?.id });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setDetailsOpen(false);
-                    deleteMutation.mutate({ id: selectedClient?.id });
-                  }}
-                >
-                  <Trash2 className="text-red-500" />
-                </Button>
               </DialogHeader>
 
-              <div className="space-y-6 mt-6">
-                {/* Status and Industry */}
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={selectedClient.status} />
-                  {selectedClient.industry && (
-                    <IndustryPill industry={selectedClient.industry} />
-                  )}
-                </div>
-
+              <div className="space-y-5 mt-5">
                 {/* Contact Information */}
                 <div>
-                  <h3 className="mb-3 text-gray-900">Contact Information</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-700">
-                      <Mail className="h-4 w-4 mr-3 flex-shrink-0" />
-                      <span>
-                        {isEditing ? (
-                          <Input
-                            placeholder={selectedClient.email}
-                            onChange={(e) => setEmail(e.target.value)}
-                          />
-                        ) : (
-                          selectedClient.email
-                        )}
-                      </span>
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Contact Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
+                      <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {isEditing ? (
+                        <Input
+                          defaultValue={selectedClient.email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0"
+                          placeholder="Email address"
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-700">{selectedClient.email || "—"}</span>
+                      )}
                     </div>
-                    <div className="flex items-center text-gray-700">
-                      <Phone className="h-4 w-4 mr-3 flex-shrink-0" />
-                      <span>
-                        {isEditing ? (
-                          <Input
-                            placeholder={selectedClient.phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                          />
-                        ) : (
-                          selectedClient.phone
-                        )}
-                      </span>
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
+                      <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {isEditing ? (
+                        <Input
+                          defaultValue={selectedClient.phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0"
+                          placeholder="Phone number"
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-700">{selectedClient.phone || "—"}</span>
+                      )}
                     </div>
+                    {isEditing && (
+                      <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
+                        <Briefcase className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <Input
+                          defaultValue={selectedClient.industry}
+                          onChange={(e) => setIndustry(e.target.value)}
+                          className="h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0"
+                          placeholder="Industry"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Projects Summary */}
                 <div>
-                  <h3 className="mb-3 text-gray-900">Projects</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Projects</h3>
+                  <div className="grid grid-cols-2 gap-3">
                     <Card className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-green-100">
+                          <TrendingUp className="h-5 w-5 text-green-600" />
+                        </div>
+                      </div>
+                      <p className="text-2xl text-gray-900 mb-1">{selectedClient.activeProjects}</p>
                       <p className="text-sm text-gray-600">Active Projects</p>
-                      <p className="text-2xl mt-1 text-green-600">
-                        {selectedClient.activeProjects}
-                      </p>
                     </Card>
                     <Card className="p-4">
-                      <p className="text-sm text-gray-600">
-                        Completed Projects
-                      </p>
-                      <p className="text-2xl mt-1 text-gray-900">
-                        {selectedClient.completedProjects}
-                      </p>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-blue-100">
+                          <CheckCircle className="h-5 w-5 text-blue-600" />
+                        </div>
+                      </div>
+                      <p className="text-2xl text-gray-900 mb-1">{selectedClient.completedProjects}</p>
+                      <p className="text-sm text-gray-600">Completed Projects</p>
                     </Card>
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div>
-                  <h3 className="mb-3 text-gray-900">Notes</h3>
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Notes</h3>
                   {isEditing ? (
-                    <Input
-                      placeholder={selectedClient.notes}
+                    <Textarea
+                      defaultValue={selectedClient.notes ?? ""}
                       onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Add notes..."
+                      rows={3}
                     />
                   ) : (
-                    <p className="text-gray-700 text-sm">
+                    <p className="text-sm text-gray-700 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3 min-h-[60px]">
                       {selectedClient.notes || "—"}
                     </p>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t">
+                <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
                   <Button
                     variant="outline"
-                    onClick={() => setDetailsOpen(false)}
+                    onClick={() => { setDetailsOpen(false); setIsEditing(false); }}
                   >
                     Close
                   </Button>
                   <Button
                     onClick={() => {
+                      if (isEditing) {
+                        const updatedData = {
+                          id: selectedClient.id,
+                          name: name || selectedClient.name,
+                          email: email || selectedClient.email,
+                          phone: phone || selectedClient.phone,
+                          industry: industry || selectedClient.industry,
+                          notes: notes || selectedClient.notes,
+                        };
+                        updateClient.mutate(updatedData);
+                      }
                       setIsEditing(!isEditing);
-                      const updatedData = {
-                        id: selectedClient.id,
-                        name: name || selectedClient.name,
-                        email: email || selectedClient.email,
-                        phone: phone || selectedClient.phone,
-                        industry: industry || selectedClient.industry,
-                        notes: notes || selectedClient.notes,
-                      };
-
-                      updateClient.mutate(updatedData);
                     }}
                   >
                     {isEditing ? "Save Client" : "Edit Client"}

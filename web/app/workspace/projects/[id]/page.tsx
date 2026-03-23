@@ -11,7 +11,6 @@ import {
 } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { Progress } from "@/app/components/ui/progress";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import {
@@ -24,6 +23,10 @@ import {
   MoreVertical,
   Paperclip,
   Trash2,
+  Flag,
+  Loader2,
+  AlertCircle,
+  TrendingUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -58,8 +61,21 @@ export default function ProjectPage({
     enabled: !!id,
   });
 
-  if (projectQuery.isLoading) return <p></p>;
-  if (projectQuery.isError) return <p>Failed to load project</p>;
+  if (projectQuery.isLoading)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
+  if (projectQuery.isError)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
+          <p className="text-gray-600">Failed to load project</p>
+        </div>
+      </div>
+    );
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -211,11 +227,22 @@ export function ProjectDetailView({
     projectsTasksQuery.isLoading ||
     fileQuery.isLoading
   ) {
-    return <p>Loading...</p>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
   }
 
   if (notesQuery.isError || projectsTasksQuery.isError) {
-    return <p>Error loading data</p>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
+          <p className="text-gray-600">Error loading project data</p>
+        </div>
+      </div>
+    );
   }
 
   const toggleTaskStatus = async (taskId: number) => {
@@ -279,66 +306,51 @@ export function ProjectDetailView({
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Overall Progress</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {task_percentage(projectsTasksQuery.data ?? [])}%
-                </p>
-              </div>
-              <Progress
-                value={task_percentage(projectsTasksQuery.data ?? [])}
-                className="w-16 h-16"
-              />
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-blue-100">
+              <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
-          </CardContent>
+          </div>
+          <p className="text-2xl text-gray-900 mb-1">
+            {task_percentage(projectsTasksQuery.data ?? [])}%
+          </p>
+          <p className="text-sm text-gray-600">Overall Progress</p>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Due Date</p>
-                <p className="text-sm text-gray-900 mt-1">{project.dueDate}</p>
-              </div>
-              <Calendar className="h-8 w-8 text-blue-500" />
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-orange-100">
+              <Calendar className="h-6 w-6 text-orange-600" />
             </div>
-          </CardContent>
+          </div>
+          <p className="text-2xl text-gray-900 mb-1">{project.dueDate || "—"}</p>
+          <p className="text-sm text-gray-600">Due Date</p>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Tasks</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {
-                    projectsTasksQuery.data?.filter(
-                      (t: Task) => t.status === "completed"
-                    ).length
-                  }
-                  /{projectsTasksQuery.data?.length}
-                </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-green-100">
+              <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-          </CardContent>
+          </div>
+          <p className="text-2xl text-gray-900 mb-1">
+            {projectsTasksQuery.data?.filter((t: Task) => t.status === "completed").length ?? 0}
+            /{projectsTasksQuery.data?.length ?? 0}
+          </p>
+          <p className="text-sm text-gray-600">Tasks Completed</p>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Files</p>
-                <p className="text-2xl text-gray-900 mt-1">
-                  {fileQuery?.data?.length || 0}
-                </p>
-              </div>
-              <FileText className="h-8 w-8 text-purple-500" />
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-purple-100">
+              <FileText className="h-6 w-6 text-purple-600" />
             </div>
-          </CardContent>
+          </div>
+          <p className="text-2xl text-gray-900 mb-1">
+            {fileQuery?.data?.length || 0}
+          </p>
+          <p className="text-sm text-gray-600">Files</p>
         </Card>
       </div>
 
@@ -389,18 +401,18 @@ export function ProjectDetailView({
                             Due {task.dueDate}
                           </span>
                         )}
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${
                             task.priority === "high"
-                              ? "border-red-200 text-red-600"
+                              ? "bg-red-50 text-red-700 border border-red-200"
                               : task.priority === "medium"
-                                ? "border-yellow-200 text-yellow-600"
-                                : "border-gray-200 text-gray-600"
+                                ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                                : "bg-gray-50 text-gray-500 border border-gray-200"
                           }`}
                         >
+                          <Flag className="h-3 w-3" />
                           {task.priority}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
                     <DropdownMenu>

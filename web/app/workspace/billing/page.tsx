@@ -79,7 +79,7 @@ const PLAN_DETAILS: Record<
     price: 0,
     features: [
       "Up to 5 clients",
-      "1 project",
+      "Up to 5 projects",
       "50 AI credits/month",
       "Basic automation",
     ],
@@ -249,7 +249,7 @@ export default function Billing() {
   const clientCount = clientList?.length ?? 0;
   const clientLimit = currentPlan === "starter" ? 5 : null;
   const projectCount = projectList?.length ?? 0;
-  const projectLimit = currentPlan === "starter" ? 1 : null;
+  const projectLimit = currentPlan === "starter" ? 5 : null;
   const aiCredits = billing?.aiCredits ?? 0;
   const aiCreditLimit = AI_CREDIT_LIMITS[currentPlan] ?? 50;
 
