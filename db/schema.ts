@@ -18,8 +18,8 @@ export const users = pgTable("users", {
   user_id: varchar("user_id").notNull().unique(),
   name: text("name"),
   email: text("email").notNull(),
-  ai_credits: integer("ai_credits").notNull().default(50),
-  storage: integer("storage").notNull().default(1),
+  ai_credits: integer("ai_credits").notNull().default(0),
+  storage: integer("storage").notNull().default(0),
   recordingStatus: boolean("recordingStatus").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

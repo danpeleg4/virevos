@@ -78,6 +78,13 @@
       "when": 1774275423432,
       "tag": "0010_wise_brother_voodoo",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1774380024608,
+      "tag": "0011_complete_black_cat",
+      "breakpoints": true
     }
   ]
 }
