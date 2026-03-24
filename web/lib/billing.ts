@@ -7,20 +7,18 @@ import { eq } from "drizzle-orm";
 import { stripe } from "./stripe";
 import type Stripe from "stripe";
 
-const PRICE_ID_MAP: Record<string, string> = {
-  professional: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY!,
-  business: process.env.STRIPE_PRICE_BUSINESS_MONTHLY!,
-};
+function getPriceId(planId: string): string | undefined {
+  const map: Record<string, string | undefined> = {
+    professional: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY,
+    business: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
+  };
+  return map[planId];
+}
 
 export async function getOrCreateStripeCustomer(
   userId: string,
   email: string
 ): Promise<string> {
-  await db
-    .insert(users)
-    .values({ user_id: userId, email })
-    .onConflictDoNothing();
-
   const existing = await db
     .select({ stripeCustomerId: subscriptions.stripeCustomerId })
     .from(subscriptions)
@@ -78,7 +76,7 @@ export async function createSubscription(
     invoice_settings: { default_payment_method: input.paymentMethodId },
   });
 
-  const priceId = PRICE_ID_MAP[input.planId];
+  const priceId = getPriceId(input.planId);
   if (!priceId) throw new Error(`Unknown plan: ${input.planId}`);
 
   await stripe.subscriptions.create({
@@ -195,7 +193,16 @@ export async function getBillingOverview(): Promise<BillingOverview> {
   return { subscription, invoices, paymentMethod, aiCredits, storage };
 }
 
-async function updatePlanLimits(userId: string, planId: string): Promise<void> {
+const PLAN_RANK: Record<string, number> = {
+  starter: 0,
+  professional: 1,
+  business: 2,
+};
+
+export async function updatePlanLimits(
+  userId: string,
+  planId: string
+): Promise<void> {
   const aiCredits = () => {
     if (planId === "professional") return 250;
     if (planId === "business") return 500;
@@ -222,19 +229,18 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
 
   const sub = await getUserSubscription();
 
-  // Downgrade to starter: cancel at period end (or immediately if no sub)
+  // Downgrade to starter: cancel at period end — limits deferred until subscription.deleted fires
   if (input.planId === "starter") {
     if (!sub.stripeSubscriptionId) return; // already on starter free plan
     await stripe.subscriptions.update(sub.stripeSubscriptionId, {
       cancel_at_period_end: true,
     });
-    await updatePlanLimits(user.id, "starter");
     return;
   }
 
   if (!sub.stripeCustomerId) throw new Error("No active subscription");
 
-  const priceId = PRICE_ID_MAP[input.planId];
+  const priceId = getPriceId(input.planId);
   if (!priceId) throw new Error(`Unknown plan: ${input.planId}`);
 
   // No existing subscription — create one using the customer's default payment method
@@ -267,12 +273,17 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
   const itemId = stripeSub.items.data[0]?.id;
   if (!itemId) throw new Error("No subscription item found");
 
+  const isUpgrade = (PLAN_RANK[input.planId] ?? 0) > (PLAN_RANK[sub.plan] ?? 0);
+
   await stripe.subscriptions.update(sub.stripeSubscriptionId, {
     items: [{ id: itemId, price: priceId }],
     proration_behavior: "create_prorations",
   });
 
-  await updatePlanLimits(user.id, input.planId);
+  // Only update limits immediately for upgrades; downgrades are deferred to subscription.updated webhook
+  if (isUpgrade) {
+    await updatePlanLimits(user.id, input.planId);
+  }
 }
 
 export async function cancelSubscription(): Promise<void> {

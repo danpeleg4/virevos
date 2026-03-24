@@ -217,6 +217,60 @@ describe("changePlan", () => {
       "sub_123",
       expect.objectContaining({ cancel_at_period_end: true })
     );
+    // Limits must NOT be updated immediately — deferred to subscription.deleted webhook
+    expect(mockSet).not.toHaveBeenCalledWith(
+      expect.objectContaining({ ai_credits: expect.anything() })
+    );
+  });
+
+  it("updates limits immediately when upgrading between paid plans", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    process.env.STRIPE_PRICE_BUSINESS_MONTHLY = "price_biz";
+    mockDbSelect([
+      {
+        plan: "professional",
+        status: "active",
+        stripeCustomerId: "cus_123",
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_pro",
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+      },
+    ]);
+    mockStripeSubscriptionRetrieve.mockResolvedValue({
+      items: { data: [{ id: "si_123" }] },
+    });
+    mockStripeSubscriptionUpdate.mockResolvedValue({});
+
+    await changePlan({ planId: "business" });
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ ai_credits: 500, storage: 250 })
+    );
+  });
+
+  it("does not update limits immediately when downgrading between paid plans", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY = "price_pro";
+    mockDbSelect([
+      {
+        plan: "business",
+        status: "active",
+        stripeCustomerId: "cus_123",
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_biz",
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+      },
+    ]);
+    mockStripeSubscriptionRetrieve.mockResolvedValue({
+      items: { data: [{ id: "si_123" }] },
+    });
+    mockStripeSubscriptionUpdate.mockResolvedValue({});
+
+    await changePlan({ planId: "professional" });
+    expect(mockSet).not.toHaveBeenCalledWith(
+      expect.objectContaining({ ai_credits: expect.anything() })
+    );
   });
 });
 
