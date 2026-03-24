@@ -208,6 +208,8 @@ async function updatePlanLimits(userId: string, planId: string): Promise<void> {
   };
   const ai = aiCredits();
   const storage = storageAmount();
+  if (ai === undefined || storage === undefined)
+    throw new Error(`Unknown plan: ${planId}`);
   await db
     .update(users)
     .set({ ai_credits: ai, storage })
@@ -226,6 +228,7 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
     await stripe.subscriptions.update(sub.stripeSubscriptionId, {
       cancel_at_period_end: true,
     });
+    await updatePlanLimits(user.id, "starter");
     return;
   }
 
