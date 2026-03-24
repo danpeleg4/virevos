@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       bodyHtml: string;
       bodyText?: string;
       threadId?: string;
-      attachments?: Array<{ name: string; url?: string; path?: string }>;
+      attachments?: Array<{ name: string; url?: string; path?: string; data?: string; mimeType?: string }>;
     };
 
     if (!to || !subject || !bodyHtml) {
@@ -69,7 +69,10 @@ export async function POST(req: NextRequest) {
           let buffer: Buffer | null = null;
           let mimeType = "application/octet-stream";
 
-          if (att.path) {
+          if (att.data) {
+            buffer = Buffer.from(att.data, "base64");
+            mimeType = att.mimeType || mimeType;
+          } else if (att.path) {
             const result = await s3.send(
               new GetObjectCommand({ Bucket: S3_BUCKET, Key: att.path })
             );

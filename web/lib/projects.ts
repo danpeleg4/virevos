@@ -4,14 +4,9 @@ import { db } from "@db/db";
 import { notes, projectFiles, projects, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import {
-  AddFileMetadataInput,
-  Project,
-  UploadedAttachment,
-} from "@/types/projects";
+import { AddFileMetadataInput, Project } from "@/types/projects";
 import { s3, S3_BUCKET } from "./s3";
-import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { assertCanAddProject } from "./plan_limits";
 
 export async function deleteProject(projectId: number) {
@@ -147,36 +142,4 @@ export async function changeProjectStatus(project: Project, newStatus: string) {
     .update(projects)
     .set({ status: newStatus })
     .where(and(eq(projects.id, id), eq(projects.userId, user.id)));
-}
-
-export async function uploadCommunicationAttachment(
-  file: File
-): Promise<UploadedAttachment> {
-  const user = await currentUser();
-  if (!user?.id) throw new Error("No user");
-
-  const filePath = `communications/${user.id}/${Date.now()}-${file.name}`;
-
-  const commBuffer = Buffer.from(await file.arrayBuffer());
-  try {
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: S3_BUCKET,
-        Key: filePath,
-        Body: commBuffer,
-        ContentType: file.type,
-      })
-    );
-  } catch (error) {
-    console.error("Storage upload failed:", error);
-    throw new Error("Failed to upload file");
-  }
-
-  const url = await getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: S3_BUCKET, Key: filePath }),
-    { expiresIn: 604800 }
-  );
-
-  return { path: filePath, url, name: file.name, size: file.size };
 }

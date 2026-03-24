@@ -319,8 +319,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           threadId: selectedMessage.threadId,
           replyToGmailId: selectedMessage.gmailId,
           attachments: pendingAttachments
-            .filter((f) => f.path || f.url)
-            .map((f) => ({ name: f.name, url: f.url, path: f.path })),
+            .filter((f) => f.path || f.url || f.data)
+            .map((f) => ({ name: f.name, url: f.url, path: f.path, data: f.data, mimeType: f.mimeType })),
         });
         toast.success("Reply sent successfully");
         setReplyText("");
