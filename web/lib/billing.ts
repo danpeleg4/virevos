@@ -195,6 +195,25 @@ export async function getBillingOverview(): Promise<BillingOverview> {
   return { subscription, invoices, paymentMethod, aiCredits, storage };
 }
 
+async function updatePlanLimits(userId: string, planId: string): Promise<void> {
+  const aiCredits = () => {
+    if (planId === "professional") return 250;
+    if (planId === "business") return 500;
+    if (planId === "starter") return 50;
+  };
+  const storageAmount = () => {
+    if (planId === "professional") return 50;
+    if (planId === "business") return 250;
+    if (planId === "starter") return 1;
+  };
+  const ai = aiCredits();
+  const storage = storageAmount();
+  await db
+    .update(users)
+    .set({ ai_credits: ai, storage })
+    .where(eq(users.user_id, userId));
+}
+
 export async function changePlan(input: ChangePlanInput): Promise<void> {
   const user = await currentUser();
   if (!user?.id) throw new Error("Unauthorized");
@@ -235,6 +254,7 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
       items: [{ price: priceId }],
       default_payment_method: pm.id,
     });
+    await updatePlanLimits(user.id, input.planId);
     return;
   }
 
@@ -248,6 +268,8 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
     items: [{ id: itemId, price: priceId }],
     proration_behavior: "create_prorations",
   });
+
+  await updatePlanLimits(user.id, input.planId);
 }
 
 export async function cancelSubscription(): Promise<void> {
@@ -257,13 +279,9 @@ export async function cancelSubscription(): Promise<void> {
   const sub = await getUserSubscription();
   if (!sub.stripeSubscriptionId) throw new Error("No active subscription");
 
-  try {
-    await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-      cancel_at_period_end: true,
-    });
-  } catch (error) {
-    console.log(error);
-  }
+  await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+    cancel_at_period_end: true,
+  });
 }
 
 export async function resubscribe(): Promise<void> {

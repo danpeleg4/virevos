@@ -60,7 +60,6 @@ import {
   updatePaymentMethod,
   createSetupIntent,
 } from "@/lib/billing";
-import { number } from "motion";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
