@@ -1,1 +1,0 @@
-ALTER TABLE "users" ADD COLUMN "recordingStatus" boolean DEFAULT true NOT NULL;

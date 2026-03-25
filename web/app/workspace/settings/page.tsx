@@ -78,21 +78,6 @@ export default function Settings() {
               </p>
               <div className="space-y-4">
                 <ToggleRow
-                  label="Task assignments"
-                  description="Receive notifications when tasks are assigned to you"
-                  defaultChecked
-                />
-                <ToggleRow
-                  label="Project updates"
-                  description="Get notified about project status changes"
-                  defaultChecked
-                />
-                <ToggleRow
-                  label="Automation alerts"
-                  description="Receive alerts when automations fail or succeed"
-                  defaultChecked
-                />
-                <ToggleRow
                   label="Weekly summary"
                   description="Get a weekly email with your productivity summary"
                 />
@@ -150,10 +135,6 @@ export default function Settings() {
                   label="AI suggestions"
                   description="Show AI-powered next action suggestions"
                   defaultChecked
-                />
-                <ToggleRow
-                  label="Auto-assign tasks"
-                  description="Automatically assign tasks based on workload"
                 />
               </div>
             </div>
