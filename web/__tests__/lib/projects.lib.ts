@@ -113,7 +113,6 @@ describe("addFileMetadata", () => {
 
   it("throws when S3 upload throws", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([]); // 0 existing files
     mockS3Send.mockRejectedValueOnce(new Error("Upload failed"));
     await expect(addFileMetadata({ projectId: 1 }, makeFile())).rejects.toThrow(
       "Failed to upload file"
@@ -122,7 +121,6 @@ describe("addFileMetadata", () => {
 
   it("inserts metadata and returns { path, name, size } on success", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([]); // 0 existing files
     mockS3Send.mockResolvedValueOnce({});
 
     const file = makeFile("doc.pdf", 2048);
