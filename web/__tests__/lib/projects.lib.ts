@@ -2,9 +2,10 @@ import {
   deleteProject,
   addFileMetadata,
   createProject,
-  addNotes,
+  addProjectNotes,
   changeProjectStatus,
   updateProject,
+  deleteProjectFile,
 } from "@/lib/projects";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -38,6 +39,7 @@ jest.mock("@/lib/s3", () => ({
 
 jest.mock("@/lib/plan_limits", () => ({
   assertCanAddProject: jest.fn().mockResolvedValue(undefined),
+  assertCanAddFile: jest.fn().mockResolvedValue(undefined),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -97,12 +99,16 @@ describe("addFileMetadata", () => {
     );
   });
 
-  it("returns early (no upload) when user already has 3 or more files", async () => {
+  it("throws storage limit error and skips upload when assertCanAddFile rejects", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([{}, {}, {}]); // 3 existing files
-    const result = await addFileMetadata({ projectId: 1 }, makeFile());
+    const { assertCanAddFile } = require("@/lib/plan_limits");
+    (assertCanAddFile as jest.Mock).mockRejectedValueOnce(
+      new Error("Storage limit reached")
+    );
+    await expect(addFileMetadata({ projectId: 1 }, makeFile())).rejects.toThrow(
+      "Storage limit reached"
+    );
     expect(mockS3Send).not.toHaveBeenCalled();
-    expect(result).toBeUndefined();
   });
 
   it("throws when S3 upload throws", async () => {
@@ -168,12 +174,12 @@ describe("createProject", () => {
   });
 });
 
-// ─── addNotes ─────────────────────────────────────────────────────────────
+// ─── addProjectNotes ──────────────────────────────────────────────────────
 
-describe("addNotes", () => {
+describe("addProjectNotes", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(addNotes("Note content", 1)).rejects.toThrow("No user");
+    await expect(addProjectNotes("Note content", 1)).rejects.toThrow("No user");
   });
 });
 
@@ -219,6 +225,42 @@ describe("updateProject", () => {
       dueDate: "2026-12-31",
       priority: "low",
     });
+  });
+});
+
+// ─── deleteProjectFile ────────────────────────────────────────────────────
+
+describe("deleteProjectFile", () => {
+  it("throws when unauthenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+    await expect(deleteProjectFile(1)).rejects.toThrow("No user");
+  });
+
+  it("throws when file not found", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectWhere.mockResolvedValueOnce([]);
+    await expect(deleteProjectFile(99)).rejects.toThrow("File not found");
+    expect(mockS3Send).not.toHaveBeenCalled();
+  });
+
+  it("deletes from S3 and DB on success", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectWhere.mockResolvedValueOnce([{ path: "projects/user_1/file.pdf" }]);
+    mockS3Send.mockResolvedValueOnce({});
+
+    await deleteProjectFile(5);
+
+    expect(mockS3Send).toHaveBeenCalledTimes(1);
+    expect(mockDeleteWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not delete from DB if S3 throws", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectWhere.mockResolvedValueOnce([{ path: "projects/user_1/file.pdf" }]);
+    mockS3Send.mockRejectedValueOnce(new Error("S3 error"));
+
+    await expect(deleteProjectFile(5)).rejects.toThrow("S3 error");
+    expect(mockDeleteWhere).not.toHaveBeenCalled();
   });
 });
 

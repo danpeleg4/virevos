@@ -85,6 +85,20 @@
       "when": 1774380024608,
       "tag": "0011_complete_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1742774400000,
+      "tag": "0012_storage_bigint",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1774400368318,
+      "tag": "0013_ambiguous_daredevil",
+      "breakpoints": true
     }
   ]
 }

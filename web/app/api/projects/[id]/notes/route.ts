@@ -1,6 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { notes } from "@db/schema";
+import { projectNotes, projects } from "@db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -21,9 +21,14 @@ export async function GET(
 
   const data = await db
     .select()
-    .from(notes)
-    .where(and(eq(notes.userId, user.id), eq(notes.projectId, projectId)))
-    .orderBy(desc(notes.id));
+    .from(projectNotes)
+    .where(
+      and(
+        eq(projectNotes.userId, user.id),
+        eq(projectNotes.projectId, projectId)
+      )
+    )
+    .orderBy(desc(projectNotes.id));
 
   return NextResponse.json(data);
 }

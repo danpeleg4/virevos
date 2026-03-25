@@ -10,7 +10,6 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 jest.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
     update: jest.fn(),
   },
 }));
@@ -28,7 +27,7 @@ jest.mock("@/lib/ai_tools", () => ({
 }));
 
 jest.mock("@/lib/plan_limits", () => ({
-  assertHasAiAssistant: jest.fn().mockResolvedValue(undefined),
+  assertCanUseAI: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("@/lib/clients", () => ({
@@ -115,11 +114,10 @@ describe("POST /api/chat", () => {
 
   it("returns 401 if user has no AI credits", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
-      from: () => ({
-        where: () => Promise.resolve([{ ai_credits: 0 }]),
-      }),
-    });
+    const { assertCanUseAI } = await import("@/lib/plan_limits");
+    (assertCanUseAI as jest.Mock).mockRejectedValueOnce(
+      new Error("AI credit limit reached")
+    );
 
     const res = await POST(mockRequest({ messages: [] }));
 
@@ -127,27 +125,8 @@ describe("POST /api/chat", () => {
     expect(await res.json()).toBe("No AI Credits");
   });
 
-  it("returns 401 if user is not found in DB", async () => {
+  it("increments AI credits and streams a response", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
-      from: () => ({
-        where: () => Promise.resolve([]),
-      }),
-    });
-
-    const res = await POST(mockRequest({ messages: [] }));
-
-    expect(res.status).toBe(401);
-    expect(await res.json()).toBe("No AI Credits");
-  });
-
-  it("decrements AI credits and streams a response", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
-      from: () => ({
-        where: () => Promise.resolve([{ ai_credits: 2 }]),
-      }),
-    });
 
     const updateWhere = jest.fn();
     const updateSet = jest.fn(() => ({ where: updateWhere }));
@@ -178,11 +157,6 @@ describe("POST /api/chat", () => {
 
   it("uses previousResponseId from request for conversation chaining", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
-      from: () => ({
-        where: () => Promise.resolve([{ ai_credits: 5 }]),
-      }),
-    });
     const updateWhere = jest.fn();
     const updateSet = jest.fn(() => ({ where: updateWhere }));
     (db.update as jest.Mock).mockReturnValue({ set: updateSet });
@@ -222,11 +196,6 @@ describe("POST /api/chat", () => {
     "executes $toolName tool and streams tool_result event",
     async ({ toolName, args, resultKind }) => {
       (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-      (db.select as jest.Mock).mockReturnValue({
-        from: () => ({
-          where: () => Promise.resolve([{ ai_credits: 5 }]),
-        }),
-      });
       const updateWhere = jest.fn();
       const updateSet = jest.fn(() => ({ where: updateWhere }));
       (db.update as jest.Mock).mockReturnValue({ set: updateSet });

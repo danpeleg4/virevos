@@ -260,7 +260,8 @@ export default function Billing() {
   const projectLimit = currentPlan === "starter" ? 5 : null;
   const aiCredits = billing?.aiCredits ?? 0;
   const aiCreditLimit = AI_CREDIT_LIMITS[currentPlan] ?? 50;
-  const storage = billing?.storage ?? 1;
+  const storageBytes = billing?.storage ?? 0;
+  const storageGb = storageBytes / (1024 * 1024 * 1024);
   const storageLimit = STORAGE_LIMITS[currentPlan] ?? 1;
 
   const formatDate = (val: Date | string | null | undefined) => {
@@ -641,7 +642,7 @@ export default function Billing() {
             <Progress
               value={Math.min((aiCredits / aiCreditLimit) * 100, 100)}
             />
-            {aiCredits === 0 && (
+            {aiCredits >= aiCreditLimit && (
               <p className="text-[11px] text-red-500 mt-1">
                 No credits left — upgrade to get more
               </p>
@@ -654,13 +655,15 @@ export default function Billing() {
                 <p className="text-sm text-gray-600">Storage</p>
               </div>
               <p className="text-sm text-gray-900">
-                {storage.toString() + "GB"} / {storageLimit.toString() + "GB"}
+                {storageGb.toFixed(2) + "GB"} / {storageLimit.toString() + "GB"}
               </p>
             </div>
-            <Progress value={(Math.min(storage / storageLimit) * 100, 100)} />
-            {aiCredits === 0 && (
+            <Progress
+              value={Math.min((storageGb / storageLimit) * 100, 100)}
+            />
+            {storageGb >= storageLimit && (
               <p className="text-[11px] text-red-500 mt-1">
-                No credits left — upgrade to get more
+                Storage full — upgrade to get more
               </p>
             )}
           </div>

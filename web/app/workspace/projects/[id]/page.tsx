@@ -39,7 +39,12 @@ import { TaskDetailModal } from "@/app/components/TaskDetailModal";
 import { task_percentage } from "@/lib/task_percentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addFileMetadata, addNotes, deleteProject } from "@/lib/projects";
+import {
+  addFileMetadata,
+  addProjectNotes,
+  deleteProject,
+  deleteProjectFile,
+} from "@/lib/projects";
 import { deleteTask, updateTaskStatus } from "@/lib/tasks";
 import { Project, ProjectFile, ProjectNote } from "@/types/projects";
 import { Task } from "@/types/tasks";
@@ -118,8 +123,8 @@ export function ProjectDetailView({
     },
   });
 
-  const notesQuery = useQuery({
-    queryKey: ["notes", project.id],
+  const projectNotesQuery = useQuery({
+    queryKey: ["projectNotes", project.id],
     queryFn: async () => {
       const res = await axios.get(`/api/projects/${project.id}/notes`);
       return res.data;
@@ -151,11 +156,11 @@ export function ProjectDetailView({
       newNote: string;
       projectId: number;
     }) => {
-      await addNotes(newNote, projectId);
+      await addProjectNotes(newNote, projectId);
     },
     onSuccess: () => {
       setNewNote("");
-      queryClient.invalidateQueries({ queryKey: ["notes", project.id] });
+      queryClient.invalidateQueries({ queryKey: ["projectNotes", project.id] });
     },
   });
 
@@ -217,13 +222,36 @@ export function ProjectDetailView({
     },
   });
 
+  const deleteProjectFileMutation = useMutation({
+    mutationFn: async (fileId: number) => {
+      await deleteProjectFile(fileId);
+    },
+    onMutate: async (fileId) => {
+      await queryClient.cancelQueries({ queryKey: ["files", project.id] });
+      const previousFiles = queryClient.getQueryData<ProjectFile[]>([
+        "files",
+        project.id,
+      ]);
+      queryClient.setQueryData<ProjectFile[]>(["files", project.id], (old) =>
+        old?.filter((f) => f.id !== fileId)
+      );
+      return { previousFiles };
+    },
+    onError: (_err, _fileId, context) => {
+      queryClient.setQueryData(["files", project.id], context?.previousFiles);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+    },
+  });
+
   const onBackFunction = async () => {
     queryClient.invalidateQueries({ queryKey: ["projects"] });
     onBackAction();
   };
 
   if (
-    notesQuery.isLoading ||
+    projectNotesQuery.isLoading ||
     projectsTasksQuery.isLoading ||
     fileQuery.isLoading
   ) {
@@ -234,7 +262,7 @@ export function ProjectDetailView({
     );
   }
 
-  if (notesQuery.isError || projectsTasksQuery.isError) {
+  if (projectNotesQuery.isError || projectsTasksQuery.isError) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
@@ -324,7 +352,9 @@ export function ProjectDetailView({
               <Calendar className="h-6 w-6 text-orange-600" />
             </div>
           </div>
-          <p className="text-2xl text-gray-900 mb-1">{project.dueDate || "—"}</p>
+          <p className="text-2xl text-gray-900 mb-1">
+            {project.dueDate || "—"}
+          </p>
           <p className="text-sm text-gray-600">Due Date</p>
         </Card>
 
@@ -335,7 +365,9 @@ export function ProjectDetailView({
             </div>
           </div>
           <p className="text-2xl text-gray-900 mb-1">
-            {projectsTasksQuery.data?.filter((t: Task) => t.status === "completed").length ?? 0}
+            {projectsTasksQuery.data?.filter(
+              (t: Task) => t.status === "completed"
+            ).length ?? 0}
             /{projectsTasksQuery.data?.length ?? 0}
           </p>
           <p className="text-sm text-gray-600">Tasks Completed</p>
@@ -504,6 +536,13 @@ export function ProjectDetailView({
                     >
                       <Download className="h-4 w-4" />
                     </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => deleteProjectFileMutation.mutate(file.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -539,7 +578,7 @@ export function ProjectDetailView({
               </div>
 
               <div className="space-y-3">
-                {notesQuery.data?.map((note: ProjectNote) => (
+                {projectNotesQuery.data?.map((note: ProjectNote) => (
                   <div
                     key={note.id}
                     className="p-3 bg-gray-50 rounded-lg border border-gray-200"

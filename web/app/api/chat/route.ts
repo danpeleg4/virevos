@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { users } from "@db/schema";
 import { db } from "@db/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import OpenAI from "openai";
 import { openai, tools, executeTool, MODEL, MAX_STEPS } from "@/lib/ai_tools";
 import type { ChatMessage, StreamEvent } from "@/types/ai";
+import { assertCanUseAI } from "@/lib/plan_limits";
 
 const SYSTEM_INSTRUCTIONS =
   "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows.";
@@ -26,18 +27,15 @@ export async function POST(req: NextRequest) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const [res] = await db
-    .select({ ai_credits: users.ai_credits })
-    .from(users)
-    .where(eq(users.user_id, user.id));
-
-  if (!res || res.ai_credits <= 0) {
+  try {
+    await assertCanUseAI(user.id);
+  } catch {
     return NextResponse.json("No AI Credits", { status: 401 });
   }
 
   await db
     .update(users)
-    .set({ ai_credits: res.ai_credits - 1 })
+    .set({ ai_credits: sql`${users.ai_credits} + 1` })
     .where(eq(users.user_id, user.id));
 
   const encoder = new TextEncoder();

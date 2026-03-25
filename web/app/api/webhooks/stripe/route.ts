@@ -97,6 +97,27 @@ async function handleInvoicePaymentFailed(
     .where(eq(subscriptions.stripeCustomerId, customerId));
 }
 
+async function handleInvoicePaymentSucceeded(
+  invoice: Stripe.Invoice
+): Promise<void> {
+  const customerId =
+    typeof invoice.customer === "string"
+      ? invoice.customer
+      : (invoice.customer?.id ?? "");
+
+  if (!customerId) return;
+
+  const [existing] = await db
+    .select({ userId: subscriptions.userId })
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeCustomerId, customerId))
+    .limit(1);
+
+  if (existing?.userId) {
+    await updatePlanLimits(existing.userId, "monthly_reset");
+  }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
@@ -134,6 +155,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       case "invoice.payment_failed":
         await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+
+      case "invoice.payment_succeeded":
+        await handleInvoicePaymentSucceeded(
+          event.data.object as Stripe.Invoice
+        );
         break;
 
       default:

@@ -201,25 +201,11 @@ const PLAN_RANK: Record<string, number> = {
 
 export async function updatePlanLimits(
   userId: string,
-  planId: string
+  _planId: string
 ): Promise<void> {
-  const aiCredits = () => {
-    if (planId === "professional") return 250;
-    if (planId === "business") return 500;
-    if (planId === "starter") return 50;
-  };
-  const storageAmount = () => {
-    if (planId === "professional") return 50;
-    if (planId === "business") return 250;
-    if (planId === "starter") return 1;
-  };
-  const ai = aiCredits();
-  const storage = storageAmount();
-  if (ai === undefined || storage === undefined)
-    throw new Error(`Unknown plan: ${planId}`);
   await db
     .update(users)
-    .set({ ai_credits: ai, storage })
+    .set({ ai_credits: 0 })
     .where(eq(users.user_id, userId));
 }
 

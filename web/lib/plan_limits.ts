@@ -1,32 +1,32 @@
 "use server";
 
 import { db } from "@db/db";
-import { clients, projects } from "@db/schema";
+import { clients, projects, users } from "@db/schema";
 import { eq, count } from "drizzle-orm";
 import { getUserSubscriptionByUserId } from "./billing";
+
+const AI_CREDIT_LIMITS: Record<PlanId, number> = {
+  starter: 50,
+  professional: 250,
+  business: 500,
+};
+
+const STORAGE_LIMIT_BYTES: Record<PlanId, number> = {
+  starter: 1024 * 1024 * 1024,
+  professional: 50 * 1024 * 1024 * 1024,
+  business: 250 * 1024 * 1024 * 1024,
+};
 
 const PLAN_LIMITS: Record<
   PlanId,
   {
     maxClients: number | null;
     maxProjects: number | null;
-    aiCredits: number;
-    storage: string;
   }
 > = {
-  starter: { maxClients: 5, maxProjects: 5, aiCredits: 50, storage: "1GB" },
-  professional: {
-    maxClients: null,
-    maxProjects: null,
-    aiCredits: 250,
-    storage: "50GB",
-  },
-  business: {
-    maxClients: null,
-    maxProjects: null,
-    aiCredits: 250,
-    storage: "250GB",
-  },
+  starter: { maxClients: 5, maxProjects: 5 },
+  professional: { maxClients: null, maxProjects: null },
+  business: { maxClients: null, maxProjects: null },
 };
 
 export async function getUserPlan(userId: string): Promise<PlanId> {
@@ -64,6 +64,43 @@ export async function assertCanAddProject(userId: string): Promise<void> {
   if (result.count >= limit) {
     throw new Error(
       `Project limit reached. The ${plan} plan allows up to ${limit} projects. Please upgrade to add more.`
+    );
+  }
+}
+
+export async function assertCanUseAI(userId: string): Promise<void> {
+  const plan = await getUserPlan(userId);
+  const limit = AI_CREDIT_LIMITS[plan];
+
+  const [userRow] = await db
+    .select({ ai_credits: users.ai_credits })
+    .from(users)
+    .where(eq(users.user_id, userId));
+
+  if (!userRow || userRow.ai_credits >= limit) {
+    throw new Error(
+      `AI credit limit reached. The ${plan} plan allows up to ${limit} AI requests per billing cycle. Please upgrade for more.`
+    );
+  }
+}
+
+export async function assertCanAddFile(
+  userId: string,
+  fileSize: number
+): Promise<void> {
+  const plan = await getUserPlan(userId);
+  const limitBytes = STORAGE_LIMIT_BYTES[plan];
+
+  const [userRow] = await db
+    .select({ storage: users.storage })
+    .from(users)
+    .where(eq(users.user_id, userId));
+
+  const currentStorage = userRow?.storage ?? 0;
+  if (currentStorage + fileSize > limitBytes) {
+    const limitGb = limitBytes / (1024 * 1024 * 1024);
+    throw new Error(
+      `Storage limit reached. The ${plan} plan includes ${limitGb}GB of storage. Please upgrade for more.`
     );
   }
 }

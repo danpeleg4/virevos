@@ -244,7 +244,7 @@ describe("changePlan", () => {
 
     await changePlan({ planId: "business" });
     expect(mockSet).toHaveBeenCalledWith(
-      expect.objectContaining({ ai_credits: 500, storage: 250 })
+      expect.objectContaining({ ai_credits: 0 })
     );
   });
 
