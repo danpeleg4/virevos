@@ -154,17 +154,20 @@ export async function deleteProjectFile(fileId: number) {
   if (!user?.id) throw new Error("No user");
 
   const [file] = await db
-    .select({ path: projectFiles.path })
+    .select({ path: projectFiles.path, size: projectFiles.size })
     .from(projectFiles)
     .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
 
   if (!file) throw new Error("File not found");
 
-  await s3.send(
-    new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: file.path })
-  );
+  await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: file.path }));
 
   await db
     .delete(projectFiles)
     .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
+
+  await db
+    .update(users)
+    .set({ storage: sql`${users.storage} - ${file.size}` })
+    .where(eq(users.user_id, user.id));
 }
