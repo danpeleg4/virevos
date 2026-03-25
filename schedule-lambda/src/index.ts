@@ -1,6 +1,6 @@
-import { events, scheduledEmails, emails, users, clients, googleTokens } from "@repo/db/schema";
+import { events, scheduledEmails, emails, users, clients, googleTokens, subscriptions } from "@repo/db/schema";
 import { db } from "@repo/db/db";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray, notInArray, isNull, or, lt } from "drizzle-orm";
 import { google } from "googleapis";
 import { SchedulerClient, DeleteScheduleCommand } from "@aws-sdk/client-scheduler";
 
@@ -14,7 +14,11 @@ type ScheduledEmailEvent = {
   scheduledEmailId: number;
 };
 
-type LambdaEvent = MeetingEvent | ScheduledEmailEvent;
+type MonthlyResetEvent = {
+  type: "monthly_credit_reset";
+};
+
+type LambdaEvent = MeetingEvent | ScheduledEmailEvent | MonthlyResetEvent;
 
 function parseEmailAddress(raw: string): { name: string; email: string } {
   const match = raw?.match(/^(.*?)\s*<(.+?)>$/);
@@ -236,7 +240,57 @@ async function handleScheduledEmail(scheduledEmailId: number): Promise<void> {
   }
 }
 
+async function handleMonthlyCreditReset(): Promise<void> {
+  const paidSubs = await db
+    .select({ userId: subscriptions.userId })
+    .from(subscriptions)
+    .where(
+      and(
+        inArray(subscriptions.plan, ["professional", "business"]),
+        eq(subscriptions.status, "active")
+      )
+    );
+
+  const paidUserIds = paidSubs.map((s) => s.userId);
+
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  // Find free users whose monthly reset is due:
+  // - never reset and signed up >= 1 month ago, OR
+  // - previously reset >= 1 month ago
+  const dueFreeUsersQuery = db
+    .select({ userId: users.user_id })
+    .from(users)
+    .where(
+      and(
+        paidUserIds.length > 0 ? notInArray(users.user_id, paidUserIds) : undefined,
+        or(
+          and(isNull(users.creditsResetAt), lt(users.createdAt, oneMonthAgo)),
+          lt(users.creditsResetAt, oneMonthAgo)
+        )
+      )
+    );
+
+  const dueFreeUsers = await dueFreeUsersQuery;
+
+  if (dueFreeUsers.length === 0) return;
+
+  const dueUserIds = dueFreeUsers.map((u) => u.userId);
+  const now = new Date();
+
+  await db
+    .update(users)
+    .set({ ai_credits: 0, creditsResetAt: now })
+    .where(inArray(users.user_id, dueUserIds));
+}
+
 export const handler = async (event: LambdaEvent): Promise<void> => {
+  if ("type" in event && event.type === "monthly_credit_reset") {
+    await handleMonthlyCreditReset();
+    return;
+  }
+
   if ("type" in event && event.type === "scheduled_email") {
     await handleScheduledEmail(event.scheduledEmailId);
     return;

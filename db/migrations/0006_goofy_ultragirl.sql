@@ -1,1 +1,0 @@
-ALTER TABLE "users" ALTER COLUMN "ai_credits" SET DEFAULT 50;

@@ -18,10 +18,17 @@ jest.mock("@repo/db/schema", () => ({
   users: {},
   clients: {},
   googleTokens: {},
+  subscriptions: {},
 }));
 
 jest.mock("drizzle-orm", () => ({
   eq: jest.fn().mockReturnValue("eq-result"),
+  and: jest.fn().mockReturnValue("and-result"),
+  inArray: jest.fn().mockReturnValue("inArray-result"),
+  notInArray: jest.fn().mockReturnValue("notInArray-result"),
+  isNull: jest.fn().mockReturnValue("isNull-result"),
+  or: jest.fn().mockReturnValue("or-result"),
+  lt: jest.fn().mockReturnValue("lt-result"),
 }));
 
 // --- googleapis mock ---
@@ -79,6 +86,12 @@ function setupUpdate() {
   const mockSet = jest.fn().mockReturnValue({ where: mockWhere });
   mockDbUpdate.mockReturnValue({ set: mockSet });
   return { mockSet, mockWhere };
+}
+
+function setupUpdateNoWhere() {
+  const mockSet = jest.fn().mockResolvedValue(undefined);
+  mockDbUpdate.mockReturnValue({ set: mockSet });
+  return { mockSet };
 }
 
 function setupInsert() {
@@ -149,6 +162,53 @@ describe("schedule-lambda handler", () => {
       await expect(handler({ userId: "user_1", id: "event-123" })).resolves.not.toThrow();
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
+    });
+  });
+
+  // ─── Monthly credit reset events ───────────────────────────────────────────
+
+  describe("monthly_credit_reset events", () => {
+    const resetEvent = { type: "monthly_credit_reset" as const };
+
+    it("resets credits and updates creditsResetAt for due free users when paid users exist", async () => {
+      // 1st select: paid subs
+      setupSelectNoLimitOnce([{ userId: "user_paid_1" }]);
+      // 2nd select: due free users
+      setupSelectNoLimitOnce([{ userId: "user_free_1" }, { userId: "user_free_2" }]);
+      const { mockSet, mockWhere } = setupUpdate();
+
+      await handler(resetEvent);
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ ai_credits: 0, creditsResetAt: expect.any(Date) })
+      );
+      expect(mockWhere).toHaveBeenCalledWith("inArray-result");
+    });
+
+    it("resets credits for all due free users when no paid users exist", async () => {
+      // 1st select: no paid subs
+      setupSelectNoLimitOnce([]);
+      // 2nd select: due free users
+      setupSelectNoLimitOnce([{ userId: "user_free_1" }]);
+      const { mockSet, mockWhere } = setupUpdate();
+
+      await handler(resetEvent);
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ ai_credits: 0, creditsResetAt: expect.any(Date) })
+      );
+      expect(mockWhere).toHaveBeenCalledWith("inArray-result");
+    });
+
+    it("does not update when no free users are due for a reset", async () => {
+      // 1st select: paid subs
+      setupSelectNoLimitOnce([{ userId: "user_paid_1" }]);
+      // 2nd select: no due free users
+      setupSelectNoLimitOnce([]);
+
+      await handler(resetEvent);
+
+      expect(mockDbUpdate).not.toHaveBeenCalled();
     });
   });
 
