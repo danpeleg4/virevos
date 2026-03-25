@@ -7,20 +7,18 @@ import { eq } from "drizzle-orm";
 import { stripe } from "./stripe";
 import type Stripe from "stripe";
 
-const PRICE_ID_MAP: Record<string, string> = {
-  professional: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY!,
-  business: process.env.STRIPE_PRICE_BUSINESS_MONTHLY!,
-};
+function getPriceId(planId: string): string | undefined {
+  const map: Record<string, string | undefined> = {
+    professional: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY,
+    business: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
+  };
+  return map[planId];
+}
 
 export async function getOrCreateStripeCustomer(
   userId: string,
   email: string
 ): Promise<string> {
-  await db
-    .insert(users)
-    .values({ user_id: userId, email })
-    .onConflictDoNothing();
-
   const existing = await db
     .select({ stripeCustomerId: subscriptions.stripeCustomerId })
     .from(subscriptions)
@@ -78,7 +76,7 @@ export async function createSubscription(
     invoice_settings: { default_payment_method: input.paymentMethodId },
   });
 
-  const priceId = PRICE_ID_MAP[input.planId];
+  const priceId = getPriceId(input.planId);
   if (!priceId) throw new Error(`Unknown plan: ${input.planId}`);
 
   await stripe.subscriptions.create({
@@ -137,15 +135,22 @@ export async function getBillingOverview(): Promise<BillingOverview> {
   const subscription = await getUserSubscription();
 
   const [userRow] = await db
-    .select({ ai_credits: users.ai_credits })
+    .select({ ai_credits: users.ai_credits, storage: users.storage })
     .from(users)
     .where(eq(users.user_id, user.id))
     .limit(1);
 
   const aiCredits = userRow?.ai_credits ?? 0;
+  const storage = userRow?.storage ?? 1;
 
   if (!subscription.stripeCustomerId) {
-    return { subscription, invoices: [], paymentMethod: null, aiCredits };
+    return {
+      subscription,
+      invoices: [],
+      paymentMethod: null,
+      aiCredits,
+      storage,
+    };
   }
 
   const [invoiceList, customer] = await Promise.all([
@@ -185,7 +190,23 @@ export async function getBillingOverview(): Promise<BillingOverview> {
     }
   }
 
-  return { subscription, invoices, paymentMethod, aiCredits };
+  return { subscription, invoices, paymentMethod, aiCredits, storage };
+}
+
+const PLAN_RANK: Record<string, number> = {
+  starter: 0,
+  professional: 1,
+  business: 2,
+};
+
+export async function updatePlanLimits(
+  userId: string,
+  _planId: string
+): Promise<void> {
+  await db
+    .update(users)
+    .set({ ai_credits: 0 })
+    .where(eq(users.user_id, userId));
 }
 
 export async function changePlan(input: ChangePlanInput): Promise<void> {
@@ -194,7 +215,7 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
 
   const sub = await getUserSubscription();
 
-  // Downgrade to starter: cancel at period end (or immediately if no sub)
+  // Downgrade to starter: cancel at period end — limits deferred until subscription.deleted fires
   if (input.planId === "starter") {
     if (!sub.stripeSubscriptionId) return; // already on starter free plan
     await stripe.subscriptions.update(sub.stripeSubscriptionId, {
@@ -205,7 +226,7 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
 
   if (!sub.stripeCustomerId) throw new Error("No active subscription");
 
-  const priceId = PRICE_ID_MAP[input.planId];
+  const priceId = getPriceId(input.planId);
   if (!priceId) throw new Error(`Unknown plan: ${input.planId}`);
 
   // No existing subscription — create one using the customer's default payment method
@@ -228,6 +249,7 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
       items: [{ price: priceId }],
       default_payment_method: pm.id,
     });
+    await updatePlanLimits(user.id, input.planId);
     return;
   }
 
@@ -237,10 +259,17 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
   const itemId = stripeSub.items.data[0]?.id;
   if (!itemId) throw new Error("No subscription item found");
 
+  const isUpgrade = (PLAN_RANK[input.planId] ?? 0) > (PLAN_RANK[sub.plan] ?? 0);
+
   await stripe.subscriptions.update(sub.stripeSubscriptionId, {
     items: [{ id: itemId, price: priceId }],
     proration_behavior: "create_prorations",
   });
+
+  // Only update limits immediately for upgrades; downgrades are deferred to subscription.updated webhook
+  if (isUpgrade) {
+    await updatePlanLimits(user.id, input.planId);
+  }
 }
 
 export async function cancelSubscription(): Promise<void> {
@@ -250,13 +279,9 @@ export async function cancelSubscription(): Promise<void> {
   const sub = await getUserSubscription();
   if (!sub.stripeSubscriptionId) throw new Error("No active subscription");
 
-  try {
-    await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-      cancel_at_period_end: true,
-    });
-  } catch (error) {
-    console.log(error);
-  }
+  await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+    cancel_at_period_end: true,
+  });
 }
 
 export async function resubscribe(): Promise<void> {

@@ -20,7 +20,6 @@ import {
   FileText,
   Image,
   X,
-  Link2,
   Cloud,
   Folder,
   Search,
@@ -28,9 +27,8 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { uploadCommunicationAttachment } from "@/lib/projects";
 import type { AttachedFile } from "@/types/communications";
 
 interface AttachmentDialogProps {
@@ -89,6 +87,7 @@ export function AttachmentDialog({
   const [linkUrl, setLinkUrl] = useState("");
   const [activeTab, setActiveTab] = useState("upload");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isReading, setIsReading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: appFilesData, isLoading: isLoadingFiles } = useQuery({
@@ -104,33 +103,31 @@ export function AttachmentDialog({
 
   const appFiles = appFilesData ?? [];
 
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => uploadCommunicationAttachment(file),
-    onSuccess: (data, file) => {
-      const attachedFile: AttachedFile = {
-        id: data.path,
-        name: data.name,
-        size: formatFileSize(data.size),
-        type: getFileType(file.type, file.name),
-        path: data.path,
-        url: data.url,
-      };
-      setSelectedFiles((prev) => [...prev, attachedFile]);
-      toast.success(`${file.name} uploaded successfully`);
-    },
-    onError: (_err, file) => {
-      toast.error(`Failed to upload ${file.name}`);
-    },
-  });
-
   const handleFileInputChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    for (const file of files) {
-      await uploadMutation.mutateAsync(file);
+    setIsReading(true);
+    try {
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        const attachedFile: AttachedFile = {
+          id: `local-${Date.now()}-${file.name}`,
+          name: file.name,
+          size: formatFileSize(file.size),
+          type: getFileType(file.type, file.name),
+          data: base64,
+          mimeType: file.type || "application/octet-stream",
+        };
+        setSelectedFiles((prev) => [...prev, attachedFile]);
+      }
+    } catch {
+      toast.error("Failed to read file");
+    } finally {
+      setIsReading(false);
     }
 
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -183,8 +180,6 @@ export function AttachmentDialog({
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const isUploading = uploadMutation.isPending;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -229,7 +224,7 @@ export function AttachmentDialog({
                 className="h-full border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-400 transition-colors cursor-pointer flex flex-col items-center justify-center"
                 onClick={() => fileInputRef.current?.click()}
               >
-                {isUploading ? (
+                {isReading ? (
                   <>
                     <Loader2 className="h-12 w-12 text-blue-400 mb-4 animate-spin" />
                     <p className="text-sm text-gray-700">Uploading...</p>

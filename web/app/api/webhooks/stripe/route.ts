@@ -4,6 +4,7 @@ import { db } from "@db/db";
 import { subscriptions } from "@db/schema";
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
+import { updatePlanLimits } from "@/lib/billing";
 
 function getPlanFromPriceId(priceId: string): PlanId {
   if (priceId === process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY)
@@ -24,6 +25,12 @@ async function handleSubscriptionUpsert(
     ? new Date(sub.items.data[0].current_period_end * 1000)
     : null;
 
+  const [existing] = await db
+    .select({ userId: subscriptions.userId })
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeCustomerId, customerId))
+    .limit(1);
+
   await db
     .update(subscriptions)
     .set({
@@ -36,6 +43,12 @@ async function handleSubscriptionUpsert(
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeCustomerId, customerId));
+
+  // Update plan limits — for downgrades this is the deferred update;
+  // for upgrades it's idempotent (already applied immediately in changePlan)
+  if (existing?.userId) {
+    await updatePlanLimits(existing.userId, plan);
+  }
 }
 
 async function handleSubscriptionDeleted(
@@ -43,6 +56,12 @@ async function handleSubscriptionDeleted(
 ): Promise<void> {
   const customerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+
+  const [existing] = await db
+    .select({ userId: subscriptions.userId })
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeCustomerId, customerId))
+    .limit(1);
 
   await db
     .update(subscriptions)
@@ -55,6 +74,11 @@ async function handleSubscriptionDeleted(
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeCustomerId, customerId));
+
+  // Reset limits to starter now that the subscription has actually ended
+  if (existing?.userId) {
+    await updatePlanLimits(existing.userId, "starter");
+  }
 }
 
 async function handleInvoicePaymentFailed(
@@ -71,6 +95,27 @@ async function handleInvoicePaymentFailed(
     .update(subscriptions)
     .set({ status: "past_due", updatedAt: new Date() })
     .where(eq(subscriptions.stripeCustomerId, customerId));
+}
+
+async function handleInvoicePaymentSucceeded(
+  invoice: Stripe.Invoice
+): Promise<void> {
+  const customerId =
+    typeof invoice.customer === "string"
+      ? invoice.customer
+      : (invoice.customer?.id ?? "");
+
+  if (!customerId) return;
+
+  const [existing] = await db
+    .select({ userId: subscriptions.userId })
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeCustomerId, customerId))
+    .limit(1);
+
+  if (existing?.userId) {
+    await updatePlanLimits(existing.userId, "monthly_reset");
+  }
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -110,6 +155,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       case "invoice.payment_failed":
         await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+
+      case "invoice.payment_succeeded":
+        await handleInvoicePaymentSucceeded(
+          event.data.object as Stripe.Invoice
+        );
         break;
 
       default:

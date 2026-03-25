@@ -39,12 +39,7 @@ const plans = [
     price: 0,
     period: "month",
     description: "Perfect for individuals getting started",
-    features: [
-      "Up to 5 projects",
-      "10 AI credits per month",
-      "Basic automation",
-      "1GB storage",
-    ],
+    features: ["Up to 5 projects", "50 AI credits per month", "1GB storage"],
     highlighted: false,
   },
   {
@@ -54,10 +49,10 @@ const plans = [
     period: "month",
     description: "For growing teams and agencies",
     features: [
-      "Up to 50 projects",
-      "50 AI credits per month",
+      "Unlimited projects",
+      "250 AI credits per month",
       "Advanced automation",
-      "100GB storage",
+      "50GB storage",
       "Unlimited tasks",
     ],
     highlighted: true,
@@ -69,8 +64,8 @@ const plans = [
     period: "month",
     description: "For business",
     features: [
+      "Unlimited clients",
       "Unlimited projects",
-      "Unlimited tasks",
       "Highest AI credits per month",
       "Full app access",
     ],
@@ -235,11 +230,7 @@ export default function Onboarding() {
           />
         );
       case 5:
-        return (
-          <PaymentStep
-            formData={formData}
-          />
-        );
+        return <PaymentStep formData={formData} />;
       default:
         return null;
     }
@@ -705,7 +696,10 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const digits = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!digits) return;
 
     const newCode = ["", "", "", "", "", ""];

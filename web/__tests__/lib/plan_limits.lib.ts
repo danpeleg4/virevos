@@ -1,9 +1,22 @@
 import {
   assertCanAddClient,
   assertCanAddProject,
+  assertCanUseAI,
+  assertCanAddFile,
   getUserPlan,
 } from "@/lib/plan_limits";
 
+const AI_CREDIT_LIMITS: Record<PlanId, number> = {
+  starter: 50,
+  professional: 250,
+  business: 500,
+};
+
+const STORAGE_LIMIT_BYTES: Record<PlanId, number> = {
+  starter: 1 * 1024 * 1024 * 1024,
+  professional: 50 * 1024 * 1024 * 1024,
+  business: 250 * 1024 * 1024 * 1024,
+};
 const mockDbWhere = jest.fn().mockResolvedValue([]);
 const mockDbFrom = jest.fn(() => ({ where: mockDbWhere }));
 
@@ -101,5 +114,141 @@ describe("assertCanAddProject", () => {
   it("does not throw for business plan", async () => {
     mockSubscription("business");
     await expect(assertCanAddProject("user_1")).resolves.toBeUndefined();
+  });
+});
+
+// ─── AI_CREDIT_LIMITS / STORAGE_LIMIT_BYTES constants ────────────────────
+
+describe("AI_CREDIT_LIMITS", () => {
+  it("returns 50 for starter", () => {
+    expect(AI_CREDIT_LIMITS.starter).toBe(50);
+  });
+
+  it("returns 250 for professional", () => {
+    expect(AI_CREDIT_LIMITS.professional).toBe(250);
+  });
+
+  it("returns 500 for business", () => {
+    expect(AI_CREDIT_LIMITS.business).toBe(500);
+  });
+});
+
+describe("STORAGE_LIMIT_BYTES", () => {
+  it("returns 1GB for starter", () => {
+    expect(STORAGE_LIMIT_BYTES.starter).toBe(1 * 1024 * 1024 * 1024);
+  });
+
+  it("returns 50GB for professional", () => {
+    expect(STORAGE_LIMIT_BYTES.professional).toBe(50 * 1024 * 1024 * 1024);
+  });
+
+  it("returns 250GB for business", () => {
+    expect(STORAGE_LIMIT_BYTES.business).toBe(250 * 1024 * 1024 * 1024);
+  });
+});
+
+// ─── assertCanUseAI ───────────────────────────────────────────────────────
+
+describe("assertCanUseAI", () => {
+  it("does not throw when usage is below the plan limit", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([{ ai_credits: 10 }]);
+    await expect(assertCanUseAI("user_1")).resolves.toBeUndefined();
+  });
+
+  it("throws when usage equals the plan limit", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([{ ai_credits: 50 }]);
+    await expect(assertCanUseAI("user_1")).rejects.toThrow(
+      /AI credit limit reached/
+    );
+  });
+
+  it("throws when usage exceeds the plan limit", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([{ ai_credits: 99 }]);
+    await expect(assertCanUseAI("user_1")).rejects.toThrow(
+      /AI credit limit reached/
+    );
+  });
+
+  it("throws when user row is not found", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([]);
+    await expect(assertCanUseAI("user_1")).rejects.toThrow(
+      /AI credit limit reached/
+    );
+  });
+
+  it("uses the correct limit for professional plan (250)", async () => {
+    mockSubscription("professional");
+    mockDbWhere.mockResolvedValueOnce([{ ai_credits: 249 }]);
+    await expect(assertCanUseAI("user_1")).resolves.toBeUndefined();
+  });
+
+  it("throws at professional plan limit (250)", async () => {
+    mockSubscription("professional");
+    mockDbWhere.mockResolvedValueOnce([{ ai_credits: 250 }]);
+    await expect(assertCanUseAI("user_1")).rejects.toThrow(
+      /AI credit limit reached/
+    );
+  });
+
+  it("uses the correct limit for business plan (500)", async () => {
+    mockSubscription("business");
+    mockDbWhere.mockResolvedValueOnce([{ ai_credits: 499 }]);
+    await expect(assertCanUseAI("user_1")).resolves.toBeUndefined();
+  });
+});
+
+// ─── assertCanAddFile ─────────────────────────────────────────────────────
+
+const ONE_GB = 1024 * 1024 * 1024;
+
+describe("assertCanAddFile", () => {
+  it("does not throw when current storage + file fits within limit", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([{ storage: 0 }]);
+    await expect(
+      assertCanAddFile("user_1", ONE_GB - 1)
+    ).resolves.toBeUndefined();
+  });
+
+  it("throws when current storage + file exceeds the limit", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([{ storage: ONE_GB - 100 }]);
+    await expect(assertCanAddFile("user_1", 200)).rejects.toThrow(
+      /Storage limit reached/
+    );
+  });
+
+  it("throws when current storage exactly equals the limit", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([{ storage: ONE_GB }]);
+    await expect(assertCanAddFile("user_1", 1)).rejects.toThrow(
+      /Storage limit reached/
+    );
+  });
+
+  it("defaults to 0 storage when user row is not found", async () => {
+    mockSubscription("starter");
+    mockDbWhere.mockResolvedValueOnce([]);
+    await expect(
+      assertCanAddFile("user_1", ONE_GB - 1)
+    ).resolves.toBeUndefined();
+  });
+
+  it("uses the correct limit for professional plan (50GB)", async () => {
+    mockSubscription("professional");
+    mockDbWhere.mockResolvedValueOnce([{ storage: 49 * ONE_GB }]);
+    await expect(assertCanAddFile("user_1", ONE_GB)).resolves.toBeUndefined();
+  });
+
+  it("throws when professional limit is exceeded", async () => {
+    mockSubscription("professional");
+    mockDbWhere.mockResolvedValueOnce([{ storage: 50 * ONE_GB }]);
+    await expect(assertCanAddFile("user_1", 1)).rejects.toThrow(
+      /Storage limit reached/
+    );
   });
 });

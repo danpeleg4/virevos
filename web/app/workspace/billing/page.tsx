@@ -51,6 +51,7 @@ import {
   Star,
   FolderOpen,
   Sparkles,
+  Server,
 } from "lucide-react";
 import {
   changePlan,
@@ -68,6 +69,12 @@ const AI_CREDIT_LIMITS: Record<string, number> = {
   starter: 50,
   professional: 250,
   business: 500,
+};
+
+const STORAGE_LIMITS: Record<string, number> = {
+  starter: 1,
+  professional: 50,
+  business: 250,
 };
 
 const PLAN_DETAILS: Record<
@@ -246,12 +253,16 @@ export default function Billing() {
   const statusInfo =
     STATUS_BADGE[billing?.subscription?.status ?? "active"] ??
     STATUS_BADGE.active;
+
   const clientCount = clientList?.length ?? 0;
   const clientLimit = currentPlan === "starter" ? 5 : null;
   const projectCount = projectList?.length ?? 0;
   const projectLimit = currentPlan === "starter" ? 5 : null;
   const aiCredits = billing?.aiCredits ?? 0;
   const aiCreditLimit = AI_CREDIT_LIMITS[currentPlan] ?? 50;
+  const storageBytes = billing?.storage ?? 0;
+  const storageGb = storageBytes / (1024 * 1024 * 1024);
+  const storageLimit = STORAGE_LIMITS[currentPlan] ?? 1;
 
   const formatDate = (val: Date | string | null | undefined) => {
     if (!val) return "—";
@@ -631,9 +642,28 @@ export default function Billing() {
             <Progress
               value={Math.min((aiCredits / aiCreditLimit) * 100, 100)}
             />
-            {aiCredits === 0 && (
+            {aiCredits >= aiCreditLimit && (
               <p className="text-[11px] text-red-500 mt-1">
                 No credits left — upgrade to get more
+              </p>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Server className="h-4 w-4 text-gray-400" />
+                <p className="text-sm text-gray-600">Storage</p>
+              </div>
+              <p className="text-sm text-gray-900">
+                {storageGb.toFixed(2) + "GB"} / {storageLimit.toString() + "GB"}
+              </p>
+            </div>
+            <Progress
+              value={Math.min((storageGb / storageLimit) * 100, 100)}
+            />
+            {storageGb >= storageLimit && (
+              <p className="text-[11px] text-red-500 mt-1">
+                Storage full — upgrade to get more
               </p>
             )}
           </div>

@@ -18,8 +18,8 @@ export const users = pgTable("users", {
   user_id: varchar("user_id").notNull().unique(),
   name: text("name"),
   email: text("email").notNull(),
-  image: text("image"),
-  ai_credits: integer("ai_credits").notNull().default(50),
+  ai_credits: integer("ai_credits").notNull().default(0),
+  storage: bigint("storage", { mode: "number" }).notNull().default(0),
   recordingStatus: boolean("recordingStatus").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -61,6 +61,51 @@ export const projects = pgTable("projects", {
     .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
+// PROJECT FILES
+export const projectFiles = pgTable("project_files", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  projectId: integer("project_id")
+    .notNull()
+    .references(() => projects.id),
+  userId: text("user_id").references(() => users.user_id),
+  name: text("name").notNull(),
+  path: text("path").notNull(),
+  size: integer("size").notNull(),
+  mimeType: text("mime_type"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// PROJECT NOTES
+export const projectNotes = pgTable("project_notes", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+
+  userId: varchar("user_id").references(() => users.user_id),
+  projectId: integer("project_id").references(() => projects.id),
+});
+
+// TASKS
+export const tasks = pgTable("tasks", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  projectId: integer("project_id").references(() => projects.id, {
+    onDelete: "cascade",
+  }),
+  priority: text("priority").notNull().default("Low"),
+  status: text("status").notNull().default("in-progress"),
+  dueDate: date("due_date"),
+  completed: boolean("completed").default(false),
+
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
 // EVENTS
 export const events = pgTable("events", {
   id: text("id").primaryKey(),
@@ -93,51 +138,6 @@ export const events = pgTable("events", {
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
-
-// NOTES
-export const notes = pgTable("notes", {
-  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-
-  userId: varchar("user_id").references(() => users.user_id),
-  projectId: integer("project_id").references(() => projects.id),
-});
-
-// TASKS
-export const tasks = pgTable("tasks", {
-  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-  userId: varchar("user_id")
-    .notNull()
-    .references(() => users.user_id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  description: text("description"),
-  projectId: integer("project_id").references(() => projects.id, {
-    onDelete: "cascade",
-  }),
-  priority: text("priority").notNull().default("Low"),
-  status: text("status").notNull().default("in-progress"),
-  dueDate: date("due_date"),
-  completed: boolean("completed").default(false),
-
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
-
-// FILES
-export const projectFiles = pgTable("project_files", {
-  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-  projectId: integer("project_id")
-    .notNull()
-    .references(() => projects.id),
-  userId: text("user_id").references(() => users.user_id),
-  name: text("name").notNull(),
-  path: text("path").notNull(),
-  size: integer("size").notNull(),
-  mimeType: text("mime_type"),
-  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // MEETING ATTENDEES
@@ -335,7 +335,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [clients.id],
   }),
   tasks: many(tasks),
-  notes: many(notes),
+  projectNotes: many(projectNotes),
   files: many(projectFiles),
 }));
 
@@ -350,13 +350,13 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   }),
 }));
 
-export const notesRelations = relations(notes, ({ one }) => ({
+export const projectNotesRelations = relations(projectNotes, ({ one }) => ({
   user: one(users, {
-    fields: [notes.userId],
+    fields: [projectNotes.userId],
     references: [users.user_id],
   }),
   project: one(projects, {
-    fields: [notes.projectId],
+    fields: [projectNotes.projectId],
     references: [projects.id],
   }),
 }));
@@ -367,7 +367,7 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     references: [users.user_id],
   }),
   attendees: many(meetingAttendees),
-  notes: many(notes),
+  projectNotes: many(projectNotes),
 }));
 
 export const meetingAttendeesRelations = relations(

@@ -1,12 +1,22 @@
 import { POST } from "@/app/api/webhooks/stripe/route";
 import { NextRequest } from "next/server";
 
+const mockUpdatePlanLimits = jest.fn().mockResolvedValue(undefined);
+jest.mock("@/lib/billing", () => ({
+  updatePlanLimits: (...args: unknown[]) => mockUpdatePlanLimits(...args),
+  PLAN_RANK: { starter: 0, professional: 1, business: 2 },
+}));
+
 const mockDbWhere = jest.fn().mockResolvedValue(undefined);
 const mockDbSet = jest.fn(() => ({ where: mockDbWhere }));
+const mockDbLimit = jest.fn().mockResolvedValue([{ userId: "user_1" }]);
+const mockDbSelectWhere = jest.fn(() => ({ limit: mockDbLimit }));
+const mockDbFrom = jest.fn(() => ({ where: mockDbSelectWhere }));
 
 jest.mock("@db/db", () => ({
   db: {
     update: jest.fn(() => ({ set: mockDbSet })),
+    select: jest.fn(() => ({ from: mockDbFrom })),
   },
 }));
 
@@ -48,6 +58,8 @@ beforeEach(() => {
   process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY = "price_pro";
   process.env.STRIPE_PRICE_BUSINESS_MONTHLY = "price_biz";
   mockDbSet.mockReturnValue({ where: mockDbWhere });
+  mockDbLimit.mockResolvedValue([{ userId: "user_1" }]);
+  mockUpdatePlanLimits.mockResolvedValue(undefined);
   consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -133,6 +145,34 @@ describe("POST /api/webhooks/stripe", () => {
     const res = await POST(makeRequest("{}"));
     expect(res.status).toBe(200);
     expect(mockDbSet).not.toHaveBeenCalled();
+  });
+
+  it("calls updatePlanLimits with correct plan on subscription.created", async () => {
+    mockConstructEvent.mockReturnValue({
+      type: "customer.subscription.created",
+      data: { object: baseSubscription },
+    });
+    await POST(makeRequest("{}"));
+    expect(mockUpdatePlanLimits).toHaveBeenCalledWith("user_1", "professional");
+  });
+
+  it("calls updatePlanLimits with starter on subscription.deleted", async () => {
+    mockConstructEvent.mockReturnValue({
+      type: "customer.subscription.deleted",
+      data: { object: baseSubscription },
+    });
+    await POST(makeRequest("{}"));
+    expect(mockUpdatePlanLimits).toHaveBeenCalledWith("user_1", "starter");
+  });
+
+  it("does not call updatePlanLimits when userId not found", async () => {
+    mockDbLimit.mockResolvedValue([]);
+    mockConstructEvent.mockReturnValue({
+      type: "customer.subscription.deleted",
+      data: { object: baseSubscription },
+    });
+    await POST(makeRequest("{}"));
+    expect(mockUpdatePlanLimits).not.toHaveBeenCalled();
   });
 
   it("derives business plan from business price ID", async () => {

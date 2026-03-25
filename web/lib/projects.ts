@@ -1,18 +1,13 @@
 "use server";
 
 import { db } from "@db/db";
-import { notes, projectFiles, projects, tasks } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { projectNotes, projectFiles, projects, tasks, users } from "@db/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import {
-  AddFileMetadataInput,
-  Project,
-  UploadedAttachment,
-} from "@/types/projects";
+import { AddFileMetadataInput, Project } from "@/types/projects";
 import { s3, S3_BUCKET } from "./s3";
-import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { assertCanAddProject } from "./plan_limits";
+import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { assertCanAddProject, assertCanAddFile } from "./plan_limits";
 
 export async function deleteProject(projectId: number) {
   const user = await currentUser();
@@ -21,8 +16,13 @@ export async function deleteProject(projectId: number) {
     .delete(tasks)
     .where(and(eq(tasks.projectId, projectId), eq(tasks.userId, user.id)));
   await db
-    .delete(notes)
-    .where(and(eq(notes.projectId, projectId), eq(notes.userId, user.id)));
+    .delete(projectNotes)
+    .where(
+      and(
+        eq(projectNotes.projectId, projectId),
+        eq(projectNotes.userId, user.id)
+      )
+    );
   await db
     .delete(projects)
     .where(and(eq(projects.id, projectId), eq(projects.userId, user.id)));
@@ -32,12 +32,8 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
   if (!file) throw new Error("No file provided");
+  await assertCanAddFile(user.id, file.size);
   const filePath = `projects/${user.id}/${Date.now()}-${file.name}`;
-  const fls = await db
-    .select()
-    .from(projectFiles)
-    .where(eq(projectFiles.userId, user.id));
-  if (fls.length >= 3) return;
   const fileBuffer = Buffer.from(await file.arrayBuffer());
   try {
     await s3.send(
@@ -53,7 +49,7 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
     throw new Error("Failed to upload file");
   }
 
-  // Save metadata in Drizzle
+  // Save metadata in Drizzle and increment storage usage
   try {
     await db.insert(projectFiles).values({
       projectId: input.projectId,
@@ -63,6 +59,10 @@ export async function addFileMetadata(input: AddFileMetadataInput, file: File) {
       size: file.size,
       mimeType: input.mimeType ?? file.type,
     });
+    await db
+      .update(users)
+      .set({ storage: sql`${users.storage} + ${file.size}` })
+      .where(eq(users.user_id, user.id));
   } catch (err) {
     console.error("Drizzle insert failed:", err);
     throw new Error("Failed to save file metadata");
@@ -98,11 +98,11 @@ export async function createProject(project: Project) {
   };
 }
 
-export async function addNotes(newNote: string, projectId: number) {
+export async function addProjectNotes(newNote: string, projectId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  await db.insert(notes).values({
+  await db.insert(projectNotes).values({
     content: newNote,
     userId: user.id,
     projectId,
@@ -149,34 +149,25 @@ export async function changeProjectStatus(project: Project, newStatus: string) {
     .where(and(eq(projects.id, id), eq(projects.userId, user.id)));
 }
 
-export async function uploadCommunicationAttachment(
-  file: File
-): Promise<UploadedAttachment> {
+export async function deleteProjectFile(fileId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  const filePath = `communications/${user.id}/${Date.now()}-${file.name}`;
+  const [file] = await db
+    .select({ path: projectFiles.path, size: projectFiles.size })
+    .from(projectFiles)
+    .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
 
-  const commBuffer = Buffer.from(await file.arrayBuffer());
-  try {
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: S3_BUCKET,
-        Key: filePath,
-        Body: commBuffer,
-        ContentType: file.type,
-      })
-    );
-  } catch (error) {
-    console.error("Storage upload failed:", error);
-    throw new Error("Failed to upload file");
-  }
+  if (!file) throw new Error("File not found");
 
-  const url = await getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: S3_BUCKET, Key: filePath }),
-    { expiresIn: 604800 }
-  );
+  await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: file.path }));
 
-  return { path: filePath, url, name: file.name, size: file.size };
+  await db
+    .delete(projectFiles)
+    .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
+
+  await db
+    .update(users)
+    .set({ storage: sql`${users.storage} - ${file.size}` })
+    .where(eq(users.user_id, user.id));
 }

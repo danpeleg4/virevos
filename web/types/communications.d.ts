@@ -40,6 +40,8 @@ export interface AttachedFile {
   type: "document" | "image" | "other";
   url?: string;
   path?: string;
+  data?: string;
+  mimeType?: string;
 }
 
 export interface ActionItem {
