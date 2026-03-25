@@ -77,7 +77,7 @@ export default function ProjectsPage() {
   });
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl text-gray-900">Projects</h1>
@@ -88,15 +88,13 @@ export default function ProjectsPage() {
         )}
       </div>
 
-      {projectsQuery.data && (
-        <ProjectList
-          projects={filtered}
-          clients={projectsQuery.data?.allClients ?? []}
-          onSelect={(project) =>
-            router.push(`/workspace/projects/${project.id}`)
-          }
-        />
-      )}
+      <ProjectList
+        projects={filtered}
+        clients={projectsQuery.data?.allClients ?? []}
+        onSelect={(project) =>
+          router.push(`/workspace/projects/${project.id}`)
+        }
+      />
     </div>
   );
 }

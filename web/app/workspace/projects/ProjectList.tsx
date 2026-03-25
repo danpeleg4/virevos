@@ -122,7 +122,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
     const calculate = () => {
       if (!tableRef.current) return;
       const tableTop = tableRef.current.getBoundingClientRect().top;
-      const reserved = 40 + 50 + 50 + 24;
+      const reserved = 40 + 50 + 24;
       const available = window.innerHeight - tableTop - reserved;
       setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
     };
@@ -188,26 +188,24 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
     setCurrentPage(1);
   }, [searchQuery, activeTab]);
 
-  if (projects.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="rounded-full bg-gray-100 p-5 mb-4">
-          <FolderOpen className="h-10 w-10 text-gray-400" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">
-          No projects yet
-        </h3>
-        <p className="text-sm text-gray-500 max-w-xs">
-          Create your first project to start tracking tasks, files, and
-          progress.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div ref={tableRef}>
-      <Card className="overflow-hidden">
+    <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
+      <Card className="overflow-hidden flex flex-col h-full">
+        {projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center flex-1 text-center">
+            <div className="rounded-full bg-gray-100 p-5 mb-4">
+              <FolderOpen className="h-10 w-10 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+              No projects yet
+            </h3>
+            <p className="text-sm text-gray-500 max-w-xs">
+              Create your first project to start tracking tasks, files, and
+              progress.
+            </p>
+          </div>
+        ) : (
+          <>
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
           {/* Status tabs */}
@@ -334,7 +332,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           </DropdownMenu>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full">
             <thead className="border-b border-gray-200">
               <tr>
@@ -499,6 +497,8 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
             </Button>
           </div>
         </div>
+          </>
+        )}
       </Card>
 
       {editingProject && (

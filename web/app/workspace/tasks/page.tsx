@@ -105,7 +105,7 @@ export default function Tasks() {
     const calculate = () => {
       if (!tableRef.current) return;
       const tableTop = tableRef.current.getBoundingClientRect().top;
-      const reserved = 40 + 50 + 50 + 24;
+      const reserved = 40 + 50 + 24;
       const available = window.innerHeight - tableTop - reserved;
       setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
     };
@@ -205,7 +205,7 @@ export default function Tasks() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -218,8 +218,8 @@ export default function Tasks() {
       </div>
 
       {/* Tasks Table */}
-      <div ref={tableRef}>
-        <Card className="overflow-hidden">
+      <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
+        <Card className="overflow-hidden flex flex-col h-full">
           {/* Toolbar */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
             {/* Status tabs */}
@@ -333,7 +333,7 @@ export default function Tasks() {
             </DropdownMenu>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto flex-1">
             <table className="w-full">
               <thead className="border-b border-gray-200">
                 <tr>
