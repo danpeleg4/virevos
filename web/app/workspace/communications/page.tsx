@@ -32,7 +32,7 @@ export default function Communications() {
 
   return (
     <div
-      className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex flex-col overflow-hidden"
+      className="p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden"
       style={{ height: "calc(100dvh - 65px)" }}
     >
       {/* Header */}

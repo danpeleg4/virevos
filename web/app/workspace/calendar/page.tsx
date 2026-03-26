@@ -43,7 +43,7 @@ function CalendarContent() {
   );
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 gap-6 max-w-7xl mx-auto">
+    <div className="flex flex-col h-full p-4 sm:p-6 gap-6">
       {/* Header */}
       <div className="shrink-0">
         <h1 className="text-2xl sm:text-3xl text-gray-900">Smart Scheduling</h1>
@@ -59,12 +59,12 @@ function CalendarContent() {
         <div className="flex-1 min-h-0 overflow-hidden">
           {activeTab === "calendar" && <CalendarView tabNav={tabNav} />}
           {activeTab === "meetings" && (
-            <div className="h-full overflow-y-auto">
+            <div className="h-full flex flex-col">
               <Meetings tabNav={tabNav} />
             </div>
           )}
           {activeTab === "notes" && (
-            <div className="h-full overflow-y-auto">
+            <div className="h-full flex flex-col">
               <MeetingNotes tabNav={tabNav} />
             </div>
           )}

@@ -70,7 +70,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
     const calculate = () => {
       if (!tableRef.current) return;
       const tableTop = tableRef.current.getBoundingClientRect().top;
-      const reserved = 40 + 50 + 50 + 24;
+      const reserved = 40 + 50 + 24;
       const available = window.innerHeight - tableTop - reserved;
       setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
     };
@@ -213,7 +213,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   };
 
   return (
-    <div ref={tableRef}>
+    <div ref={tableRef} className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
         {tabNav && (
@@ -298,7 +298,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto flex-1">
         <table className="w-full">
           <thead className="border-b border-gray-200">
             <tr>

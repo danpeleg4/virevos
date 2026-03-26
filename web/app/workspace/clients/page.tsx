@@ -66,16 +66,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function DomainPill({ email }: { email: string }) {
-  const domain = email.includes("@") ? email.split("@")[1] : email;
-  return (
-    <span className="inline-flex items-center gap-1 text-xs border border-blue-200 bg-blue-50 text-blue-700 rounded-full px-2.5 py-0.5">
-      <Globe className="h-3 w-3 flex-shrink-0" />
-      {domain}
-    </span>
-  );
-}
-
 function IndustryPill({ industry }: { industry: string }) {
   return (
     <span className="inline-flex items-center text-xs bg-gray-100 text-gray-700 rounded-full py-0.5">
@@ -95,9 +85,13 @@ function ProjectsBadge({ active, total }: { active: number; total: number }) {
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<"name" | "status" | "projects">("name");
+  const [sortField, setSortField] = useState<"name" | "status" | "projects">(
+    "name"
+  );
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -117,8 +111,8 @@ export default function Clients() {
     const calculateItemsPerPage = () => {
       if (!tableRef.current) return;
       const tableTop = tableRef.current.getBoundingClientRect().top;
-      // Reserve space for: table header row (~40px), toolbar (~50px), pagination (~50px), bottom padding (24px)
-      const reserved = 40 + 50 + 50 + 24;
+      // Reserve space for: table header row (~40px), toolbar (~50px), bottom padding (24px)
+      const reserved = 40 + 50 + 24;
       const available = window.innerHeight - tableTop - reserved;
       setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
     };
@@ -151,15 +145,21 @@ export default function Clients() {
           (client) =>
             (statusFilter === "all" || client.status === statusFilter) &&
             (client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              client?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              client?.industry?.toLowerCase().includes(searchQuery.toLowerCase()))
+              client?.email
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              client?.industry
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase()))
         )
       : []
   ).sort((a, b) => {
     let cmp = 0;
     if (sortField === "name") cmp = (a.name ?? "").localeCompare(b.name ?? "");
-    else if (sortField === "status") cmp = (a.status ?? "").localeCompare(b.status ?? "");
-    else if (sortField === "projects") cmp = (Number(a.totalProjects) || 0) - (Number(b.totalProjects) || 0);
+    else if (sortField === "status")
+      cmp = (a.status ?? "").localeCompare(b.status ?? "");
+    else if (sortField === "projects")
+      cmp = (Number(a.totalProjects) || 0) - (Number(b.totalProjects) || 0);
     return sortDir === "asc" ? cmp : -cmp;
   });
 
@@ -300,7 +300,7 @@ export default function Clients() {
   });
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -386,8 +386,8 @@ export default function Clients() {
       </div>
 
       {/* Clients Table */}
-      <div ref={tableRef}>
-        <Card className="overflow-hidden">
+      <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
+        <Card className="overflow-hidden flex flex-col h-full">
           {/* Toolbar */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
             <div className="relative flex-1 max-w-xs">
@@ -415,15 +415,35 @@ export default function Clients() {
                     [
                       { label: "Name (A–Z)", field: "name", dir: "asc" },
                       { label: "Name (Z–A)", field: "name", dir: "desc" },
-                      { label: "Status (Active first)", field: "status", dir: "asc" },
-                      { label: "Status (Inactive first)", field: "status", dir: "desc" },
-                      { label: "Projects (Most)", field: "projects", dir: "desc" },
-                      { label: "Projects (Fewest)", field: "projects", dir: "asc" },
+                      {
+                        label: "Status (Active first)",
+                        field: "status",
+                        dir: "asc",
+                      },
+                      {
+                        label: "Status (Inactive first)",
+                        field: "status",
+                        dir: "desc",
+                      },
+                      {
+                        label: "Projects (Most)",
+                        field: "projects",
+                        dir: "desc",
+                      },
+                      {
+                        label: "Projects (Fewest)",
+                        field: "projects",
+                        dir: "asc",
+                      },
                     ] as const
                   ).map(({ label, field, dir }) => (
                     <DropdownMenuItem
                       key={label}
-                      onClick={() => { setSortField(field); setSortDir(dir); setCurrentPage(1); }}
+                      onClick={() => {
+                        setSortField(field);
+                        setSortDir(dir);
+                        setCurrentPage(1);
+                      }}
                       className="flex items-center justify-between"
                     >
                       {label}
@@ -454,7 +474,10 @@ export default function Clients() {
                   ).map(({ label, value }) => (
                     <DropdownMenuItem
                       key={value}
-                      onClick={() => { setStatusFilter(value); setCurrentPage(1); }}
+                      onClick={() => {
+                        setStatusFilter(value);
+                        setCurrentPage(1);
+                      }}
                       className="flex items-center justify-between"
                     >
                       {label}
@@ -469,124 +492,127 @@ export default function Clients() {
           </div>
 
           {getClients.data?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
               <div className="rounded-full bg-gray-100 p-5 mb-4">
                 <Building2 className="h-10 w-10 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No clients yet</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">
+                No clients yet
+              </h3>
               <p className="text-sm text-gray-500 max-w-xs">
-                Add your first client to start managing relationships, projects, and communications.
+                Add your first client to start managing relationships, projects,
+                and communications.
               </p>
             </div>
           ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="w-10 px-3 py-2.5">
-                    <Checkbox
-                      className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer"
-                      checked={
-                        paginatedClients.length > 0 &&
-                        selectedIds.size === paginatedClients.length
-                      }
-                      onCheckedChange={toggleSelectAll}
-                    />
-                  </th>
-                  <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Building2 className="h-3.5 w-3.5" />
-                      Client
-                    </div>
-                  </th>
-                  <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Mail className="h-3.5 w-3.5" />
-                      Email
-                    </div>
-                  </th>
-                  <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Briefcase className="h-3.5 w-3.5" />
-                      Industry
-                    </div>
-                  </th>
-                  <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Target className="h-3.5 w-3.5" />
-                      Status
-                    </div>
-                  </th>
-                  <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <FolderOpen className="h-3.5 w-3.5" />
-                      Projects
-                    </div>
-                  </th>
-                  <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Calendar className="h-3.5 w-3.5" />
-                      Joined
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedClients.map((client, index) => (
-                  <tr
-                    key={client?.id ?? `temp-${index}-${client.name}`}
-                    onClick={() => handleClientClick(client)}
-                    className="cursor-pointer transition-colors hover:bg-gray-50 group"
-                  >
-                    <td
-                      className="px-3 py-2.5"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full">
+                <thead className="border-b border-gray-200">
+                  <tr>
+                    <th className="w-10 px-3 py-2.5">
                       <Checkbox
-                        className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer transition-opacity"
-                        checked={selectedIds.has(client.id)}
-                        onCheckedChange={() => toggleSelect(client.id)}
+                        className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer"
+                        checked={
+                          paginatedClients.length > 0 &&
+                          selectedIds.size === paginatedClients.length
+                        }
+                        onCheckedChange={toggleSelectAll}
                       />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <Avatar className="h-7 w-7 flex-shrink-0">
-                          <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
-                            {client.name[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm text-gray-900 font-medium pl-3">
-                          {client.name}
-                        </span>
+                    </th>
+                    <th className="text-left px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                        <Building2 className="h-3.5 w-3.5" />
+                        Client
                       </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-sm text-gray-700">
-                      {client.email || "—"}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {client.industry && (
-                        <IndustryPill industry={client.industry} />
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <StatusBadge status={client.status} />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <ProjectsBadge
-                        active={Number(client.activeProjects || 0)}
-                        total={Number(client.totalProjects || 0)}
-                      />
-                    </td>
-                    <td className="px-3 py-2.5 text-xs text-gray-500">
-                      {client?.createdAt
-                        ? new Date(client.createdAt).toLocaleDateString()
-                        : "—"}
-                    </td>
+                    </th>
+                    <th className="text-left px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                        <Mail className="h-3.5 w-3.5" />
+                        Email
+                      </div>
+                    </th>
+                    <th className="text-left px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                        <Briefcase className="h-3.5 w-3.5" />
+                        Industry
+                      </div>
+                    </th>
+                    <th className="text-left px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                        <Target className="h-3.5 w-3.5" />
+                        Status
+                      </div>
+                    </th>
+                    <th className="text-left px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                        <FolderOpen className="h-3.5 w-3.5" />
+                        Projects
+                      </div>
+                    </th>
+                    <th className="text-left px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                        <Calendar className="h-3.5 w-3.5" />
+                        Joined
+                      </div>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedClients.map((client, index) => (
+                    <tr
+                      key={client?.id ?? `temp-${index}-${client.name}`}
+                      onClick={() => handleClientClick(client)}
+                      className="cursor-pointer transition-colors hover:bg-gray-50 group"
+                    >
+                      <td
+                        className="px-3 py-2.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer transition-opacity"
+                          checked={selectedIds.has(client.id)}
+                          onCheckedChange={() => toggleSelect(client.id)}
+                        />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar className="h-7 w-7 flex-shrink-0">
+                            <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
+                              {client.name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm text-gray-900 font-medium pl-3">
+                            {client.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 text-sm text-gray-700">
+                        {client.email || "—"}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {client.industry && (
+                          <IndustryPill industry={client.industry} />
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <StatusBadge status={client.status} />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <ProjectsBadge
+                          active={Number(client.activeProjects || 0)}
+                          total={Number(client.totalProjects || 0)}
+                        />
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-gray-500">
+                        {client?.createdAt
+                          ? new Date(client.createdAt).toLocaleDateString()
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* Pagination */}
@@ -626,7 +652,13 @@ export default function Clients() {
       </div>
 
       {/* Client Details Modal */}
-      <Dialog open={detailsOpen} onOpenChange={(open) => { setDetailsOpen(open); if (!open) setIsEditing(false); }}>
+      <Dialog
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setIsEditing(false);
+        }}
+      >
         <DialogContent className="max-w-2xl">
           {selectedClient && (
             <>
@@ -682,7 +714,9 @@ export default function Clients() {
               <div className="space-y-5 mt-5">
                 {/* Contact Information */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Contact Information</h3>
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                    Contact Information
+                  </h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
                       <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -694,7 +728,9 @@ export default function Clients() {
                           placeholder="Email address"
                         />
                       ) : (
-                        <span className="text-sm text-gray-700">{selectedClient.email || "—"}</span>
+                        <span className="text-sm text-gray-700">
+                          {selectedClient.email || "—"}
+                        </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
@@ -707,7 +743,9 @@ export default function Clients() {
                           placeholder="Phone number"
                         />
                       ) : (
-                        <span className="text-sm text-gray-700">{selectedClient.phone || "—"}</span>
+                        <span className="text-sm text-gray-700">
+                          {selectedClient.phone || "—"}
+                        </span>
                       )}
                     </div>
                     {isEditing && (
@@ -726,7 +764,9 @@ export default function Clients() {
 
                 {/* Projects Summary */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Projects</h3>
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                    Projects
+                  </h3>
                   <div className="grid grid-cols-2 gap-3">
                     <Card className="p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -734,7 +774,9 @@ export default function Clients() {
                           <TrendingUp className="h-5 w-5 text-green-600" />
                         </div>
                       </div>
-                      <p className="text-2xl text-gray-900 mb-1">{selectedClient.activeProjects}</p>
+                      <p className="text-2xl text-gray-900 mb-1">
+                        {selectedClient.activeProjects}
+                      </p>
                       <p className="text-sm text-gray-600">Active Projects</p>
                     </Card>
                     <Card className="p-4">
@@ -743,15 +785,21 @@ export default function Clients() {
                           <CheckCircle className="h-5 w-5 text-blue-600" />
                         </div>
                       </div>
-                      <p className="text-2xl text-gray-900 mb-1">{selectedClient.completedProjects}</p>
-                      <p className="text-sm text-gray-600">Completed Projects</p>
+                      <p className="text-2xl text-gray-900 mb-1">
+                        {selectedClient.completedProjects}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Completed Projects
+                      </p>
                     </Card>
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Notes</h3>
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                    Notes
+                  </h3>
                   {isEditing ? (
                     <Textarea
                       defaultValue={selectedClient.notes ?? ""}
@@ -770,7 +818,10 @@ export default function Clients() {
                 <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
                   <Button
                     variant="outline"
-                    onClick={() => { setDetailsOpen(false); setIsEditing(false); }}
+                    onClick={() => {
+                      setDetailsOpen(false);
+                      setIsEditing(false);
+                    }}
                   >
                     Close
                   </Button>

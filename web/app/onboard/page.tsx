@@ -42,7 +42,7 @@ const plans = [
     features: ["Up to 5 projects", "50 AI credits per month", "1GB storage"],
     highlighted: false,
   },
-  {
+  /*{
     id: "professional",
     name: "Professional",
     price: 29,
@@ -70,7 +70,7 @@ const plans = [
       "Full app access",
     ],
     highlighted: false,
-  },
+  },*/
 ];
 
 const getClerkErrorMessage = (err: unknown) => {
