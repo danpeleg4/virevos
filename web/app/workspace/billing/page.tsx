@@ -423,9 +423,7 @@ export default function Billing() {
                                     ? "default"
                                     : "outline"
                               }
-                              disabled={
-                                isCurrent || changePlanMutation.isPending
-                              }
+                              disabled
                               onClick={() =>
                                 !isCurrent && setConfirmPlan(planId)
                               }
@@ -437,7 +435,7 @@ export default function Billing() {
                                   ? "Changing..."
                                   : planId === "starter"
                                     ? "Downgrade"
-                                    : "Select Plan"}
+                                    : "Coming soon"}
                             </Button>
                           </Card>
                         </div>
@@ -549,7 +547,7 @@ export default function Billing() {
 
           <Dialog open={paymentMethodOpen} onOpenChange={setPaymentMethodOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="w-full">
+              <Button disabled variant="outline" className="w-full">
                 Update Payment Method
               </Button>
             </DialogTrigger>
@@ -658,9 +656,7 @@ export default function Billing() {
                 {storageGb.toFixed(2) + "GB"} / {storageLimit.toString() + "GB"}
               </p>
             </div>
-            <Progress
-              value={Math.min((storageGb / storageLimit) * 100, 100)}
-            />
+            <Progress value={Math.min((storageGb / storageLimit) * 100, 100)} />
             {storageGb >= storageLimit && (
               <p className="text-[11px] text-red-500 mt-1">
                 Storage full — upgrade to get more
