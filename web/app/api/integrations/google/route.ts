@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@db/db";
-import { googleTokens } from "@db/schema";
+import { emails, googleTokens } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { stopWatchChannel } from "@/lib/google_sync";
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     }
 
     await db.delete(googleTokens).where(eq(googleTokens.userId, user.id));
+    await db.delete(emails).where(eq(emails.userId, user.id));
 
     return NextResponse.json({ success: true });
   }
