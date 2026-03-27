@@ -10,7 +10,7 @@ export default function PrivacyPolicyPage() {
     <main className="mx-auto max-w-4xl px-6 py-16 text-gray-800">
       <h1 className="text-3xl font-semibold mb-6">Privacy Policy</h1>
       <p className="text-sm text-gray-500 mb-10">
-        Last updated: March 23, 2026
+        Last updated: March 27, 2026
       </p>
 
       <section className="space-y-8 leading-relaxed">
@@ -55,6 +55,8 @@ export default function PrivacyPolicyPage() {
             Google Calendar via OAuth 2.0. Here is what we access and how we use
             it:
           </p>
+
+          <h3 className="font-medium mt-4 mb-2">What Google data we collect</h3>
           <ul className="list-disc pl-6 space-y-2 mb-3">
             <li>
               <strong>Calendar events:</strong> We read your calendar events
@@ -68,22 +70,57 @@ export default function PrivacyPolicyPage() {
               Calendar without requiring you to re-authenticate.
             </li>
             <li>
-              <strong>Incremental sync:</strong> We use Google Calendar sync
-              tokens to efficiently fetch only new or changed events rather than
+              <strong>Sync tokens:</strong> We use Google Calendar sync tokens
+              to efficiently fetch only new or changed events rather than
               re-fetching your entire calendar.
             </li>
           </ul>
+
+          <h3 className="font-medium mt-4 mb-2">How long we retain it</h3>
           <p className="mb-3">
+            Your Google Calendar data (events, OAuth tokens, and sync state) is
+            retained for as long as your Google account remains connected to
+            Virevos. We do not retain Google data beyond what is needed to
+            provide the active integration.
+          </p>
+
+          <h3 className="font-medium mt-4 mb-2">How to request deletion</h3>
+          <p className="mb-3">
+            You may request deletion of your Google data at any time by
+            disconnecting your Google account from the Integrations settings
+            page, or by emailing us at{" "}
+            <a
+              href="mailto:support@virevos.com"
+              className="text-blue-600 hover:underline"
+            >
+              support@virevos.com
+            </a>
+            . Upon disconnection, we will revoke the active sync channel and
+            permanently delete your stored OAuth tokens and all synced calendar
+            data from our systems.
+          </p>
+
+          <h3 className="font-medium mt-4 mb-2">Revoking access via Google</h3>
+          <p className="mb-3">
+            You can also revoke Virevos&apos;s access to your Google account at
+            any time directly through{" "}
+            <a
+              href="https://myaccount.google.com/permissions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Google Security Settings
+            </a>
+            . Revoking access there will immediately invalidate our stored
+            tokens; we recommend also disconnecting from the Virevos
+            Integrations page to ensure all local data is deleted.
+          </p>
+
+          <p>
             We do not share your Google Calendar data with third parties, and we
             do not use it for advertising purposes. Your calendar data is used
             exclusively to power Virevos features you have explicitly enabled.
-          </p>
-          <p>
-            You may disconnect your Google account at any time from the
-            Integrations settings page. Upon disconnection, we will revoke the
-            active sync channel and delete your stored OAuth tokens. Any
-            previously synced calendar data will also be removed from our
-            systems.
           </p>
         </div>
 
