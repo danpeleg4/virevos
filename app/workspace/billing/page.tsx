@@ -263,6 +263,10 @@ export default function Billing() {
   const storageBytes = billing?.storage ?? 0;
   const storageGb = storageBytes / (1024 * 1024 * 1024);
   const storageLimit = STORAGE_LIMITS[currentPlan] ?? 1;
+  const storageUsedDisplay =
+    storageGb < 0.01
+      ? (storageBytes / (1024 * 1024)).toFixed(1) + "MB"
+      : storageGb.toFixed(2) + "GB";
 
   const formatDate = (val: Date | string | null | undefined) => {
     if (!val) return "—";
@@ -621,7 +625,7 @@ export default function Billing() {
                   : 100
               }
             />
-            {currentPlan === "starter" && projectCount >= 1 && (
+            {currentPlan === "starter" && projectCount >= 5 && (
               <p className="text-[11px] text-red-500 mt-1">
                 Limit reached — upgrade to add more
               </p>
@@ -653,7 +657,7 @@ export default function Billing() {
                 <p className="text-sm text-gray-600">Storage</p>
               </div>
               <p className="text-sm text-gray-900">
-                {storageGb.toFixed(2) + "GB"} / {storageLimit.toString() + "GB"}
+                {storageUsedDisplay} / {storageLimit.toString() + "GB"}
               </p>
             </div>
             <Progress value={Math.min((storageGb / storageLimit) * 100, 100)} />

@@ -81,10 +81,34 @@ describe("deleteProject", () => {
     await expect(deleteProject(1)).rejects.toThrow("No user");
   });
 
-  it("calls db.delete three times (tasks, notes, projects) in order", async () => {
+  it("calls db.delete four times (projectFiles, tasks, notes, projects) when no files exist", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectWhere.mockResolvedValue([]);
     await deleteProject(5);
-    expect(mockDeleteWhere).toHaveBeenCalledTimes(3);
+    expect(mockDeleteWhere).toHaveBeenCalledTimes(4);
+  });
+
+  it("deletes files from storage and decrements storage counter when files exist", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectWhere.mockResolvedValue([
+      { path: "projects/user_1/file1.pdf", size: 1000 },
+      { path: "projects/user_1/file2.pdf", size: 2000 },
+    ]);
+    await deleteProject(5);
+    expect(mockDeleteFile).toHaveBeenCalledTimes(2);
+    expect(mockDeleteFile).toHaveBeenCalledWith("projectFiles", "projects/user_1/file1.pdf");
+    expect(mockDeleteFile).toHaveBeenCalledWith("projectFiles", "projects/user_1/file2.pdf");
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ storage: expect.anything() })
+    );
+  });
+
+  it("does not update storage counter when project has no files", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectWhere.mockResolvedValue([]);
+    await deleteProject(5);
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+    expect(mockSet).not.toHaveBeenCalled();
   });
 });
 

@@ -19,13 +19,19 @@ export async function deleteProject(projectId: number) {
       .from(projectFiles)
       .where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
 
-  if (!files) throw new Error("File not found");
-
   for (const file of files) {
     await deleteFile(FILES_BUCKET, file.path);
   }
 
   await db.delete(projectFiles).where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
+
+  const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+  if (totalSize > 0) {
+    await db
+      .update(users)
+      .set({ storage: sql`${users.storage} - ${totalSize}` })
+      .where(eq(users.user_id, user.id));
+  }
 
   // Delete project tasks
   await db
