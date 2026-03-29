@@ -216,7 +216,7 @@ export default function Billing() {
 
   const { data: projectList } = useQuery<{ id: number }[]>({
     queryKey: ["projects"],
-    queryFn: () => axios.get("/api/projects/get-projects").then((r) => r.data),
+    queryFn: () => axios.get("/api/projects/get-projects").then((r) => r.data.projects),
   });
 
   const { data: setupSecret } = useQuery<string>({

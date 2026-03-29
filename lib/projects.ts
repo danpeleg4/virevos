@@ -12,9 +12,26 @@ import { assertCanAddProject, assertCanAddFile } from "./plan_limits";
 export async function deleteProject(projectId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
+
+  // Delete project files
+  const files = await db
+      .select({ path: projectFiles.path, size: projectFiles.size })
+      .from(projectFiles)
+      .where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
+
+  if (!files) throw new Error("File not found");
+
+  for (const file of files) {
+    await deleteFile(FILES_BUCKET, file.path);
+  }
+
+  await db.delete(projectFiles).where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
+
+  // Delete project tasks
   await db
     .delete(tasks)
     .where(and(eq(tasks.projectId, projectId), eq(tasks.userId, user.id)));
+  // Delete project notes
   await db
     .delete(projectNotes)
     .where(
@@ -23,6 +40,8 @@ export async function deleteProject(projectId: number) {
         eq(projectNotes.userId, user.id)
       )
     );
+
+  // Delete project
   await db
     .delete(projects)
     .where(and(eq(projects.id, projectId), eq(projects.userId, user.id)));
