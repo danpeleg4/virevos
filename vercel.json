@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron/process-scheduled-emails", "schedule": "* * * * *" },
+    { "path": "/api/cron/activate-meetings", "schedule": "* * * * *" },
+    { "path": "/api/cron/credit-reset", "schedule": "0 0 1 * *" }
+  ]
+}
