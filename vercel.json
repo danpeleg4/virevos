@@ -5,3 +5,4 @@
     { "path": "/api/cron/credit-reset", "schedule": "0 0 1 * *" }
   ]
 }
+
