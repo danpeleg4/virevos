@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -138,6 +139,7 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl">Create New Task</DialogTitle>
+          <DialogDescription>Add a new task to this project.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 mt-2">

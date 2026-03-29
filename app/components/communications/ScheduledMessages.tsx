@@ -9,6 +9,7 @@ import { Textarea } from "../ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -269,6 +270,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Schedule New Message</DialogTitle>
+            <DialogDescription>Schedule a message to be sent at a specific date and time.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">

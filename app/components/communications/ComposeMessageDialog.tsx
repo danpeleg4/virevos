@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
@@ -99,6 +100,7 @@ export function ComposeMessageDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>New Message</DialogTitle>
+          <DialogDescription>Compose and send a message to your client.</DialogDescription>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as "email" | "chat")}>
