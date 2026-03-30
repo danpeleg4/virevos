@@ -236,4 +236,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Cron failed" }, { status: 500 });
   }
 }
-
