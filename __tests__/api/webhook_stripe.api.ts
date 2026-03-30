@@ -24,6 +24,7 @@ const mockConstructEvent = jest.fn();
 const mockSubscriptionsRetrieve = jest.fn();
 
 jest.mock("@/lib/stripe", () => ({
+  ...jest.requireActual("@/lib/stripe"),
   stripe: {
     webhooks: { constructEvent: (...args: unknown[]) => mockConstructEvent(...args) },
     subscriptions: { retrieve: (...args: unknown[]) => mockSubscriptionsRetrieve(...args) },
