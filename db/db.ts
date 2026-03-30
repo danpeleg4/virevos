@@ -1,4 +1,5 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 
 const isProd = process.env.NODE_ENV === "production";
@@ -10,10 +11,8 @@ if (!url) {
   );
 }
 
-export const db = drizzle({
-  schema,
-  connection: {
-    connectionString: url,
-    ssl: isProd ? { rejectUnauthorized: false } : false,
-  },
+const client = postgres(url, {
+  ssl: isProd ? "require" : false,
 });
+
+export const db = drizzle(client, { schema });
