@@ -15,7 +15,8 @@ import { events } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { supabaseAdmin, RECORDINGS_BUCKET, TRANSCRIPTS_BUCKET } from "@/lib/supabase";
 
-export const maxDuration = 800;
+// TODO After upgraded vercel plan to change the maxDuration to a higher number
+export const maxDuration = 299;
 export const runtime = "nodejs";
 
 const streamPipeline = promisify(pipeline);
