@@ -1,17 +1,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Card,
   CardContent,
-  CardHeader,
   CardTitle,
   CardDescription,
 } from "../ui/card";
-import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
-import { CheckCircle, ExternalLink, Settings } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -182,7 +179,7 @@ export function IntegrationSettings() {
     <div className="space-y-6">
       {/* Integration Cards */}
       <div className="grid grid-cols-1 gap-4">
-        {integrations.map((integration) => {
+        {integrations.map((integration, index) => {
           return (
             <div className="p-2" key={integration.id}>
               <div className="p-2">
@@ -250,7 +247,7 @@ export function IntegrationSettings() {
                   </div>
                 </CardContent>
               )}
-              <Separator />
+              {index < integrations.length - 1 && <Separator />}
             </div>
           );
         })}

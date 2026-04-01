@@ -92,8 +92,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                 href={item.path}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-accent text-foreground"
-                    : "text-foreground hover:bg-accent"
+                    ? "bg-foreground/10 text-foreground font-medium"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 }`}
               >
                 <item.icon className="h-5 w-5" />
@@ -185,8 +185,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                       }}
                       className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                         isActive
-                          ? "bg-accent text-foreground"
-                          : "text-foreground hover:bg-accent"
+                          ? "bg-foreground/10 text-foreground font-medium"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       }`}
                     >
                       <item.icon className="h-5 w-5" />
