@@ -52,15 +52,15 @@ const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 function StatusBadge({ status }: { status: string }) {
   if (status === "active") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
         <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
         Active
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
+      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block" />
       Inactive
     </span>
   );
@@ -68,8 +68,8 @@ function StatusBadge({ status }: { status: string }) {
 
 function IndustryPill({ industry }: { industry: string }) {
   return (
-    <span className="inline-flex items-center text-xs bg-gray-100 text-gray-700 rounded-full py-0.5">
-      <span className="w-2 h-2 rounded-full bg-gray-400 inline-block flex-shrink-0" />
+    <span className="inline-flex items-center text-xs bg-muted text-muted-foreground rounded-full py-0.5">
+      <span className="w-2 h-2 rounded-full bg-muted-foreground inline-block flex-shrink-0" />
       {industry}
     </span>
   );
@@ -77,7 +77,7 @@ function IndustryPill({ industry }: { industry: string }) {
 
 function ProjectsBadge({ active, total }: { active: number; total: number }) {
   return (
-    <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+    <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
       {active} active · {total} total
     </span>
   );
@@ -304,8 +304,8 @@ export default function Clients() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900">Clients</h1>
-          <p className="mt-1 text-gray-600">Manage your client relationships</p>
+          <h1 className="text-2xl sm:text-3xl text-foreground">Clients</h1>
+          <p className="mt-1 text-muted-foreground">Manage your client relationships</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -389,9 +389,9 @@ export default function Clients() {
       <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
         <Card className="overflow-hidden flex flex-col h-full">
           {/* Toolbar */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
             <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search clients..."
                 value={searchQuery}
@@ -402,7 +402,7 @@ export default function Clients() {
             <div className="flex items-center gap-1.5 ml-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                  <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                     <ArrowUpDown className="h-3 w-3" />
                     Sort
                     {sortField !== "name" || sortDir !== "asc" ? (
@@ -456,7 +456,7 @@ export default function Clients() {
               </DropdownMenu>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                  <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                     <SlidersHorizontal className="h-3 w-3" />
                     Filter
                     {statusFilter !== "all" ? (
@@ -493,13 +493,13 @@ export default function Clients() {
 
           {getClients.data?.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
-              <div className="rounded-full bg-gray-100 p-5 mb-4">
-                <Building2 className="h-10 w-10 text-gray-400" />
+              <div className="rounded-full bg-muted p-5 mb-4">
+                <Building2 className="h-10 w-10 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">
+              <h3 className="text-lg font-medium text-foreground mb-1">
                 No clients yet
               </h3>
-              <p className="text-sm text-gray-500 max-w-xs">
+              <p className="text-sm text-muted-foreground max-w-xs">
                 Add your first client to start managing relationships, projects,
                 and communications.
               </p>
@@ -507,11 +507,11 @@ export default function Clients() {
           ) : (
             <div className="overflow-x-auto flex-1">
               <table className="w-full">
-                <thead className="border-b border-gray-200">
+                <thead className="border-b border-border">
                   <tr>
                     <th className="w-10 px-3 py-2.5">
                       <Checkbox
-                        className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer"
+                        className="rounded border-border h-3.5 w-3.5 cursor-pointer"
                         checked={
                           paginatedClients.length > 0 &&
                           selectedIds.size === paginatedClients.length
@@ -520,56 +520,56 @@ export default function Clients() {
                       />
                     </th>
                     <th className="text-left px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <Building2 className="h-3.5 w-3.5" />
                         Client
                       </div>
                     </th>
                     <th className="text-left px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <Mail className="h-3.5 w-3.5" />
                         Email
                       </div>
                     </th>
                     <th className="text-left px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <Briefcase className="h-3.5 w-3.5" />
                         Industry
                       </div>
                     </th>
                     <th className="text-left px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <Target className="h-3.5 w-3.5" />
                         Status
                       </div>
                     </th>
                     <th className="text-left px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <FolderOpen className="h-3.5 w-3.5" />
                         Projects
                       </div>
                     </th>
                     <th className="text-left px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <Calendar className="h-3.5 w-3.5" />
                         Joined
                       </div>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   {paginatedClients.map((client, index) => (
                     <tr
                       key={client?.id ?? `temp-${index}-${client.name}`}
                       onClick={() => handleClientClick(client)}
-                      className="cursor-pointer transition-colors hover:bg-gray-50 group"
+                      className="cursor-pointer transition-colors hover:bg-muted/50 group"
                     >
                       <td
                         className="px-3 py-2.5"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
-                          className="rounded border-gray-300 h-3.5 w-3.5 cursor-pointer transition-opacity"
+                          className="rounded border-border h-3.5 w-3.5 cursor-pointer transition-opacity"
                           checked={selectedIds.has(client.id)}
                           onCheckedChange={() => toggleSelect(client.id)}
                         />
@@ -581,12 +581,12 @@ export default function Clients() {
                               {client.name[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-gray-900 font-medium pl-3">
+                          <span className="text-sm text-foreground font-medium pl-3">
                             {client.name}
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-sm text-gray-700">
+                      <td className="px-3 py-2.5 text-sm text-muted-foreground">
                         {client.email || "—"}
                       </td>
                       <td className="px-3 py-2.5">
@@ -603,7 +603,7 @@ export default function Clients() {
                           total={Number(client.totalProjects || 0)}
                         />
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-gray-500">
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground">
                         {client?.createdAt
                           ? new Date(client.createdAt).toLocaleDateString()
                           : "—"}
@@ -616,8 +616,8 @@ export default function Clients() {
           )}
 
           {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
-            <div className="text-xs text-gray-500">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
+            <div className="text-xs text-muted-foreground">
               Showing {startIndex + 1}–
               {Math.min(startIndex + itemsPerPage, filteredClients.length)} of{" "}
               {filteredClients.length} clients
@@ -633,7 +633,7 @@ export default function Clients() {
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                 Previous
               </Button>
-              <span className="px-2 py-1 text-xs text-gray-600">
+              <span className="px-2 py-1 text-xs text-muted-foreground">
                 {currentPage} / {totalPages}
               </span>
               <Button
@@ -663,7 +663,7 @@ export default function Clients() {
           {selectedClient && (
             <>
               {/* Header */}
-              <DialogHeader className="pb-4 border-b border-gray-100">
+              <DialogHeader className="pb-4 border-b border-border">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-14 w-14 flex-shrink-0">
@@ -672,7 +672,7 @@ export default function Clients() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <DialogTitle className="text-xl text-gray-900">
+                      <DialogTitle className="text-xl text-foreground">
                         {isEditing ? (
                           <Input
                             defaultValue={selectedClient.name}
@@ -714,12 +714,12 @@ export default function Clients() {
               <div className="space-y-5 mt-5">
                 {/* Contact Information */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
                     Contact Information
                   </h3>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
-                      <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <div className="flex items-center gap-3 bg-muted/50 rounded-lg border border-border px-4 py-3">
+                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       {isEditing ? (
                         <Input
                           defaultValue={selectedClient.email}
@@ -728,13 +728,13 @@ export default function Clients() {
                           placeholder="Email address"
                         />
                       ) : (
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-muted-foreground">
                           {selectedClient.email || "—"}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
-                      <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <div className="flex items-center gap-3 bg-muted/50 rounded-lg border border-border px-4 py-3">
+                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       {isEditing ? (
                         <Input
                           defaultValue={selectedClient.phone}
@@ -743,14 +743,14 @@ export default function Clients() {
                           placeholder="Phone number"
                         />
                       ) : (
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-muted-foreground">
                           {selectedClient.phone || "—"}
                         </span>
                       )}
                     </div>
                     {isEditing && (
-                      <div className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3">
-                        <Briefcase className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-center gap-3 bg-muted/50 rounded-lg border border-border px-4 py-3">
+                        <Briefcase className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <Input
                           defaultValue={selectedClient.industry}
                           onChange={(e) => setIndustry(e.target.value)}
@@ -764,7 +764,7 @@ export default function Clients() {
 
                 {/* Projects Summary */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
                     Projects
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -774,10 +774,10 @@ export default function Clients() {
                           <TrendingUp className="h-5 w-5 text-green-600" />
                         </div>
                       </div>
-                      <p className="text-2xl text-gray-900 mb-1">
+                      <p className="text-2xl text-foreground mb-1">
                         {selectedClient.activeProjects}
                       </p>
-                      <p className="text-sm text-gray-600">Active Projects</p>
+                      <p className="text-sm text-muted-foreground">Active Projects</p>
                     </Card>
                     <Card className="p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -785,10 +785,10 @@ export default function Clients() {
                           <CheckCircle className="h-5 w-5 text-blue-600" />
                         </div>
                       </div>
-                      <p className="text-2xl text-gray-900 mb-1">
+                      <p className="text-2xl text-foreground mb-1">
                         {selectedClient.completedProjects}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         Completed Projects
                       </p>
                     </Card>
@@ -797,7 +797,7 @@ export default function Clients() {
 
                 {/* Notes */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
                     Notes
                   </h3>
                   {isEditing ? (
@@ -808,14 +808,14 @@ export default function Clients() {
                       rows={3}
                     />
                   ) : (
-                    <p className="text-sm text-gray-700 bg-gray-50 rounded-lg border border-gray-100 px-4 py-3 min-h-[60px]">
+                    <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg border border-border px-4 py-3 min-h-[60px]">
                       {selectedClient.notes || "—"}
                     </p>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
+                <div className="flex justify-end space-x-3 pt-2 border-t border-border">
                   <Button
                     variant="outline"
                     onClick={() => {

@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Card } from "./ui/card";
-import { Badge } from "./ui/badge";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -272,18 +270,18 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="fixed right-0 top-0 h-screen bg-white border-l border-gray-200 z-50 flex flex-col shadow-2xl overflow-hidden"
+          className="fixed right-0 top-0 h-screen bg-card border-l border-border z-50 flex flex-col shadow-2xl overflow-hidden"
           style={{ width: "420px" }}
         >
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+          <div className="p-4 border-b border-border flex items-center justify-between bg-muted/50">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-br from-purple-500 to-blue-600 p-2 rounded-lg">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-gray-900">Virevos AI</h3>
-                <p className="text-xs text-gray-500">
+                <h3 className="text-foreground">Virevos AI</h3>
+                <p className="text-xs text-muted-foreground">
                   Powered by Virevos Brain
                 </p>
               </div>
@@ -293,7 +291,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="text-gray-500 hover:text-gray-900"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -363,7 +361,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           */}
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-muted/50">
             {messages.map((message, msgIndex) => (
               <motion.div
                 key={message.id}
@@ -382,12 +380,12 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                       <p>{message.content}</p>
                     </div>
                   ) : (
-                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 overflow-hidden min-w-0">
-                      <div className="text-sm text-gray-800 break-words overflow-hidden">
+                    <div className="bg-card border border-border rounded-lg px-4 py-3 overflow-hidden min-w-0">
+                      <div className="text-sm text-foreground break-words overflow-hidden">
                         {message.content ? (
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         ) : (
-                          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         )}
                       </div>
                     </div>
@@ -399,14 +397,14 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <div className="p-4 border-t border-border bg-muted/50">
             <div className="flex space-x-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Plan, search, build anything..."
-                className="flex-1 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
+                className="flex-1"
                 disabled={status === "streaming"}
               />
               <Button

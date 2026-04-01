@@ -134,8 +134,8 @@ Return only the email body text, no subject line.`;
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Sparkles className="h-5 w-5 text-purple-600" />
-          <h4 className="text-sm text-gray-900">AI Draft Reply</h4>
-          <Badge className="bg-purple-100 text-purple-700">Beta</Badge>
+          <h4 className="text-sm text-foreground">AI Draft Reply</h4>
+          <Badge className="bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">Beta</Badge>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -143,13 +143,13 @@ Return only the email body text, no subject line.`;
       </div>
 
       {/* Context Card */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800">
         <CardContent className="pt-4">
-          <p className="text-sm text-blue-900 mb-2">
+          <p className="text-sm text-blue-900 dark:text-blue-200 mb-2">
             <strong>Context:</strong> Replying to {message.from} from{" "}
             {message.client}
           </p>
-          <p className="text-xs text-blue-800 italic">
+          <p className="text-xs text-blue-800 dark:text-blue-300 italic">
             &quot;{message.preview}&quot;
           </p>
         </CardContent>
@@ -157,7 +157,7 @@ Return only the email body text, no subject line.`;
 
       {/* Tone Selection */}
       <div className="space-y-2">
-        <label className="text-sm text-gray-700">Tone</label>
+        <label className="text-sm text-muted-foreground">Tone</label>
         <Select value={tone} onValueChange={handleToneChange}>
           <SelectTrigger>
             <SelectValue />
@@ -167,7 +167,7 @@ Return only the email body text, no subject line.`;
               <SelectItem key={preset.value} value={preset.value}>
                 <div>
                   <div className="font-medium text-left">{preset.label}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {preset.description}
                   </div>
                 </div>
@@ -179,7 +179,7 @@ Return only the email body text, no subject line.`;
 
       {/* Custom Instructions */}
       <div className="space-y-2">
-        <label className="text-sm text-gray-700">
+        <label className="text-sm text-muted-foreground">
           Additional Instructions (Optional)
         </label>
         <Textarea
@@ -219,7 +219,7 @@ Return only the email body text, no subject line.`;
           className="space-y-3"
         >
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-700">AI-Generated Draft</label>
+            <label className="text-sm text-muted-foreground">AI-Generated Draft</label>
             <Button
               size="sm"
               variant="ghost"
@@ -235,14 +235,14 @@ Return only the email body text, no subject line.`;
             rows={12}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             You can edit the draft above before sending
           </p>
         </motion.div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+      <div className="flex items-center justify-between pt-4 border-t border-border">
         <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>

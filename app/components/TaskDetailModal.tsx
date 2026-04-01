@@ -27,13 +27,13 @@ import { Task, TaskDetailModalProps } from "@/types/tasks";
 const STATUS_CONFIG = {
   completed: { label: "Completed", className: "bg-green-100 text-green-700 border-green-200" },
   "in-progress": { label: "In Progress", className: "bg-blue-100 text-blue-700 border-blue-200" },
-  todo: { label: "To Do", className: "bg-gray-100 text-gray-600 border-gray-200" },
+  todo: { label: "To Do", className: "bg-muted text-muted-foreground border-border" },
 } as const;
 
 const PRIORITY_CONFIG = {
   high: { label: "High", color: "text-red-500" },
   medium: { label: "Medium", color: "text-yellow-500" },
-  low: { label: "Low", color: "text-gray-400" },
+  low: { label: "Low", color: "text-muted-foreground" },
 } as const;
 
 export function TaskDetailModal({
@@ -342,7 +342,7 @@ export function TaskDetailModal({
                   </SelectItem>
                   <SelectItem value="low">
                     <span className="flex items-center gap-2">
-                      <Flag className="h-3.5 w-3.5 text-gray-400" />
+                      <Flag className="h-3.5 w-3.5 text-muted-foreground" />
                       Low
                     </span>
                   </SelectItem>

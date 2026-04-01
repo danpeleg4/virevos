@@ -49,7 +49,7 @@ const TAB_LABELS: Record<StatusTab, string> = {
 function StatusBadge({ status }: { status: string }) {
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
         <CheckCircle className="h-3 w-3" />
         Completed
       </span>
@@ -57,14 +57,14 @@ function StatusBadge({ status }: { status: string }) {
   }
   if (status === "inactive") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
         <Clock className="h-3 w-3" />
         Inactive
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
       <TrendingUp className="h-3 w-3" />
       Active
     </span>
@@ -74,10 +74,10 @@ function StatusBadge({ status }: { status: string }) {
 function PriorityBadge({ priority }: { priority: string }) {
   const styles =
     priority === "high"
-      ? "bg-red-50 text-red-700 border border-red-200"
+      ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
       : priority === "medium"
-        ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-        : "bg-gray-50 text-gray-500 border border-gray-200";
+        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+        : "bg-muted text-muted-foreground border border-border";
   return (
     <span
       className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${styles}`}
@@ -90,8 +90,8 @@ function PriorityBadge({ priority }: { priority: string }) {
 
 function ClientPill({ name }: { name: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
-      <span className="w-2 h-2 rounded-full bg-gray-400 inline-block flex-shrink-0" />
+    <span className="inline-flex items-center gap-1.5 text-xs bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">
+      <span className="w-2 h-2 rounded-full bg-muted-foreground inline-block flex-shrink-0" />
       {name}
     </span>
   );
@@ -193,13 +193,13 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
       <Card className="overflow-hidden flex flex-col h-full">
         {projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <div className="rounded-full bg-gray-100 p-5 mb-4">
-              <FolderOpen className="h-10 w-10 text-gray-400" />
+            <div className="rounded-full bg-muted p-5 mb-4">
+              <FolderOpen className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
+            <h3 className="text-lg font-medium text-foreground mb-1">
               No projects yet
             </h3>
-            <p className="text-sm text-gray-500 max-w-xs">
+            <p className="text-sm text-muted-foreground max-w-xs">
               Create your first project to start tracking tasks, files, and
               progress.
             </p>
@@ -207,7 +207,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
         ) : (
           <>
         {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
           {/* Status tabs */}
           <div className="flex items-center gap-1">
             {STATUS_TABS.map((tab) => (
@@ -216,16 +216,16 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                 onClick={() => setActiveTab(tab)}
                 className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
                   activeTab === tab
-                    ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                    ? "bg-card border border-border text-foreground shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
               >
                 {TAB_LABELS[tab]}
                 <span
                   className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
                     activeTab === tab
-                      ? "bg-gray-100 text-gray-600"
-                      : "text-gray-400"
+                      ? "bg-muted text-muted-foreground"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {tabCounts[tab]}
@@ -235,7 +235,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           </div>
 
           <div className="relative flex-1 max-w-xs ml-auto">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Search projects..."
               value={searchQuery}
@@ -245,7 +245,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                 <ArrowUpDown className="h-3 w-3" />
                 Sort
                 {sortField !== "name" || sortDir !== "asc" ? (
@@ -297,7 +297,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                 <SlidersHorizontal className="h-3 w-3" />
                 Filter
                 {statusFilter !== "all" ? (
@@ -334,46 +334,46 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
 
         <div className="overflow-x-auto flex-1">
           <table className="w-full">
-            <thead className="border-b border-gray-200">
+            <thead className="border-b border-border">
               <tr>
                 <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                     <FolderOpen className="h-3.5 w-3.5" />
                     Project
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                     <Briefcase className="h-3.5 w-3.5" />
                     Client
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                     <Target className="h-3.5 w-3.5" />
                     Status
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5 min-w-[140px]">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                     <TrendingUp className="h-3.5 w-3.5" />
                     Progress
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                     <ListChecks className="h-3.5 w-3.5" />
                     Tasks
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                     <Calendar className="h-3.5 w-3.5" />
                     Due date
                   </div>
                 </th>
                 <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                     <Flag className="h-3.5 w-3.5" />
                     Priority
                   </div>
@@ -381,7 +381,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                 <th className="w-10 px-2 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {paginatedProjects.map((project) => {
                 const pct = task_percentage({
                   completed: project.stats.completedTasks,
@@ -391,11 +391,11 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                   <tr
                     key={project.id}
                     onClick={() => onSelect(project)}
-                    className="cursor-pointer transition-colors hover:bg-gray-50 group"
+                    className="cursor-pointer transition-colors hover:bg-muted/50 group"
                   >
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-foreground">
                           {project.name}
                         </span>
                       </div>
@@ -411,25 +411,25 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2 min-w-[120px]">
                         <Progress value={pct} className="h-1.5 flex-1" />
-                        <span className="text-xs text-gray-500 w-7 text-right shrink-0">
+                        <span className="text-xs text-muted-foreground w-7 text-right shrink-0">
                           {pct}%
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 align-middle">
-                      <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+                      <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
                         {project.stats.completedTasks}/
                         {project.stats.totalTasks}
                       </span>
                     </td>
                     <td className="px-4 py-3 align-middle">
                       {project.dueDate ? (
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3 shrink-0" />
                           {project.dueDate}
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 align-middle">
@@ -441,7 +441,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                           e.stopPropagation();
                           setEditingProject(project);
                         }}
-                        className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center h-7 w-7 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-200"
+                        className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
                         aria-label="Edit project"
                       >
                         <MoreVertical className="h-4 w-4" />
@@ -454,7 +454,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                 <tr>
                   <td
                     colSpan={8}
-                    className="px-4 py-12 text-center text-sm text-gray-400"
+                    className="px-4 py-12 text-center text-sm text-muted-foreground"
                   >
                     No projects found
                   </td>
@@ -465,8 +465,8 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
-          <div className="text-xs text-gray-500">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
+          <div className="text-xs text-muted-foreground">
             Showing {filteredProjects.length === 0 ? 0 : startIndex + 1}–
             {Math.min(startIndex + itemsPerPage, filteredProjects.length)} of{" "}
             {filteredProjects.length} projects
@@ -482,7 +482,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
               <ChevronLeft className="h-3.5 w-3.5 mr-1" />
               Previous
             </Button>
-            <span className="px-2 py-1 text-xs text-gray-600">
+            <span className="px-2 py-1 text-xs text-muted-foreground">
               {currentPage} / {totalPages}
             </span>
             <Button

@@ -225,7 +225,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                 </Select>
               </div>
               {isLoading && (
-                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               )}
             </div>
           </CardContent>
@@ -254,9 +254,9 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
           {selectedClientId && portalEnabled && (
             <CardContent className="space-y-4">
               {currentPortal ? (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-blue-900">
+                    <p className="text-sm text-blue-900 dark:text-blue-200">
                       <strong>Portal URL:</strong>
                     </p>
                     <div className="flex items-center space-x-2">
@@ -281,40 +281,40 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-blue-800 font-mono break-all">
+                  <p className="text-sm text-blue-800 dark:text-blue-300 font-mono break-all">
                     {portalUrl}
                   </p>
                   {currentPortal.lastAccessedAt && (
-                    <p className="text-xs text-blue-600 mt-2">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                       Last accessed:{" "}
                       {new Date(currentPortal.lastAccessedAt).toLocaleString()}
                     </p>
                   )}
                 </div>
               ) : (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-600">
+                <div className="bg-muted/50 border border-border rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
                     Save settings to generate a portal URL for this client
                   </p>
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-2xl text-gray-900">
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <p className="text-2xl text-foreground">
                     {portals.filter((p) => p.enabled).length}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">Active Portals</p>
+                  <p className="text-sm text-muted-foreground mt-1">Active Portals</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-2xl text-gray-900">{portals.length}</p>
-                  <p className="text-sm text-gray-600 mt-1">Total Portals</p>
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <p className="text-2xl text-foreground">{portals.length}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Total Portals</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-2xl text-gray-900">
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <p className="text-2xl text-foreground">
                     {portals.filter((p) => p.lastAccessedAt).length}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">Accessed</p>
+                  <p className="text-sm text-muted-foreground mt-1">Accessed</p>
                 </div>
               </div>
             </CardContent>
@@ -343,7 +343,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Acme Agency"
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Displayed in the portal header
                   </p>
                 </div>
@@ -358,7 +358,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                     onChange={(e) => setWelcomeMessage(e.target.value)}
                     rows={3}
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     This message appears when clients first access the portal
                   </p>
                 </div>
@@ -380,7 +380,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 py-6">
                     <Label>Enable Portal Chat</Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Allow clients to send messages directly through the portal
                     </p>
                   </div>
@@ -398,12 +398,12 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                       <div className="space-y-1">
                         <Label className="flex items-center">
                           AI Chat Assistant
-                          <Badge className="ml-2 bg-purple-100 text-purple-700">
+                          <Badge className="ml-2 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
                             <Sparkles className="h-3 w-3 mr-1" />
                             Coming soon
                           </Badge>
                         </Label>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           AI answers common questions automatically
                         </p>
                       </div>
@@ -415,11 +415,11 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                     </div>
 
                     {aiChatBot && (
-                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <h4 className="text-sm text-purple-900 mb-2">
+                      <div className="bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                        <h4 className="text-sm text-purple-900 dark:text-purple-200 mb-2">
                           AI Assistant Features:
                         </h4>
-                        <ul className="space-y-1 text-sm text-purple-800">
+                        <ul className="space-y-1 text-sm text-purple-800 dark:text-purple-300">
                           <li className="flex items-start">
                             <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
                             <span>
@@ -451,7 +451,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label>File Sharing</Label>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Let clients upload and download files
                         </p>
                       </div>
@@ -477,7 +477,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 py-6">
                     <Label>Email Notifications</Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Get notified when clients send messages
                     </p>
                   </div>

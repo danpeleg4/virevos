@@ -339,8 +339,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return (
       <div className="py-24 text-center">
         <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-        <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-foreground text-lg mb-2">Gmail not connected</p>
+        <p className="text-sm text-muted-foreground mb-6">
           Connect your Google account to sync emails and use the inbox.
         </p>
         <Button onClick={() => (window.location.href = "/api/google")}>
@@ -354,7 +354,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const navActions = (
     <>
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder="Search..."
           value={searchQuery}
@@ -367,7 +367,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-2.5 py-1.5 transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />
             {filterType === "all"
               ? "Type"
@@ -400,7 +400,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-2.5 py-1.5 transition-colors">
             <ArrowUpDown className="h-3.5 w-3.5" />
             {filterStatus === "all"
               ? "Status"
@@ -471,12 +471,12 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           >
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : filteredMessages.length === 0 ? (
               <div className="text-center py-12">
-                <MessageSquare className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No messages found</p>
+                <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No messages found</p>
                 <Button
                   size="sm"
                   variant="outline"
@@ -503,10 +503,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     onClick={() => handleSelectMessage(message)}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       selectedMessage?.id === message.id
-                        ? "bg-blue-50 border-blue-200 border"
+                        ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 border"
                         : message.unread
-                          ? "bg-gray-50 hover:bg-gray-100"
-                          : "hover:bg-gray-50"
+                          ? "bg-muted/50 hover:bg-accent"
+                          : "hover:bg-muted/50"
                     }`}
                   >
                     <div className="flex items-start space-x-3">
@@ -519,14 +519,14 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                             <span
                               className={`text-sm ${
                                 message.unread ? "font-semibold" : ""
-                              } text-gray-900 truncate`}
+                              } text-foreground truncate`}
                             >
                               {message.from}
                             </span>
                             {message.type === "email" ? (
-                              <Mail className="h-3 w-3 text-gray-400" />
+                              <Mail className="h-3 w-3 text-muted-foreground" />
                             ) : (
-                              <MessageSquare className="h-3 w-3 text-gray-400" />
+                              <MessageSquare className="h-3 w-3 text-muted-foreground" />
                             )}
                           </div>
                           <button
@@ -539,7 +539,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                               className={`h-4 w-4 cursor-pointer ${
                                 message.starred
                                   ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-400"
+                                  : "text-muted-foreground"
                               }`}
                             />
                           </button>
@@ -548,12 +548,12 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           <p
                             className={`text-sm ${
                               message.unread ? "font-medium" : ""
-                            } text-gray-700 truncate mb-1`}
+                            } text-foreground truncate mb-1`}
                           >
                             {message.subject}
                           </p>
                         )}
-                        <p className="text-xs text-gray-500 truncate mb-2">
+                        <p className="text-xs text-muted-foreground truncate mb-2">
                           {message.preview}
                         </p>
                         <div className="flex items-center justify-between">
@@ -564,7 +564,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           ) : (
                             <span />
                           )}
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-muted-foreground">
                             {formatTimestamp(message.timestamp)}
                           </span>
                         </div>
@@ -576,7 +576,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                 <div ref={sentinelRef} className="py-1" />
                 {isFetchingNextPage && (
                   <div className="flex justify-center py-3">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
                 )}
               </>
@@ -603,21 +603,21 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     <AvatarFallback>{selectedMessage.initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-foreground">
                       {selectedMessage.from}
                     </h3>
                     {selectedMessage.fromEmail && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {selectedMessage.fromEmail}
                       </p>
                     )}
                     {selectedMessage.client && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {selectedMessage.client}
                       </p>
                     )}
                     {selectedMessage.subject && (
-                      <p className="text-sm text-gray-900 mt-2">
+                      <p className="text-sm text-foreground mt-2">
                         {selectedMessage.subject}
                       </p>
                     )}
@@ -719,7 +719,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
               {/* Message Content — rendered in a sandboxed iframe so email
                   <style> blocks cannot get into the parent page */}
-              <div className="text-gray-700">
+              <div className="text-foreground">
                 {selectedMessage.body ? (
                   <iframe
                     ref={emailIframeRef}
@@ -737,7 +737,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     }}
                   />
                 ) : (
-                  <p className="text-gray-700">{selectedMessage.preview}</p>
+                  <p className="text-foreground">{selectedMessage.preview}</p>
                 )}
               </div>
 
@@ -773,7 +773,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
                 return (
                   <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-gray-700">
+                    <h4 className="text-sm font-medium text-muted-foreground">
                       Conversation History ({threadMessages.length} message
                       {threadMessages.length !== 1 ? "s" : ""})
                     </h4>
@@ -785,31 +785,31 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           animate={{ opacity: 1, y: 0 }}
                           className={`rounded-lg border p-3 text-sm ${
                             msg.sent
-                              ? "bg-blue-50 border-blue-100 ml-6"
-                              : "bg-gray-50 border-gray-100 mr-6"
+                              ? "bg-blue-50 dark:bg-blue-950/50 border-blue-100 dark:border-blue-900 ml-6"
+                              : "bg-muted/50 border-border mr-6"
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-foreground">
                                 {msg.from}
                               </span>
                               {msg.type === "email" ? (
-                                <Mail className="h-3 w-3 text-gray-400" />
+                                <Mail className="h-3 w-3 text-muted-foreground" />
                               ) : (
-                                <MessageSquare className="h-3 w-3 text-gray-400" />
+                                <MessageSquare className="h-3 w-3 text-muted-foreground" />
                               )}
                               {msg.subject && (
-                                <span className="text-gray-500 truncate max-w-48">
+                                <span className="text-muted-foreground truncate max-w-48">
                                   {msg.subject}
                                 </span>
                               )}
                             </div>
-                            <span className="text-xs text-gray-400 flex-shrink-0">
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               {formatTimestamp(msg.timestamp)}
                             </span>
                           </div>
-                          <p className="text-gray-600 line-clamp-3">
+                          <p className="text-muted-foreground line-clamp-3">
                             {msg.preview}
                           </p>
                         </motion.div>
@@ -824,7 +824,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
               {!showAIComposer ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm text-gray-700">Reply</h4>
+                    <h4 className="text-sm text-muted-foreground">Reply</h4>
                     <Button
                       size="sm"
                       variant="outline"
@@ -842,11 +842,11 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     onChange={(e) => setReplyText(e.target.value)}
                   />
                   {(pendingAttachments.length > 0 || pendingSchedule) && (
-                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border">
+                    <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg border">
                       {pendingAttachments.map((file) => (
                         <div
                           key={file.id}
-                          className="flex items-center gap-1.5 bg-white border rounded-md px-2 py-1 text-xs text-gray-700"
+                          className="flex items-center gap-1.5 bg-card border rounded-md px-2 py-1 text-xs text-foreground"
                         >
                           {file.type === "document" ? (
                             <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
@@ -855,24 +855,24 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           ) : file.url?.startsWith("http") && !file.path ? (
                             <Link2 className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
                           ) : (
-                            <File className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                            <File className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                           )}
                           <span className="max-w-32 truncate">{file.name}</span>
-                          <span className="text-gray-400">{file.size}</span>
+                          <span className="text-muted-foreground">{file.size}</span>
                           <button
                             onClick={() =>
                               setPendingAttachments((prev) =>
                                 prev.filter((f) => f.id !== file.id)
                               )
                             }
-                            className="ml-0.5 hover:bg-gray-100 rounded-full p-0.5"
+                            className="ml-0.5 hover:bg-accent rounded-full p-0.5"
                           >
                             <X className="h-3 w-3" />
                           </button>
                         </div>
                       ))}
                       {pendingSchedule && (
-                        <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-md px-2 py-1 text-xs text-blue-700">
+                        <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-md px-2 py-1 text-xs text-blue-700 dark:text-blue-300">
                           <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                           <span>
                             {pendingSchedule.date.toLocaleDateString()} at{" "}
@@ -961,9 +961,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         ) : (
           <div className="flex-1 flex flex-col justify-center">
             <div className="py-24 text-center">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Select a message to view</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Select a message to view</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 Choose from {filteredMessages.length} loaded message
                 {filteredMessages.length !== 1 ? "s" : ""} in your inbox
               </p>

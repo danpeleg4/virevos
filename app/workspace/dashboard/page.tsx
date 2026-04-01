@@ -146,8 +146,8 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
             Welcome back! Here’s what’s happening today.
           </p>
         </div>
@@ -190,8 +190,8 @@ export default function Dashboard() {
                   />
                 </div>
               </div>
-              <p className="text-2xl text-gray-900 mb-1">{stat.value}</p>
-              <p className="text-sm text-gray-600">{stat.label}</p>
+              <p className="text-2xl text-foreground mb-1">{stat.value}</p>
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
             </Card>
           </motion.div>
         ))}
@@ -202,7 +202,7 @@ export default function Dashboard() {
         {/* Recent Projects */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl text-gray-900">Recent Projects</h2>
+            <h2 className="text-xl text-foreground">Recent Projects</h2>
             <Button variant="ghost" size="sm">
               <Link href="/workspace/projects">View All</Link>
             </Button>
@@ -215,11 +215,11 @@ export default function Dashboard() {
                 href={`/workspace/projects/${project.id}`}
                 className="block"
               >
-                <div className="space-y-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer p-3">
+                <div className="space-y-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer p-3">
                   <div className="flex justify-between">
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-gray-900">
+                        <h3 className="text-foreground">
                           {project.name ?? "Untitled"}
                         </h3>
                         <Badge
@@ -228,7 +228,7 @@ export default function Dashboard() {
                             project.status === "completed"
                               ? "border-blue-200 text-blue-700"
                               : project.status === "inactive"
-                                ? "border-gray-200 text-gray-500"
+                                ? "border-border text-muted-foreground"
                                 : "border-green-200 text-green-700"
                           }
                         >
@@ -242,19 +242,19 @@ export default function Dashboard() {
                               : "Active"}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {project.clientName ?? "Unknown Client"}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-900">
+                      <p className="text-sm text-foreground">
                         {task_percentage({
                           completed: project.stats.completedTasks ?? 0,
                           total: project.stats.totalTasks ?? 0,
                         })}
                         %
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {project.stats.completedTasks ?? 0}/
                         {project.stats.totalTasks ?? 0} tasks
                       </p>
@@ -266,7 +266,7 @@ export default function Dashboard() {
                       total: project.stats.totalTasks ?? 0,
                     })}
                   />
-                  <div className="flex items-center text-xs text-gray-500">
+                  <div className="flex items-center text-xs text-muted-foreground">
                     <Clock className="h-3 w-3 mr-1" />
                     Due: {project.dueDate ?? "No due date"}
                   </div>
@@ -279,7 +279,7 @@ export default function Dashboard() {
         {/* Upcoming Tasks */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl text-gray-900">Upcoming Tasks</h2>
+            <h2 className="text-xl text-foreground">Upcoming Tasks</h2>
             <Button variant="ghost" size="sm">
               <Link href="/workspace/tasks">View All</Link>
             </Button>
@@ -292,7 +292,7 @@ export default function Dashboard() {
               .map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => router.push(`/workspace/tasks`)}
                 >
                   <div className="flex-shrink-0 mt-0.5">
@@ -309,7 +309,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <p className="text-gray-900">
+                      <p className="text-foreground">
                         {task.title ?? "Untitled"}
                       </p>
                       <Badge
@@ -319,16 +319,16 @@ export default function Dashboard() {
                             ? "border-red-200 text-red-700"
                             : task.priority === "medium"
                               ? "border-yellow-200 text-yellow-700"
-                              : "border-gray-200 text-gray-700"
+                              : "border-border text-muted-foreground"
                         }`}
                       >
                         {task.priority ?? "none"}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {task.projectName ?? "No Project"}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {task.dueDate ?? "No due date"}
                     </p>
                   </div>

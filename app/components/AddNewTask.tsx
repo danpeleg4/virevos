@@ -221,7 +221,7 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
                   </SelectItem>
                   <SelectItem value="low">
                     <span className="flex items-center gap-2">
-                      <Flag className="h-3.5 w-3.5 text-gray-400" />
+                      <Flag className="h-3.5 w-3.5 text-muted-foreground" />
                       Low
                     </span>
                   </SelectItem>

@@ -118,14 +118,14 @@ const PLAN_DETAILS: Record<
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-blue-100 text-blue-700" },
-  past_due: { label: "Past Due", className: "bg-red-100 text-red-700" },
-  canceled: { label: "Canceled", className: "bg-gray-100 text-gray-700" },
+  active: { label: "Active", className: "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300" },
+  past_due: { label: "Past Due", className: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300" },
+  canceled: { label: "Canceled", className: "bg-muted text-muted-foreground" },
   incomplete: {
     label: "Incomplete",
-    className: "bg-yellow-100 text-yellow-700",
+    className: "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300",
   },
-  trialing: { label: "Trialing", className: "bg-purple-100 text-purple-700" },
+  trialing: { label: "Trialing", className: "bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300" },
 };
 
 function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
@@ -289,10 +289,10 @@ export default function Billing() {
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900">
+          <h1 className="text-2xl sm:text-3xl text-foreground">
             Billing & Subscription
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage your subscription and billing information
           </p>
         </div>
@@ -303,8 +303,8 @@ export default function Billing() {
         <Card className="p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl text-gray-900">Current Plan</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-xl text-foreground">Current Plan</h2>
+              <p className="text-sm text-muted-foreground mt-1">
                 You&#39;re on the {planInfo.name} plan
               </p>
             </div>
@@ -313,17 +313,17 @@ export default function Billing() {
 
           <div className="grid sm:grid-cols-2 gap-6 mb-6">
             <div>
-              <p className="text-sm text-gray-500 mb-2">Plan</p>
-              <p className="text-3xl text-gray-900">
+              <p className="text-sm text-muted-foreground mb-2">Plan</p>
+              <p className="text-3xl text-foreground">
                 ${planInfo.price}
-                <span className="text-lg text-gray-600">/month</span>
+                <span className="text-lg text-muted-foreground">/month</span>
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-2">Next Billing</p>
+              <p className="text-sm text-muted-foreground mb-2">Next Billing</p>
               <div className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-gray-400" />
-                <p className="text-lg text-gray-900">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
+                <p className="text-lg text-foreground">
                   {billing?.subscription.plan === "starter"
                     ? `Free Forever`
                     : billing?.subscription?.cancelAtPeriodEnd
@@ -335,12 +335,12 @@ export default function Billing() {
           </div>
 
           <div className="mb-6">
-            <p className="text-sm text-gray-700 mb-3">Included Features</p>
+            <p className="text-sm text-foreground mb-3">Included Features</p>
             <div className="grid sm:grid-cols-2 gap-3">
               {planInfo.features.map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm text-gray-700">{feature}</span>
+                  <span className="text-sm text-muted-foreground">{feature}</span>
                 </div>
               ))}
             </div>
@@ -380,28 +380,28 @@ export default function Billing() {
                           <Card
                             className={`flex flex-col h-full p-5 transition-all ${
                               isCurrent
-                                ? "border-2 border-blue-500 bg-blue-50/40"
+                                ? "border-2 border-blue-500 bg-blue-50/40 dark:bg-blue-950/20"
                                 : isPopular
                                   ? "border-2 border-blue-300"
-                                  : "border border-gray-200"
+                                  : "border border-border"
                             }`}
                           >
                             <div className="mb-4">
                               <div className="flex items-center justify-between mb-1">
-                                <h3 className="text-lg font-semibold text-gray-900">
+                                <h3 className="text-lg font-semibold text-foreground">
                                   {pd.name}
                                 </h3>
                                 {isCurrent && (
-                                  <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                  <Badge className="bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs">
                                     Current
                                   </Badge>
                                 )}
                               </div>
                               <div className="flex items-baseline gap-1">
-                                <span className="text-3xl font-bold text-gray-900">
+                                <span className="text-3xl font-bold text-foreground">
                                   ${pd.price}
                                 </span>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-muted-foreground">
                                   /mo
                                 </span>
                               </div>
@@ -411,7 +411,7 @@ export default function Billing() {
                               {pd.features.map((f, i) => (
                                 <div key={i} className="flex items-start gap-2">
                                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                  <span className="text-sm text-gray-600">
+                                  <span className="text-sm text-muted-foreground">
                                     {f}
                                   </span>
                                 </div>
@@ -524,7 +524,7 @@ export default function Billing() {
         {/* Payment Method */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl text-gray-900">Payment Method</h2>
+            <h2 className="text-xl text-foreground">Payment Method</h2>
           </div>
 
           {billing?.paymentMethod ? (
@@ -544,7 +544,7 @@ export default function Billing() {
               </p>
             </div>
           ) : (
-            <div className="bg-gray-100 rounded-lg p-4 mb-6 text-center text-sm text-gray-500">
+            <div className="bg-muted rounded-lg p-4 mb-6 text-center text-sm text-muted-foreground">
               No payment method on file
             </div>
           )}
@@ -583,15 +583,15 @@ export default function Billing() {
 
       {/* Usage Stats */}
       <Card className="p-6">
-        <h2 className="text-xl text-gray-900 mb-6">Usage Overview</h2>
+        <h2 className="text-xl text-foreground mb-6">Usage Overview</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Clients</p>
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Clients</p>
               </div>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-foreground">
                 {clientCount} / {clientLimit ?? "Unlimited"}
               </p>
             </div>
@@ -611,10 +611,10 @@ export default function Billing() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <FolderOpen className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Projects</p>
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Projects</p>
               </div>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-foreground">
                 {projectCount} / {projectLimit ?? "Unlimited"}
               </p>
             </div>
@@ -634,10 +634,10 @@ export default function Billing() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <Sparkles className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">AI Credits</p>
+                <Sparkles className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">AI Credits</p>
               </div>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-foreground">
                 {aiCredits} / {aiCreditLimit}
               </p>
             </div>
@@ -653,10 +653,10 @@ export default function Billing() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <Server className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Storage</p>
+                <Server className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Storage</p>
               </div>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-foreground">
                 {storageUsedDisplay} / {storageLimit.toString() + "GB"}
               </p>
             </div>
@@ -673,7 +673,7 @@ export default function Billing() {
       {/* Invoices */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl text-gray-900">Billing History</h2>
+          <h2 className="text-xl text-foreground">Billing History</h2>
         </div>
 
         {billing?.invoices?.length ? (
@@ -692,28 +692,28 @@ export default function Billing() {
               <TableBody>
                 {billing.invoices.map((invoice) => (
                   <TableRow key={invoice.id}>
-                    <TableCell className="text-gray-900">
+                    <TableCell className="text-foreground">
                       {invoice.number ?? invoice.id.slice(0, 12)}
                     </TableCell>
-                    <TableCell className="text-gray-600">
+                    <TableCell className="text-muted-foreground">
                       {invoice.date
                         ? formatDate(new Date(invoice.date * 1000))
                         : "—"}
                     </TableCell>
-                    <TableCell className="text-gray-600">
+                    <TableCell className="text-muted-foreground">
                       {invoice.description ?? `${planInfo.name} Plan - Monthly`}
                     </TableCell>
-                    <TableCell className="text-gray-900">
+                    <TableCell className="text-foreground">
                       {formatAmount(invoice.amountPaid, invoice.currency)}
                     </TableCell>
                     <TableCell>
                       {invoice.status === "paid" ? (
-                        <Badge className="bg-green-100 text-green-700">
+                        <Badge className="bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Paid
                         </Badge>
                       ) : (
-                        <Badge className="bg-gray-100 text-gray-700">
+                        <Badge className="bg-muted text-muted-foreground">
                           {invoice.status}
                         </Badge>
                       )}
@@ -738,7 +738,7 @@ export default function Billing() {
             </Table>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No invoices yet.</p>
+          <p className="text-sm text-muted-foreground">No invoices yet.</p>
         )}
       </Card>
     </div>

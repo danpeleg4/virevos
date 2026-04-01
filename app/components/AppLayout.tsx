@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { AIAssistant } from "./AIAssistant";
+import { ThemeToggle } from "./ThemeToggle";
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
@@ -52,10 +53,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (!isLoaded)
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-gray-200 animate-pulse" />
-          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+          <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
+          <div className="h-4 w-24 bg-muted rounded animate-pulse" />
         </div>
       </div>
     );
@@ -63,12 +64,12 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = (path: string) => router.push(path);
 
   return (
-    <div className="h-screen flex bg-gray-50 overflow-hidden">
+    <div className="h-screen flex bg-background overflow-hidden">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r border-gray-200">
-        <div className="p-6 border-b border-gray-200">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-card border-r border-border">
+        <div className="p-6 border-b border-border">
           <h1
-            className="text-2xl text-gray-900 cursor-pointer flex items-center gap-2"
+            className="text-2xl text-foreground cursor-pointer flex items-center gap-2"
             onClick={() => router.push("/")}
           >
             <Image
@@ -79,7 +80,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             ></Image>
             Virevos
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Workspace Starter</p>
+          <p className="text-sm text-muted-foreground mt-1">Workspace Starter</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
@@ -91,8 +92,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                 href={item.path}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-accent text-foreground"
+                    : "text-foreground hover:bg-accent"
                 }`}
               >
                 <item.icon className="h-5 w-5" />
@@ -102,7 +103,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-border">
           <Button
             style={{ cursor: "pointer" }}
             variant="outline"
@@ -115,12 +116,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           </Button>
         </div>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-border">
           <div className="flex items-center space-x-3">
             <UserButton />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-900 truncate">{`${user?.firstName} ${user?.lastName}`}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm text-foreground truncate">{`${user?.firstName} ${user?.lastName}`}</p>
+              <p className="text-xs text-muted-foreground">
                 {user?.primaryEmailAddress?.emailAddress}
               </p>
             </div>
@@ -153,12 +154,12 @@ export function AppLayout({ children }: AppLayoutProps) {
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-50 lg:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 lg:hidden flex flex-col"
             >
-              <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <div className="p-6 border-b border-border flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl text-gray-900">Virevos</h1>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <h1 className="text-2xl text-foreground">Virevos</h1>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Workspace Starter
                   </p>
                 </div>
@@ -184,8 +185,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                       }}
                       className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                         isActive
-                          ? "bg-gray-100 text-gray-900"
-                          : "text-gray-700 hover:bg-gray-100"
+                          ? "bg-accent text-foreground"
+                          : "text-foreground hover:bg-accent"
                       }`}
                     >
                       <item.icon className="h-5 w-5" />
@@ -195,7 +196,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 })}
               </nav>
 
-              <div className="p-4 border-t border-gray-200">
+              <div className="p-4 border-t border-border">
                 <Button
                   variant="outline"
                   className="w-full justify-start"
@@ -212,12 +213,12 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </Button>
               </div>
 
-              <div className="p-4 border-t border-gray-200">
+              <div className="p-4 border-t border-border">
                 <div className="flex items-center space-x-3">
                   <UserButton />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 truncate">{`${user?.firstName} ${user?.lastName}`}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-foreground truncate">{`${user?.firstName} ${user?.lastName}`}</p>
+                    <p className="text-xs text-muted-foreground">
                       {user?.primaryEmailAddress?.emailAddress}
                     </p>
                   </div>
@@ -230,7 +231,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <header className="bg-card border-b border-border sticky top-0 z-30">
           <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             <Button
               variant="ghost"
@@ -242,21 +243,23 @@ export function AppLayout({ children }: AppLayoutProps) {
             </Button>
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold text-gray-900 truncate lg:hidden">
+              <h1 className="text-lg font-semibold text-foreground truncate lg:hidden">
                 Virevos
               </h1>
             </div>
 
-            <Button
-              style={{ cursor: "pointer" }}
-              variant="outline"
-              size="sm"
-              onClick={() => setAiOpen(!aiOpen)}
-              className="shrink-0"
-            >
-              <Sparkles className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">AI Assistant</span>
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <ThemeToggle />
+              <Button
+                style={{ cursor: "pointer" }}
+                variant="outline"
+                size="sm"
+                onClick={() => setAiOpen(!aiOpen)}
+              >
+                <Sparkles className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">AI Assistant</span>
+              </Button>
+            </div>
           </div>
         </header>
 

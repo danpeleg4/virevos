@@ -137,11 +137,11 @@ export function ActionItemsDialog({
   const getPriorityColor = (priority: ActionItem["priority"]) => {
     switch (priority) {
       case "high":
-        return "bg-red-100 text-red-700";
+        return "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300";
       case "medium":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300";
       case "low":
-        return "bg-green-100 text-green-700";
+        return "bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300";
     }
   };
 
@@ -149,7 +149,7 @@ export function ActionItemsDialog({
     if (status === "completed") {
       return <CheckCircle2 className="h-5 w-5 text-green-500" />;
     }
-    return <Circle className="h-5 w-5 text-gray-400" />;
+    return <Circle className="h-5 w-5 text-muted-foreground" />;
   };
 
   const completedCount = items.filter((i) => i.status === "completed").length;
@@ -167,17 +167,17 @@ export function ActionItemsDialog({
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-xs text-blue-600 mb-1">Total Items</p>
-            <p className="text-2xl text-blue-900">{items.length}</p>
+          <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">Total Items</p>
+            <p className="text-2xl text-blue-900 dark:text-blue-200">{items.length}</p>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-xs text-green-600 mb-1">Completed</p>
-            <p className="text-2xl text-green-900">{completedCount}</p>
+          <div className="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg p-3">
+            <p className="text-xs text-green-600 dark:text-green-400 mb-1">Completed</p>
+            <p className="text-2xl text-green-900 dark:text-green-200">{completedCount}</p>
           </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-            <p className="text-xs text-orange-600 mb-1">Pending</p>
-            <p className="text-2xl text-orange-900">{pendingCount}</p>
+          <div className="bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+            <p className="text-xs text-orange-600 dark:text-orange-400 mb-1">Pending</p>
+            <p className="text-2xl text-orange-900 dark:text-orange-200">{pendingCount}</p>
           </div>
         </div>
 
@@ -192,7 +192,7 @@ export function ActionItemsDialog({
             Add Action Item
           </Button>
         ) : (
-          <div className="border rounded-lg p-4 space-y-3 bg-gray-50">
+          <div className="border rounded-lg p-4 space-y-3 bg-muted/50">
             <div className="space-y-2">
               <Label>Title *</Label>
               <Input
@@ -290,8 +290,8 @@ export function ActionItemsDialog({
                 transition={{ delay: index * 0.05 }}
                 className={`border rounded-lg p-4 ${
                   item.status === "completed"
-                    ? "bg-gray-50 opacity-75"
-                    : "bg-white"
+                    ? "bg-muted/50 opacity-75"
+                    : "bg-card"
                 }`}
               >
                 <div className="flex items-start space-x-3">
@@ -306,8 +306,8 @@ export function ActionItemsDialog({
                       <h4
                         className={`text-sm font-medium ${
                           item.status === "completed"
-                            ? "line-through text-gray-500"
-                            : "text-gray-900"
+                            ? "line-through text-muted-foreground"
+                            : "text-foreground"
                         }`}
                       >
                         {item.title}
@@ -321,7 +321,7 @@ export function ActionItemsDialog({
                       </Button>
                     </div>
                     {item.description && (
-                      <p className="text-xs text-gray-600 mb-3">
+                      <p className="text-xs text-muted-foreground mb-3">
                         {item.description}
                       </p>
                     )}
@@ -330,7 +330,7 @@ export function ActionItemsDialog({
                         {item.priority}
                       </Badge>
                       {item.status === "in-progress" && (
-                        <Badge className="bg-blue-100 text-blue-700">
+                        <Badge className="bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
                           In Progress
                         </Badge>
                       )}

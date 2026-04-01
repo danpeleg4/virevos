@@ -215,12 +215,12 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   return (
     <div ref={tableRef} className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
         {tabNav && (
           <div className="flex items-center gap-1 shrink-0 mr-2">{tabNav}</div>
         )}
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Search meeting notes..."
             value={searchQuery}
@@ -231,7 +231,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
         <div className="flex items-center gap-1.5 ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                 <ArrowUpDown className="h-3 w-3" />
                 Sort
                 {sortField !== "date" || sortDir !== "desc" ? (
@@ -267,7 +267,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                 <SlidersHorizontal className="h-3 w-3" />
                 Filter
                 {filterStatus !== "all" ? (
@@ -300,63 +300,63 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
 
       <div className="overflow-x-auto flex-1">
         <table className="w-full">
-          <thead className="border-b border-gray-200">
+          <thead className="border-b border-border">
             <tr>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <FileText className="h-3.5 w-3.5" />
                   Meeting
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <Calendar className="h-3.5 w-3.5" />
                   Date
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <Clock className="h-3.5 w-3.5" />
                   Duration
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <Users className="h-3.5 w-3.5" />
                   Attendees
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   Labels
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <CheckSquare className="h-3.5 w-3.5" />
                   Actions
                 </div>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {paginatedNotes.map((note) => (
               <tr
                 key={note.id}
                 onClick={() => handleViewDetails(note)}
-                className="cursor-pointer hover:bg-gray-50 transition-colors group"
+                className="cursor-pointer hover:bg-muted/50 transition-colors group"
               >
                 <td className="px-4 py-3 max-w-[260px]">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {note.title}
                   </p>
                   {note.ai_summary && (
-                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
                       {note.ai_summary}
                     </p>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                   {new Date(note.dateTime).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -369,7 +369,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                       {note.duration}m
                     </span>
                   ) : (
-                    <span className="text-xs text-gray-400">—</span>
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -377,7 +377,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                     {note.attendees.slice(0, 3).map((attendee, i) => (
                       <Avatar
                         key={i}
-                        className="h-6 w-6 border-2 border-white ring-0"
+                        className="h-6 w-6 border-2 border-card ring-0"
                       >
                         <AvatarFallback className="text-[10px] bg-blue-100 text-blue-600">
                           {attendee.initials}
@@ -385,7 +385,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                       </Avatar>
                     ))}
                     {note.attendees.length > 3 && (
-                      <div className="h-6 w-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] text-gray-600">
+                      <div className="h-6 w-6 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
                         +{note.attendees.length - 3}
                       </div>
                     )}
@@ -398,7 +398,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                       AI
                     </span>
                     {note.hasTranscript && (
-                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
                         <Mic className="h-2.5 w-2.5" />
                         Transcript
                       </span>
@@ -416,8 +416,8 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
             {filteredNotes.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center">
-                  <FileText className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm text-gray-400">
+                  <FileText className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
                     {searchQuery
                       ? "No notes match your search"
                       : "Notes are automatically generated after meetings with transcription enabled"}
@@ -430,8 +430,8 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
-        <div className="text-xs text-gray-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
+        <div className="text-xs text-muted-foreground">
           Showing {filteredNotes.length === 0 ? 0 : startIndex + 1}–
           {Math.min(startIndex + itemsPerPage, filteredNotes.length)} of{" "}
           {filteredNotes.length} notes
@@ -447,7 +447,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
             <ChevronLeft className="h-3.5 w-3.5 mr-1" />
             Previous
           </Button>
-          <span className="px-2 py-1 text-xs text-gray-600">
+          <span className="px-2 py-1 text-xs text-muted-foreground">
             {page} / {totalPages}
           </span>
           <Button
@@ -506,14 +506,14 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                 {/* Tags */}
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
-                    <Tag className="h-4 w-4 text-gray-500" />
-                    <h3 className="text-sm text-gray-700">Tags</h3>
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm text-muted-foreground">Tags</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {selectedNote?.tags?.map((tag, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200"
+                        className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-full bg-muted text-foreground border border-border"
                       >
                         {tag}
                       </span>
@@ -524,8 +524,8 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                 {/* Attendees */}
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <h3 className="text-sm text-gray-700">Attendees</h3>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm text-muted-foreground">Attendees</h3>
                   </div>
                   <div className="space-y-2">
                     {selectedNote?.attendees?.map((attendee, index) => (
@@ -535,7 +535,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                             {attendee.initials}
                           </AvatarFallback>
                         </Avatar>
-                        <p className="text-sm text-gray-900">{attendee.name}</p>
+                        <p className="text-sm text-foreground">{attendee.name}</p>
                       </div>
                     ))}
                   </div>
@@ -546,7 +546,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-purple-500" />
-                      <h3 className="text-sm text-gray-700">AI Summary</h3>
+                      <h3 className="text-sm text-foreground">AI Summary</h3>
                     </div>
                     <Button
                       size="sm"
@@ -560,7 +560,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                       )}
                     </Button>
                   </div>
-                  <p className="text-sm leading-relaxed text-gray-700">
+                  <p className="text-sm leading-relaxed text-foreground">
                     {selectedNote.ai_summary}
                   </p>
                 </div>
@@ -569,13 +569,13 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
                     <FileText className="h-4 w-4 text-blue-500" />
-                    <h3 className="text-sm text-gray-700">Key Points</h3>
+                    <h3 className="text-sm text-foreground">Key Points</h3>
                   </div>
                   <ul className="space-y-2">
                     {selectedNote?.key_points?.map((point, index) => (
                       <li
                         key={index}
-                        className="text-sm flex items-start text-gray-700"
+                        className="text-sm flex items-start text-foreground"
                       >
                         <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500" />
                         <span className="flex-1">{point}</span>
@@ -588,7 +588,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
                     <CheckSquare className="h-4 w-4 text-orange-500" />
-                    <h3 className="text-sm text-gray-700">
+                    <h3 className="text-sm text-foreground">
                       Action Items ({selectedNote?.action_items?.length})
                     </h3>
                   </div>
@@ -599,11 +599,11 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                         className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
                       >
                         <div className="flex items-start justify-between mb-1">
-                          <p className="text-sm text-gray-900">{item.task}</p>
+                          <p className="text-sm text-foreground">{item.task}</p>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs h-6 px-2 bg-white"
+                            className="text-xs h-6 px-2 bg-card"
                             onClick={() => handleAddSingleTask(item, index)}
                             disabled={
                               addingItems.has(index) || addedItems.has(index)
@@ -616,7 +616,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                                 : "Add"}
                           </Button>
                         </div>
-                        <div className="flex items-center text-xs text-gray-600 space-x-3">
+                        <div className="flex items-center text-xs text-muted-foreground space-x-3">
                           <span>Due: {item.dueDate ?? "No due date"}</span>
                         </div>
                       </div>
@@ -639,15 +639,15 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                   <div>
                     <div className="flex items-center space-x-2 mb-3">
                       <Mic className="h-4 w-4 text-purple-500" />
-                      <h3 className="text-sm text-gray-700">Transcript</h3>
+                      <h3 className="text-sm text-foreground">Transcript</h3>
                     </div>
                     {transcriptLoading ? (
-                      <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 text-sm text-gray-400">
+                      <div className="p-4 rounded-lg border bg-muted/50 border-border text-sm text-muted-foreground">
                         Loading transcript...
                       </div>
                     ) : transcriptData.length > 0 ? (
                       <>
-                        <div className="max-h-96 overflow-y-auto p-4 rounded-lg border bg-gray-50 border-gray-200">
+                        <div className="max-h-96 overflow-y-auto p-4 rounded-lg border bg-muted/50 border-border">
                           <div className="space-y-4">
                             {(showFullTranscript
                               ? transcriptData
@@ -657,14 +657,14 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                                 key={index}
                                 className="flex items-start space-x-3"
                               >
-                                <span className="text-xs mt-1 text-gray-400 shrink-0">
+                                <span className="text-xs mt-1 text-muted-foreground shrink-0">
                                   {entry.time}
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium mb-0.5 text-blue-600">
                                     {entry.speaker}
                                   </p>
-                                  <p className="text-sm text-gray-700">
+                                  <p className="text-sm text-foreground">
                                     {entry.text}
                                   </p>
                                 </div>
@@ -689,7 +689,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                 )}
 
                 {/* Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <div className="flex justify-end space-x-3 pt-4 border-t border-border">
                   <Button onClick={() => setDetailsOpen(false)}>Close</Button>
                 </div>
               </div>

@@ -46,7 +46,7 @@ const ROW_HEIGHT = 48;
 function StatusBadge({ status }: { status: string | undefined }) {
   if (status === "active") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 text-red-700 border border-red-200">
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
         <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
         Live
       </span>
@@ -54,15 +54,15 @@ function StatusBadge({ status }: { status: string | undefined }) {
   }
   if (status === "upcoming") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
         Upcoming
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted/50 text-muted-foreground border border-border">
+      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block" />
       Ended
     </span>
   );
@@ -184,14 +184,14 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   return (
     <div ref={tableRef} className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
         {tabNav && (
           <div className="flex items-center gap-1 shrink-0 mr-2">
             {tabNav}
           </div>
         )}
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Search meetings..."
             value={searchQuery}
@@ -205,7 +205,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
         <div className="flex items-center gap-1.5 ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                 <ArrowUpDown className="h-3 w-3" />
                 Sort
                 {sortField !== "date" || sortDir !== "desc" ? (
@@ -241,7 +241,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                 <SlidersHorizontal className="h-3 w-3" />
                 Filter
                 {statusFilter !== "all" ? (
@@ -284,72 +284,72 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
 
       <div className="overflow-x-auto flex-1">
         <table className="w-full">
-          <thead className="border-b border-gray-200">
+          <thead className="border-b border-border">
             <tr>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <Video className="h-3.5 w-3.5" />
                   Meeting
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   Status
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <Calendar className="h-3.5 w-3.5" />
                   Date
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <Clock className="h-3.5 w-3.5" />
                   Time
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   <Users className="h-3.5 w-3.5" />
                   Participants
                 </div>
               </th>
               <th className="text-left px-4 py-2.5">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                   Duration
                 </div>
               </th>
               <th className="px-4 py-2.5" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {paginatedMeetings.map((meeting) => (
               <tr
                 key={meeting.id}
-                className="hover:bg-gray-50 transition-colors group"
+                className="hover:bg-muted/50 transition-colors group"
               >
                 <td className="px-4 py-2.5">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-foreground">
                     {decodeURIComponent(meeting.title)}
                   </span>
                 </td>
                 <td className="px-4 py-2.5">
                   <StatusBadge status={meeting.status} />
                 </td>
-                <td className="px-4 py-2.5 text-xs text-gray-500">
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">
                   {formatDateOnly(new Date(meeting.dateTime))}
                 </td>
-                <td className="px-4 py-2.5 text-xs text-gray-500">
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">
                   {formatTimeOnly(new Date(meeting.dateTime))}
                 </td>
                 <td className="px-4 py-2.5">
-                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
                     <Users className="h-3 w-3" />
                     {meeting?.attendees?.length ?? 0}
                   </span>
                 </td>
-                <td className="px-4 py-2.5 text-xs text-gray-500">
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">
                   {meeting.duration ? `${meeting.duration}m` : "—"}
                 </td>
                 <td className="px-4 py-2.5">
@@ -392,8 +392,8 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
             {filteredMeetings.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center">
-                  <FileText className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm text-gray-400">
+                  <FileText className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
                     {searchQuery
                       ? "No meetings match your search"
                       : "No meetings found"}
@@ -406,8 +406,8 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
-        <div className="text-xs text-gray-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
+        <div className="text-xs text-muted-foreground">
           Showing {filteredMeetings.length === 0 ? 0 : startIndex + 1}–
           {Math.min(startIndex + itemsPerPage, filteredMeetings.length)} of{" "}
           {filteredMeetings.length} meetings
@@ -423,7 +423,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
             <ChevronLeft className="h-3.5 w-3.5 mr-1" />
             Previous
           </Button>
-          <span className="px-2 py-1 text-xs text-gray-600">
+          <span className="px-2 py-1 text-xs text-muted-foreground">
             {page} / {totalPages}
           </span>
           <Button
@@ -470,10 +470,10 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
               </Button>
             ) : (
               <div className="space-y-3">
-                <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
-                  <p className="text-xs mb-2 text-gray-600">Meeting Link</p>
+                <div className="p-3 rounded-lg border bg-muted/50 border-border">
+                  <p className="text-xs mb-2 text-muted-foreground">Meeting Link</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-700 truncate flex-1">
+                    <p className="text-sm text-foreground truncate flex-1">
                       {meetingLink}
                     </p>
                     <Button
@@ -658,7 +658,7 @@ function TranscriptionView({
   if (loading) return <p>Loading recording...</p>;
 
   return (
-    <div className="h-full min-h-0 flex flex-col p-6 bg-white overflow-hidden">
+    <div className="h-full min-h-0 flex flex-col p-6 bg-card overflow-hidden">
       <div className="flex items-center space-x-4 mb-2">
         <Button variant="ghost" onClick={onBack}>
           ← Back to Summary
@@ -667,7 +667,7 @@ function TranscriptionView({
 
       <div>
         <h1 className="text-3xl">Meeting Transcription</h1>
-        <p className="mb-4 text-gray-600">
+        <p className="mb-4 text-muted-foreground">
           {decodeURIComponent(meeting.title)} •{" "}
           {new Date(meeting.dateTime).toLocaleString()}
         </p>
@@ -702,7 +702,7 @@ function TranscriptionView({
               </Button>
               <div className="flex-1">
                 <div
-                  className="h-2 rounded-full bg-gray-100 cursor-pointer"
+                  className="h-2 rounded-full bg-muted cursor-pointer"
                   onClick={onSeek}
                 >
                   <div
@@ -711,7 +711,7 @@ function TranscriptionView({
                   />
                 </div>
               </div>
-              <span className="text-sm font-mono text-gray-500 tabular-nums">
+              <span className="text-sm font-mono text-muted-foreground tabular-nums">
                 {formatClock(currentTime)} / {formatClock(duration)}
               </span>
             </div>
@@ -720,12 +720,12 @@ function TranscriptionView({
 
         <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
           <CardContent className="flex-1 min-h-0 p-0 overflow-y-auto">
-            <div className="p-4 border-b bg-gray-50/50">
+            <div className="p-4 border-b bg-muted/50">
               <Input
                 placeholder="Search transcript..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white"
+                className="bg-card"
               />
             </div>
             <div
@@ -741,20 +741,20 @@ function TranscriptionView({
                       className={`p-3 rounded-xl transition-all duration-200 border border-transparent ${
                         isActive
                           ? "bg-blue-50 border-blue-100 shadow-sm"
-                          : "hover:bg-gray-50"
+                          : "hover:bg-muted/50"
                       }`}
                     >
                       <div className="flex gap-3">
-                        <span className="text-[10px] font-mono text-gray-400 mt-1 tabular-nums">
+                        <span className="text-[10px] font-mono text-muted-foreground mt-1 tabular-nums">
                           {entry.time}
                         </span>
                         <div>
                           <p
-                            className={`text-xs font-bold mb-0.5 ${isActive ? "text-blue-600" : "text-gray-900"}`}
+                            className={`text-xs font-bold mb-0.5 ${isActive ? "text-blue-600" : "text-foreground"}`}
                           >
                             {entry.speaker}
                           </p>
-                          <p className="text-sm text-gray-600 leading-relaxed">
+                          <p className="text-sm text-muted-foreground leading-relaxed">
                             {entry.text}
                           </p>
                         </div>
@@ -763,7 +763,7 @@ function TranscriptionView({
                   );
                 })
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
                   Loading transcript segments...
                 </div>
               )}

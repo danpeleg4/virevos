@@ -76,8 +76,8 @@ export function VideoMeetingPreferences() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-lg text-gray-900">Video Meeting Preferences</h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h2 className="text-lg text-foreground">Video Meeting Preferences</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
           Configure how Virevos handles video meetings
         </p>
       </div>
@@ -85,7 +85,7 @@ export function VideoMeetingPreferences() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <Label>Auto-Record Meetings</Label>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Automatically start recording when meetings begin
             </p>
           </div>
@@ -235,12 +235,12 @@ export function IntegrationSettings() {
               {integration.connected && (
                 <CardContent className="space-y-4">
                   <div className="mb-4">
-                    <h4 className="text-sm text-gray-700 mb-2">Features</h4>
+                    <h4 className="text-sm text-foreground mb-2">Features</h4>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {integration.features.map((feature, i) => (
                         <li
                           key={i}
-                          className="flex items-start text-sm text-gray-600"
+                          className="flex items-start text-sm text-muted-foreground"
                         >
                           <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
                           <span>{feature}</span>
