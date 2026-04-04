@@ -32,8 +32,8 @@ function CalendarContent() {
           onClick={() => setActiveTab(tab)}
           className={`cursor-pointer whitespace-nowrap text-xs px-3 py-1.5 rounded-md transition-colors ${
             activeTab === tab
-              ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              ? "bg-card border border-border text-foreground shadow-sm font-medium"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
           }`}
         >
           {TAB_LABELS[tab]}
@@ -46,8 +46,8 @@ function CalendarContent() {
     <div className="flex flex-col h-full p-4 sm:p-6 gap-6">
       {/* Header */}
       <div className="shrink-0">
-        <h1 className="text-2xl sm:text-3xl text-gray-900">Smart Scheduling</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl sm:text-3xl text-foreground">Smart Scheduling</h1>
+        <p className="text-muted-foreground mt-1">
           AI-powered scheduling that adapts to your workload and automatically
           manages conflicts
         </p>
@@ -70,7 +70,7 @@ function CalendarContent() {
           )}
           {activeTab === "preferences" && (
             <div className="h-full flex flex-col">
-              <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
+              <div className="flex items-center gap-1 px-4 py-3 border-b border-border bg-muted/50 shrink-0 overflow-x-auto">
                 {tabNav}
               </div>
               <div className="flex-1 overflow-y-auto">

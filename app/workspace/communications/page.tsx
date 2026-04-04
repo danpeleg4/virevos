@@ -38,10 +38,10 @@ export default function Communications() {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900">
+          <h1 className="text-2xl sm:text-3xl text-foreground">
             Communications
           </h1>
-          <p className="mt-1 text-gray-600">
+          <p className="mt-1 text-muted-foreground">
             Unified inbox for all client communications with AI-powered
             assistance
           </p>
@@ -51,15 +51,15 @@ export default function Communications() {
       {/* Card with embedded tabs */}
       <Card className="flex flex-col overflow-hidden" style={fillStyle}>
         {/* Tab nav */}
-        <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-1 px-4 py-3 border-b border-border bg-muted/50 shrink-0 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setActiveTab(tab.value)}
               className={`cursor-pointer px-3 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors ${
                 activeTab === tab.value
-                  ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  ? "bg-card border border-border text-foreground shadow-sm font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               {tab.label}

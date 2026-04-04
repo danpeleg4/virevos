@@ -90,28 +90,28 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     switch (status) {
       case "pending":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
             <Clock className="h-3 w-3" />
             Scheduled
           </span>
         );
       case "sent":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
             Sent
           </span>
         );
       case "failed":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 text-red-700 border border-red-200">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
             Failed
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted/50 text-muted-foreground border border-border">
             {status}
           </span>
         );
@@ -197,8 +197,8 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     return (
       <div className="py-24 text-center">
         <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-        <p className="text-gray-700 text-lg mb-2">Gmail not connected</p>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-foreground text-lg mb-2">Gmail not connected</p>
+        <p className="text-sm text-muted-foreground mb-6">
           Connect your Google account to sync emails and use the inbox.
         </p>
         <Button onClick={() => (window.location.href = "/api/google")}>
@@ -221,7 +221,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const navActions = (
     <>
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder="Search scheduled..."
           value={searchQuery}
@@ -231,7 +231,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+          <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />
             {statusFilterLabel}
             {statusFilter !== "all" && (
@@ -275,7 +275,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm text-gray-700">
+                <label className="text-sm text-foreground">
                   Recipient Email *
                 </label>
                 <Input
@@ -285,7 +285,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-700">Recipient Name</label>
+                <label className="text-sm text-foreground">Recipient Name</label>
                 <Input
                   placeholder="John Doe"
                   value={formToName}
@@ -295,7 +295,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-700">Subject *</label>
+              <label className="text-sm text-foreground">Subject *</label>
               <Input
                 placeholder="Email subject..."
                 value={formSubject}
@@ -304,7 +304,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-700">Message *</label>
+              <label className="text-sm text-foreground">Message *</label>
               <Textarea
                 placeholder="Type your message..."
                 rows={6}
@@ -315,7 +315,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm text-gray-700">Date *</label>
+                <label className="text-sm text-foreground">Date *</label>
                 <Input
                   type="date"
                   value={formDate}
@@ -323,7 +323,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-700">Time</label>
+                <label className="text-sm text-foreground">Time</label>
                 <Input
                   type="time"
                   value={formTime}
@@ -332,7 +332,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
+            <div className="flex justify-end space-x-2 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setIsCreating(false)}>
                 Cancel
               </Button>
@@ -357,17 +357,17 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : filteredMessages.length === 0 ? (
         <div className="py-24 text-center">
-          <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">
+          <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">
             {messages.length === 0
               ? "No scheduled messages"
               : "No messages match your filters"}
           </p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {messages.length === 0
               ? "Schedule messages to be sent at the perfect time"
               : "Try adjusting your search or filter"}
@@ -402,24 +402,24 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-sm text-gray-900">
+                        <h3 className="text-sm text-foreground">
                           {message.toName || message.toEmail}
                         </h3>
-                        <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
+                        <span className="inline-flex items-center gap-1.5 text-xs bg-muted text-foreground rounded-full px-2.5 py-0.5">
                           {message.toEmail}
                         </span>
-                        <Mail className="h-4 w-4 text-gray-400" />
+                        <Mail className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-gray-900 mb-2">
+                      <p className="text-sm text-foreground mb-2">
                         {message.subject}
                       </p>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                         {message.bodyText ||
                           message.bodyHtml
                             .replace(/<[^>]*>/g, "")
                             .slice(0, 200)}
                       </p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                         <div className="flex items-center">
                           <Clock className="h-3 w-3 mr-1" />
                           {new Date(message.scheduledAt).toLocaleString(

@@ -78,18 +78,18 @@ export function ScheduleMessageDialog({
     });
 
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
         <div className="flex items-start space-x-2">
           <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-sm text-blue-900 font-medium">
+            <p className="text-sm text-blue-900 dark:text-blue-200 font-medium">
               Message will be sent on:
             </p>
-            <p className="text-sm text-blue-700 mt-1">
+            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
               {dateStr} at {time} ({timezone})
             </p>
             {recurring !== "none" && (
-              <Badge className="mt-2 bg-purple-100 text-purple-700">
+              <Badge className="mt-2 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
                 Repeats {recurring}
               </Badge>
             )}
@@ -132,7 +132,7 @@ export function ScheduleMessageDialog({
               <div className="grid grid-cols-2 gap-4 items-start">
                 <div className="space-y-2">
                   <Label>Select Date</Label>
-                  <div className="border rounded-lg bg-white">
+                  <div className="border rounded-lg bg-card">
                     <Calendar
                       mode="single"
                       selected={date}

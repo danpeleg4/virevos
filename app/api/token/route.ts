@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   AccessToken,
-  EgressClient,
-  EncodedFileOutput,
-  EncodingOptionsPreset,
   RoomServiceClient,
 } from "livekit-server-sdk";
-import { events, users } from "@db/schema";
+import { events } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -17,7 +14,6 @@ const roomService = new RoomServiceClient(
   process.env.LIVEKIT_API_KEY,
   process.env.LIVEKIT_API_SECRET
 );
-const egressClient = new EgressClient(livekitHost!);
 
 export async function POST(req: NextRequest) {
   const { meetingId, name } = await req.json();
@@ -37,13 +33,6 @@ export async function POST(req: NextRequest) {
   if (!meeting || !meeting.isMeeting || !isAppMeeting) {
     return notFound();
   }
-
-  const [userStatus] = await db
-    .select({
-      recordingStatus: users.recordingStatus,
-    })
-    .from(users)
-    .where(eq(users.user_id, meeting.userId));
 
   const participantName = name;
   if (!participantName) {
@@ -70,7 +59,6 @@ export async function POST(req: NextRequest) {
 
   const roomName = meeting.id;
   let room = (await roomService.listRooms([roomName]))[0];
-  let shouldStartRecording = false;
 
   if (!room) {
     try {
@@ -79,35 +67,9 @@ export async function POST(req: NextRequest) {
         emptyTimeout: 60,
         maxParticipants: 20,
       });
-      shouldStartRecording = true;
     } catch (error) {
       room = (await roomService.listRooms([roomName]))[0];
     }
-  }
-
-  if (shouldStartRecording && room && userStatus.recordingStatus) {
-    const outputs = {
-      file: new EncodedFileOutput({
-        filepath: `recordings/${meeting.userId}/${meeting.id}/main.mp4`,
-        output: {
-          case: "s3",
-          value: {
-            accessKey: process.env.SUPABASE_S3_ACCESS_KEY_ID,
-            secret: process.env.SUPABASE_S3_SECRET_ACCESS_KEY,
-            endpoint: `${process.env.SUPABASE_URL}/storage/v1/s3`,
-            bucket: "recording",
-            region: "auto",
-            forcePathStyle: true,
-          },
-        },
-      }),
-    };
-
-    await egressClient.startRoomCompositeEgress(roomName, outputs, {
-      layout: "grid",
-      encodingOptions: EncodingOptionsPreset.H264_1080P_30,
-      audioOnly: false,
-    });
   }
 
   // Create the token

@@ -128,7 +128,7 @@ export function EventDetailsDialog({
           <div className="flex items-start justify-between">
             <div>
               <DialogTitle className="text-xl mb-2">{event.title}</DialogTitle>
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
                   {formatDateOnly(new Date(event.dateTime))}
@@ -156,7 +156,7 @@ export function EventDetailsDialog({
           <div>
             {event.attendees && event.attendees.length > 0 && (
               <div>
-                <h3 className="text-sm text-gray-700 mb-3 flex items-center">
+                <h3 className="text-sm text-foreground mb-3 flex items-center">
                   <Users className="h-4 w-4 mr-2" />
                   Attendees
                 </h3>
@@ -165,14 +165,14 @@ export function EventDetailsDialog({
                   {event.attendees.map((attendee, i) => (
                     <div
                       key={i}
-                      className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2"
+                      className="flex items-center space-x-2 bg-muted/50 rounded-lg px-3 py-2"
                     >
                       <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">
                           {attendee.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-foreground">
                         {attendee.name}
                       </span>
                     </div>
@@ -185,13 +185,13 @@ export function EventDetailsDialog({
           {/* Meeting Link */}
           {event.link ? (
             <div>
-              <h3 className="text-sm text-gray-700 mb-3">Link</h3>
+              <h3 className="text-sm text-foreground mb-3">Link</h3>
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
                   readOnly
                   value={event.link || ""}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50"
+                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-muted/50"
                 />
                 <Button
                   className="cursor-pointer"
@@ -238,19 +238,19 @@ export function EventDetailsDialog({
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h4 className="text-sm text-gray-700 mb-2">Summary</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="text-sm text-foreground mb-2">Summary</h4>
+                      <p className="text-sm text-muted-foreground">
                         {event.ai_summary}
                       </p>
                     </div>
 
                     <div>
-                      <h4 className="text-sm text-gray-700 mb-2">Key Points</h4>
+                      <h4 className="text-sm text-foreground mb-2">Key Points</h4>
                       <ul className="space-y-1">
                         {event?.key_points?.map((point, i) => (
                           <li
                             key={i}
-                            className="text-sm text-gray-600 flex items-start"
+                            className="text-sm text-muted-foreground flex items-start"
                           >
                             <span className="mr-2">•</span>
                             <span>{point}</span>
@@ -260,7 +260,7 @@ export function EventDetailsDialog({
                     </div>
 
                     <div>
-                      <h4 className="text-sm text-gray-700 mb-3 flex items-center">
+                      <h4 className="text-sm text-foreground mb-3 flex items-center">
                         <CheckSquare className="h-4 w-4 mr-2" />
                         Action Items ({event?.action_items?.length})
                       </h4>
@@ -271,13 +271,13 @@ export function EventDetailsDialog({
                             className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
                           >
                             <div className="flex items-start justify-between mb-1">
-                              <p className="text-sm text-gray-900">
+                              <p className="text-sm text-foreground">
                                 {item.task}
                               </p>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-xs h-6 px-2 bg-white"
+                                className="text-xs h-6 px-2 bg-card"
                                 onClick={() => handleAddSingleTask(item, i)}
                                 disabled={
                                   addingItems.has(i) || addedItems.has(i)
@@ -290,7 +290,7 @@ export function EventDetailsDialog({
                                     : "Add"}
                               </Button>
                             </div>
-                            <div className="flex items-center text-xs text-gray-600 space-x-3">
+                            <div className="flex items-center text-xs text-muted-foreground space-x-3">
                               <span>Due: {item.dueDate ?? "No due date"}</span>
                             </div>
                           </div>
@@ -322,12 +322,12 @@ export function EventDetailsDialog({
                   </CardHeader>
                   <CardContent>
                     {transcriptLoading ? (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-400">
+                      <div className="bg-muted/50 border border-border rounded-lg p-4 text-sm text-muted-foreground">
                         Loading transcript...
                       </div>
                     ) : (
                       <>
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                        <div className="bg-muted/50 border border-border rounded-lg p-4 max-h-96 overflow-y-auto">
                           <div className="space-y-4">
                             {(showFullTranscript
                               ? formattedData
@@ -337,14 +337,14 @@ export function EventDetailsDialog({
                                 key={i}
                                 className="flex items-start space-x-3"
                               >
-                                <span className="text-xs mt-1 text-gray-400 shrink-0">
+                                <span className="text-xs mt-1 text-muted-foreground shrink-0">
                                   {chunk.time}
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium text-blue-600 mb-0.5">
                                     {chunk.speaker}
                                   </p>
-                                  <p className="text-sm text-gray-700">
+                                  <p className="text-sm text-foreground">
                                     {chunk.text}
                                   </p>
                                 </div>

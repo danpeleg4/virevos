@@ -77,7 +77,7 @@ export default function ProjectPage({
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-gray-600">Failed to load project</p>
+          <p className="text-muted-foreground">Failed to load project</p>
         </div>
       </div>
     );
@@ -269,7 +269,7 @@ export function ProjectDetailView({
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-gray-600">Error loading project data</p>
+          <p className="text-muted-foreground">Error loading project data</p>
         </div>
       </div>
     );
@@ -304,10 +304,10 @@ export function ProjectDetailView({
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl text-gray-900 truncate">
+            <h1 className="text-xl sm:text-2xl text-foreground truncate">
               {project.name}
             </h1>
-            <p className="text-gray-600 mt-1 truncate">{project.clientName}</p>
+            <p className="text-muted-foreground mt-1 truncate">{project.clientName}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2 ml-10 sm:ml-0">
@@ -315,10 +315,10 @@ export function ProjectDetailView({
             variant="outline"
             className={`shrink-0 ${
               project.priority === "high"
-                ? "border-red-200 text-red-700"
+                ? "border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
                 : project.priority === "medium"
-                  ? "border-yellow-200 text-yellow-700"
-                  : "border-gray-200 text-gray-700"
+                  ? "border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300"
+                  : "border-border text-muted-foreground"
             }`}
           >
             {project.priority} priority
@@ -342,10 +342,10 @@ export function ProjectDetailView({
               <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
           </div>
-          <p className="text-2xl text-gray-900 mb-1">
+          <p className="text-2xl text-foreground mb-1">
             {task_percentage(projectsTasksQuery.data ?? [])}%
           </p>
-          <p className="text-sm text-gray-600">Overall Progress</p>
+          <p className="text-sm text-muted-foreground">Overall Progress</p>
         </Card>
 
         <Card className="p-6">
@@ -354,10 +354,10 @@ export function ProjectDetailView({
               <Calendar className="h-6 w-6 text-orange-600" />
             </div>
           </div>
-          <p className="text-2xl text-gray-900 mb-1">
+          <p className="text-2xl text-foreground mb-1">
             {project.dueDate || "—"}
           </p>
-          <p className="text-sm text-gray-600">Due Date</p>
+          <p className="text-sm text-muted-foreground">Due Date</p>
         </Card>
 
         <Card className="p-6">
@@ -366,13 +366,13 @@ export function ProjectDetailView({
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
           </div>
-          <p className="text-2xl text-gray-900 mb-1">
+          <p className="text-2xl text-foreground mb-1">
             {projectsTasksQuery.data?.filter(
               (t: Task) => t.status === "completed"
             ).length ?? 0}
             /{projectsTasksQuery.data?.length ?? 0}
           </p>
-          <p className="text-sm text-gray-600">Tasks Completed</p>
+          <p className="text-sm text-muted-foreground">Tasks Completed</p>
         </Card>
 
         <Card className="p-6">
@@ -381,10 +381,10 @@ export function ProjectDetailView({
               <FileText className="h-6 w-6 text-purple-600" />
             </div>
           </div>
-          <p className="text-2xl text-gray-900 mb-1">
+          <p className="text-2xl text-foreground mb-1">
             {fileQuery?.data?.length || 0}
           </p>
-          <p className="text-sm text-gray-600">Files</p>
+          <p className="text-sm text-muted-foreground">Files</p>
         </Card>
       </div>
 
@@ -410,8 +410,8 @@ export function ProjectDetailView({
                     key={task.id}
                     className={`flex items-center space-x-3 p-3 rounded-lg border ${
                       task.status === "completed"
-                        ? "bg-gray-50 border-gray-200"
-                        : "bg-white border-gray-200 hover:border-blue-300"
+                        ? "bg-muted/50 border-border"
+                        : "bg-card border-border hover:border-blue-300"
                     }`}
                   >
                     <Checkbox
@@ -423,25 +423,25 @@ export function ProjectDetailView({
                       <p
                         className={`text-sm ${
                           task.status === "completed"
-                            ? "line-through text-gray-500"
-                            : "text-gray-900"
+                            ? "line-through text-muted-foreground"
+                            : "text-foreground"
                         }`}
                       >
                         {task.title}
                       </p>
                       <div className="flex items-center space-x-3 mt-1">
                         {task.dueDate && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             Due {task.dueDate}
                           </span>
                         )}
                         <span
                           className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${
                             task.priority === "high"
-                              ? "bg-red-50 text-red-700 border border-red-200"
+                              ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
                               : task.priority === "medium"
-                                ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                                : "bg-gray-50 text-gray-500 border border-gray-200"
+                                ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+                                : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
                           <Flag className="h-3 w-3" />
@@ -516,15 +516,15 @@ export function ProjectDetailView({
                 {fileQuery?.data?.slice(0, 8).map((file: ProjectFile) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50"
                   >
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                       <FileText className="h-8 w-8 text-blue-500 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-gray-900 truncate">
+                        <p className="text-sm text-foreground truncate">
                           {file.name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {file.size} • {file.uploadedAt}
                         </p>
                       </div>
@@ -583,10 +583,10 @@ export function ProjectDetailView({
                 {projectNotesQuery.data?.map((note: ProjectNote) => (
                   <div
                     key={note.id}
-                    className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    className="p-3 bg-muted/50 rounded-lg border border-border"
                   >
                     <p className="text-sm  mb-2">{note.content}</p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>
                         {(() => {
                           const raw = note.createdAt;

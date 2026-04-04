@@ -34,8 +34,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "missing room" }, { status: 400 });
   }
 
-  const egressClient = new EgressClient(process.env.LIVEKIT_HOST!);
-
   if (event.event === "room_started") {
     await db
       .update(events)
@@ -85,29 +83,28 @@ export async function POST(req: NextRequest) {
         .where(eq(events.id, roomName));
 
       const [userStatus] = await db
-        .select({
-          recordingStatus: users.recordingStatus,
-        })
+        .select({ recordingStatus: users.recordingStatus })
         .from(users)
         .where(eq(users.user_id, dbEvent.userId));
 
-      const outputs: EncodedOutputs = {
-        file: new EncodedFileOutput({
-          filepath: `recordings/${dbEvent.userId}/${dbEvent.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
-          output: {
-            case: "s3",
-            value: {
-              accessKey: process.env.SUPABASE_S3_ACCESS_KEY_ID,
-              secret: process.env.SUPABASE_S3_SECRET_ACCESS_KEY,
-              endpoint: `${process.env.SUPABASE_URL}/storage/v1/s3`,
-              bucket: "recording",
-              region: "auto",
-              forcePathStyle: true,
-            },
-          },
-        }),
-      };
       if (userStatus.recordingStatus) {
+        const egressClient = new EgressClient(process.env.LIVEKIT_HOST!);
+        const outputs: EncodedOutputs = {
+          file: new EncodedFileOutput({
+            filepath: `recordings/${dbEvent.userId}/${dbEvent.id}/${identity}/${crypto.randomUUID().slice(0, 5)}.mp4`,
+            output: {
+              case: "s3",
+              value: {
+                accessKey: process.env.SUPABASE_S3_ACCESS_KEY_ID,
+                secret: process.env.SUPABASE_S3_SECRET_ACCESS_KEY,
+                endpoint: `${process.env.SUPABASE_URL}/storage/v1/s3`,
+                bucket: "recording",
+                region: "auto",
+                forcePathStyle: true,
+              },
+            },
+          }),
+        };
         await egressClient.startParticipantEgress(roomName, identity, outputs);
       }
     }

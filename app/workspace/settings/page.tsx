@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
@@ -27,8 +28,8 @@ function ToggleRow({
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-gray-900">{label}</p>
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       <Switch disabled className="shrink-0" />
     </div>
@@ -37,19 +38,21 @@ function ToggleRow({
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<TabValue>("notifications");
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl text-gray-900">Settings</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl sm:text-3xl text-foreground">Settings</h1>
+        <p className="text-muted-foreground mt-1">
           Manage your account and preferences
         </p>
       </div>
 
       <Card className="overflow-hidden">
         {/* Tab nav */}
-        <div className="flex border-b border-gray-200 px-4 overflow-x-auto">
+        <div className="flex border-b border-border px-4 overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -58,8 +61,8 @@ export default function Settings() {
                 onClick={() => setActiveTab(tab.value)}
                 className={`cursor-pointer inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors ${
                   activeTab === tab.value
-                    ? "border-black text-black"
-                    : "border-transparent text-gray-500 hover:text-gray-900"
+                    ? "border-foreground text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -73,7 +76,7 @@ export default function Settings() {
         {activeTab === "notifications" && (
           <CardContent className="pt-6 space-y-6 max-w-2xl">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                 Email
               </p>
               <div className="space-y-4">
@@ -87,7 +90,7 @@ export default function Settings() {
             <Separator />
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                 Push
               </p>
               <div className="space-y-4">
@@ -115,19 +118,26 @@ export default function Settings() {
         {activeTab === "preferences" && (
           <CardContent className="pt-6 space-y-6 max-w-2xl">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                 Appearance
               </p>
-              <ToggleRow
-                label="Dark mode"
-                description="Use dark theme across the app"
-              />
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">Dark mode</p>
+                  <p className="text-sm text-muted-foreground">Use dark theme across the app</p>
+                </div>
+                <Switch
+                  checked={isDark}
+                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                  className="shrink-0"
+                />
+              </div>
             </div>
 
             <Separator />
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                 Productivity
               </p>
               <div className="space-y-4">

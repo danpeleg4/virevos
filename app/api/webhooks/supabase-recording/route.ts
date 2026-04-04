@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { pipeline } from "stream";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { Readable } from "stream";
 import OpenAI from "openai";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { v4 as uuidv4 } from "uuid";
 import ffmpegPath from "ffmpeg-static";
 import { db } from "@db/db";
-import { events } from "@db/schema";
+import { events, meetingAttendees } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { supabaseAdmin, RECORDINGS_BUCKET, TRANSCRIPTS_BUCKET } from "@/lib/supabase";
 
@@ -19,7 +17,6 @@ import { supabaseAdmin, RECORDINGS_BUCKET, TRANSCRIPTS_BUCKET } from "@/lib/supa
 export const maxDuration = 299;
 export const runtime = "nodejs";
 
-const streamPipeline = promisify(pipeline);
 const execAsync = promisify(exec);
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -68,31 +65,36 @@ export function normalizeDueDate(value: unknown): string | null {
   return d.toISOString().split("T")[0];
 }
 
-async function streamToString(stream: Readable): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on("data", (chunk) => chunks.push(chunk));
-    stream.on("error", reject);
-    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
-  });
-}
-
-async function waitForMainJson(
+async function waitForAllParticipants(
   userId: string,
   roomName: string,
-  retries = 5
-): Promise<string | null> {
+  expectedCount: number,
+  retries = 8,
+  delayMs = 3000
+): Promise<boolean> {
   const prefix = `recordings/${userId}/${roomName}`;
   for (let i = 0; i < retries; i++) {
-    const { data } = await supabaseAdmin.storage
+    const { data: topLevel } = await supabaseAdmin.storage
       .from(RECORDINGS_BUCKET)
-      .list(prefix);
-    const jsonFile = (data ?? []).find((f) => f.name.endsWith(".json"));
-    if (jsonFile) return `${prefix}/${jsonFile.name}`;
-    await new Promise((r) => setTimeout(r, 3000));
+      .list(prefix, { limit: 100 });
+
+    const folders = (topLevel ?? []).filter((f) => !f.name.includes("."));
+    let readyCount = 0;
+    for (const folder of folders) {
+      const { data: files } = await supabaseAdmin.storage
+        .from(RECORDINGS_BUCKET)
+        .list(`${prefix}/${folder.name}`);
+      if ((files ?? []).some((f) => f.name.endsWith(".json"))) {
+        readyCount++;
+      }
+    }
+    if (readyCount >= expectedCount) return true;
+    await new Promise((r) => setTimeout(r, delayMs));
   }
-  return null;
+  return false;
 }
+
+
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -108,9 +110,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "skipped" });
   }
 
-  // Path structure: recordings/{userId}/{roomName}/...
+  // Path structure for participant egress: recordings/{userId}/{roomName}/{identity}/file.json
   const parts = filePath.split("/");
-  if (parts[0] !== "recordings" || parts.length < 3) {
+  if (parts[0] !== "recordings" || parts.length < 5) {
     return NextResponse.json({ status: "skipped" });
   }
 
@@ -119,22 +121,32 @@ export async function POST(req: NextRequest) {
   const indexName = "vire-recording";
   const index = pc.index(indexName).namespace(userId);
 
-  // Get main JSON metadata
-  const mainJsonPath = await waitForMainJson(userId, roomName);
-  if (!mainJsonPath) {
-    console.error("Main JSON not found for", roomName);
-    return NextResponse.json({ error: "Main JSON not found" }, { status: 500 });
+  // Guard against duplicate processing when multiple participants' JSONs upload
+  const [dbEvent] = await db.select().from(events).where(eq(events.id, roomName));
+  if (!dbEvent) {
+    return NextResponse.json({ status: "skipped" });
+  }
+  if (dbEvent.hasTranscript) {
+    return NextResponse.json({ status: "already processed" });
   }
 
-  const { data: mainJsonBlob, error: mainJsonError } = await supabaseAdmin.storage
-    .from(RECORDINGS_BUCKET)
-    .download(mainJsonPath);
-  if (mainJsonError || !mainJsonBlob) {
-    return NextResponse.json({ error: "Failed to download main JSON" }, { status: 500 });
+  // Wait for all participant recordings to finish uploading before processing.
+  // Each participant egress uploads a .json metadata file last — we poll until
+  // the number of participant folders with a .json matches the number of attendees.
+  const expectedCount = await db
+    .select()
+    .from(meetingAttendees)
+    .where(eq(meetingAttendees.meetingId, roomName))
+    .then((rows) => rows.length);
+
+  const allReady = await waitForAllParticipants(userId, roomName, expectedCount);
+  if (!allReady) {
+    // Another participant's JSON will re-trigger this webhook; bail out for now.
+    return NextResponse.json({ status: "waiting for other participants" });
   }
-  const mainJson = JSON.parse(await mainJsonBlob.text());
-  const mainStartEpoch = mainJson.started_at;
-  const mainEpochInSeconds = Math.trunc(Number(mainStartEpoch) / 1e9);
+
+  // Fallback epoch used when a participant has no JSON metadata file
+  const scheduledEpochInSeconds = Math.trunc(new Date(dbEvent.dateTime).getTime() / 1000);
 
   // List participant folders
   const { data: topLevel } = await supabaseAdmin.storage
@@ -193,8 +205,8 @@ export async function POST(req: NextRequest) {
       );
 
       // Get participant JSON metadata
-      let startedAtEpochInSeconds = mainEpochInSeconds;
-      let endedAtEpochInSeconds = mainEpochInSeconds;
+      let startedAtEpochInSeconds = scheduledEpochInSeconds;
+      let endedAtEpochInSeconds = scheduledEpochInSeconds;
       if (participant.json) {
         const { data: pJsonBlob } = await supabaseAdmin.storage
           .from(RECORDINGS_BUCKET)
@@ -235,6 +247,14 @@ export async function POST(req: NextRequest) {
     }
 
     const flattened = allRecordGroups.flat();
+
+    // Use the earliest actual recording start as the baseline so transcript
+    // timestamps align with video position 0 (= when the first participant joined).
+    const mainEpochInSeconds =
+      flattened.length > 0
+        ? Math.min(...flattened.map((r) => r.startedAtEpoch))
+        : scheduledEpochInSeconds;
+
     const sorted = flattened.sort(
       (a, b) => a.startedAtEpoch + a.start_time - (b.startedAtEpoch + b.start_time)
     );

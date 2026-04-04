@@ -172,7 +172,7 @@ export function AttachmentDialog({
       case "image":
         return <Image className="h-8 w-8 text-green-500" />;
       default:
-        return <File className="h-8 w-8 text-gray-500" />;
+        return <File className="h-8 w-8 text-muted-foreground" />;
     }
   };
 
@@ -221,21 +221,21 @@ export function AttachmentDialog({
               className="absolute inset-0 data-[state=inactive]:hidden"
             >
               <div
-                className="h-full border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-400 transition-colors cursor-pointer flex flex-col items-center justify-center"
+                className="h-full border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-blue-400 transition-colors cursor-pointer flex flex-col items-center justify-center"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {isReading ? (
                   <>
                     <Loader2 className="h-12 w-12 text-blue-400 mb-4 animate-spin" />
-                    <p className="text-sm text-gray-700">Uploading...</p>
+                    <p className="text-sm text-foreground">Uploading...</p>
                   </>
                 ) : (
                   <>
-                    <Cloud className="h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-sm text-gray-700 mb-2">
+                    <Cloud className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-sm text-foreground mb-2">
                       Drop files here or click to browse
                     </p>
-                    <p className="text-xs text-gray-500 mb-4">
+                    <p className="text-xs text-muted-foreground mb-4">
                       Maximum file size: 10 MB
                     </p>
                     <Button variant="outline" size="sm" type="button">
@@ -259,7 +259,7 @@ export function AttachmentDialog({
               className="absolute inset-0 flex flex-col gap-3 data-[state=inactive]:hidden"
             >
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search files..."
                   className="pl-10"
@@ -271,11 +271,11 @@ export function AttachmentDialog({
               <ScrollArea className="flex-1">
                 {isLoadingFiles ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : filteredAppFiles.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Folder className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Folder className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm">No project files found</p>
                   </div>
                 ) : (
@@ -294,18 +294,18 @@ export function AttachmentDialog({
                           onClick={() => handleSelectAppFile(file)}
                           className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
                             attached
-                              ? "bg-blue-50 border-blue-200 border"
-                              : "hover:bg-gray-50"
+                              ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 border"
+                              : "hover:bg-muted/50"
                           }`}
                         >
                           <div className="flex-shrink-0">
                             {getFileIcon(type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-900 truncate">
+                            <p className="text-sm text-foreground truncate">
                               {file.name}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               {formatFileSize(file.size)}
                               {file.projectName ? ` · ${file.projectName}` : ""}
                             </p>
@@ -327,7 +327,7 @@ export function AttachmentDialog({
 
         {selectedFiles.length > 0 && (
           <div className="border-t pt-4">
-            <p className="text-sm text-gray-700 mb-3">
+            <p className="text-sm text-foreground mb-3">
               Selected Files ({selectedFiles.length})
             </p>
             <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
@@ -340,7 +340,7 @@ export function AttachmentDialog({
                         selectedFiles.filter((f) => f.id !== file.id)
                       )
                     }
-                    className="ml-2 hover:bg-gray-300 rounded-full p-0.5"
+                    className="ml-2 hover:bg-accent rounded-full p-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>

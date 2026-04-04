@@ -39,10 +39,10 @@ type StatusTab = (typeof STATUS_TABS)[number];
 function PriorityBadge({ priority }: { priority: string }) {
   const styles =
     priority === "high"
-      ? "bg-red-50 text-red-700 border border-red-200"
+      ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
       : priority === "medium"
-        ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-        : "bg-gray-50 text-gray-500 border border-gray-200";
+        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+        : "bg-muted text-muted-foreground border border-border";
   return (
     <span
       className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${styles}`}
@@ -56,7 +56,7 @@ function PriorityBadge({ priority }: { priority: string }) {
 function StatusBadge({ status }: { status: string }) {
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
         <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
         Completed
       </span>
@@ -64,15 +64,15 @@ function StatusBadge({ status }: { status: string }) {
   }
   if (status === "in-progress") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
         In Progress
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
+      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block" />
       To Do
     </span>
   );
@@ -80,8 +80,8 @@ function StatusBadge({ status }: { status: string }) {
 
 function ProjectPill({ name }: { name: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
-      <span className="w-2 h-2 rounded-full bg-gray-400 inline-block flex-shrink-0" />
+    <span className="inline-flex items-center gap-1.5 text-xs bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">
+      <span className="w-2 h-2 rounded-full bg-muted-foreground inline-block flex-shrink-0" />
       {name}
     </span>
   );
@@ -209,8 +209,8 @@ export default function Tasks() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl text-gray-900">Tasks</h1>
-          <p className="text-gray-600 mt-1">Manage your tasks and to-dos</p>
+          <h1 className="text-2xl sm:text-3xl text-foreground">Tasks</h1>
+          <p className="text-muted-foreground mt-1">Manage your tasks and to-dos</p>
         </div>
         <div className="w-full sm:w-auto">
           <AddNewTask />
@@ -221,7 +221,7 @@ export default function Tasks() {
       <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
         <Card className="overflow-hidden flex flex-col h-full">
           {/* Toolbar */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex-wrap">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
             {/* Status tabs */}
             <div className="flex items-center gap-1">
               {STATUS_TABS.map((tab) => (
@@ -233,16 +233,16 @@ export default function Tasks() {
                   }}
                   className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
                     activeTab === tab
-                      ? "bg-white border border-gray-200 text-gray-900 shadow-sm font-medium"
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                      ? "bg-card border border-border text-foreground shadow-sm font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
                 >
                   {TAB_LABELS[tab]}
                   <span
                     className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
                       activeTab === tab
-                        ? "bg-gray-100 text-gray-600"
-                        : "text-gray-400"
+                        ? "bg-muted text-muted-foreground"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {tab === "in-progress"
@@ -254,7 +254,7 @@ export default function Tasks() {
             </div>
 
             <div className="relative flex-1 max-w-xs ml-auto">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search tasks..."
                 value={searchQuery}
@@ -267,7 +267,7 @@ export default function Tasks() {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                   <ArrowUpDown className="h-3 w-3" />
                   Sort
                   {sortField !== "dueDate" || sortDir !== "asc" ? (
@@ -301,7 +301,7 @@ export default function Tasks() {
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors">
+                <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
                   <SlidersHorizontal className="h-3 w-3" />
                   Filter
                   {priorityFilter !== "all" ? (
@@ -335,47 +335,47 @@ export default function Tasks() {
 
           <div className="overflow-x-auto flex-1">
             <table className="w-full">
-              <thead className="border-b border-gray-200">
+              <thead className="border-b border-border">
                 <tr>
                   <th className="w-10 px-3 py-2.5" />
                   <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                       <ListTodo className="h-3.5 w-3.5" />
                       Task
                     </div>
                   </th>
                   <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                       <Briefcase className="h-3.5 w-3.5" />
                       Project
                     </div>
                   </th>
                   <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                       <Flag className="h-3.5 w-3.5" />
                       Priority
                     </div>
                   </th>
                   <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                       <Target className="h-3.5 w-3.5" />
                       Status
                     </div>
                   </th>
                   <th className="text-left px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                       <Calendar className="h-3.5 w-3.5" />
                       Due date
                     </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {paginatedTasks.map((task: Task) => (
                   <tr
                     key={task.id}
                     onClick={() => handleTaskClick(task)}
-                    className="cursor-pointer transition-colors hover:bg-gray-50 group"
+                    className="cursor-pointer transition-colors hover:bg-muted/50 group"
                   >
                     <td
                       className="px-3 py-2.5"
@@ -396,8 +396,8 @@ export default function Tasks() {
                       <span
                         className={`text-sm font-medium ${
                           task.status === "completed"
-                            ? "line-through text-gray-400"
-                            : "text-gray-900"
+                            ? "line-through text-muted-foreground"
+                            : "text-foreground"
                         }`}
                       >
                         {task.title}
@@ -414,7 +414,7 @@ export default function Tasks() {
                     <td className="px-3 py-2.5">
                       <StatusBadge status={task.status} />
                     </td>
-                    <td className="px-3 py-2.5 text-xs text-gray-500">
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">
                       {task.dueDate
                         ? new Date(task.dueDate).toLocaleDateString()
                         : "—"}
@@ -425,7 +425,7 @@ export default function Tasks() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-3 py-12 text-center text-sm text-gray-400"
+                      className="px-3 py-12 text-center text-sm text-muted-foreground"
                     >
                       No tasks found
                     </td>
@@ -436,8 +436,8 @@ export default function Tasks() {
           </div>
 
           {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50/50">
-            <div className="text-xs text-gray-500">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
+            <div className="text-xs text-muted-foreground">
               Showing {filteredTasks.length === 0 ? 0 : startIndex + 1}–
               {Math.min(startIndex + itemsPerPage, filteredTasks.length)} of{" "}
               {filteredTasks.length} tasks
@@ -453,7 +453,7 @@ export default function Tasks() {
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                 Previous
               </Button>
-              <span className="px-2 py-1 text-xs text-gray-600">
+              <span className="px-2 py-1 text-xs text-muted-foreground">
                 {currentPage} / {Math.max(1, totalPages)}
               </span>
               <Button

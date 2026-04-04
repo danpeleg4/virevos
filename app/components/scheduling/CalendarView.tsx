@@ -211,7 +211,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-200 bg-gray-50/50 shrink-0 overflow-x-auto">
+      <div className="flex items-center gap-1 px-4 py-3 border-b border-border bg-muted/50 shrink-0 overflow-x-auto">
         {tabNav && (
           <div className="flex items-center gap-1 shrink-0">{tabNav}</div>
         )}
@@ -237,7 +237,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-foreground">
               {formattedDate}
             </span>
             {isToday && (
@@ -277,10 +277,10 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="absolute left-0 right-0 flex border-b border-gray-100 hover:bg-gray-50/40 transition-colors"
+                className="absolute left-0 right-0 flex border-b border-border hover:bg-muted/40 transition-colors"
                 style={{ top: hour * rowHeight, height: rowHeight }}
               >
-                <div className="w-20 shrink-0 px-3 pt-2 text-xs text-gray-400 border-r border-gray-100 text-right">
+                <div className="w-20 shrink-0 px-3 pt-2 text-xs text-muted-foreground border-r border-border text-right">
                   {formatHour(hour)}
                 </div>
               </div>
@@ -292,7 +292,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
                 className="absolute left-20 right-0 h-0.5 bg-blue-500 z-10 pointer-events-none"
                 style={{ top: (dropMinutes / 60) * rowHeight }}
               >
-                <span className="absolute left-0 -top-2.5 text-[10px] text-blue-600 font-medium bg-white px-1 rounded">
+                <span className="absolute left-0 -top-2.5 text-[10px] text-blue-600 font-medium bg-card px-1 rounded">
                   {`${Math.floor(dropMinutes / 60) % 12 || 12}:${String(dropMinutes % 60).padStart(2, "0")} ${Math.floor(dropMinutes / 60) >= 12 ? "PM" : "AM"}`}
                 </span>
               </div>
@@ -334,7 +334,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
                         ? "bg-red-50 border-red-200 text-red-900"
                         : meeting.status === "upcoming"
                           ? "bg-blue-50 border-blue-200 text-blue-900"
-                          : "bg-gray-50 border-gray-200 text-gray-900"
+                          : "bg-muted/50 border-border text-foreground"
                     }`}
                   >
                     {/* Title row — always visible */}
@@ -393,7 +393,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
                               .map((attendee, i) => (
                                 <Avatar
                                   key={i}
-                                  className="h-4 w-4 border border-white ring-0"
+                                  className="h-4 w-4 border border-card ring-0"
                                 >
                                   <AvatarFallback className="text-[8px] bg-blue-100 text-blue-600">
                                     {attendee.initials}
@@ -401,7 +401,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
                                 </Avatar>
                               ))}
                             {meeting.attendees.length > 3 && (
-                              <div className="h-4 w-4 rounded-full border border-white bg-gray-100 flex items-center justify-center text-[8px] text-gray-600">
+                              <div className="h-4 w-4 rounded-full border border-card bg-muted flex items-center justify-center text-[8px] text-muted-foreground">
                                 +{meeting.attendees.length - 3}
                               </div>
                             )}
@@ -414,7 +414,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
                           </span>
                         )}
                         {meeting.hasNotes && (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
                             <FileText className="h-2.5 w-2.5" />
                             Notes
                           </span>
