@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
@@ -37,6 +38,8 @@ function ToggleRow({
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<TabValue>("notifications");
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -118,10 +121,17 @@ export default function Settings() {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                 Appearance
               </p>
-              <ToggleRow
-                label="Dark mode"
-                description="Use dark theme across the app"
-              />
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">Dark mode</p>
+                  <p className="text-sm text-muted-foreground">Use dark theme across the app</p>
+                </div>
+                <Switch
+                  checked={isDark}
+                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                  className="shrink-0"
+                />
+              </div>
             </div>
 
             <Separator />

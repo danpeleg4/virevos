@@ -533,7 +533,6 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   );
 }
 
-// Transcription View — unchanged
 function TranscriptionView({
   meeting,
   onBack,
@@ -543,7 +542,7 @@ function TranscriptionView({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videos, setVideos] = useState<{ participant: string; url: string }[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -551,7 +550,8 @@ function TranscriptionView({
   const [currentChunkIndex, setCurrentChunkIndex] = useState<
     number | null | string
   >(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const primaryRef = useRef<HTMLVideoElement | null>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   function formatTime(seconds: number): string {
@@ -588,7 +588,7 @@ function TranscriptionView({
     const fetchRecording = async () => {
       try {
         const res = await axios.get(`/api/recording/${meeting.id}`);
-        setVideoUrl(res.data.url ?? null);
+        setVideos(res.data.videos ?? []);
       } catch (err) {
         console.error("Failed to fetch recording:", err);
       } finally {
@@ -598,8 +598,9 @@ function TranscriptionView({
     fetchRecording();
   }, [meeting.id]);
 
+  // Track state from the primary (first) video
   useEffect(() => {
-    const video = videoRef.current;
+    const video = primaryRef.current;
     if (!video) return;
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
@@ -617,7 +618,7 @@ function TranscriptionView({
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [videoUrl]);
+  }, [videos]);
 
   useEffect(() => {
     if (!formattedData.length) return;
@@ -630,11 +631,16 @@ function TranscriptionView({
     setCurrentChunkIndex(index !== -1 ? index : null);
   }, [currentTime, formattedData]);
 
+  const allVideos = () => videoRefs.current.filter((v): v is HTMLVideoElement => v !== null);
+
   const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused || video.ended) video.play();
-    else video.pause();
+    const primary = primaryRef.current;
+    if (!primary) return;
+    if (primary.paused || primary.ended) {
+      allVideos().forEach((v) => v.play());
+    } else {
+      allVideos().forEach((v) => v.pause());
+    }
   };
 
   const formatClock = (seconds: number) => {
@@ -645,17 +651,20 @@ function TranscriptionView({
 
   const progressPercent =
     duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
+
   const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const bar = e.currentTarget;
     const rect = bar.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const percent = Math.max(0, Math.min(clickX / rect.width, 1));
     const newTime = percent * duration;
-    if (videoRef.current) videoRef.current.currentTime = newTime;
+    allVideos().forEach((v) => { v.currentTime = newTime; });
     setCurrentTime(newTime);
   };
 
   if (loading) return <p>Loading recording...</p>;
+
+  const gridCols = videos.length >= 2 ? "grid-cols-2" : "grid-cols-1";
 
   return (
     <div className="h-full min-h-0 flex flex-col p-6 bg-card overflow-hidden">
@@ -676,20 +685,28 @@ function TranscriptionView({
       <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
         <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
           <Card className="p-6 flex flex-col min-h-0 shadow-sm">
-            <div className="aspect-video relative bg-black rounded-lg overflow-hidden mb-4">
-              <div className="h-full w-full">
-                {videoUrl ? (
-                  <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-white">
-                    No video found
+            <div className={`grid ${gridCols} gap-2 bg-black rounded-lg overflow-hidden mb-4`}>
+              {videos.length > 0 ? (
+                videos.map((v, i) => (
+                  <div key={v.participant} className="relative aspect-video">
+                    <video
+                      ref={(el) => {
+                        videoRefs.current[i] = el;
+                        if (i === 0) primaryRef.current = el;
+                      }}
+                      src={v.url}
+                      className="w-full h-full object-contain"
+                    />
+                    <span className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-1.5 py-0.5 rounded">
+                      {v.participant}
+                    </span>
                   </div>
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="aspect-video flex items-center justify-center text-white col-span-2">
+                  No video found
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <Button size="sm" onClick={togglePlay} className="shrink-0">
