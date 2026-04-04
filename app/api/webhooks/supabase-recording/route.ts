@@ -145,8 +145,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "waiting for other participants" });
   }
 
-  // Use the meeting's scheduled start time as the reference epoch
-  const mainEpochInSeconds = Math.trunc(new Date(dbEvent.dateTime).getTime() / 1000);
+  // Fallback epoch used when a participant has no JSON metadata file
+  const scheduledEpochInSeconds = Math.trunc(new Date(dbEvent.dateTime).getTime() / 1000);
 
   // List participant folders
   const { data: topLevel } = await supabaseAdmin.storage
@@ -205,8 +205,8 @@ export async function POST(req: NextRequest) {
       );
 
       // Get participant JSON metadata
-      let startedAtEpochInSeconds = mainEpochInSeconds;
-      let endedAtEpochInSeconds = mainEpochInSeconds;
+      let startedAtEpochInSeconds = scheduledEpochInSeconds;
+      let endedAtEpochInSeconds = scheduledEpochInSeconds;
       if (participant.json) {
         const { data: pJsonBlob } = await supabaseAdmin.storage
           .from(RECORDINGS_BUCKET)
@@ -247,6 +247,14 @@ export async function POST(req: NextRequest) {
     }
 
     const flattened = allRecordGroups.flat();
+
+    // Use the earliest actual recording start as the baseline so transcript
+    // timestamps align with video position 0 (= when the first participant joined).
+    const mainEpochInSeconds =
+      flattened.length > 0
+        ? Math.min(...flattened.map((r) => r.startedAtEpoch))
+        : scheduledEpochInSeconds;
+
     const sorted = flattened.sort(
       (a, b) => a.startedAtEpoch + a.start_time - (b.startedAtEpoch + b.start_time)
     );
