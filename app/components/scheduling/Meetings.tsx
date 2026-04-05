@@ -797,10 +797,47 @@ function TranscriptionView({
               className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
               ref={containerRef}
             >
-              {formattedData.length > 0 ? (
-                formattedData.map((entry, index) => {
-                  const isActive = index === currentChunkIndex;
+              {formattedData.length > 0 ? (() => {
+                const q = searchQuery.toLowerCase();
+                const filtered = q
+                  ? formattedData.filter(
+                      (e) =>
+                        e.text.toLowerCase().includes(q) ||
+                        e.speaker.toLowerCase().includes(q)
+                    )
+                  : formattedData;
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
+                      No results for &quot;{searchQuery}&quot;
+                    </div>
+                  );
+                }
+
+                return filtered.map((entry, index) => {
+                  const originalIndex = formattedData.indexOf(entry);
+                  const isActive = !q && originalIndex === currentChunkIndex;
                   const color = speakerColors.get(entry.speaker);
+
+                  const highlight = (text: string) => {
+                    if (!q) return <>{text}</>;
+                    const parts = text.split(new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+                    return (
+                      <>
+                        {parts.map((part, i) =>
+                          part.toLowerCase() === q ? (
+                            <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5">
+                              {part}
+                            </mark>
+                          ) : (
+                            part
+                          )
+                        )}
+                      </>
+                    );
+                  };
+
                   return (
                     <div
                       key={index}
@@ -821,14 +858,14 @@ function TranscriptionView({
                             {entry.speaker}
                           </p>
                           <p className="text-sm text-muted-foreground leading-relaxed">
-                            {entry.text}
+                            {highlight(entry.text)}
                           </p>
                         </div>
                       </div>
                     </div>
                   );
-                })
-              ) : (
+                });
+              })() : (
                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
                   Loading transcript segments...
                 </div>
