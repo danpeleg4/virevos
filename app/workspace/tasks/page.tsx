@@ -206,16 +206,6 @@ export default function Tasks() {
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl text-foreground">Tasks</h1>
-          <p className="text-muted-foreground mt-1">Manage your tasks and to-dos</p>
-        </div>
-        <div className="w-full sm:w-auto">
-          <AddNewTask />
-        </div>
-      </div>
 
       {/* Tasks Table */}
       <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
@@ -331,6 +321,7 @@ export default function Tasks() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <AddNewTask />
           </div>
 
           <div className="overflow-x-auto flex-1">

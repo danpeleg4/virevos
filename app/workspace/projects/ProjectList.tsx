@@ -34,6 +34,7 @@ import { Progress } from "@/app/components/ui/progress";
 import { Project } from "@/types/projects";
 import type { clients } from "@/types/clients";
 import { ProjectEditDialog } from "./ProjectEditDialog";
+import {ProjectCreateDialog} from "@/app/workspace/projects/ProjectCreateDialog";
 
 const ROW_HEIGHT = 52;
 
@@ -330,6 +331,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+              <ProjectCreateDialog clients={clients}/>
         </div>
 
         <div className="overflow-x-auto flex-1">

@@ -44,14 +44,6 @@ function CalendarContent() {
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 gap-6">
-      {/* Header */}
-      <div className="shrink-0">
-        <h1 className="text-2xl sm:text-3xl text-foreground">Smart Scheduling</h1>
-        <p className="text-muted-foreground mt-1">
-          AI-powered scheduling that adapts to your workload and automatically
-          manages conflicts
-        </p>
-      </div>
 
       {/* Main Card */}
       <Card className="flex-1 min-h-0 flex flex-col overflow-hidden">

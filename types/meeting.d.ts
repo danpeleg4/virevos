@@ -62,4 +62,5 @@ type TranscribedChunk = {
   time: string;
   text: string;
   startTime: number;
+  endTime: number;
 };

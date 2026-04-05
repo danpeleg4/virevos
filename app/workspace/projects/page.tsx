@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { ProjectList } from "./ProjectList";
-import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from "@/types/projects";
@@ -78,16 +77,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl text-foreground">Projects</h1>
-          <p className="mt-1 text-muted-foreground">Track and manage your projects</p>
-        </div>
-        {!projectsQuery.isLoading && (
-          <ProjectCreateDialog clients={projectsQuery.data?.allClients ?? []} />
-        )}
-      </div>
-
       <ProjectList
         projects={filtered}
         clients={projectsQuery.data?.allClients ?? []}

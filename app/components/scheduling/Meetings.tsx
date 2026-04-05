@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { CardContent, Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
@@ -578,6 +578,7 @@ function TranscriptionView({
         time: formatTime(item.start_time),
         text: item.chunk_text,
         startTime: item.start_time,
+        endTime: item.end_time,
       }));
       setFormattedData(formatted);
     };
@@ -649,6 +650,22 @@ function TranscriptionView({
     return `${m}:${String(s).padStart(2, "0")}`;
   };
 
+  const SPEAKER_COLORS = [
+    "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4",
+  ];
+
+  const speakerColors = useMemo(() => {
+    const map = new Map<string, string>();
+    let i = 0;
+    for (const chunk of formattedData) {
+      if (!map.has(chunk.speaker)) {
+        map.set(chunk.speaker, SPEAKER_COLORS[i % SPEAKER_COLORS.length]);
+        i++;
+      }
+    }
+    return map;
+  }, [formattedData]);
+
   const progressPercent =
     duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
 
@@ -664,49 +681,58 @@ function TranscriptionView({
 
   if (loading) return <p>Loading recording...</p>;
 
-  const gridCols = videos.length >= 2 ? "grid-cols-2" : "grid-cols-1";
-
   return (
     <div className="h-full min-h-0 flex flex-col p-6 bg-card overflow-hidden">
-      <div className="flex items-center space-x-4 mb-2">
-        <Button variant="ghost" onClick={onBack}>
-          ← Back to Summary
+      <div className="flex items-center gap-3 mb-4">
+        <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 shrink-0">
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Back
         </Button>
-      </div>
-
-      <div>
-        <h1 className="text-3xl">Meeting Transcription</h1>
-        <p className="mb-4 text-muted-foreground">
-          {decodeURIComponent(meeting.title)} •{" "}
-          {new Date(meeting.dateTime).toLocaleString()}
-        </p>
+        <div className="h-5 w-px bg-border" />
+        <div>
+          <h1 className="text-xl font-semibold leading-tight text-foreground">
+            {decodeURIComponent(meeting.title)}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {formatDateOnly(new Date(meeting.dateTime))} at {formatTimeOnly(new Date(meeting.dateTime))}
+          </p>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
         <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
           <Card className="p-6 flex flex-col min-h-0 shadow-sm">
-            <div className={`grid ${gridCols} gap-2 bg-black rounded-lg overflow-hidden mb-4`}>
-              {videos.length > 0 ? (
-                videos.map((v, i) => (
-                  <div key={v.participant} className="relative aspect-video">
-                    <video
-                      ref={(el) => {
-                        videoRefs.current[i] = el;
-                        if (i === 0) primaryRef.current = el;
-                      }}
-                      src={v.url}
-                      className="w-full h-full object-contain"
-                    />
-                    <span className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-1.5 py-0.5 rounded">
-                      {v.participant}
-                    </span>
+            <div className={`relative bg-black rounded-lg overflow-hidden mb-4${videos.length >= 2 ? " aspect-video" : ""}`}>
+              <div className={videos.length >= 2 ? "flex flex-col sm:flex-row h-full" : ""}>
+                {videos.length > 0 ? (
+                  videos.map((v, i) => (
+                    <div
+                      key={v.participant}
+                      className={`relative ${
+                        videos.length >= 2
+                          ? "flex-1 min-w-0 aspect-video sm:aspect-auto"
+                          : "aspect-video"
+                      }`}
+                    >
+                      <video
+                        ref={(el) => {
+                          videoRefs.current[i] = el;
+                          if (i === 0) primaryRef.current = el;
+                        }}
+                        src={v.url}
+                        className="w-full h-full object-contain"
+                      />
+                      <span className="absolute bottom-2 left-2 text-xs text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                        {v.participant}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="aspect-video flex items-center justify-center text-white/60 text-sm">
+                    No video found
                   </div>
-                ))
-              ) : (
-                <div className="aspect-video flex items-center justify-center text-white col-span-2">
-                  No video found
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <Button size="sm" onClick={togglePlay} className="shrink-0">
@@ -719,12 +745,24 @@ function TranscriptionView({
               </Button>
               <div className="flex-1">
                 <div
-                  className="h-2 rounded-full bg-muted cursor-pointer"
+                  className="relative h-2 rounded-full bg-muted cursor-pointer overflow-hidden"
                   onClick={onSeek}
                 >
+                  {duration > 0 && formattedData.map((chunk, i) => (
+                    <div
+                      key={i}
+                      className="absolute top-0 h-full"
+                      style={{
+                        left: `${(chunk.startTime / duration) * 100}%`,
+                        width: `${Math.max(0.3, ((chunk.endTime - chunk.startTime) / duration) * 100)}%`,
+                        backgroundColor: speakerColors.get(chunk.speaker),
+                        opacity: 0.85,
+                      }}
+                    />
+                  ))}
                   <div
-                    className="h-2 bg-blue-600 rounded-full transition-all"
-                    style={{ width: `${progressPercent}%` }}
+                    className="absolute top-0 h-full w-0.5 bg-white/90 shadow"
+                    style={{ left: `${progressPercent}%` }}
                   />
                 </div>
               </div>
@@ -732,6 +770,16 @@ function TranscriptionView({
                 {formatClock(currentTime)} / {formatClock(duration)}
               </span>
             </div>
+            {speakerColors.size > 0 && (
+              <div className="flex flex-wrap gap-3 mt-3">
+                {Array.from(speakerColors.entries()).map(([speaker, color]) => (
+                  <div key={speaker} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                    <span className="text-xs text-muted-foreground">{speaker}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 
@@ -752,14 +800,14 @@ function TranscriptionView({
               {formattedData.length > 0 ? (
                 formattedData.map((entry, index) => {
                   const isActive = index === currentChunkIndex;
+                  const color = speakerColors.get(entry.speaker);
                   return (
                     <div
                       key={index}
-                      className={`p-3 rounded-xl transition-all duration-200 border border-transparent ${
-                        isActive
-                          ? "bg-blue-50 border-blue-100 shadow-sm"
-                          : "hover:bg-muted/50"
+                      className={`p-3 rounded-xl transition-all duration-200 border shadow-sm ${
+                        isActive ? "border-transparent" : "border-transparent hover:bg-muted/50"
                       }`}
+                      style={isActive ? { backgroundColor: `${color}18`, borderColor: `${color}40` } : undefined}
                     >
                       <div className="flex gap-3">
                         <span className="text-[10px] font-mono text-muted-foreground mt-1 tabular-nums">
@@ -767,7 +815,8 @@ function TranscriptionView({
                         </span>
                         <div>
                           <p
-                            className={`text-xs font-bold mb-0.5 ${isActive ? "text-blue-600" : "text-foreground"}`}
+                            className="text-xs font-bold mb-0.5"
+                            style={{ color: isActive ? color : undefined }}
                           >
                             {entry.speaker}
                           </p>
