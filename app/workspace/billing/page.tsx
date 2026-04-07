@@ -287,16 +287,6 @@ export default function Billing() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl text-foreground">
-            Billing & Subscription
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your subscription and billing information
-          </p>
-        </div>
-      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Current Plan */}

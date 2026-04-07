@@ -45,6 +45,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
+import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
+import { Separator } from "../ui/separator";
 
 const ROW_HEIGHT = 52;
 
@@ -352,7 +354,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                   </p>
                   {note.ai_summary && (
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {note.ai_summary}
+                      {note.ai_summary.slice(0, 50)}...
                     </p>
                   )}
                 </td>
@@ -465,206 +467,198 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
 
       {/* Meeting Details Modal — unchanged */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedNote && (
             <>
               <DialogHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <DialogTitle className="text-2xl">
-                      {selectedNote.title}
-                    </DialogTitle>
-                    <DialogDescription className="mt-2">
-                      <span className="flex flex-wrap items-center gap-3 text-sm">
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(selectedNote.dateTime).toLocaleDateString(
-                            "en-US",
-                            {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
-                        </span>
-                        <span className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {selectedNote.duration}m
-                        </span>
-                        <span className="flex items-center">
-                          <Users className="h-4 w-4 mr-1" />
-                          {selectedNote?.attendees?.length} participants
-                        </span>
+                <DialogTitle className="text-xl">{selectedNote.title}</DialogTitle>
+                <DialogDescription asChild>
+                  <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDateOnly(new Date(selectedNote.dateTime))}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatTimeOnly(new Date(selectedNote.dateTime))} · {selectedNote.duration} min
+                    </span>
+                    {selectedNote?.attendees && selectedNote.attendees.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        {selectedNote.attendees.length} participant{selectedNote.attendees.length !== 1 ? "s" : ""}
                       </span>
-                    </DialogDescription>
+                    )}
                   </div>
-                </div>
+                </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-6 mt-6">
+              <div className="space-y-5 mt-2">
+
                 {/* Tags */}
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm text-muted-foreground">Tags</h3>
+                {selectedNote?.tags && selectedNote.tags.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedNote.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-full bg-muted text-foreground border border-border"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedNote?.tags?.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-full bg-muted text-foreground border border-border"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                )}
 
                 {/* Attendees */}
-                <div>
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm text-muted-foreground">Attendees</h3>
+                {selectedNote?.attendees && selectedNote.attendees.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Attendees</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedNote.attendees.map((attendee, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 border border-border"
+                        >
+                          <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-[10px]">
+                              {attendee.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{attendee.name}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {selectedNote?.attendees?.map((attendee, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-sm">
-                            {attendee.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <p className="text-sm text-foreground">{attendee.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                )}
+
+                <Separator />
 
                 {/* AI Summary */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <Sparkles className="h-4 w-4 text-purple-500" />
-                      <h3 className="text-sm text-foreground">AI Summary</h3>
+                {selectedNote.ai_summary && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI Summary</span>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCopySummary}>
+                        {copied ? (
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-sm leading-relaxed text-foreground">
+                      {selectedNote.ai_summary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Key Points */}
+                {selectedNote?.key_points && selectedNote.key_points.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-3.5 w-3.5 text-blue-500" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Key Points</span>
+                    </div>
+                    <ul className="space-y-2">
+                      {selectedNote.key_points.map((point, index) => (
+                        <li key={index} className="text-sm flex items-start text-foreground">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500 shrink-0" />
+                          <span className="flex-1">{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Action Items */}
+                {selectedNote?.action_items && selectedNote.action_items.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckSquare className="h-3.5 w-3.5 text-orange-500" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Action Items ({selectedNote.action_items.length})
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedNote.action_items.map((item, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-muted/50 border border-border rounded-lg"
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-1">
+                            <p className="text-sm text-foreground">{item.task}</p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-6 px-2 shrink-0"
+                              onClick={() => handleAddSingleTask(item, index)}
+                              disabled={addingItems.has(index) || addedItems.has(index)}
+                            >
+                              {addingItems.has(index)
+                                ? "Adding..."
+                                : addedItems.has(index)
+                                  ? "Added"
+                                  : "Add"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Due: {item.dueDate ?? "No due date"}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                     <Button
                       size="sm"
-                      variant="ghost"
-                      onClick={handleCopySummary}
+                      variant="outline"
+                      className="mt-3"
+                      onClick={handleAddAllToTasks}
+                      disabled={allAdded}
                     >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      {allAdded ? "All Added" : "Add All to Tasks"}
                     </Button>
                   </div>
-                  <p className="text-sm leading-relaxed text-foreground">
-                    {selectedNote.ai_summary}
-                  </p>
-                </div>
-
-                {/* Key Points */}
-                <div>
-                  <div className="flex items-center space-x-2 mb-3">
-                    <FileText className="h-4 w-4 text-blue-500" />
-                    <h3 className="text-sm text-foreground">Key Points</h3>
-                  </div>
-                  <ul className="space-y-2">
-                    {selectedNote?.key_points?.map((point, index) => (
-                      <li
-                        key={index}
-                        className="text-sm flex items-start text-foreground"
-                      >
-                        <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500" />
-                        <span className="flex-1">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Action Items */}
-                <div>
-                  <div className="flex items-center space-x-2 mb-3">
-                    <CheckSquare className="h-4 w-4 text-orange-500" />
-                    <h3 className="text-sm text-foreground">
-                      Action Items ({selectedNote?.action_items?.length})
-                    </h3>
-                  </div>
-                  <div className="space-y-2">
-                    {selectedNote?.action_items?.map((item, index) => (
-                      <div
-                        key={index}
-                        className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
-                      >
-                        <div className="flex items-start justify-between mb-1">
-                          <p className="text-sm text-foreground">{item.task}</p>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-6 px-2 bg-card"
-                            onClick={() => handleAddSingleTask(item, index)}
-                            disabled={
-                              addingItems.has(index) || addedItems.has(index)
-                            }
-                          >
-                            {addingItems.has(index)
-                              ? "Adding..."
-                              : addedItems.has(index)
-                                ? "Added"
-                                : "Add"}
-                          </Button>
-                        </div>
-                        <div className="flex items-center text-xs text-muted-foreground space-x-3">
-                          <span>Due: {item.dueDate ?? "No due date"}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    size="sm"
-                    className="mt-3"
-                    variant="outline"
-                    onClick={handleAddAllToTasks}
-                    disabled={allAdded}
-                  >
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    {allAdded ? "All Added" : "Add All to Tasks"}
-                  </Button>
-                </div>
+                )}
 
                 {/* Transcript */}
                 {selectedNote.hasTranscript && (
                   <div>
-                    <div className="flex items-center space-x-2 mb-3">
-                      <Mic className="h-4 w-4 text-purple-500" />
-                      <h3 className="text-sm text-foreground">Transcript</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mic className="h-3.5 w-3.5 text-purple-500" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Transcript</span>
                     </div>
                     {transcriptLoading ? (
-                      <div className="p-4 rounded-lg border bg-muted/50 border-border text-sm text-muted-foreground">
+                      <div className="p-4 rounded-lg border border-border bg-muted/50 text-sm text-muted-foreground">
                         Loading transcript...
                       </div>
                     ) : transcriptData.length > 0 ? (
                       <>
-                        <div className="max-h-96 overflow-y-auto p-4 rounded-lg border bg-muted/50 border-border">
+                        <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-muted/50 p-4">
                           <div className="space-y-4">
                             {(showFullTranscript
                               ? transcriptData
                               : transcriptData.slice(0, 3)
                             ).map((entry, index) => (
-                              <div
-                                key={index}
-                                className="flex items-start space-x-3"
-                              >
-                                <span className="text-xs mt-1 text-muted-foreground shrink-0">
+                              <div key={index} className="flex items-start gap-3">
+                                <span className="text-xs mt-0.5 text-muted-foreground shrink-0 tabular-nums">
                                   {entry.time}
                                 </span>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium mb-0.5 text-blue-600">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-semibold text-foreground mb-0.5">
                                     {entry.speaker}
                                   </p>
-                                  <p className="text-sm text-foreground">
+                                  <p className="text-sm text-muted-foreground leading-relaxed">
                                     {entry.text}
                                   </p>
                                 </div>
@@ -674,24 +668,17 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                         </div>
                         {transcriptData.length > 3 && (
                           <button
-                            className="cursor-pointer mt-3 text-sm text-blue-600 hover:underline flex items-center gap-1"
+                            className="mt-2 text-sm text-blue-500 hover:underline flex items-center gap-1 cursor-pointer"
                             onClick={() => setShowFullTranscript((v) => !v)}
                           >
-                            <FileText className="h-4 w-4" />
-                            {showFullTranscript
-                              ? "Show Less"
-                              : "View Full Transcript"}
+                            <FileText className="h-3.5 w-3.5" />
+                            {showFullTranscript ? "Show less" : "View full transcript"}
                           </button>
                         )}
                       </>
                     ) : null}
                   </div>
                 )}
-
-                {/* Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t border-border">
-                  <Button onClick={() => setDetailsOpen(false)}>Close</Button>
-                </div>
               </div>
             </>
           )}

@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 import {
-  Video,
   Calendar,
   Clock,
   Users,
@@ -18,6 +15,9 @@ import {
   ExternalLink,
   Copy,
   Mic,
+  Sparkles,
+  Tag,
+  Check,
 } from "lucide-react";
 import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
@@ -40,6 +40,7 @@ export function EventDetailsDialog({
   const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [showFullTranscript, setShowFullTranscript] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [addedItems, setAddedItems] = useState<Set<number>>(
     () =>
@@ -100,6 +101,7 @@ export function EventDetailsDialog({
           time: formatTime(item.start_time),
           text: item.chunk_text,
           startTime: item.start_time,
+          endTime: item.end_time,
         }));
         setFormattedData(formatted);
       } finally {
@@ -121,254 +123,259 @@ export function EventDetailsDialog({
       )
     );
   }
+
+  function handleCopySummary() {
+    if (!event.ai_summary) return;
+    navigator.clipboard.writeText(event.ai_summary);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-xl mb-2">{event.title}</DialogTitle>
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  {formatDateOnly(new Date(event.dateTime))}
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {formatTimeOnly(new Date(event.dateTime))} ({event.duration}{" "}
-                  min)
-                </div>
-                <div className="flex items-center">
-                  <Video className="h-4 w-4 mr-1" />
-                </div>
-              </div>
+          <DialogTitle className="text-xl">{event.title}</DialogTitle>
+          <DialogDescription asChild>
+            <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                {formatDateOnly(new Date(event.dateTime))}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {formatTimeOnly(new Date(event.dateTime))} · {event.duration} min
+              </span>
+              {event.attendees && event.attendees.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  {event.attendees.length} participant{event.attendees.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
-            <Badge
-              variant={event.status === "completed" ? "default" : "secondary"}
-            >
-              {event.status}
-            </Badge>
-          </div>
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-6">
-          {/* Attendees */}
-          <div>
-            {event.attendees && event.attendees.length > 0 && (
-              <div>
-                <h3 className="text-sm text-foreground mb-3 flex items-center">
-                  <Users className="h-4 w-4 mr-2" />
-                  Attendees
-                </h3>
+        <div className="space-y-5 mt-2">
 
-                <div className="flex flex-wrap gap-2">
-                  {event.attendees.map((attendee, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center space-x-2 bg-muted/50 rounded-lg px-3 py-2"
-                    >
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">
-                          {attendee.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-foreground">
-                        {attendee.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+          {/* Tags */}
+          {event.tags && event.tags.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</span>
               </div>
-            )}
-          </div>
+              <div className="flex flex-wrap gap-1.5">
+                {event.tags.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-full bg-muted text-foreground border border-border"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Attendees */}
+          {event.attendees && event.attendees.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Attendees</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {event.attendees.map((attendee, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 border border-border"
+                  >
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback className="text-[10px]">
+                        {attendee.initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{attendee.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Meeting Link */}
-          {event.link ? (
+          {event.link && (
             <div>
-              <h3 className="text-sm text-foreground mb-3">Link</h3>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Link</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
-                  value={event.link || ""}
-                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-muted/50"
+                  value={event.link}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-muted/50 text-muted-foreground"
                 />
                 <Button
-                  className="cursor-pointer"
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(event.link || "");
-                  }}
+                  onClick={() => navigator.clipboard.writeText(event.link || "")}
                 >
-                  <Copy className="h-4 w-4 mr-2" />
+                  <Copy className="h-4 w-4 mr-1.5" />
                   Copy
                 </Button>
                 <Button
-                  className="cursor-pointer"
                   size="sm"
-                  onClick={() => {
-                    if (event.link) {
-                      window.open(event.link, "_blank");
-                    }
-                  }}
+                  onClick={() => event.link && window.open(event.link, "_blank")}
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
+                  <ExternalLink className="h-4 w-4 mr-1.5" />
                   Open
                 </Button>
               </div>
             </div>
-          ) : null}
+          )}
 
           {hasAIContent && (
             <>
               <Separator />
 
-              {/* AI-Generated Notes */}
-              {event.hasNotes && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <FileText className="h-5 w-5 mr-2 text-purple-600" />
-                      AI-Generated Meeting Notes
-                      <Badge className="ml-2 bg-purple-100 text-purple-700">
-                        Auto
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="text-sm text-foreground mb-2">Summary</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {event.ai_summary}
-                      </p>
+              {/* AI Summary */}
+              {event.hasNotes && event.ai_summary && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI Summary</span>
                     </div>
+                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCopySummary}>
+                      {copied ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-sm leading-relaxed text-foreground">
+                    {event.ai_summary}
+                  </p>
+                </div>
+              )}
 
-                    <div>
-                      <h4 className="text-sm text-foreground mb-2">Key Points</h4>
-                      <ul className="space-y-1">
-                        {event?.key_points?.map((point, i) => (
-                          <li
-                            key={i}
-                            className="text-sm text-muted-foreground flex items-start"
-                          >
-                            <span className="mr-2">•</span>
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+              {/* Key Points */}
+              {event.hasNotes && event.key_points && event.key_points.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="h-3.5 w-3.5 text-blue-500" />
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Key Points</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {event.key_points.map((point, i) => (
+                      <li key={i} className="text-sm flex items-start text-foreground">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500 shrink-0" />
+                        <span className="flex-1">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-                    <div>
-                      <h4 className="text-sm text-foreground mb-3 flex items-center">
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                        Action Items ({event?.action_items?.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {event?.action_items?.map((item, i) => (
-                          <div
-                            key={i}
-                            className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
-                          >
-                            <div className="flex items-start justify-between mb-1">
-                              <p className="text-sm text-foreground">
-                                {item.task}
-                              </p>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs h-6 px-2 bg-card"
-                                onClick={() => handleAddSingleTask(item, i)}
-                                disabled={
-                                  addingItems.has(i) || addedItems.has(i)
-                                }
-                              >
-                                {addingItems.has(i)
-                                  ? "Adding..."
-                                  : addedItems.has(i)
-                                    ? "Added"
-                                    : "Add"}
-                              </Button>
-                            </div>
-                            <div className="flex items-center text-xs text-muted-foreground space-x-3">
-                              <span>Due: {item.dueDate ?? "No due date"}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <Button
-                        size="sm"
-                        className="mt-3"
-                        variant="outline"
-                        onClick={handleAddAllToTasks}
-                        disabled={allAdded}
+              {/* Action Items */}
+              {event.hasNotes && event.action_items && event.action_items.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckSquare className="h-3.5 w-3.5 text-orange-500" />
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Action Items ({event.action_items.length})
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {event.action_items.map((item, i) => (
+                      <div
+                        key={i}
+                        className="p-3 bg-muted/50 border border-border rounded-lg"
                       >
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                        {allAdded ? "All Added" : "Add All to Tasks"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div className="flex items-start justify-between gap-3 mb-1">
+                          <p className="text-sm text-foreground">{item.task}</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-6 px-2 shrink-0"
+                            onClick={() => handleAddSingleTask(item, i)}
+                            disabled={addingItems.has(i) || addedItems.has(i)}
+                          >
+                            {addingItems.has(i)
+                              ? "Adding..."
+                              : addedItems.has(i)
+                                ? "Added"
+                                : "Add"}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Due: {item.dueDate ?? "No due date"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-3"
+                    onClick={handleAddAllToTasks}
+                    disabled={allAdded}
+                  >
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    {allAdded ? "All Added" : "Add All to Tasks"}
+                  </Button>
+                </div>
               )}
 
               {/* Transcript */}
               {event.hasTranscript && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <Mic className="h-5 w-5 mr-2 text-blue-600" />
-                      Meeting Transcript
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {transcriptLoading ? (
-                      <div className="bg-muted/50 border border-border rounded-lg p-4 text-sm text-muted-foreground">
-                        Loading transcript...
-                      </div>
-                    ) : (
-                      <>
-                        <div className="bg-muted/50 border border-border rounded-lg p-4 max-h-96 overflow-y-auto">
-                          <div className="space-y-4">
-                            {(showFullTranscript
-                              ? formattedData
-                              : formattedData.slice(0, 3)
-                            ).map((chunk, i) => (
-                              <div
-                                key={i}
-                                className="flex items-start space-x-3"
-                              >
-                                <span className="text-xs mt-1 text-muted-foreground shrink-0">
-                                  {chunk.time}
-                                </span>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium text-blue-600 mb-0.5">
-                                    {chunk.speaker}
-                                  </p>
-                                  <p className="text-sm text-foreground">
-                                    {chunk.text}
-                                  </p>
-                                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mic className="h-3.5 w-3.5 text-purple-500" />
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Transcript</span>
+                  </div>
+                  {transcriptLoading ? (
+                    <div className="p-4 rounded-lg border border-border bg-muted/50 text-sm text-muted-foreground">
+                      Loading transcript...
+                    </div>
+                  ) : (
+                    <>
+                      <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-muted/50 p-4">
+                        <div className="space-y-4">
+                          {(showFullTranscript
+                            ? formattedData
+                            : formattedData.slice(0, 3)
+                          ).map((chunk, i) => (
+                            <div key={i} className="flex items-start gap-3">
+                              <span className="text-xs mt-0.5 text-muted-foreground shrink-0 tabular-nums">
+                                {chunk.time}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-foreground mb-0.5">
+                                  {chunk.speaker}
+                                </p>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {chunk.text}
+                                </p>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                        {formattedData.length > 3 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="cursor-pointer mt-3"
-                            onClick={() => setShowFullTranscript((v) => !v)}
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            {showFullTranscript
-                              ? "Show Less"
-                              : "View Full Transcript"}
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                      </div>
+                      {formattedData.length > 3 && (
+                        <button
+                          className="mt-2 text-sm text-blue-500 hover:underline flex items-center gap-1 cursor-pointer"
+                          onClick={() => setShowFullTranscript((v) => !v)}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          {showFullTranscript ? "Show less" : "View full transcript"}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
             </>
           )}
