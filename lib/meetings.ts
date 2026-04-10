@@ -14,7 +14,7 @@ export async function createInstantMeeting(title: string) {
   }
 
   const now = new Date();
-  const meetingId = crypto.randomUUID().slice(0, 5);
+  const meetingId = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   await db.insert(events).values({
     id: meetingId,
     title,

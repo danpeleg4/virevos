@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin, TRANSCRIPTS_BUCKET } from "@/lib/supabase";
+import { db } from "@db/db";
+import { events } from "@db/schema";
+import { and, eq } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
@@ -14,6 +17,15 @@ export async function GET(
   const { id } = await ctx.params;
   if (!id) {
     return NextResponse.json({ error: "Invalid meetingId" }, { status: 400 });
+  }
+
+  const [meeting] = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(and(eq(events.id, id), eq(events.userId, user.id)));
+
+  if (!meeting) {
+    return new NextResponse("Not Found", { status: 404 });
   }
 
   const folderPrefix = `${user.id}/${id}`;
