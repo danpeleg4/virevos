@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Video, Users, Check, VideoOff, Mic, MicOff } from "lucide-react";
+import { Video, Users, Check, VideoOff, Mic, MicOff, ScreenShare, ScreenShareOff } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
   createLocalTracks,
@@ -28,6 +28,7 @@ export default function InMeetingView() {
   const [joined, setJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
@@ -78,12 +79,6 @@ export default function InMeetingView() {
     setJoined(true);
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const toggleMute = async () => {
     if (!roomRef.current) return;
     const next = !isMuted;
@@ -98,25 +93,54 @@ export default function InMeetingView() {
     setIsCameraOff(next);
   };
 
+  const toggleScreenShare = async () => {
+    if (!roomRef.current) return;
+    const next = !isScreenSharing;
+    await roomRef.current.localParticipant.setScreenShareEnabled(next);
+    setIsScreenSharing(next);
+  };
+
   if (!joined) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
-        <h1 className="text-2xl mb-4">Enter your name to join</h1>
-        <input
-          className="p-2 rounded text-black mb-4"
-          placeholder="Your name"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-          }}
-        />
-        <button
-          className="px-4 py-2 bg-blue-600 rounded cursor-pointer"
-          onClick={joinRoom}
-          disabled={!name}
-        >
-          Join
-        </button>
+      <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+
+          {/* Card */}
+          <div className="bg-[oklch(0.35_0_0)] border border-[oklch(1_0_0/12%)] rounded-xl p-8">
+            <div className="mb-6">
+              <h1 className="text-[oklch(0.985_0_0)] text-xl font-semibold leading-tight">
+                Ready to join?
+              </h1>
+              <p className="text-[oklch(0.556_0_0)] text-sm mt-1">
+                Enter your name to join the meeting
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[oklch(0.922_0_0)]">
+                  Your name
+                </label>
+                <input
+                  className="flex h-9 w-full rounded-md border border-[oklch(1_0_0/18%)] bg-[oklch(1_0_0/10%)] px-3 py-1 text-base text-[oklch(0.985_0_0)] placeholder:text-[oklch(0.556_0_0)] transition-colors outline-none focus:border-[oklch(0.488_0.243_264.376)] focus:ring-2 focus:ring-[oklch(0.488_0.243_264.376/30%)]"
+                  placeholder="e.g. Jane Smith"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && name && joinRoom()}
+                  autoFocus
+                />
+              </div>
+
+              <button
+                className="w-full h-9 px-4 rounded-md bg-gray-700 text-white text-sm font-medium transition-colors hover:bg-[oklch(0.44_0.243_264.376)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={joinRoom}
+                disabled={!name.trim()}
+              >
+                Join Meeting
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -173,13 +197,17 @@ export default function InMeetingView() {
           </button>
 
           <button
-            onClick={handleCopyLink}
-            className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
+            onClick={toggleScreenShare}
+            className={`p-4 rounded-full transition-colors ${
+              isScreenSharing
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-gray-700 hover:bg-gray-600"
+            }`}
           >
-            {copied ? (
-              <Check className="h-5 w-5 text-green-400" />
+            {isScreenSharing ? (
+              <ScreenShareOff className="h-5 w-5 text-white" />
             ) : (
-              <Users className="h-5 w-5 text-white" />
+              <ScreenShare className="h-5 w-5 text-white" />
             )}
           </button>
 
