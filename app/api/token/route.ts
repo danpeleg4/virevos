@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   AccessToken,
-  RoomServiceClient,
 } from "livekit-server-sdk";
 import { events } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-
-const livekitHost = process.env.LIVEKIT_HOST;
-const roomService = new RoomServiceClient(
-  livekitHost!,
-  process.env.LIVEKIT_API_KEY,
-  process.env.LIVEKIT_API_SECRET
-);
 
 export async function POST(req: NextRequest) {
   const { meetingId, name } = await req.json();
@@ -58,19 +50,6 @@ export async function POST(req: NextRequest) {
   }
 
   const roomName = meeting.id;
-  let room = (await roomService.listRooms([roomName]))[0];
-
-  if (!room) {
-    try {
-      room = await roomService.createRoom({
-        name: roomName,
-        emptyTimeout: 60,
-        maxParticipants: 20,
-      });
-    } catch (error) {
-      room = (await roomService.listRooms([roomName]))[0];
-    }
-  }
 
   // Create the token
   const at = new AccessToken(

@@ -301,90 +301,6 @@ export default function Clients() {
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl text-foreground">Clients</h1>
-          <p className="mt-1 text-muted-foreground">Manage your client relationships</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Client
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add New Client</DialogTitle>
-              <DialogDescription>Create a new client profile</DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Client Name</Label>
-                <Input
-                  placeholder="Acme Corporation"
-                  className="mt-2"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  placeholder="contact@acme.com"
-                  className="mt-2"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Phone</Label>
-                <Input
-                  placeholder="+1 (555) 000-0000"
-                  className="mt-2"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Industry</Label>
-                <Input
-                  placeholder="Technology"
-                  className="mt-2"
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Notes</Label>
-                <Textarea
-                  placeholder="Describe Notes..."
-                  className="mt-2"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    addClient.mutate({ name, email, phone, industry, notes });
-                  }}
-                >
-                  Add Client
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
       {/* Clients Table */}
       <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
         <Card className="overflow-hidden flex flex-col h-full">
@@ -488,6 +404,84 @@ export default function Clients() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Client
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add New Client</DialogTitle>
+                      <DialogDescription>Create a new client profile</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 mt-4">
+                      <div>
+                        <Label>Client Name</Label>
+                        <Input
+                            placeholder="Acme Corporation"
+                            className="mt-2"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input
+                            type="email"
+                            placeholder="contact@acme.com"
+                            className="mt-2"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Phone</Label>
+                        <Input
+                            placeholder="+1 (555) 000-0000"
+                            className="mt-2"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Industry</Label>
+                        <Input
+                            placeholder="Technology"
+                            className="mt-2"
+                            value={industry}
+                            onChange={(e) => setIndustry(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Notes</Label>
+                        <Textarea
+                            placeholder="Describe Notes..."
+                            className="mt-2"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="flex justify-end space-x-3 pt-4">
+                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                              addClient.mutate({ name, email, phone, industry, notes });
+                            }}
+                        >
+                          Add Client
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
 
