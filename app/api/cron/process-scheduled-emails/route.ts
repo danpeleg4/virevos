@@ -3,99 +3,13 @@ import { db } from "@db/db";
 import { scheduledEmails, emails, users, clients, googleTokens } from "@db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { google } from "googleapis";
+import {getFreshGoogleAccessToken} from "@/lib/google_access";
+import {buildRawEmail} from "@/lib/gmail_client";
 
 function parseEmailAddress(raw: string): { name: string; email: string } {
   const match = raw?.match(/^(.*?)\s*<(.+?)>$/);
   if (match) return { name: match[1].trim().replace(/^"|"$/g, ""), email: match[2].trim() };
   return { name: "", email: raw?.trim() ?? "" };
-}
-
-function buildRawEmail({
-  to,
-  toName,
-  from,
-  fromName,
-  subject,
-  bodyHtml,
-  bodyText,
-}: {
-  to: string;
-  toName?: string;
-  from: string;
-  fromName?: string;
-  subject: string;
-  bodyHtml: string;
-  bodyText?: string;
-}): string {
-  const boundary = `alt_${Date.now()}`;
-  const toHeader = toName ? `"${toName}" <${to}>` : to;
-  const fromHeader = fromName ? `"${fromName}" <${from}>` : from;
-  const message = [
-    `From: ${fromHeader}`,
-    `To: ${toHeader}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/plain; charset="UTF-8"`,
-    `Content-Transfer-Encoding: quoted-printable`,
-    ``,
-    bodyText || bodyHtml.replace(/<[^>]*>/g, ""),
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset="UTF-8"`,
-    `Content-Transfer-Encoding: quoted-printable`,
-    ``,
-    bodyHtml,
-    ``,
-    `--${boundary}--`,
-  ].join("\r\n");
-  return Buffer.from(message).toString("base64url");
-}
-
-async function getFreshAccessToken(userId: string): Promise<string | null> {
-  const rows = await db
-    .select()
-    .from(googleTokens)
-    .where(eq(googleTokens.userId, userId))
-    .limit(1);
-
-  if (!rows.length) return null;
-
-  const tokenData = rows[0];
-  const now = Date.now();
-
-  if (tokenData.expires_in && tokenData.expires_in > now + 30000) {
-    return tokenData.access_token;
-  }
-
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
-  );
-  oauth2Client.setCredentials({ refresh_token: tokenData.refresh_token });
-
-  try {
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    const updateData: {
-      access_token?: string;
-      expires_in: number;
-      connected: boolean;
-      refresh_token?: string;
-    } = {
-      access_token: credentials.access_token ?? undefined,
-      expires_in: credentials.expiry_date as number,
-      connected: true,
-    };
-    if (credentials.refresh_token) updateData.refresh_token = credentials.refresh_token;
-    await db.update(googleTokens).set(updateData).where(eq(googleTokens.userId, userId));
-    return credentials.access_token ?? null;
-  } catch (err) {
-    console.error("Token refresh error:", err);
-    return null;
-  }
 }
 
 async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
@@ -117,7 +31,7 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
   }
 
   const userId = scheduledEmail.userId;
-  const accessToken = await getFreshAccessToken(userId);
+  const accessToken = await getFreshGoogleAccessToken(userId);
 
   if (!accessToken) {
     await db
