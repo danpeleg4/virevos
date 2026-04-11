@@ -6,6 +6,21 @@ jest.mock("@clerk/nextjs/server", () => ({
   currentUser: jest.fn(),
 }));
 
+// eslint-disable-next-line no-var
+var mockDbWhere: jest.Mock;
+
+jest.mock("@db/db", () => {
+  mockDbWhere = jest.fn();
+  return {
+    db: {
+      select: () => ({ from: () => ({ where: mockDbWhere }) }),
+    },
+  };
+});
+
+jest.mock("@db/schema", () => ({ events: {} }));
+jest.mock("drizzle-orm", () => ({ and: jest.fn(), eq: jest.fn() }));
+
 jest.mock("@/lib/supabase", () => ({
   RECORDINGS_BUCKET: "recording",
   supabaseAdmin: {
@@ -39,6 +54,7 @@ function mockStorage(topLevel: { name: string }[], folderFiles: { name: string }
 describe("GET /api/recording/[id]", () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    mockDbWhere.mockResolvedValue([{ id: "meeting_1" }]);
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
