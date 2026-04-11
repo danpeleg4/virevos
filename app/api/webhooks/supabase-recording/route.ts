@@ -131,8 +131,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Wait for all participant recordings to finish uploading before processing.
-  // Each participant egress uploads a .json metadata file last — we poll until
-  // the number of participant folders with a .json matches the number of attendees.
   const expectedCount = await db
     .select()
     .from(meetingAttendees)
@@ -268,12 +266,18 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    await index.upsertRecords(normalized);
+    if (normalized.length > 0) {
+      await index.upsertRecords(normalized);
+    }
 
     // AI meeting analysis
     const fullTranscript = normalized
       .map((r) => `${r.speaker}: ${r.chunk_text}`)
       .join("\n");
+
+    if (!fullTranscript) {
+      return NextResponse.json({ status: "ok", note: "no transcript content" });
+    }
 
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4o",
