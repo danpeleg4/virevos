@@ -17,7 +17,10 @@ import {
   Participant,
   RemoteTrack,
   RoomEvent,
+  ParticipantEvent,
   Track,
+  TrackPublication,
+  LocalTrackPublication,
 } from "livekit-client";
 import axios from "axios";
 
@@ -28,7 +31,7 @@ export default function InMeetingView() {
   const [joined, setJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
@@ -66,9 +69,18 @@ export default function InMeetingView() {
       setParticipants((prev) => prev.filter((x) => x.sid !== p.sid));
     });
 
-    // TrackSubscribed fires when a participant adds a track
+    // TrackSubscribed fires when a remote participant adds a track
     room.on(RoomEvent.TrackSubscribed, () => {
-      // Force re-render to attach the new track
+      setParticipants((prev) => [...prev]);
+    });
+
+    // LocalTrackPublished fires when the local participant publishes a track (e.g. screen share)
+    room.on(RoomEvent.LocalTrackPublished, () => {
+      setParticipants((prev) => [...prev]);
+    });
+
+    // LocalTrackUnpublished fires when the local participant stops a track
+    room.on(RoomEvent.LocalTrackUnpublished, () => {
       setParticipants((prev) => [...prev]);
     });
 
@@ -164,7 +176,7 @@ export default function InMeetingView() {
       </div>
 
       {/* Control Bar */}
-      <div className="p-6 fixed bottom-0 left-0 right-0 flex justify-center">
+      <div className="p-6 fixed bottom-0 left-0 right-0 flex justify-center z-30">
         <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-4 flex items-center space-x-3">
           <button
             onClick={toggleMute}
@@ -280,9 +292,13 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
       const el = track.attach();
       if (!el) return;
       if (track.kind === "video") {
+        el.style.position = "absolute";
+        el.style.inset = "0";
         el.style.width = "100%";
         el.style.height = "100%";
-        el.style.objectFit = "cover";
+        el.style.objectFit =
+          track.source === Track.Source.ScreenShare ? "contain" : "cover";
+        el.style.zIndex = track.source === Track.Source.ScreenShare ? "1" : "0";
         containerRef.current?.appendChild(el);
       } else if (track.kind === "audio") {
         el.autoplay = true;
@@ -290,33 +306,47 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
       }
     };
 
-    // Attach existing tracks
-    participant.videoTrackPublications.values().forEach((pub) => {
-      if (pub.isSubscribed && pub.track) attachTrack(pub.track);
+    // Attach existing tracks — use pub.track directly since isSubscribed is false for local publications
+    participant.videoTrackPublications.values().forEach((pub: TrackPublication) => {
+      if (pub.track) attachTrack(pub.track);
     });
 
-    participant.audioTrackPublications.values().forEach((pub) => {
-      if (pub.isSubscribed && pub.track) attachTrack(pub.track);
+    participant.audioTrackPublications.values().forEach((pub: TrackPublication) => {
+      if (pub.track) attachTrack(pub.track);
     });
 
     const handleTrackSubscribed = (track: RemoteTrack) => attachTrack(track);
-    participant.on("trackSubscribed", handleTrackSubscribed);
+    participant.on(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+
+    const handleLocalTrackPublished = (pub: LocalTrackPublication) => {
+      if (pub.track) attachTrack(pub.track);
+    };
+    participant.on(ParticipantEvent.LocalTrackPublished, handleLocalTrackPublished);
+
+    const handleLocalTrackUnpublished = (pub: LocalTrackPublication) => {
+      if (pub.track && containerRef.current) {
+        pub.track.detach().forEach((el) => el.remove());
+      }
+    };
+    participant.on(ParticipantEvent.LocalTrackUnpublished, handleLocalTrackUnpublished);
 
     // Cleanup
     return () => {
-      participant.removeListener("trackSubscribed", handleTrackSubscribed);
+      participant.removeListener(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+      participant.removeListener(ParticipantEvent.LocalTrackPublished, handleLocalTrackPublished);
+      participant.removeListener(ParticipantEvent.LocalTrackUnpublished, handleLocalTrackUnpublished);
       if (containerRef.current) containerRef.current.innerHTML = "";
       if (audioRef.current) audioRef.current.innerHTML = "";
     };
   }, [participant]);
 
   const hasVideo = Array.from(participant.videoTrackPublications.values()).some(
-    (pub) => pub.isSubscribed
+    (pub) => pub.track != null
   );
 
   return (
     <>
-      <div className="absolute inset-0" ref={containerRef}>
+      <div className="absolute inset-0 overflow-hidden" ref={containerRef}>
         {!hasVideo && (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center">
