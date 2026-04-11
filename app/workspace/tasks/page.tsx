@@ -29,6 +29,7 @@ import axios from "axios";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateTaskStatus } from "@/lib/tasks";
+import { parseDateOnlyString } from "@/lib/date_utils";
 import { Task } from "@/types/tasks";
 
 const ROW_HEIGHT = 48;
@@ -407,7 +408,7 @@ export default function Tasks() {
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">
                       {task.dueDate
-                        ? new Date(task.dueDate).toLocaleDateString()
+                        ? parseDateOnlyString(task.dueDate).toLocaleDateString()
                         : "—"}
                     </td>
                   </tr>

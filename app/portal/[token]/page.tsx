@@ -33,6 +33,7 @@ import {
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import type { PortalData } from "@/types/portal";
+import { parseDateOnlyString } from "@/lib/date_utils";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -452,7 +453,7 @@ export default function PortalPage() {
                         <span className="text-gray-600">Due Date</span>
                         <span className="text-gray-900">
                           {project.dueDate
-                            ? new Date(project.dueDate).toLocaleDateString()
+                            ? parseDateOnlyString(project.dueDate).toLocaleDateString()
                             : "—"}
                         </span>
                       </div>
