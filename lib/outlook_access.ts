@@ -12,6 +12,7 @@ export const OUTLOOK_SCOPES = [
   "offline_access",
   "Calendars.ReadWrite",
   "Mail.ReadWrite",
+  "Mail.Send",
   "MailboxSettings.Read",
 ].join(" ");
 

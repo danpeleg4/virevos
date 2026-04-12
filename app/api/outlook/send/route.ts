@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json()) as SendEmailBody;
-  const { to, toName, subject, bodyHtml, bodyText, cc, replyToOutlookId } = body;
+  const { to, toName, subject, bodyHtml, cc, replyToOutlookId } = body;
 
   if (!to || !subject || !bodyHtml) {
     return NextResponse.json(
@@ -43,6 +43,7 @@ export async function POST(req: Request) {
     );
   }
 
+  // Request Body
   const message = {
     subject,
     body: {
@@ -52,15 +53,6 @@ export async function POST(req: Request) {
     toRecipients: [buildRecipient(to, toName)],
     ...(cc?.length
       ? { ccRecipients: cc.map((addr) => buildRecipient(addr)) }
-      : {}),
-    // Provide plain-text body as an internet message header when available
-    ...(bodyText
-      ? {
-          uniqueBody: {
-            contentType: "Text",
-            content: bodyText,
-          },
-        }
       : {}),
   };
 

@@ -239,7 +239,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
   const applyAction = async (id: string, action: string) => {
     try {
-      await axios.patch(`/api/gmail/messages/${id}`, { action });
+      await axios.patch(`/api/outlook/messages/${id}`, { action });
 
       const updater = (msg: InboxMessage): InboxMessage => {
         const updated = { ...msg };
@@ -283,7 +283,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
   const handleDeleteMessage = async (id: string) => {
     try {
-      await axios.delete(`/api/gmail/messages/${id}`);
+      await axios.delete(`/api/outlook/messages/${id}`);
       removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
       toast.success("Message deleted");
@@ -317,7 +317,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         setPendingAttachments([]);
         setPendingSchedule(null);
       } else {
-        await axios.post("/api/gmail/send", {
+        await axios.post("/api/outlook/send", {
           to: selectedMessage.fromEmail || selectedMessage.from,
           subject: `Re: ${selectedMessage.subject || ""}`,
           bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
@@ -345,13 +345,13 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return (
       <div className="py-24 text-center">
         <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-        <p className="text-foreground text-lg mb-2">Gmail not connected</p>
+        <p className="text-foreground text-lg mb-2">Email not connected</p>
         <p className="text-sm text-muted-foreground mb-6">
-          Connect your Google account to sync emails and use the inbox.
+          Connect your Email account to sync emails and use the inbox.
         </p>
         <Button onClick={() => (window.location.href = "/api/google")}>
           <Mail className="h-4 w-4 mr-2" />
-          Connect Gmail
+          Connect Email
         </Button>
       </div>
     );
@@ -939,7 +939,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   onSend={async (replyHtml: string) => {
                     setIsSending(true);
                     try {
-                      await axios.post("/api/gmail/send", {
+                      await axios.post("/api/outlook/send", {
                         to: selectedMessage.fromEmail || selectedMessage.from,
                         subject: `Re: ${selectedMessage.subject || ""}`,
                         bodyHtml: replyHtml,
@@ -986,7 +986,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  Sync Gmail
+                  Sync Email
                 </Button>
               )}
             </div>
