@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { emails, clients } from "@db/schema";
+import { googleEmails, clients } from "@db/schema";
 import { eq, desc, or, ilike, and, SQL } from "drizzle-orm";
 import { performGmailSync } from "@/lib/gmail_sync";
 
@@ -34,49 +34,49 @@ export async function GET(req: NextRequest) {
     const filter = searchParams.get("filter") || "all"; // all | unread | starred | sent | archived
     const offset = (page - 1) * limit;
 
-    const conditions: SQL[] = [eq(emails.userId, user.id)];
+    const conditions: SQL[] = [eq(googleEmails.userId, user.id)];
 
     if (search) {
       conditions.push(
         or(
-          ilike(emails.fromName, `%${search}%`),
-          ilike(emails.fromEmail, `%${search}%`),
-          ilike(emails.subject, `%${search}%`),
-          ilike(emails.snippet, `%${search}%`)
+          ilike(googleEmails.fromName, `%${search}%`),
+          ilike(googleEmails.fromEmail, `%${search}%`),
+          ilike(googleEmails.subject, `%${search}%`),
+          ilike(googleEmails.snippet, `%${search}%`)
         ) as SQL
       );
     }
 
-    if (filter === "unread") conditions.push(eq(emails.isRead, false));
-    else if (filter === "starred") conditions.push(eq(emails.isStarred, true));
-    else if (filter === "sent") conditions.push(eq(emails.isSent, true));
-    else if (filter === "archived") conditions.push(eq(emails.isArchived, true));
+    if (filter === "unread") conditions.push(eq(googleEmails.isRead, false));
+    else if (filter === "starred") conditions.push(eq(googleEmails.isStarred, true));
+    else if (filter === "sent") conditions.push(eq(googleEmails.isSent, true));
+    else if (filter === "archived") conditions.push(eq(googleEmails.isArchived, true));
 
     const rows = await db
       .select({
-        id: emails.id,
-        gmailId: emails.gmailId,
-        threadId: emails.threadId,
-        subject: emails.subject,
-        snippet: emails.snippet,
-        fromEmail: emails.fromEmail,
-        fromName: emails.fromName,
-        toEmails: emails.toEmails,
-        bodyHtml: emails.bodyHtml,
-        bodyText: emails.bodyText,
-        labelIds: emails.labelIds,
-        isRead: emails.isRead,
-        isStarred: emails.isStarred,
-        isArchived: emails.isArchived,
-        isSent: emails.isSent,
-        sentAt: emails.sentAt,
-        clientId: emails.clientId,
+        id: googleEmails.id,
+        gmailId: googleEmails.gmailId,
+        threadId: googleEmails.threadId,
+        subject: googleEmails.subject,
+        snippet: googleEmails.snippet,
+        fromEmail: googleEmails.fromEmail,
+        fromName: googleEmails.fromName,
+        toEmails: googleEmails.toEmails,
+        bodyHtml: googleEmails.bodyHtml,
+        bodyText: googleEmails.bodyText,
+        labelIds: googleEmails.labelIds,
+        isRead: googleEmails.isRead,
+        isStarred: googleEmails.isStarred,
+        isArchived: googleEmails.isArchived,
+        isSent: googleEmails.isSent,
+        sentAt: googleEmails.sentAt,
+        clientId: googleEmails.clientId,
         clientName: clients.name,
       })
-      .from(emails)
-      .leftJoin(clients, eq(emails.clientId, clients.id))
+      .from(googleEmails)
+      .leftJoin(clients, eq(googleEmails.clientId, clients.id))
       .where(and(...conditions))
-      .orderBy(desc(emails.sentAt))
+      .orderBy(desc(googleEmails.sentAt))
       .limit(limit + 1)
       .offset(offset);
 

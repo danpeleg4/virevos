@@ -133,7 +133,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       });
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (filterStatus !== "all") params.set("filter", filterStatus);
-      const { data } = await axios.get<EmailsPage>(`/api/gmail/sync?${params}`);
+      const { data } = await axios.get<EmailsPage>(`/api/outlook/sync?${params}`);
       return data;
     },
     getNextPageParam: (lastPage) =>
@@ -162,13 +162,19 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   }, [handleObserver]);
 
   useEffect(() => {
-    checkGoogleConnection();
+    checkConnection();
   }, []);
 
-  const checkGoogleConnection = async () => {
+  const checkOutlookConnection = async () => {
+    const { data } = await axios.get("/api/integrations/outlook");
+    return data.connected
+  }
+
+  const checkConnection = async () => {
     try {
       const { data } = await axios.get("/api/integrations/google");
-      setIsConnected(data.connected === true);
+      const outlookData = await checkOutlookConnection();
+      setIsConnected((data.connected === true) || outlookData);
     } catch {
       setIsConnected(false);
     }
@@ -217,8 +223,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const { data } = await axios.post("/api/gmail/sync");
-      toast.success(`Synced ${data.synced} emails`);
+      await axios.post("/api/outlook/sync");
+      toast.success("Emails synced successfully");
       await refetch();
     } catch {
       toast.error("Sync failed");
@@ -430,7 +436,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         variant="outline"
         onClick={handleSync}
         disabled={isSyncing}
-        title="Sync Gmail"
+        title="Sync Emails"
         className="h-8 w-8 flex-shrink-0"
       >
         {isSyncing ? (
@@ -489,7 +495,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  Sync Gmail
+                  Sync Emails
                 </Button>
               </div>
             ) : (

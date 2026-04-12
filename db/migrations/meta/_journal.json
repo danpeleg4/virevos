@@ -15,6 +15,20 @@
       "when": 1774442700000,
       "tag": "0001_credits_reset_at",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775918206466,
+      "tag": "0002_amused_toro",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1744489200000,
+      "tag": "0003_outlook_sent_delta",
+      "breakpoints": true
     }
   ]
 }

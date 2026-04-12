@@ -57,7 +57,7 @@ export function ComposeMessageDialog({
     if (!emailTo.trim() || !emailBody.trim()) return;
     setIsSending(true);
     try {
-      await axios.post("/api/gmail/send", {
+      await axios.post("/api/outlook/send", {
         to: emailTo.trim(),
         subject: emailSubject.trim(),
         bodyHtml: `<p>${emailBody.replace(/\n/g, "<br>")}</p>`,

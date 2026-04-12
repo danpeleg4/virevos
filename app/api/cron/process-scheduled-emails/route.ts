@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@db/db";
-import { scheduledEmails, emails, users, clients, googleTokens } from "@db/schema";
+import { scheduledEmails, googleEmails, users, clients } from "@db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { google } from "googleapis";
 import {getFreshGoogleAccessToken} from "@/lib/google_access";
@@ -90,7 +90,7 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
       }
     }
 
-    await db.insert(emails).values({
+    await db.insert(googleEmails).values({
       gmailId,
       threadId,
       subject: scheduledEmail.subject,

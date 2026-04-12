@@ -4,7 +4,7 @@ import {
   clientPortalTokens,
   clients,
   projects,
-  emails,
+  googleEmails,
   projectFiles,
 } from "@db/schema";
 import { and, eq } from "drizzle-orm";
@@ -60,29 +60,29 @@ export async function GET(
     // Fetch emails involving this client
     const clientEmails = await db
       .select({
-        id: emails.id,
-        subject: emails.subject,
-        snippet: emails.snippet,
-        fromEmail: emails.fromEmail,
-        fromName: emails.fromName,
-        bodyText: emails.bodyText,
-        bodyHtml: emails.bodyHtml,
-        isSent: emails.isSent,
-        sentAt: emails.sentAt,
-        isRead: emails.isRead,
+        id: googleEmails.id,
+        subject: googleEmails.subject,
+        snippet: googleEmails.snippet,
+        fromEmail: googleEmails.fromEmail,
+        fromName: googleEmails.fromName,
+        bodyText: googleEmails.bodyText,
+        bodyHtml: googleEmails.bodyHtml,
+        isSent: googleEmails.isSent,
+        sentAt: googleEmails.sentAt,
+        isRead: googleEmails.isRead,
       })
-      .from(emails)
+      .from(googleEmails)
       .where(
         and(
-          eq(emails.userId, portalToken.userId),
-          eq(emails.clientId, client.id)
+          eq(googleEmails.userId, portalToken.userId),
+          eq(googleEmails.clientId, client.id)
         )
       )
       .limit(50);
 
     // Fetch project files for client's projects
     const projectIds = clientProjects.map((p) => p.id);
-    let files: Array<typeof projectFiles.$inferSelect> = [];
+    const files: Array<typeof projectFiles.$inferSelect> = [];
     if (projectIds.length > 0) {
       // Fetch files for all projects (drizzle doesn't support inArray easily without import, use loop)
       for (const pid of projectIds) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import { clientPortalTokens, clients, emails, users } from "@db/schema";
+import { clientPortalTokens, clients, googleEmails, users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { getGmailClient, buildRawEmail } from "@/lib/gmail_client";
 
@@ -54,7 +54,7 @@ export async function POST(
     const gmail = await getGmailClient(userId);
     if (!gmail) {
       // Still save the message even if Gmail is not connected
-      await db.insert(emails).values({
+      await db.insert(googleEmails).values({
         gmailId: `portal-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         threadId: `portal-thread-${Date.now()}`,
         subject: `Portal message from ${client.name}`,
@@ -115,7 +115,7 @@ export async function POST(
     }
 
     // Save to emails DB with clientId set
-    await db.insert(emails).values({
+    await db.insert(googleEmails).values({
       gmailId,
       threadId,
       subject,

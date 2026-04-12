@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@db/db";
-import { googleEmails, googleTokens } from "@db/schema";
+import { outlookEmails, outlookTokens } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
-import { stopWatchChannel } from "@/lib/google_sync";
+import { removeSubscriptions } from "@/lib/outlook_sync";
 
 export async function GET() {
   const user = await currentUser();
@@ -13,8 +13,8 @@ export async function GET() {
 
   const rows = await db
     .select()
-    .from(googleTokens)
-    .where(eq(googleTokens.userId, user.id))
+    .from(outlookTokens)
+    .where(eq(outlookTokens.userId, user.id))
     .limit(1);
 
   return NextResponse.json({
@@ -32,13 +32,13 @@ export async function POST(req: Request) {
 
   if (data.action === "disconnect") {
     try {
-      await stopWatchChannel(user.id);
+      await removeSubscriptions(user.id);
     } catch (err) {
-      console.error("[integrations/google] stopWatchChannel failed:", err);
+      console.error("[integrations/outlook] removeSubscriptions failed:", err);
     }
 
-    await db.delete(googleTokens).where(eq(googleTokens.userId, user.id));
-    await db.delete(googleEmails).where(eq(googleEmails.userId, user.id));
+    await db.delete(outlookTokens).where(eq(outlookTokens.userId, user.id));
+    await db.delete(outlookEmails).where(eq(outlookEmails.userId, user.id));
 
     return NextResponse.json({ success: true });
   }
@@ -46,8 +46,8 @@ export async function POST(req: Request) {
   if (data.action === "status") {
     const rows = await db
       .select()
-      .from(googleTokens)
-      .where(eq(googleTokens.userId, user.id))
+      .from(outlookTokens)
+      .where(eq(outlookTokens.userId, user.id))
       .limit(1);
 
     return NextResponse.json({

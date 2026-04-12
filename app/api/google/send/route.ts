@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { emails, clients } from "@db/schema";
+import { googleEmails, clients } from "@db/schema";
 import { eq } from "drizzle-orm";
 import axios from "axios";
 import {
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Save sent email to DB
-    await db.insert(emails).values({
+    await db.insert(googleEmails).values({
       gmailId,
       threadId: sentThreadId,
       subject,
