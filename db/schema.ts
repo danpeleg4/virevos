@@ -205,6 +205,7 @@ export const outlookEmails = pgTable("outlook_emails", {
   isStarred: boolean("is_starred").default(false),
   isArchived: boolean("is_archived").default(false),
   isSent: boolean("is_sent").default(false),
+  hasAttachments: boolean("has_attachments").default(false),
   sentAt: timestamp("sent_at").notNull(),
   clientId: integer("client_id").references(() => clients.id, {
     onDelete: "set null",

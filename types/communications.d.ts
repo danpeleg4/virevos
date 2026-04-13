@@ -14,6 +14,7 @@ export interface InboxMessage {
   starred: boolean;
   archived?: boolean;
   sent?: boolean;
+  hasAttachments?: boolean;
   client: string;
   clientId?: number | null;
   labels?: string[];

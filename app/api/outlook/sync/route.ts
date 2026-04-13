@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
         isStarred: outlookEmails.isStarred,
         isArchived: outlookEmails.isArchived,
         isSent: outlookEmails.isSent,
+        hasAttachments: outlookEmails.hasAttachments,
         sentAt: outlookEmails.sentAt,
         clientId: outlookEmails.clientId,
         clientName: clients.name,
@@ -105,6 +106,7 @@ export async function GET(req: NextRequest) {
       starred: email.isStarred ?? false,
       archived: email.isArchived ?? false,
       sent: email.isSent ?? false,
+      hasAttachments: email.hasAttachments ?? false,
       client: email.clientName || "",
       clientId: email.clientId,
     }));

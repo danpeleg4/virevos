@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -40,6 +40,7 @@ import {
   CheckIcon,
   SlidersHorizontal,
   ArrowUpDown,
+  Download,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { motion } from "motion/react";
@@ -108,6 +109,25 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const emailIframeRef = useRef<HTMLIFrameElement>(null);
   const [emailIframeHeight, setEmailIframeHeight] = useState(400);
+
+  interface OutlookAttachmentMeta {
+    id: string;
+    name: string;
+    size: number;
+    contentType: string;
+  }
+
+  const { data: attachmentsData } =
+    useQuery<OutlookAttachmentMeta[]>({
+      queryKey: ["outlook-attachments", selectedMessage?.id],
+      queryFn: async () => {
+        const res = await axios.get<{ attachments: OutlookAttachmentMeta[] }>(
+          `/api/outlook/messages/${selectedMessage!.id}/attachments`
+        );
+        return res.data.attachments;
+      },
+      enabled: !!selectedMessage?.id && selectedMessage.type === "email",
+    });
 
   // Debounce search query
   useEffect(() => {
@@ -267,19 +287,19 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     await applyAction(id, currentlyStarred ? "unstar" : "star");
   };
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
     const msg = allMessages.find((m) => m.id === id);
-    if (msg?.unread) applyAction(id, "markRead");
+    if (msg?.unread) await applyAction(id, "markRead");
   };
 
-  const handleSelectMessage = (message: InboxMessage) => {
+  const handleSelectMessage = async (message: InboxMessage) => {
     setSelectedMessage(message);
     setEmailIframeHeight(400);
     setReplyText("");
     setPendingAttachments([]);
     setPendingSchedule(null);
     setShowAIComposer(false);
-    markAsRead(message.id);
+    await markAsRead(message.id);
   };
 
   const handleDeleteMessage = async (id: string) => {
@@ -418,7 +438,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {(["all", "unread", "starred", "archived"] as const).map((v) => (
+          {(["all", "unread", "starred", "sent", "archived"] as const).map((v) => (
             <DropdownMenuItem
               key={v}
               onClick={() => setFilterStatus(v)}
@@ -496,7 +516,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  Sync Emails
+                  Sync Messages
                 </Button>
               </div>
             ) : (
@@ -507,7 +527,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index * 0.03, 0.3) }}
-                    onClick={() => handleSelectMessage(message)}
+                    onClick={async () => await handleSelectMessage(message)}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       selectedMessage?.id === message.id
                         ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 border"
@@ -564,13 +584,22 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           {message.preview}
                         </p>
                         <div className="flex items-center justify-between">
-                          {message.client ? (
-                            <Badge variant="outline" className="text-xs">
-                              {message.client}
-                            </Badge>
-                          ) : (
-                            <span />
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {message.client ? (
+                              <Badge variant="outline" className="text-xs">
+                                {message.client}
+                              </Badge>
+                            ) : null}
+                            {message.sent && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Send className="h-2.5 w-2.5" />
+                                Sent
+                              </Badge>
+                            )}
+                            {message.hasAttachments && (
+                              <Paperclip className="h-3 w-3 text-muted-foreground" />
+                            )}
+                          </div>
                           <span className="text-xs text-muted-foreground">
                             {formatTimestamp(message.timestamp)}
                           </span>
@@ -757,6 +786,51 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   ))}
                 </div>
               )}
+
+              {/* Attachments — always fetched for Outlook emails; panel only renders when results arrive */}
+              {selectedMessage.type === "email" &&
+                (attachmentsData ?? []).length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Paperclip className="h-3.5 w-3.5" />
+                      Attachments
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {attachmentsData!.map((att) => (
+                        <a
+                          key={att.id}
+                          href={`/api/outlook/messages/${selectedMessage.id}/attachments?download=${encodeURIComponent(att.id)}`}
+                          download={att.name}
+                          className="flex items-center gap-2 bg-muted/60 hover:bg-muted border border-border rounded-md px-3 py-2 text-sm transition-colors group"
+                        >
+                          {att.contentType.startsWith("image/") ? (
+                            <Image className="h-4 w-4 text-green-500 flex-shrink-0" />
+                          ) : att.contentType.includes("pdf") ||
+                            att.contentType.includes("document") ||
+                            att.contentType.includes("spreadsheet") ||
+                            att.contentType.includes("text") ? (
+                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          ) : (
+                            <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium truncate max-w-40">
+                              {att.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {att.size < 1024
+                                ? `${att.size} B`
+                                : att.size < 1024 * 1024
+                                  ? `${(att.size / 1024).toFixed(1)} KB`
+                                  : `${(att.size / (1024 * 1024)).toFixed(1)} MB`}
+                            </span>
+                          </div>
+                          <Download className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               <Separator />
 
