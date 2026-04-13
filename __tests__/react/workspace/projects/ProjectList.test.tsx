@@ -17,12 +17,12 @@ jest.mock("@/lib/projects", () => ({
 }));
 
 const mockProjects = [
-  { id: 1, name: "Alpha Project", status: "active", clientName: "Acme", dueDate: "2026-06-01", stats: { totalTasks: 5, completedTasks: 3, percentage: 60 }, priority: "high" },
-  { id: 2, name: "Beta Project", status: "completed", clientName: "Beta", dueDate: "2026-05-01", stats: { totalTasks: 4, completedTasks: 4, percentage: 100 }, priority: "medium" },
+  { id: 1, clientId: null, name: "Alpha Project", status: "active", clientName: "Acme", dueDate: "2026-06-01", stats: { totalTasks: 5, completedTasks: 3, percentage: 60 }, priority: "high" },
+  { id: 2, clientId: null, name: "Beta Project", status: "completed", clientName: "Beta", dueDate: "2026-05-01", stats: { totalTasks: 4, completedTasks: 4, percentage: 100 }, priority: "medium" },
 ];
 
 const mockClients = [
-  { id: 1, name: "Acme Corp", email: "a@a.com", status: "active", activeProjects: 1, completedProjects: 0, totalProjects: 1, avatar: "A" },
+  { id: 1, name: "Acme Corp", email: "a@a.com", phone: "", industry: undefined, status: "active", activeProjects: 1, completedProjects: 0, totalProjects: 1, avatar: "A" },
 ];
 
 import { ProjectList } from "@/app/workspace/projects/ProjectList";

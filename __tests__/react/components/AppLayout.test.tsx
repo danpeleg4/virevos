@@ -20,13 +20,17 @@ jest.mock("next-themes", () => ({
 }));
 
 jest.mock("motion/react", () => {
-  const R = require("react");
+  const { createElement } = jest.requireActual<typeof import("react")>("react");
   const motion = new Proxy(
     {},
     {
-      get: (_t, tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, ...props }: Record<string, unknown>) {
-          return R.createElement(tag, props, children);
+      get: (_t, _tag: string) =>
+        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
+          return createElement(
+            _tag as keyof JSX.IntrinsicElements,
+            props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
+            children as React.ReactNode,
+          );
         },
     }
   );

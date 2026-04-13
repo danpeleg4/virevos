@@ -7,6 +7,7 @@ import {
   registerFreePlan,
 } from "@/lib/billing";
 import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@db/db";
 
 jest.mock("@clerk/nextjs/server", () => ({
   currentUser: jest.fn(),
@@ -73,8 +74,7 @@ function mockDbSelect(rows: unknown[]) {
   const limitMock = jest.fn().mockResolvedValue(rows);
   const whereMock = jest.fn(() => ({ limit: limitMock }));
   const fromMock = jest.fn(() => ({ where: whereMock }));
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  (require("@db/db").db.select as jest.Mock).mockReturnValue({
+  (db.select as jest.Mock).mockReturnValue({
     from: fromMock,
   });
   return { fromMock, whereMock, limitMock };

@@ -30,8 +30,8 @@ jest.mock("@/lib/projects", () => ({
 
 const mockProjectsData = {
   projects: [
-    { id: 1, name: "Website Redesign", status: "active", clientName: "Acme", dueDate: "2026-06-01", stats: { totalTasks: 5, completedTasks: 2 } },
-    { id: 2, name: "Mobile App", status: "completed", clientName: "Beta", dueDate: "2026-05-01", stats: { totalTasks: 3, completedTasks: 3 } },
+    { id: 1, clientId: null, name: "Website Redesign", status: "active", clientName: "Acme", dueDate: "2026-06-01", priority: "medium", stats: { totalTasks: 5, completedTasks: 2, percentage: 40 } },
+    { id: 2, clientId: null, name: "Mobile App", status: "completed", clientName: "Beta", dueDate: "2026-05-01", priority: "high", stats: { totalTasks: 3, completedTasks: 3, percentage: 100 } },
   ],
   allClients: [{ id: 1, name: "Acme" }, { id: 2, name: "Beta" }],
 };

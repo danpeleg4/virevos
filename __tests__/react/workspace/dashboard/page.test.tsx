@@ -20,20 +20,6 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-jest.mock("motion/react", () => {
-  const R = require("react");
-  const motion = new Proxy(
-    {},
-    {
-      get: (_t, tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, ...props }: Record<string, unknown>) {
-          return R.createElement(tag, props, children);
-        },
-    }
-  );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
-});
-
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -49,8 +35,8 @@ jest.mock("@/lib/task_percentage", () => ({
 }));
 
 const mockProjects = [
-  { id: 1, name: "Alpha Project", status: "active", clientName: "TechCorp", dueDate: "2026-06-01", stats: { totalTasks: 4, completedTasks: 2 } },
-  { id: 2, name: "Beta Project", status: "active", clientName: "StartupXYZ", dueDate: "2026-07-01", stats: { totalTasks: 2, completedTasks: 2 } },
+  { id: 1, clientId: null, name: "Alpha Project", status: "active", clientName: "TechCorp", dueDate: "2026-06-01", priority: "medium", stats: { totalTasks: 4, completedTasks: 2, percentage: 50 } },
+  { id: 2, clientId: null, name: "Beta Project", status: "active", clientName: "StartupXYZ", dueDate: "2026-07-01", priority: "low", stats: { totalTasks: 2, completedTasks: 2, percentage: 100 } },
 ];
 
 const mockTasks = [

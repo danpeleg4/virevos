@@ -142,6 +142,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   });
 
   const allMessages = data?.pages.flatMap((p) => p.messages) ?? [];
+  console.log(allMessages);
 
   // Intersection observer to load next page when sentinel is visible
   const handleObserver = useCallback(
@@ -262,8 +263,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
   };
 
-  const toggleStar = (id: string, currentlyStarred: boolean) => {
-    applyAction(id, currentlyStarred ? "unstar" : "star");
+  const toggleStar = async (id: string, currentlyStarred: boolean) => {
+    await applyAction(id, currentlyStarred ? "unstar" : "star");
   };
 
   const markAsRead = (id: string) => {
@@ -536,9 +537,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                             )}
                           </div>
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              toggleStar(message.id, message.starred);
+                              await toggleStar(message.id, message.starred);
                             }}
                           >
                             <Star

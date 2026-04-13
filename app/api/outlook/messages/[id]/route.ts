@@ -49,22 +49,18 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const rows = await db
+  const [rows] = await db
     .select()
     .from(outlookEmails)
     .where(and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id)))
-    .limit(1);
 
-  if (!rows.length) {
+  if (!rows) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const email = rows[0];
-  const body = await req.json() as {
-    isRead?: boolean;
-    isStarred?: boolean;
-    isArchived?: boolean;
-  };
+  const email = rows;
+  const body = await req.json()
+  console.log(body);
 
   const dbUpdate: Partial<typeof body> = {};
   const graphUpdate: Record<string, unknown> = {};
@@ -74,11 +70,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     graphUpdate.isRead = body.isRead;
   }
 
-  if (body.isStarred !== undefined) {
-    dbUpdate.isStarred = body.isStarred;
-    graphUpdate.flag = { flagStatus: body.isStarred ? "flagged" : "notFlagged" };
+  if (body.action === "star" || body.action === "unstar") {
+    dbUpdate.isStarred = body.action === "star";
+    graphUpdate.flag = { flagStatus: body.action === "star" ? "flagged" : "notFlagged" };
   }
-
   if (body.isArchived !== undefined) {
     dbUpdate.isArchived = body.isArchived;
   }

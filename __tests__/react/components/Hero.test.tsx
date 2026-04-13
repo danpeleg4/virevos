@@ -8,19 +8,7 @@ jest.mock("next/navigation", () => ({
   useParams: jest.fn(() => ({})),
 }));
 
-jest.mock("motion/react", () => {
-  const R = require("react");
-  const motion = new Proxy(
-    {},
-    {
-      get: (_t, tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
-          return R.createElement(tag, props, children);
-        },
-    }
-  );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => children };
-});
+
 
 import { Hero } from "@/app/components/Hero";
 
