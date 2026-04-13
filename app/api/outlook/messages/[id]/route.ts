@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { outlookEmails } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, InferSelectModel} from "drizzle-orm";
 import axios from "axios";
 import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
 
@@ -43,6 +43,12 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
+  interface MessagePatchBody {
+    action: "star" | "unstar" | "archive" | "unarchive" | "markRead" | "markUnread";
+  }
+
+  type EmailUpdate = Partial<Pick<InferSelectModel<typeof outlookEmails>, "isStarred" | "isArchived" | "isRead">>;
+
   const { id } = await params;
   const numericId = parseInt(id, 10);
   if (isNaN(numericId)) {
@@ -59,23 +65,24 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   }
 
   const email = rows;
-  const body = await req.json()
-  console.log(body);
+  const body = await req.json() as MessagePatchBody;
 
-  const dbUpdate: Partial<typeof body> = {};
+  const dbUpdate: EmailUpdate = {};
   const graphUpdate: Record<string, unknown> = {};
-
-  if (body.isRead !== undefined) {
-    dbUpdate.isRead = body.isRead;
-    graphUpdate.isRead = body.isRead;
-  }
 
   if (body.action === "star" || body.action === "unstar") {
     dbUpdate.isStarred = body.action === "star";
     graphUpdate.flag = { flagStatus: body.action === "star" ? "flagged" : "notFlagged" };
   }
-  if (body.isArchived !== undefined) {
-    dbUpdate.isArchived = body.isArchived;
+
+  if (body.action === "archive" || body.action === "unarchive") {
+    dbUpdate.isArchived = body.action === "archive";
+    graphUpdate.archive = body.action === "archive" ? "archive" : "inbox";
+  }
+
+  if (body.action === "markRead" || body.action === "markUnread") {
+    dbUpdate.isRead = body.action === "markRead";
+    graphUpdate.isRead = body.action === "markRead"
   }
 
   if (Object.keys(dbUpdate).length > 0) {
@@ -107,11 +114,11 @@ export async function PATCH(req: Request, { params }: RouteParams) {
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-      // Move to Archive folder if archiving
-      if (body.isArchived === true) {
+      // Move to Archive/Inbox folder if archive/unarchive
+      if (body.action === "archive" || body.action === "unarchive") {
         await axios.post(
           `${GRAPH_BASE}/me/messages/${email.outlookId}/move`,
-          { destinationId: "archive" },
+          { destinationId: graphUpdate.archive },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }

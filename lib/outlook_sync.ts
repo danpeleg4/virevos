@@ -9,7 +9,7 @@ const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const EVENT_SELECT =
   "id,subject,bodyPreview,start,end,isOnlineMeeting,onlineMeetingUrl,webLink,showAs,isCancelled";
 const EMAIL_SELECT =
-  "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,isRead,receivedDateTime,isDraft";
+  "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,isRead,receivedDateTime,isDraft,flag";
 
 interface GraphEvent {
   id: string;
@@ -37,6 +37,7 @@ interface GraphMessage {
   isRead?: boolean;
   receivedDateTime?: string;
   isDraft?: boolean;
+  flag?: { flagStatus: string };
   parentFolderId?: string;
   "@removed"?: { reason: string };
 }
@@ -227,7 +228,7 @@ async function applyOutlookEmailsToDb(
     const bodyText =
       msg.body?.contentType === "text" ? msg.body.content : null;
     const isRead = msg.isRead ?? false;
-    const isStarred = false;
+    const isStarred = msg.flag?.flagStatus === "flagged";
     const sentAt = new Date(msg.receivedDateTime);
 
     if (existingMap.has(msg.id)) {

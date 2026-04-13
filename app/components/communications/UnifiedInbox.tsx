@@ -142,7 +142,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   });
 
   const allMessages = data?.pages.flatMap((p) => p.messages) ?? [];
-  console.log(allMessages);
 
   // Intersection observer to load next page when sentinel is visible
   const handleObserver = useCallback(
@@ -239,6 +238,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   });
 
   const applyAction = async (id: string, action: string) => {
+    // TODO add optimistic updates
     try {
       await axios.patch(`/api/outlook/messages/${id}`, { action });
 
@@ -650,8 +650,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => {
-                          applyAction(
+                        onClick={async () => {
+                          await applyAction(
                             selectedMessage.id,
                             selectedMessage.archived ? "unarchive" : "archive"
                           );
@@ -671,8 +671,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => {
-                          toggleStar(
+                        onClick={async () => {
+                          await toggleStar(
                             selectedMessage.id,
                             selectedMessage.starred
                           );
@@ -690,8 +690,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => {
-                          applyAction(
+                        onClick={async () => {
+                          await applyAction(
                             selectedMessage.id,
                             selectedMessage.unread ? "markRead" : "markUnread"
                           );
