@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@db/db";
-import { scheduledEmails, googleEmails, users, clients } from "@db/schema";
+import { scheduledEmails, outlookEmails, users, clients } from "@db/schema";
 import { eq, and, lte } from "drizzle-orm";
-import { google } from "googleapis";
-import {getFreshGoogleAccessToken} from "@/lib/google_access";
-import {buildRawEmail} from "@/lib/gmail_client";
+import axios from "axios";
+import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+
+const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 function parseEmailAddress(raw: string): { name: string; email: string } {
   const match = raw?.match(/^(.*?)\s*<(.+?)>$/);
@@ -31,22 +32,23 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
   }
 
   const userId = scheduledEmail.userId;
-  const accessToken = await getFreshGoogleAccessToken(userId);
+  const accessToken = await getFreshOutlookAccessToken(userId);
 
   if (!accessToken) {
     await db
       .update(scheduledEmails)
-      .set({ status: "failed", errorMessage: "Gmail not connected for user" })
+      .set({ status: "failed", errorMessage: "Outlook not connected for user" })
       .where(eq(scheduledEmails.id, scheduledEmailId));
     return;
   }
 
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
-  const gmail = google.gmail({ version: "v1", auth });
+  const headers = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
 
-  const profileRes = await gmail.users.getProfile({ userId: "me" });
-  const fromEmail = profileRes.data.emailAddress || "";
+  const profileRes = await axios.get<{ mail?: string; userPrincipalName?: string }>(
+    `${GRAPH_BASE}/me`,
+    { headers }
+  );
+  const fromEmail = profileRes.data.mail || profileRes.data.userPrincipalName || "";
 
   const userRows = await db
     .select({ name: users.name })
@@ -55,24 +57,32 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
     .limit(1);
   const fromName = userRows[0]?.name || "";
 
-  const rawEmail = buildRawEmail({
-    to: scheduledEmail.toEmail,
-    toName: scheduledEmail.toName || undefined,
-    from: fromEmail,
-    fromName,
+  const messagePayload = {
     subject: scheduledEmail.subject,
-    bodyHtml: scheduledEmail.bodyHtml,
-    bodyText: scheduledEmail.bodyText || undefined,
-  });
+    body: {
+      contentType: "HTML",
+      content: scheduledEmail.bodyHtml,
+    },
+    toRecipients: [
+      {
+        emailAddress: {
+          address: parseEmailAddress(scheduledEmail.toEmail).email || scheduledEmail.toEmail,
+          name: scheduledEmail.toName || scheduledEmail.toEmail,
+        },
+      },
+    ],
+  };
 
   try {
-    const sendRes = await gmail.users.messages.send({
-      userId: "me",
-      requestBody: { raw: rawEmail },
-    });
+    const draftRes = await axios.post<{ id: string; conversationId: string }>(
+      `${GRAPH_BASE}/me/messages`,
+      messagePayload,
+      { headers }
+    );
+    const outlookId = draftRes.data.id;
+    const conversationId = draftRes.data.conversationId;
 
-    const gmailId = sendRes.data.id!;
-    const threadId = sendRes.data.threadId!;
+    await axios.post(`${GRAPH_BASE}/me/messages/${outlookId}/send`, {}, { headers });
 
     let clientId: number | null = scheduledEmail.clientId;
     if (!clientId) {
@@ -90,9 +100,9 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
       }
     }
 
-    await db.insert(googleEmails).values({
-      gmailId,
-      threadId,
+    await db.insert(outlookEmails).values({
+      outlookId,
+      conversationId,
       subject: scheduledEmail.subject,
       snippet:
         scheduledEmail.bodyText?.slice(0, 200) ||
@@ -102,7 +112,6 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
       toEmails: [scheduledEmail.toEmail],
       bodyHtml: scheduledEmail.bodyHtml,
       bodyText: scheduledEmail.bodyText || null,
-      labelIds: ["SENT"],
       isRead: true,
       isStarred: false,
       isArchived: false,

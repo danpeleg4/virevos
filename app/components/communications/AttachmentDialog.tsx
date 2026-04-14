@@ -88,6 +88,7 @@ export function AttachmentDialog({
   const [activeTab, setActiveTab] = useState("upload");
   const [searchQuery, setSearchQuery] = useState("");
   const [isReading, setIsReading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: appFilesData, isLoading: isLoadingFiles } = useQuery({
@@ -131,6 +132,34 @@ export function AttachmentDialog({
     }
 
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    setIsReading(true);
+    try {
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        const attachedFile: AttachedFile = {
+          id: `local-${Date.now()}-${file.name}`,
+          name: file.name,
+          size: formatFileSize(file.size),
+          type: getFileType(file.type, file.name),
+          data: base64,
+          mimeType: file.type || "application/octet-stream",
+        };
+        setSelectedFiles((prev) => [...prev, attachedFile]);
+      }
+    } catch {
+      toast.error("Failed to read file");
+    } finally {
+      setIsReading(false);
+    }
   };
 
   const handleSelectAppFile = (file: AppFile) => {
@@ -221,8 +250,16 @@ export function AttachmentDialog({
               className="absolute inset-0 data-[state=inactive]:hidden"
             >
               <div
-                className="h-full border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-blue-400 transition-colors cursor-pointer flex flex-col items-center justify-center"
+                className={`h-full border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer flex flex-col items-center justify-center ${
+                  isDragging
+                    ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30"
+                    : "border-border hover:border-blue-400"
+                }`}
                 onClick={() => fileInputRef.current?.click()}
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
               >
                 {isReading ? (
                   <>
@@ -268,7 +305,7 @@ export function AttachmentDialog({
                 />
               </div>
 
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 min-h-0 overflow-hidden">
                 {isLoadingFiles ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -342,7 +379,7 @@ export function AttachmentDialog({
                     }
                     className="ml-2 hover:bg-accent rounded-full p-0.5"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3 w-3 cursor-pointer" />
                   </button>
                 </Badge>
               ))}

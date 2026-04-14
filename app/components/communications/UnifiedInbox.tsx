@@ -1008,6 +1008,11 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                 <AIReplyComposer
                   message={selectedMessage}
                   onClose={() => setShowAIComposer(false)}
+                  onSchedule={(draftText) => {
+                    setReplyText(draftText);
+                    setShowAIComposer(false);
+                    setShowScheduleDialog(true);
+                  }}
                   onSend={async (replyHtml: string) => {
                     setIsSending(true);
                     try {
