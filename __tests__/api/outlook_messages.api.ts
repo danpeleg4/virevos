@@ -116,7 +116,7 @@ describe("PATCH /api/outlook/messages/[id]", () => {
   it("returns 404 when message not found", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     mockDbEmpty();
-    const res = await PATCH(makeRequest("PATCH", { isRead: true }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), { params });
     expect(res.status).toBe(404);
   });
 
@@ -128,7 +128,7 @@ describe("PATCH /api/outlook/messages/[id]", () => {
     (db.update as jest.Mock).mockReturnValue({ set: setMock });
     (axios.patch as jest.Mock).mockResolvedValue({});
 
-    const res = await PATCH(makeRequest("PATCH", { isRead: true }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), { params });
     expect(res.status).toBe(200);
     expect(db.update).toHaveBeenCalled();
     expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ isRead: true }));
@@ -147,7 +147,7 @@ describe("PATCH /api/outlook/messages/[id]", () => {
     (db.update as jest.Mock).mockReturnValue({ set: setMock });
     (axios.patch as jest.Mock).mockResolvedValue({});
 
-    const res = await PATCH(makeRequest("PATCH", { isStarred: true }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "star" }), { params });
     expect(res.status).toBe(200);
     expect(axios.patch).toHaveBeenCalledWith(
       expect.stringContaining("outlook_msg_1"),
@@ -165,7 +165,7 @@ describe("PATCH /api/outlook/messages/[id]", () => {
     (axios.patch as jest.Mock).mockRejectedValue(new Error("Graph error"));
     jest.spyOn(console, "error").mockImplementationOnce(() => {});
 
-    const res = await PATCH(makeRequest("PATCH", { isRead: true }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), { params });
     expect(res.status).toBe(200);
   });
 });

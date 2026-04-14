@@ -59,6 +59,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     .select()
     .from(outlookEmails)
     .where(and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id)))
+    .limit(1)
 
   if (!rows) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
