@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@db/db";
-import { emails, emailAttachments, clients } from "@db/schema";
+import { googleEmails, emailAttachments, clients } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { gmail_v1 } from "googleapis";
 import {
@@ -161,9 +161,9 @@ async function processMessage(
 
   // Upsert: check for existing record
   const existing = await db
-    .select({ id: emails.id })
-    .from(emails)
-    .where(and(eq(emails.gmailId, msg.id!), eq(emails.userId, userId)))
+    .select({ id: googleEmails.id })
+    .from(googleEmails)
+    .where(and(eq(googleEmails.gmailId, msg.id!), eq(googleEmails.userId, userId)))
     .limit(1);
 
   let emailId: number;
@@ -188,7 +188,7 @@ async function processMessage(
 
   if (existing.length > 0) {
     await db
-      .update(emails)
+      .update(googleEmails)
       .set({
         isRead,
         isStarred,
@@ -197,14 +197,14 @@ async function processMessage(
         snippet: msg.snippet ?? null,
         clientId,
       })
-      .where(eq(emails.id, existing[0].id));
+      .where(eq(googleEmails.id, existing[0].id));
     emailId = existing[0].id;
     await upsertEmailToPinecone(pineconeRecord, userId);
   } else {
     const [inserted] = await db
-      .insert(emails)
+      .insert(googleEmails)
       .values(emailData)
-      .returning({ id: emails.id });
+      .returning({ id: googleEmails.id });
     emailId = inserted.id;
 
     // Save attachment metadata for new emails

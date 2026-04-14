@@ -1,6 +1,7 @@
 export interface InboxMessage {
   id: string;
   gmailId?: string;
+  outlookId?: string;
   threadId?: string;
   type: "email" | "chat";
   from: string;
@@ -14,6 +15,7 @@ export interface InboxMessage {
   starred: boolean;
   archived?: boolean;
   sent?: boolean;
+  hasAttachments?: boolean;
   client: string;
   clientId?: number | null;
   labels?: string[];

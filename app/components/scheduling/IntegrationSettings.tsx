@@ -129,15 +129,19 @@ export function IntegrationSettings() {
   const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
     queryKey: ["integrations"],
     queryFn: async () => {
-      const [googleCheck] = await Promise.all([
+      const [googleCheck, outlookCheck] = await Promise.all([
         axios.post("/api/integrations/google", { action: "status" }),
+        axios.post("/api/integrations/outlook", { action: "status" }),
       ]);
 
       const googleCalendarConnected = googleCheck.data.connected;
+      const outlookConnected = outlookCheck.data.connected;
 
       return INITIAL_INTEGRATIONS.map((int) => {
         if (int.id === "google")
           return { ...int, connected: googleCalendarConnected };
+        if (int.id === "outlook")
+          return { ...int, connected: outlookConnected };
         return int;
       });
     },
@@ -156,6 +160,11 @@ export function IntegrationSettings() {
           action: "disconnect",
         });
       }
+      if (id === "outlook" && action === "disconnect") {
+        await axios.post("/api/integrations/outlook", {
+          action: "disconnect",
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["integrations"] });
@@ -171,6 +180,16 @@ export function IntegrationSettings() {
 
     if (id === "google" && integration && integration.connected) {
       mutation.mutate({ id: "google", action: "disconnect" });
+      return;
+    }
+
+    if (id === "outlook" && integration && !integration.connected) {
+      router.push("/api/outlook");
+      return;
+    }
+
+    if (id === "outlook" && integration && integration.connected) {
+      mutation.mutate({ id: "outlook", action: "disconnect" });
       return;
     }
   };

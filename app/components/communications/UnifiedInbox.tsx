@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -40,6 +40,7 @@ import {
   CheckIcon,
   SlidersHorizontal,
   ArrowUpDown,
+  Download,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { motion } from "motion/react";
@@ -109,6 +110,25 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const emailIframeRef = useRef<HTMLIFrameElement>(null);
   const [emailIframeHeight, setEmailIframeHeight] = useState(400);
 
+  interface OutlookAttachmentMeta {
+    id: string;
+    name: string;
+    size: number;
+    contentType: string;
+  }
+
+  const { data: attachmentsData } =
+    useQuery<OutlookAttachmentMeta[]>({
+      queryKey: ["outlook-attachments", selectedMessage?.id],
+      queryFn: async () => {
+        const res = await axios.get<{ attachments: OutlookAttachmentMeta[] }>(
+          `/api/outlook/messages/${selectedMessage!.id}/attachments`
+        );
+        return res.data.attachments;
+      },
+      enabled: !!selectedMessage?.id && selectedMessage.type === "email",
+    });
+
   // Debounce search query
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
@@ -133,7 +153,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       });
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (filterStatus !== "all") params.set("filter", filterStatus);
-      const { data } = await axios.get<EmailsPage>(`/api/gmail/sync?${params}`);
+      const { data } = await axios.get<EmailsPage>(`/api/outlook/sync?${params}`);
       return data;
     },
     getNextPageParam: (lastPage) =>
@@ -162,13 +182,19 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   }, [handleObserver]);
 
   useEffect(() => {
-    checkGoogleConnection();
+    checkConnection();
   }, []);
 
-  const checkGoogleConnection = async () => {
+  const checkOutlookConnection = async () => {
+    const { data } = await axios.get("/api/integrations/outlook");
+    return data.connected
+  }
+
+  const checkConnection = async () => {
     try {
       const { data } = await axios.get("/api/integrations/google");
-      setIsConnected(data.connected === true);
+      const outlookData = await checkOutlookConnection();
+      setIsConnected((data.connected === true) || outlookData);
     } catch {
       setIsConnected(false);
     }
@@ -217,8 +243,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const { data } = await axios.post("/api/gmail/sync");
-      toast.success(`Synced ${data.synced} emails`);
+      await axios.post("/api/outlook/sync");
+      toast.success("Emails synced successfully");
       await refetch();
     } catch {
       toast.error("Sync failed");
@@ -232,8 +258,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   });
 
   const applyAction = async (id: string, action: string) => {
+    // TODO add optimistic updates
     try {
-      await axios.patch(`/api/gmail/messages/${id}`, { action });
+      await axios.patch(`/api/outlook/messages/${id}`, { action });
 
       const updater = (msg: InboxMessage): InboxMessage => {
         const updated = { ...msg };
@@ -256,28 +283,28 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
   };
 
-  const toggleStar = (id: string, currentlyStarred: boolean) => {
-    applyAction(id, currentlyStarred ? "unstar" : "star");
+  const toggleStar = async (id: string, currentlyStarred: boolean) => {
+    await applyAction(id, currentlyStarred ? "unstar" : "star");
   };
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
     const msg = allMessages.find((m) => m.id === id);
-    if (msg?.unread) applyAction(id, "markRead");
+    if (msg?.unread) await applyAction(id, "markRead");
   };
 
-  const handleSelectMessage = (message: InboxMessage) => {
+  const handleSelectMessage = async (message: InboxMessage) => {
     setSelectedMessage(message);
     setEmailIframeHeight(400);
     setReplyText("");
     setPendingAttachments([]);
     setPendingSchedule(null);
     setShowAIComposer(false);
-    markAsRead(message.id);
+    await markAsRead(message.id);
   };
 
   const handleDeleteMessage = async (id: string) => {
     try {
-      await axios.delete(`/api/gmail/messages/${id}`);
+      await axios.delete(`/api/outlook/messages/${id}`);
       removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
       toast.success("Message deleted");
@@ -311,13 +338,13 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         setPendingAttachments([]);
         setPendingSchedule(null);
       } else {
-        await axios.post("/api/gmail/send", {
+        await axios.post("/api/outlook/send", {
           to: selectedMessage.fromEmail || selectedMessage.from,
           subject: `Re: ${selectedMessage.subject || ""}`,
           bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
           bodyText: replyText,
           threadId: selectedMessage.threadId,
-          replyToGmailId: selectedMessage.gmailId,
+          replyToOutlookId: selectedMessage.outlookId,
           attachments: pendingAttachments
             .filter((f) => f.path || f.url || f.data)
             .map((f) => ({ name: f.name, url: f.url, path: f.path, data: f.data, mimeType: f.mimeType })),
@@ -339,13 +366,13 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return (
       <div className="py-24 text-center">
         <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-        <p className="text-foreground text-lg mb-2">Gmail not connected</p>
+        <p className="text-foreground text-lg mb-2">Email not connected</p>
         <p className="text-sm text-muted-foreground mb-6">
-          Connect your Google account to sync emails and use the inbox.
+          Connect your Email account to sync emails and use the inbox.
         </p>
         <Button onClick={() => (window.location.href = "/api/google")}>
           <Mail className="h-4 w-4 mr-2" />
-          Connect Gmail
+          Connect Email
         </Button>
       </div>
     );
@@ -411,7 +438,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {(["all", "unread", "starred", "archived"] as const).map((v) => (
+          {(["all", "unread", "starred", "sent", "archived"] as const).map((v) => (
             <DropdownMenuItem
               key={v}
               onClick={() => setFilterStatus(v)}
@@ -430,7 +457,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         variant="outline"
         onClick={handleSync}
         disabled={isSyncing}
-        title="Sync Gmail"
+        title="Sync Emails"
         className="h-8 w-8 flex-shrink-0"
       >
         {isSyncing ? (
@@ -489,7 +516,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  Sync Gmail
+                  Sync Messages
                 </Button>
               </div>
             ) : (
@@ -500,7 +527,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index * 0.03, 0.3) }}
-                    onClick={() => handleSelectMessage(message)}
+                    onClick={async () => await handleSelectMessage(message)}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       selectedMessage?.id === message.id
                         ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 border"
@@ -530,9 +557,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                             )}
                           </div>
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              toggleStar(message.id, message.starred);
+                              await toggleStar(message.id, message.starred);
                             }}
                           >
                             <Star
@@ -557,13 +584,22 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           {message.preview}
                         </p>
                         <div className="flex items-center justify-between">
-                          {message.client ? (
-                            <Badge variant="outline" className="text-xs">
-                              {message.client}
-                            </Badge>
-                          ) : (
-                            <span />
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {message.client ? (
+                              <Badge variant="outline" className="text-xs">
+                                {message.client}
+                              </Badge>
+                            ) : null}
+                            {message.sent && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Send className="h-2.5 w-2.5" />
+                                Sent
+                              </Badge>
+                            )}
+                            {message.hasAttachments && (
+                              <Paperclip className="h-3 w-3 text-muted-foreground" />
+                            )}
+                          </div>
                           <span className="text-xs text-muted-foreground">
                             {formatTimestamp(message.timestamp)}
                           </span>
@@ -643,8 +679,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => {
-                          applyAction(
+                        onClick={async () => {
+                          await applyAction(
                             selectedMessage.id,
                             selectedMessage.archived ? "unarchive" : "archive"
                           );
@@ -664,8 +700,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => {
-                          toggleStar(
+                        onClick={async () => {
+                          await toggleStar(
                             selectedMessage.id,
                             selectedMessage.starred
                           );
@@ -683,8 +719,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => {
-                          applyAction(
+                        onClick={async () => {
+                          await applyAction(
                             selectedMessage.id,
                             selectedMessage.unread ? "markRead" : "markUnread"
                           );
@@ -750,6 +786,48 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   ))}
                 </div>
               )}
+
+              {/* Attachments — always fetched for Outlook emails; panel only renders when results arrive */}
+              {selectedMessage.type === "email" &&
+                (attachmentsData ?? []).length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Paperclip className="h-3.5 w-3.5" />
+                      Attachments
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {attachmentsData!.map((att) => (
+                        <a
+                          key={att.id}
+                          className="flex items-center gap-2 bg-muted/60 hover:bg-muted border border-border rounded-md px-3 py-2 text-sm transition-colors group"
+                        >
+                          {att.contentType.startsWith("image/") ? (
+                            <Image className="h-4 w-4 text-green-500 flex-shrink-0" />
+                          ) : att.contentType.includes("pdf") ||
+                            att.contentType.includes("document") ||
+                            att.contentType.includes("spreadsheet") ||
+                            att.contentType.includes("text") ? (
+                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          ) : (
+                            <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium truncate max-w-40">
+                              {att.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {att.size < 1024
+                                ? `${att.size} B`
+                                : att.size < 1024 * 1024
+                                  ? `${(att.size / 1024).toFixed(1)} KB`
+                                  : `${(att.size / (1024 * 1024)).toFixed(1)} MB`}
+                            </span>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               <Separator />
 
@@ -930,15 +1008,20 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                 <AIReplyComposer
                   message={selectedMessage}
                   onClose={() => setShowAIComposer(false)}
+                  onSchedule={(draftText) => {
+                    setReplyText(draftText);
+                    setShowAIComposer(false);
+                    setShowScheduleDialog(true);
+                  }}
                   onSend={async (replyHtml: string) => {
                     setIsSending(true);
                     try {
-                      await axios.post("/api/gmail/send", {
+                      await axios.post("/api/outlook/send", {
                         to: selectedMessage.fromEmail || selectedMessage.from,
                         subject: `Re: ${selectedMessage.subject || ""}`,
                         bodyHtml: replyHtml,
                         threadId: selectedMessage.threadId,
-                        replyToGmailId: selectedMessage.gmailId,
+                        replyToOutlookId: selectedMessage.outlookId,
                       });
                       toast.success("Reply sent successfully");
                       setShowAIComposer(false);
@@ -980,7 +1063,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  Sync Gmail
+                  Sync Email
                 </Button>
               )}
             </div>

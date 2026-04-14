@@ -15,7 +15,6 @@ const transform = {
 
 const config = {
   coverageProvider: "v8",
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
 
   projects: [
     {
@@ -24,6 +23,7 @@ const config = {
       testMatch: ["**/__tests__/api/**/*.ts", "**/__tests__/lib/**/*.ts"],
       moduleNameMapper,
       transform,
+      setupFilesAfterEnv: ["<rootDir>/jest.setup.node.ts"],
     },
     {
       displayName: "jsdom",
@@ -31,6 +31,7 @@ const config = {
       testMatch: ["**/__tests__/react/**/*.tsx"],
       moduleNameMapper,
       transform,
+      setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
     },
   ],
 };

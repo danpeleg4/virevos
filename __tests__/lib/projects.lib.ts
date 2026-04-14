@@ -8,6 +8,7 @@ import {
   deleteProjectFile,
 } from "@/lib/projects";
 import { currentUser } from "@clerk/nextjs/server";
+import { assertCanAddFile } from "@/lib/plan_limits";
 
 jest.mock("@clerk/nextjs/server", () => ({
   currentUser: jest.fn(),
@@ -134,7 +135,6 @@ describe("addFileMetadata", () => {
 
   it("throws storage limit error and skips upload when assertCanAddFile rejects", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const { assertCanAddFile } = require("@/lib/plan_limits");
     (assertCanAddFile as jest.Mock).mockRejectedValueOnce(
       new Error("Storage limit reached")
     );

@@ -21,6 +21,7 @@ interface AIReplyComposerProps {
   };
   onClose: () => void;
   onSend?: (html: string) => Promise<void>;
+  onSchedule?: (draftText: string) => void;
 }
 
 const tonePresets = [
@@ -51,6 +52,7 @@ export function AIReplyComposer({
   message,
   onClose,
   onSend,
+  onSchedule,
 }: AIReplyComposerProps) {
   const [tone, setTone] = useState("professional");
   const [draft, setDraft] = useState<string>();
@@ -247,7 +249,11 @@ Return only the email body text, no subject line.`;
           Cancel
         </Button>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            disabled={!draft}
+            onClick={() => draft && onSchedule?.(draft)}
+          >
             <Clock className="h-4 w-4 mr-2" />
             Schedule
           </Button>

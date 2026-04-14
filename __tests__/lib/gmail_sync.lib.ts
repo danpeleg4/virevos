@@ -101,7 +101,7 @@ jest.mock("@db/db", () => {
 });
 
 jest.mock("@db/schema", () => ({
-  emails: { id: "id", gmailId: "gmailId", userId: "userId" },
+  googleEmails: { id: "id", gmailId: "gmailId", userId: "userId" },
   emailAttachments: {},
   clients: { id: "id", email: "email", userId: "userId" },
 }));

@@ -61,14 +61,20 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [formTime, setFormTime] = useState("09:00");
 
   useEffect(() => {
-    checkGoogleConnection();
+    checkConnection();
     fetchScheduledEmails();
   }, []);
 
-  const checkGoogleConnection = async () => {
+  const checkOutlookConnection = async () => {
+    const { data } = await axios.get("/api/integrations/outlook");
+    return data.connected
+  }
+
+  const checkConnection = async () => {
     try {
       const { data } = await axios.get("/api/integrations/google");
-      setIsConnected(data.connected === true);
+      const outlookData = await checkOutlookConnection();
+      setIsConnected((data.connected === true) || outlookData);
     } catch {
       setIsConnected(false);
     }
@@ -130,7 +136,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const sendNow = async (msg: ScheduledEmail) => {
     try {
-      await axios.post("/api/gmail/send", {
+      await axios.post("/api/outlook/send", {
         to: msg.toEmail,
         toName: msg.toName,
         subject: msg.subject,
@@ -197,13 +203,13 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     return (
       <div className="py-24 text-center">
         <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-        <p className="text-foreground text-lg mb-2">Gmail not connected</p>
+        <p className="text-foreground text-lg mb-2">Email not connected</p>
         <p className="text-sm text-muted-foreground mb-6">
-          Connect your Google account to sync emails and use the inbox.
+          Connect your Email account to sync emails and use the inbox.
         </p>
-        <Button onClick={() => (window.location.href = "/api/google")}>
+        <Button onClick={() => (window.location.href = "/api/outlook")}>
           <Mail className="h-4 w-4 mr-2" />
-          Connect Gmail
+          Connect Email
         </Button>
       </div>
     );

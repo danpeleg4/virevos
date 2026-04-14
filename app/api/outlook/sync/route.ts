@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { emails, clients } from "@db/schema";
+import { outlookEmails, clients } from "@db/schema";
 import { eq, desc, or, ilike, and, SQL } from "drizzle-orm";
-import { performGmailSync } from "@/lib/gmail_sync";
+import { performIncrementalSync } from "@/lib/outlook_sync";
 
 export async function POST() {
   try {
@@ -12,10 +12,10 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const result = await performGmailSync(user.id);
-    return NextResponse.json(result);
+    await performIncrementalSync(user.id);
+    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[api/gmail/sync POST]", err);
+    console.error("[api/outlook/sync POST]", err);
     return NextResponse.json({ error: "Sync failed" }, { status: 500 });
   }
 }
@@ -34,49 +34,51 @@ export async function GET(req: NextRequest) {
     const filter = searchParams.get("filter") || "all"; // all | unread | starred | sent | archived
     const offset = (page - 1) * limit;
 
-    const conditions: SQL[] = [eq(emails.userId, user.id)];
+    const conditions: SQL[] = [eq(outlookEmails.userId, user.id)];
 
     if (search) {
       conditions.push(
         or(
-          ilike(emails.fromName, `%${search}%`),
-          ilike(emails.fromEmail, `%${search}%`),
-          ilike(emails.subject, `%${search}%`),
-          ilike(emails.snippet, `%${search}%`)
+          ilike(outlookEmails.fromName, `%${search}%`),
+          ilike(outlookEmails.fromEmail, `%${search}%`),
+          ilike(outlookEmails.subject, `%${search}%`),
+          ilike(outlookEmails.snippet, `%${search}%`)
         ) as SQL
       );
     }
 
-    if (filter === "unread") conditions.push(eq(emails.isRead, false));
-    else if (filter === "starred") conditions.push(eq(emails.isStarred, true));
-    else if (filter === "sent") conditions.push(eq(emails.isSent, true));
-    else if (filter === "archived") conditions.push(eq(emails.isArchived, true));
+    if (filter === "unread") conditions.push(eq(outlookEmails.isRead, false));
+    else if (filter === "starred")
+      conditions.push(eq(outlookEmails.isStarred, true));
+    else if (filter === "sent") conditions.push(eq(outlookEmails.isSent, true));
+    else if (filter === "archived")
+      conditions.push(eq(outlookEmails.isArchived, true));
 
     const rows = await db
       .select({
-        id: emails.id,
-        gmailId: emails.gmailId,
-        threadId: emails.threadId,
-        subject: emails.subject,
-        snippet: emails.snippet,
-        fromEmail: emails.fromEmail,
-        fromName: emails.fromName,
-        toEmails: emails.toEmails,
-        bodyHtml: emails.bodyHtml,
-        bodyText: emails.bodyText,
-        labelIds: emails.labelIds,
-        isRead: emails.isRead,
-        isStarred: emails.isStarred,
-        isArchived: emails.isArchived,
-        isSent: emails.isSent,
-        sentAt: emails.sentAt,
-        clientId: emails.clientId,
+        id: outlookEmails.id,
+        outlookId: outlookEmails.outlookId,
+        conversationId: outlookEmails.conversationId,
+        subject: outlookEmails.subject,
+        snippet: outlookEmails.snippet,
+        fromEmail: outlookEmails.fromEmail,
+        fromName: outlookEmails.fromName,
+        toEmails: outlookEmails.toEmails,
+        bodyHtml: outlookEmails.bodyHtml,
+        bodyText: outlookEmails.bodyText,
+        isRead: outlookEmails.isRead,
+        isStarred: outlookEmails.isStarred,
+        isArchived: outlookEmails.isArchived,
+        isSent: outlookEmails.isSent,
+        hasAttachments: outlookEmails.hasAttachments,
+        sentAt: outlookEmails.sentAt,
+        clientId: outlookEmails.clientId,
         clientName: clients.name,
       })
-      .from(emails)
-      .leftJoin(clients, eq(emails.clientId, clients.id))
+      .from(outlookEmails)
+      .leftJoin(clients, eq(outlookEmails.clientId, clients.id))
       .where(and(...conditions))
-      .orderBy(desc(emails.sentAt))
+      .orderBy(desc(outlookEmails.sentAt))
       .limit(limit + 1)
       .offset(offset);
 
@@ -85,8 +87,8 @@ export async function GET(req: NextRequest) {
 
     const messages = pageRows.map((email) => ({
       id: String(email.id),
-      gmailId: email.gmailId,
-      threadId: email.threadId,
+      outlookId: email.outlookId,
+      conversationId: email.conversationId,
       type: "email" as const,
       from: email.fromName || email.fromEmail || "Unknown",
       fromEmail: email.fromEmail,
@@ -104,15 +106,14 @@ export async function GET(req: NextRequest) {
       starred: email.isStarred ?? false,
       archived: email.isArchived ?? false,
       sent: email.isSent ?? false,
+      hasAttachments: email.hasAttachments ?? false,
       client: email.clientName || "",
       clientId: email.clientId,
-      labels: email.labelIds ?? [],
-      tags: [] as string[],
     }));
 
     return NextResponse.json({ messages, page, limit, hasMore });
   } catch (err) {
-    console.error("[api/gmail/sync GET]", err);
+    console.error("[api/outlook/sync GET]", err);
     return NextResponse.json(
       { error: "Failed to fetch emails" },
       { status: 500 }

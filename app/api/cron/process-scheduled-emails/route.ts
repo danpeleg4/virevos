@@ -1,101 +1,16 @@
 import { NextResponse } from "next/server";
 import { db } from "@db/db";
-import { scheduledEmails, emails, users, clients, googleTokens } from "@db/schema";
+import { scheduledEmails, outlookEmails, users, clients } from "@db/schema";
 import { eq, and, lte } from "drizzle-orm";
-import { google } from "googleapis";
+import axios from "axios";
+import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+
+const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 function parseEmailAddress(raw: string): { name: string; email: string } {
   const match = raw?.match(/^(.*?)\s*<(.+?)>$/);
   if (match) return { name: match[1].trim().replace(/^"|"$/g, ""), email: match[2].trim() };
   return { name: "", email: raw?.trim() ?? "" };
-}
-
-function buildRawEmail({
-  to,
-  toName,
-  from,
-  fromName,
-  subject,
-  bodyHtml,
-  bodyText,
-}: {
-  to: string;
-  toName?: string;
-  from: string;
-  fromName?: string;
-  subject: string;
-  bodyHtml: string;
-  bodyText?: string;
-}): string {
-  const boundary = `alt_${Date.now()}`;
-  const toHeader = toName ? `"${toName}" <${to}>` : to;
-  const fromHeader = fromName ? `"${fromName}" <${from}>` : from;
-  const message = [
-    `From: ${fromHeader}`,
-    `To: ${toHeader}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/plain; charset="UTF-8"`,
-    `Content-Transfer-Encoding: quoted-printable`,
-    ``,
-    bodyText || bodyHtml.replace(/<[^>]*>/g, ""),
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset="UTF-8"`,
-    `Content-Transfer-Encoding: quoted-printable`,
-    ``,
-    bodyHtml,
-    ``,
-    `--${boundary}--`,
-  ].join("\r\n");
-  return Buffer.from(message).toString("base64url");
-}
-
-async function getFreshAccessToken(userId: string): Promise<string | null> {
-  const rows = await db
-    .select()
-    .from(googleTokens)
-    .where(eq(googleTokens.userId, userId))
-    .limit(1);
-
-  if (!rows.length) return null;
-
-  const tokenData = rows[0];
-  const now = Date.now();
-
-  if (tokenData.expires_in && tokenData.expires_in > now + 30000) {
-    return tokenData.access_token;
-  }
-
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
-  );
-  oauth2Client.setCredentials({ refresh_token: tokenData.refresh_token });
-
-  try {
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    const updateData: {
-      access_token?: string;
-      expires_in: number;
-      connected: boolean;
-      refresh_token?: string;
-    } = {
-      access_token: credentials.access_token ?? undefined,
-      expires_in: credentials.expiry_date as number,
-      connected: true,
-    };
-    if (credentials.refresh_token) updateData.refresh_token = credentials.refresh_token;
-    await db.update(googleTokens).set(updateData).where(eq(googleTokens.userId, userId));
-    return credentials.access_token ?? null;
-  } catch (err) {
-    console.error("Token refresh error:", err);
-    return null;
-  }
 }
 
 async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
@@ -117,22 +32,23 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
   }
 
   const userId = scheduledEmail.userId;
-  const accessToken = await getFreshAccessToken(userId);
+  const accessToken = await getFreshOutlookAccessToken(userId);
 
   if (!accessToken) {
     await db
       .update(scheduledEmails)
-      .set({ status: "failed", errorMessage: "Gmail not connected for user" })
+      .set({ status: "failed", errorMessage: "Outlook not connected for user" })
       .where(eq(scheduledEmails.id, scheduledEmailId));
     return;
   }
 
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
-  const gmail = google.gmail({ version: "v1", auth });
+  const headers = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
 
-  const profileRes = await gmail.users.getProfile({ userId: "me" });
-  const fromEmail = profileRes.data.emailAddress || "";
+  const profileRes = await axios.get<{ mail?: string; userPrincipalName?: string }>(
+    `${GRAPH_BASE}/me`,
+    { headers }
+  );
+  const fromEmail = profileRes.data.mail || profileRes.data.userPrincipalName || "";
 
   const userRows = await db
     .select({ name: users.name })
@@ -141,24 +57,32 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
     .limit(1);
   const fromName = userRows[0]?.name || "";
 
-  const rawEmail = buildRawEmail({
-    to: scheduledEmail.toEmail,
-    toName: scheduledEmail.toName || undefined,
-    from: fromEmail,
-    fromName,
+  const messagePayload = {
     subject: scheduledEmail.subject,
-    bodyHtml: scheduledEmail.bodyHtml,
-    bodyText: scheduledEmail.bodyText || undefined,
-  });
+    body: {
+      contentType: "HTML",
+      content: scheduledEmail.bodyHtml,
+    },
+    toRecipients: [
+      {
+        emailAddress: {
+          address: parseEmailAddress(scheduledEmail.toEmail).email || scheduledEmail.toEmail,
+          name: scheduledEmail.toName || scheduledEmail.toEmail,
+        },
+      },
+    ],
+  };
 
   try {
-    const sendRes = await gmail.users.messages.send({
-      userId: "me",
-      requestBody: { raw: rawEmail },
-    });
+    const draftRes = await axios.post<{ id: string; conversationId: string }>(
+      `${GRAPH_BASE}/me/messages`,
+      messagePayload,
+      { headers }
+    );
+    const outlookId = draftRes.data.id;
+    const conversationId = draftRes.data.conversationId;
 
-    const gmailId = sendRes.data.id!;
-    const threadId = sendRes.data.threadId!;
+    await axios.post(`${GRAPH_BASE}/me/messages/${outlookId}/send`, {}, { headers });
 
     let clientId: number | null = scheduledEmail.clientId;
     if (!clientId) {
@@ -176,9 +100,9 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
       }
     }
 
-    await db.insert(emails).values({
-      gmailId,
-      threadId,
+    await db.insert(outlookEmails).values({
+      outlookId,
+      conversationId,
       subject: scheduledEmail.subject,
       snippet:
         scheduledEmail.bodyText?.slice(0, 200) ||
@@ -188,7 +112,6 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
       toEmails: [scheduledEmail.toEmail],
       bodyHtml: scheduledEmail.bodyHtml,
       bodyText: scheduledEmail.bodyText || null,
-      labelIds: ["SENT"],
       isRead: true,
       isStarred: false,
       isArchived: false,

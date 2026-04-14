@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { emails } from "@db/schema";
+import { googleEmails } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { getGmailClient } from "@/lib/gmail_client";
 
@@ -48,8 +48,8 @@ export async function PATCH(
     // Find email in DB
     const emailRow = await db
       .select()
-      .from(emails)
-      .where(and(eq(emails.id, parseInt(id, 10)), eq(emails.userId, user.id)))
+      .from(googleEmails)
+      .where(and(eq(googleEmails.id, parseInt(id, 10)), eq(googleEmails.userId, user.id)))
       .limit(1);
 
     if (!emailRow.length) {
@@ -87,7 +87,7 @@ export async function PATCH(
     if (action === "markUnread") dbUpdate.isRead = false;
 
     if (Object.keys(dbUpdate).length > 0) {
-      await db.update(emails).set(dbUpdate).where(eq(emails.id, email.id));
+      await db.update(googleEmails).set(dbUpdate).where(eq(googleEmails.id, email.id));
     }
 
     return NextResponse.json({ success: true });
@@ -113,8 +113,8 @@ export async function DELETE(
     const { id } = await params;
 
     await db
-      .delete(emails)
-      .where(and(eq(emails.id, parseInt(id, 10)), eq(emails.userId, user.id)));
+      .delete(googleEmails)
+      .where(and(eq(googleEmails.id, parseInt(id, 10)), eq(googleEmails.userId, user.id)));
 
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -135,6 +135,7 @@ export const events = pgTable("events", {
   conflictReason: text("conflict_reason"),
   origin: text("origin").default("app"),
   googleEventId: text("google_event_id"),
+  outlookEventId: text("outlook_event_id"),
 
   userId: varchar("user_id")
     .notNull()
@@ -156,6 +157,64 @@ export const meetingAttendees = pgTable(
     unique("meeting_attendees_meeting_id_name_unique").on(t.meetingId, t.name),
   ]
 );
+
+// OUTLOOK TOKENS
+export const outlookTokens = pgTable("outlook_tokens", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  access_token: text("access_token").notNull(),
+  refresh_token: text("refresh_token").notNull(),
+  expires_in: bigint("expires_in", { mode: "number" }).notNull(),
+  connected: boolean("connected").default(false),
+
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+});
+
+// OUTLOOK SYNC STATE
+export const outlookSyncState = pgTable("outlook_sync_state", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  calendarSubscriptionId: text("calendar_subscription_id"),
+  emailSubscriptionId: text("email_subscription_id"),
+  calendarDeltaLink: text("calendar_delta_link"),
+  emailDeltaLink: text("email_delta_link"),
+  sentEmailDeltaLink: text("sent_email_delta_link"),
+  clientState: text("client_state"),
+  subscriptionExpiration: bigint("subscription_expiration", { mode: "number" }),
+
+  userId: varchar("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+});
+
+// OUTLOOK EMAILS
+export const outlookEmails = pgTable("outlook_emails", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  outlookId: text("outlook_id").notNull(),
+  conversationId: text("conversation_id").notNull(),
+  subject: text("subject").default("(no subject)"),
+  snippet: text("snippet"),
+  fromEmail: text("from_email"),
+  fromName: text("from_name"),
+  toEmails: text("to_emails").array().default([]),
+  ccEmails: text("cc_emails").array().default([]),
+  bodyHtml: text("body_html"),
+  bodyText: text("body_text"),
+  isRead: boolean("is_read").default(false),
+  isStarred: boolean("is_starred").default(false),
+  isArchived: boolean("is_archived").default(false),
+  isSent: boolean("is_sent").default(false),
+  hasAttachments: boolean("has_attachments").default(false),
+  sentAt: timestamp("sent_at").notNull(),
+  clientId: integer("client_id").references(() => clients.id, {
+    onDelete: "set null",
+  }),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // GOOGLE TOKENS
 export const googleTokens = pgTable("google_tokens", {
@@ -184,8 +243,8 @@ export const googleSyncState = pgTable("google_sync_state", {
     .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// EMAILS - Gmail messages stored locally
-export const emails = pgTable("emails", {
+// GOOGLE EMAILS
+export const googleEmails = pgTable("emails", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   gmailId: text("gmail_id").notNull(),
   threadId: text("thread_id").notNull(),
@@ -217,7 +276,7 @@ export const emailAttachments = pgTable("email_attachments", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   emailId: integer("email_id")
     .notNull()
-    .references(() => emails.id, { onDelete: "cascade" }),
+    .references(() => googleEmails.id, { onDelete: "cascade" }),
   filename: text("filename").notNull(),
   mimeType: text("mime_type"),
   size: integer("size"),
@@ -307,7 +366,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     fields: [users.user_id],
     references: [googleSyncState.userId],
   }),
-  emails: many(emails),
+  emails: many(googleEmails),
   scheduledEmails: many(scheduledEmails),
   clientPortalTokens: many(clientPortalTokens),
 }));
@@ -318,7 +377,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     references: [users.user_id],
   }),
   projects: many(projects),
-  emails: many(emails),
+  emails: many(googleEmails),
   scheduledEmails: many(scheduledEmails),
   portalToken: one(clientPortalTokens, {
     fields: [clients.id],
@@ -398,13 +457,13 @@ export const googleSyncStateRelations = relations(
   })
 );
 
-export const emailsRelations = relations(emails, ({ one, many }) => ({
+export const emailsRelations = relations(googleEmails, ({ one, many }) => ({
   user: one(users, {
-    fields: [emails.userId],
+    fields: [googleEmails.userId],
     references: [users.user_id],
   }),
   client: one(clients, {
-    fields: [emails.clientId],
+    fields: [googleEmails.clientId],
     references: [clients.id],
   }),
   attachments: many(emailAttachments),
@@ -413,9 +472,9 @@ export const emailsRelations = relations(emails, ({ one, many }) => ({
 export const emailAttachmentsRelations = relations(
   emailAttachments,
   ({ one }) => ({
-    email: one(emails, {
+    email: one(googleEmails, {
       fields: [emailAttachments.emailId],
-      references: [emails.id],
+      references: [googleEmails.id],
     }),
     user: one(users, {
       fields: [emailAttachments.userId],
@@ -437,6 +496,34 @@ export const scheduledEmailsRelations = relations(
     }),
   })
 );
+
+export const outlookTokensRelations = relations(outlookTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [outlookTokens.userId],
+    references: [users.user_id],
+  }),
+}));
+
+export const outlookSyncStateRelations = relations(
+  outlookSyncState,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [outlookSyncState.userId],
+      references: [users.user_id],
+    }),
+  })
+);
+
+export const outlookEmailsRelations = relations(outlookEmails, ({ one }) => ({
+  user: one(users, {
+    fields: [outlookEmails.userId],
+    references: [users.user_id],
+  }),
+  client: one(clients, {
+    fields: [outlookEmails.clientId],
+    references: [clients.id],
+  }),
+}));
 
 export const clientPortalTokensRelations = relations(
   clientPortalTokens,

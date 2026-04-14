@@ -367,15 +367,6 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
 
             {/* Chat Features */}
             <div>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MessageSquare className="h-5 w-5 mr-2 text-green-600" />
-                  Chat & Messaging
-                </CardTitle>
-                <CardDescription>
-                  Configure how clients can communicate through the portal
-                </CardDescription>
-              </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 py-6">
@@ -467,12 +458,6 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
 
             {/* Notification Settings */}
             <div>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bell className="h-5 w-5 mr-2 text-orange-600" />
-                  Notification Settings
-                </CardTitle>
-              </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 py-6">

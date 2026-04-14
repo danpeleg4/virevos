@@ -6,6 +6,21 @@ jest.mock("@clerk/nextjs/server", () => ({
   currentUser: jest.fn(),
 }));
 
+// eslint-disable-next-line no-var
+var mockWhere: jest.Mock;
+
+jest.mock("@db/db", () => {
+  mockWhere = jest.fn();
+  return {
+    db: {
+      select: () => ({ from: () => ({ where: mockWhere }) }),
+    },
+  };
+});
+
+jest.mock("@db/schema", () => ({ events: {} }));
+jest.mock("drizzle-orm", () => ({ and: jest.fn(), eq: jest.fn() }));
+
 const mockList = jest.fn();
 const mockDownload = jest.fn();
 
@@ -28,6 +43,7 @@ function mockCtx(id: string) {
 describe("GET /api/transcript/[id]", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockWhere.mockResolvedValue([{ id: "abc123_xyz" }]);
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
