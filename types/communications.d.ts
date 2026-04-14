@@ -1,6 +1,7 @@
 export interface InboxMessage {
   id: string;
   gmailId?: string;
+  outlookId?: string;
   threadId?: string;
   type: "email" | "chat";
   from: string;

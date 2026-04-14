@@ -489,6 +489,47 @@ export async function setupSubscriptions(userId: string): Promise<void> {
     });
 }
 
+export async function renewSubscriptions(userId: string): Promise<void> {
+  const token = await getFreshOutlookAccessToken(userId);
+  if (!token) return;
+
+  const rows = await db
+    .select()
+    .from(outlookSyncState)
+    .where(eq(outlookSyncState.userId, userId))
+    .limit(1);
+
+  if (!rows.length) return;
+
+  const { calendarSubscriptionId, emailSubscriptionId } = rows[0];
+  const newExpiration = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+  let anyFailed = false;
+
+  for (const subId of [calendarSubscriptionId, emailSubscriptionId]) {
+    if (!subId) continue;
+    try {
+      await axios.patch(
+        `${GRAPH_BASE}/subscriptions/${subId}`,
+        { expirationDateTime: newExpiration.toISOString() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (err) {
+      console.error(`[outlook_sync] Failed to renew subscription ${subId}:`, err);
+      anyFailed = true;
+    }
+  }
+
+  if (anyFailed) {
+    await setupSubscriptions(userId);
+    return;
+  }
+
+  await db
+    .update(outlookSyncState)
+    .set({ subscriptionExpiration: newExpiration.getTime() })
+    .where(eq(outlookSyncState.userId, userId));
+}
+
 export async function removeSubscriptions(userId: string): Promise<void> {
   const rows = await db
     .select()

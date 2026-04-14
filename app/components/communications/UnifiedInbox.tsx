@@ -344,7 +344,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
           bodyText: replyText,
           threadId: selectedMessage.threadId,
-          replyToGmailId: selectedMessage.gmailId,
+          replyToOutlookId: selectedMessage.outlookId,
           attachments: pendingAttachments
             .filter((f) => f.path || f.url || f.data)
             .map((f) => ({ name: f.name, url: f.url, path: f.path, data: f.data, mimeType: f.mimeType })),
@@ -1021,7 +1021,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                         subject: `Re: ${selectedMessage.subject || ""}`,
                         bodyHtml: replyHtml,
                         threadId: selectedMessage.threadId,
-                        replyToGmailId: selectedMessage.gmailId,
+                        replyToOutlookId: selectedMessage.outlookId,
                       });
                       toast.success("Reply sent successfully");
                       setShowAIComposer(false);
