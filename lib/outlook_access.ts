@@ -70,7 +70,6 @@ export async function getFreshOutlookAccessToken(
   const now = Date.now();
 
   if (tokenData.expires_in > now + 30000) {
-    console.log("[getFreshOutlookAccessToken] stored token length:", tokenData.access_token?.length, "expires_in:", tokenData.expires_in, "now:", now);
     return tokenData.access_token;
   }
 

@@ -19,12 +19,6 @@ export interface OutlookAttachmentMeta {
   contentType: string;
 }
 
-interface GraphFileAttachment {
-  name: string;
-  contentType: string;
-  contentBytes: string; // base64
-}
-
 async function resolveEmail(numericId: number, userId: string) {
   const [email] = await db
     .select({ outlookId: outlookEmails.outlookId })
@@ -36,11 +30,7 @@ async function resolveEmail(numericId: number, userId: string) {
 
 /** GET /api/outlook/messages/[id]/attachments
  *  — lists attachment metadata
- *
- *  GET /api/outlook/messages/[id]/attachments?download=<attachmentId>
- *  — proxies the file bytes for download (attachment ID passed as query param
- *    to avoid URL-path issues with base64 characters like / and +)
- */
+ **/
 export async function GET(req: NextRequest, { params }: RouteParams) {
   const user = await currentUser();
   if (!user?.id) {
@@ -61,33 +51,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   const token = await getFreshOutlookAccessToken(user.id);
   if (!token) {
     return NextResponse.json({ error: "Outlook account not connected" }, { status: 403 });
-  }
-
-  const attachmentId = req.nextUrl.searchParams.get("download");
-
-  // ── Download mode ────────────────────────────────────────────────────────────
-  if (attachmentId) {
-    try {
-      const res = await axios.get<GraphFileAttachment>(
-        `${GRAPH_BASE}/me/messages/${email.outlookId}/attachments/${attachmentId}?$select=name,contentType,contentBytes`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const { name, contentType, contentBytes } = res.data;
-      const buffer = Buffer.from(contentBytes, "base64");
-
-      return new NextResponse(buffer, {
-        headers: {
-          "Content-Type": contentType ?? "application/octet-stream",
-          "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
-          "Content-Length": String(buffer.byteLength),
-        },
-      });
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response?.status ?? 500;
-      console.error("[outlook/attachments download]", err);
-      return NextResponse.json({ error: "Failed to download attachment" }, { status });
-    }
   }
 
   // ── List mode ────────────────────────────────────────────────────────────────

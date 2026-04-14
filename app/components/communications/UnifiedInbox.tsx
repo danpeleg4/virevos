@@ -799,8 +799,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       {attachmentsData!.map((att) => (
                         <a
                           key={att.id}
-                          href={`/api/outlook/messages/${selectedMessage.id}/attachments?download=${encodeURIComponent(att.id)}`}
-                          download={att.name}
                           className="flex items-center gap-2 bg-muted/60 hover:bg-muted border border-border rounded-md px-3 py-2 text-sm transition-colors group"
                         >
                           {att.contentType.startsWith("image/") ? (
@@ -825,7 +823,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                                   : `${(att.size / (1024 * 1024)).toFixed(1)} MB`}
                             </span>
                           </div>
-                          <Download className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                         </a>
                       ))}
                     </div>

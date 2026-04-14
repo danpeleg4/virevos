@@ -136,7 +136,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const sendNow = async (msg: ScheduledEmail) => {
     try {
-      await axios.post("/api/gmail/send", {
+      await axios.post("/api/outlook/send", {
         to: msg.toEmail,
         toName: msg.toName,
         subject: msg.subject,
