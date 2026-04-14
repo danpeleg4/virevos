@@ -192,6 +192,132 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
   return (
     <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
       <Card className="overflow-hidden flex flex-col h-full">
+        {/* Toolbar */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
+          {/* Status tabs */}
+          <div className="flex items-center gap-1">
+            {STATUS_TABS.map((tab) => (
+                <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
+                        activeTab === tab
+                            ? "bg-card border border-border text-foreground shadow-sm font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    }`}
+                >
+                  {TAB_LABELS[tab]}
+                  <span
+                      className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                          activeTab === tab
+                              ? "bg-muted text-muted-foreground"
+                              : "text-muted-foreground"
+                      }`}
+                  >
+                  {tabCounts[tab]}
+                </span>
+                </button>
+            ))}
+          </div>
+
+          <div className="relative flex-1 max-w-xs ml-auto">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+                placeholder="Search projects..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
+                <ArrowUpDown className="h-3 w-3" />
+                Sort
+                {sortField !== "name" || sortDir !== "asc" ? (
+                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {(
+                  [
+                    { label: "Name (A–Z)", field: "name", dir: "asc" },
+                    { label: "Name (Z–A)", field: "name", dir: "desc" },
+                    {
+                      label: "Progress (Highest)",
+                      field: "progress",
+                      dir: "desc",
+                    },
+                    { label: "Progress (Lowest)", field: "progress", dir: "asc" },
+                    {
+                      label: "Due Date (Earliest)",
+                      field: "dueDate",
+                      dir: "asc",
+                    },
+                    { label: "Due Date (Latest)", field: "dueDate", dir: "desc" },
+                    {
+                      label: "Priority (Highest)",
+                      field: "priority",
+                      dir: "desc",
+                    },
+                    { label: "Priority (Lowest)", field: "priority", dir: "asc" },
+                  ] as const
+              ).map(({ label, field, dir }) => (
+                  <DropdownMenuItem
+                      key={label}
+                      onClick={() => {
+                        setSortField(field);
+                        setSortDir(dir);
+                        setCurrentPage(1);
+                      }}
+                      className="flex items-center justify-between"
+                  >
+                    {label}
+                    {sortField === field && sortDir === dir && (
+                        <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                    )}
+                  </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
+                <SlidersHorizontal className="h-3 w-3" />
+                Filter
+                {statusFilter !== "all" ? (
+                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {(
+                  [
+                    { label: "All Status", value: "all" },
+                    { label: "Active", value: "active" },
+                    { label: "Inactive", value: "inactive" },
+                    { label: "Completed", value: "completed" },
+                  ] as const
+              ).map(({ label, value }) => (
+                  <DropdownMenuItem
+                      key={value}
+                      onClick={() => {
+                        setStatusFilter(value);
+                        setCurrentPage(1);
+                      }}
+                      className="flex items-center justify-between"
+                  >
+                    {label}
+                    {statusFilter === value && (
+                        <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                    )}
+                  </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <ProjectCreateDialog clients={clients}/>
+        </div>
         {projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <div className="rounded-full bg-muted p-5 mb-4">
@@ -207,133 +333,6 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           </div>
         ) : (
           <>
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
-          {/* Status tabs */}
-          <div className="flex items-center gap-1">
-            {STATUS_TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
-                  activeTab === tab
-                    ? "bg-card border border-border text-foreground shadow-sm font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                }`}
-              >
-                {TAB_LABELS[tab]}
-                <span
-                  className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
-                    activeTab === tab
-                      ? "bg-muted text-muted-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {tabCounts[tab]}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <div className="relative flex-1 max-w-xs ml-auto">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
-                <ArrowUpDown className="h-3 w-3" />
-                Sort
-                {sortField !== "name" || sortDir !== "asc" ? (
-                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
-                ) : null}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {(
-                [
-                  { label: "Name (A–Z)", field: "name", dir: "asc" },
-                  { label: "Name (Z–A)", field: "name", dir: "desc" },
-                  {
-                    label: "Progress (Highest)",
-                    field: "progress",
-                    dir: "desc",
-                  },
-                  { label: "Progress (Lowest)", field: "progress", dir: "asc" },
-                  {
-                    label: "Due Date (Earliest)",
-                    field: "dueDate",
-                    dir: "asc",
-                  },
-                  { label: "Due Date (Latest)", field: "dueDate", dir: "desc" },
-                  {
-                    label: "Priority (Highest)",
-                    field: "priority",
-                    dir: "desc",
-                  },
-                  { label: "Priority (Lowest)", field: "priority", dir: "asc" },
-                ] as const
-              ).map(({ label, field, dir }) => (
-                <DropdownMenuItem
-                  key={label}
-                  onClick={() => {
-                    setSortField(field);
-                    setSortDir(dir);
-                    setCurrentPage(1);
-                  }}
-                  className="flex items-center justify-between"
-                >
-                  {label}
-                  {sortField === field && sortDir === dir && (
-                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
-                <SlidersHorizontal className="h-3 w-3" />
-                Filter
-                {statusFilter !== "all" ? (
-                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
-                ) : null}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              {(
-                [
-                  { label: "All Status", value: "all" },
-                  { label: "Active", value: "active" },
-                  { label: "Inactive", value: "inactive" },
-                  { label: "Completed", value: "completed" },
-                ] as const
-              ).map(({ label, value }) => (
-                <DropdownMenuItem
-                  key={value}
-                  onClick={() => {
-                    setStatusFilter(value);
-                    setCurrentPage(1);
-                  }}
-                  className="flex items-center justify-between"
-                >
-                  {label}
-                  {statusFilter === value && (
-                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-              <ProjectCreateDialog clients={clients}/>
-        </div>
-
         <div className="overflow-x-auto flex-1">
           <table className="w-full">
             <thead className="border-b border-border">
