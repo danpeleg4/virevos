@@ -10,7 +10,10 @@ const moduleNameMapper = {
 };
 
 const transform = {
-  "^.+\\.(ts|tsx)$": ["babel-jest", { presets: ["next/babel"] }],
+  "^.+\\.(ts|tsx)$": [
+    "babel-jest",
+    { presets: [["next/babel", { "preset-react": { runtime: "automatic" } }]] },
+  ],
 };
 
 const config = {

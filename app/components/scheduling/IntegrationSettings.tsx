@@ -19,21 +19,6 @@ import { Separator } from "@/app/components/ui/separator";
 
 const INITIAL_INTEGRATIONS: Integration[] = [
   {
-    id: "google",
-    name: "Google",
-    description: "Sync with your Google Account",
-    icon: "/google.svg",
-    connected: false,
-    syncStatus: "synced",
-    lastSync: "1 minute ago",
-    features: [
-      "Two-way calendar sync",
-      "Conflict detection",
-      "Automatic event creation",
-      "Availability management",
-    ],
-  },
-  {
     id: "outlook",
     name: "Microsoft Outlook",
     description: "Sync with Outlook Calendar",

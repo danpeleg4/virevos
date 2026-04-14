@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Input } from "../ui/input";
@@ -135,7 +135,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  const emailsQueryKey = ["emails", debouncedSearch, filterStatus] as const;
+  const emailsQueryKey = useMemo(
+    () => ["emails", debouncedSearch, filterStatus] as const,
+    [debouncedSearch, filterStatus]
+  );
 
   const {
     data,
