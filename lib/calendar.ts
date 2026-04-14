@@ -7,6 +7,10 @@ import { eq, and } from "drizzle-orm";
 import { Event } from "@/types/meeting";
 import { getFreshGoogleAccessToken } from "@/lib/google_access";
 import { google } from "googleapis";
+import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+import axios from "axios";
+
+const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 export async function addMeetingToCalendar(meeting: Event) {
   const user = await currentUser();
@@ -27,6 +31,9 @@ export async function addMeetingToCalendar(meeting: Event) {
   const internalUserId = dbUser[0].user_id;
   const startDate = new Date(meeting.dateTime);
   const meetingId = crypto.randomUUID();
+
+  let outlookEventId: string | null = null;
+  const outlookToken = await getFreshOutlookAccessToken(user.id)
 
   let googleEventId: string | null = null;
   const googleToken = await getFreshGoogleAccessToken(user.id);
@@ -70,6 +77,26 @@ export async function addMeetingToCalendar(meeting: Event) {
     }
   }
 
+  if (outlookToken) {
+    const endDate = new Date(startDate.getTime() + meeting.duration * 60000);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    try {
+      const res = await axios.post<{ id: string }>(
+        `${GRAPH_BASE}/me/events`,
+        {
+          subject: meeting.title,
+          body: { contentType: "Text", content: meeting.description ?? "" },
+          start: { dateTime: startDate.toISOString(), timeZone: tz },
+          end: { dateTime: endDate.toISOString(), timeZone: tz },
+        },
+        { headers: { Authorization: `Bearer ${outlookToken}`, "Content-Type": "application/json" } }
+      );
+      outlookEventId = res.data.id;
+    } catch (error) {
+      console.error("Outlook Calendar error:", error);
+    }
+  }
+
   const now = new Date();
   const status = startDate > now ? "upcoming" : "scheduled";
   const payload = {
@@ -88,6 +115,7 @@ export async function addMeetingToCalendar(meeting: Event) {
     conflictReason: meeting.conflictReason ?? null,
     userId: internalUserId,
     googleEventId,
+    outlookEventId,
   };
 
   const [inserted] = await db
@@ -124,20 +152,21 @@ export async function updateEvent(input: {
     .set(updateData)
     .where(and(eq(events.id, input.id), eq(events.userId, user.id)));
 
-  if (input.dateTime !== undefined) {
-    const googleToken = await getFreshGoogleAccessToken(user.id);
-    if (googleToken) {
-      const eventRow = await db
-        .select()
-        .from(events)
-        .where(and(eq(events.id, input.id), eq(events.userId, user.id)))
-        .limit(1);
+  const hasExternalFields = input.title !== undefined || input.description !== undefined || input.dateTime !== undefined;
+  if (hasExternalFields) {
+    const [eventRow] = await db
+      .select()
+      .from(events)
+      .where(and(eq(events.id, input.id), eq(events.userId, user.id)))
+      .limit(1);
 
-      if (eventRow.length > 0) {
+    if (eventRow) {
+      const googleToken = await getFreshGoogleAccessToken(user.id);
+      if (googleToken) {
         const oauth2Client = new google.auth.OAuth2();
         oauth2Client.setCredentials({ access_token: googleToken });
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-        const googleEventId = eventRow[0].googleEventId || input.id;
+        const googleEventId = eventRow.googleEventId || input.id;
 
         try {
           await calendar.events.patch({
@@ -158,6 +187,24 @@ export async function updateEvent(input: {
           });
         } catch (error) {
           console.error("Google Calendar update error:", error);
+        }
+      }
+
+      const outlookToken = await getFreshOutlookAccessToken(user.id);
+      if (outlookToken && eventRow.outlookEventId) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        try {
+          await axios.patch(
+            `${GRAPH_BASE}/me/events/${eventRow.outlookEventId}`,
+            {
+              ...(input.title ? { subject: input.title } : {}),
+              ...(input.description ? { body: { contentType: "Text", content: input.description } } : {}),
+              ...(input.dateTime ? { start: { dateTime: new Date(input.dateTime).toISOString(), timeZone: tz } } : {}),
+            },
+            { headers: { Authorization: `Bearer ${outlookToken}`, "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("Outlook Calendar update error:", error);
         }
       }
     }
@@ -195,7 +242,18 @@ export async function deleteEventFromCalendar(id: string) {
       });
     } catch (error) {
       console.error("Error deleting from Google Calendar:", error);
-      // We might want to continue even if Google delete fails (e.g. event already deleted manually)
+    }
+  }
+
+  const outlookToken = await getFreshOutlookAccessToken(user.id);
+  if (outlookToken && meeting.outlookEventId) {
+    try {
+      await axios.delete(
+        `${GRAPH_BASE}/me/events/${meeting.outlookEventId}`,
+        { headers: { Authorization: `Bearer ${outlookToken}` } }
+      );
+    } catch (error) {
+      console.error("Error deleting from Outlook Calendar:", error);
     }
   }
 
