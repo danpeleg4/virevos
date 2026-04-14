@@ -31,7 +31,11 @@ export function getOutlookAuthUrl(): string {
 
 export async function exchangeOutlookCode(
   code: string
-): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
+): Promise<{
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+}> {
   const params = new URLSearchParams({
     client_id: process.env.OUTLOOK_CLIENT_ID!,
     client_secret: process.env.OUTLOOK_CLIENT_SECRET!,

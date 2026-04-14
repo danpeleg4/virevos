@@ -33,7 +33,7 @@ export async function addMeetingToCalendar(meeting: Event) {
   const meetingId = crypto.randomUUID();
 
   let outlookEventId: string | null = null;
-  const outlookToken = await getFreshOutlookAccessToken(user.id)
+  const outlookToken = await getFreshOutlookAccessToken(user.id);
 
   let googleEventId: string | null = null;
   const googleToken = await getFreshGoogleAccessToken(user.id);
@@ -89,7 +89,12 @@ export async function addMeetingToCalendar(meeting: Event) {
           start: { dateTime: startDate.toISOString(), timeZone: tz },
           end: { dateTime: endDate.toISOString(), timeZone: tz },
         },
-        { headers: { Authorization: `Bearer ${outlookToken}`, "Content-Type": "application/json" } }
+        {
+          headers: {
+            Authorization: `Bearer ${outlookToken}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
       outlookEventId = res.data.id;
     } catch (error) {
@@ -140,8 +145,10 @@ export async function updateEvent(input: {
 
   const updateData: Record<string, unknown> = {};
   if (input.title !== undefined) updateData.title = input.title;
-  if (input.description !== undefined) updateData.description = input.description;
-  if (input.dateTime !== undefined) updateData.dateTime = new Date(input.dateTime);
+  if (input.description !== undefined)
+    updateData.description = input.description;
+  if (input.dateTime !== undefined)
+    updateData.dateTime = new Date(input.dateTime);
   if (input.duration !== undefined) updateData.duration = input.duration;
   if (input.status !== undefined) updateData.status = input.status;
 
@@ -152,7 +159,10 @@ export async function updateEvent(input: {
     .set(updateData)
     .where(and(eq(events.id, input.id), eq(events.userId, user.id)));
 
-  const hasExternalFields = input.title !== undefined || input.description !== undefined || input.dateTime !== undefined;
+  const hasExternalFields =
+    input.title !== undefined ||
+    input.description !== undefined ||
+    input.dateTime !== undefined;
   if (hasExternalFields) {
     const [eventRow] = await db
       .select()
@@ -179,7 +189,8 @@ export async function updateEvent(input: {
                 ? {
                     start: {
                       dateTime: new Date(input.dateTime).toISOString(),
-                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                      timeZone:
+                        Intl.DateTimeFormat().resolvedOptions().timeZone,
                     },
                   }
                 : {}),
@@ -198,10 +209,24 @@ export async function updateEvent(input: {
             `${GRAPH_BASE}/me/events/${eventRow.outlookEventId}`,
             {
               ...(input.title ? { subject: input.title } : {}),
-              ...(input.description ? { body: { contentType: "Text", content: input.description } } : {}),
-              ...(input.dateTime ? { start: { dateTime: new Date(input.dateTime).toISOString(), timeZone: tz } } : {}),
+              ...(input.description
+                ? { body: { contentType: "Text", content: input.description } }
+                : {}),
+              ...(input.dateTime
+                ? {
+                    start: {
+                      dateTime: new Date(input.dateTime).toISOString(),
+                      timeZone: tz,
+                    },
+                  }
+                : {}),
             },
-            { headers: { Authorization: `Bearer ${outlookToken}`, "Content-Type": "application/json" } }
+            {
+              headers: {
+                Authorization: `Bearer ${outlookToken}`,
+                "Content-Type": "application/json",
+              },
+            }
           );
         } catch (error) {
           console.error("Outlook Calendar update error:", error);
@@ -248,10 +273,9 @@ export async function deleteEventFromCalendar(id: string) {
   const outlookToken = await getFreshOutlookAccessToken(user.id);
   if (outlookToken && meeting.outlookEventId) {
     try {
-      await axios.delete(
-        `${GRAPH_BASE}/me/events/${meeting.outlookEventId}`,
-        { headers: { Authorization: `Bearer ${outlookToken}` } }
-      );
+      await axios.delete(`${GRAPH_BASE}/me/events/${meeting.outlookEventId}`, {
+        headers: { Authorization: `Bearer ${outlookToken}` },
+      });
     } catch (error) {
       console.error("Error deleting from Outlook Calendar:", error);
     }

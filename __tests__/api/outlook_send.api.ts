@@ -74,7 +74,12 @@ describe("POST /api/outlook/send", () => {
         message: expect.objectContaining({
           subject: "Hello",
           toRecipients: [
-            { emailAddress: { address: "recipient@example.com", name: "Recipient" } },
+            {
+              emailAddress: {
+                address: "recipient@example.com",
+                name: "Recipient",
+              },
+            },
           ],
         }),
         saveToSentItems: true,
@@ -103,7 +108,12 @@ describe("POST /api/outlook/send", () => {
       expect.objectContaining({
         message: expect.objectContaining({
           ccRecipients: [
-            { emailAddress: { address: "cc@example.com", name: "cc@example.com" } },
+            {
+              emailAddress: {
+                address: "cc@example.com",
+                name: "cc@example.com",
+              },
+            },
           ],
         }),
       }),
@@ -166,8 +176,8 @@ describe("POST /api/outlook/send", () => {
     // POST /me/messages → draft, POST attachments, POST send
     (axios.post as jest.Mock)
       .mockResolvedValueOnce({ data: { id: draftId } }) // create draft
-      .mockResolvedValueOnce({ data: {} })              // add attachment
-      .mockResolvedValueOnce({ data: {} });             // send draft
+      .mockResolvedValueOnce({ data: {} }) // add attachment
+      .mockResolvedValueOnce({ data: {} }); // send draft
 
     const smallBase64 = Buffer.alloc(100).toString("base64"); // 100 bytes
 
@@ -219,10 +229,10 @@ describe("POST /api/outlook/send", () => {
     const uploadUrl = "https://upload.microsoft.com/session/abc";
 
     (axios.post as jest.Mock)
-      .mockResolvedValueOnce({ data: { id: draftId } })          // create draft
-      .mockResolvedValueOnce({ data: { uploadUrl } })             // createUploadSession
-      .mockResolvedValueOnce({ data: {} });                       // send draft
-    (axios.put as jest.Mock).mockResolvedValue({ status: 200 });  // chunk upload
+      .mockResolvedValueOnce({ data: { id: draftId } }) // create draft
+      .mockResolvedValueOnce({ data: { uploadUrl } }) // createUploadSession
+      .mockResolvedValueOnce({ data: {} }); // send draft
+    (axios.put as jest.Mock).mockResolvedValue({ status: 200 }); // chunk upload
 
     // 4 MB file (> 3 MB threshold)
     const largeBase64 = Buffer.alloc(4 * 1024 * 1024).toString("base64");
@@ -233,7 +243,11 @@ describe("POST /api/outlook/send", () => {
         subject: "Large file",
         bodyHtml: "<p>Big attachment</p>",
         attachments: [
-          { name: "big.bin", data: largeBase64, mimeType: "application/octet-stream" },
+          {
+            name: "big.bin",
+            data: largeBase64,
+            mimeType: "application/octet-stream",
+          },
         ],
       })
     );
@@ -242,7 +256,9 @@ describe("POST /api/outlook/send", () => {
 
     // createUploadSession
     expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining(`/me/messages/${draftId}/attachments/createUploadSession`),
+      expect.stringContaining(
+        `/me/messages/${draftId}/attachments/createUploadSession`
+      ),
       expect.objectContaining({
         AttachmentItem: expect.objectContaining({
           attachmentType: "file",
@@ -279,8 +295,8 @@ describe("POST /api/outlook/send", () => {
     const replyDraftId = "reply_draft_001";
     (axios.post as jest.Mock)
       .mockResolvedValueOnce({ data: { id: replyDraftId } }) // createReply
-      .mockResolvedValueOnce({ data: {} })                   // add attachment
-      .mockResolvedValueOnce({ data: {} });                  // send draft
+      .mockResolvedValueOnce({ data: {} }) // add attachment
+      .mockResolvedValueOnce({ data: {} }); // send draft
 
     const smallBase64 = Buffer.alloc(50).toString("base64");
 
@@ -338,13 +354,20 @@ describe("POST /api/outlook/send", () => {
         subject: "App file",
         bodyHtml: "<p>From files</p>",
         attachments: [
-          { name: "report.pdf", path: "projects/123/report.pdf", mimeType: "application/pdf" },
+          {
+            name: "report.pdf",
+            path: "projects/123/report.pdf",
+            mimeType: "application/pdf",
+          },
         ],
       })
     );
 
     expect(res.status).toBe(200);
-    expect(downloadFile).toHaveBeenCalledWith("files", "projects/123/report.pdf");
+    expect(downloadFile).toHaveBeenCalledWith(
+      "files",
+      "projects/123/report.pdf"
+    );
     expect(axios.post).toHaveBeenCalledWith(
       expect.stringContaining(`/me/messages/${draftId}/attachments`),
       expect.objectContaining({ name: "report.pdf" }),

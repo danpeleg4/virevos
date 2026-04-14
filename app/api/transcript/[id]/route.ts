@@ -36,13 +36,19 @@ export async function GET(
       .list(folderPrefix);
 
     if (listError || !files || files.length === 0) {
-      return NextResponse.json({ error: "No files found in folder" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No files found in folder" },
+        { status: 404 }
+      );
     }
 
     const jsonFiles = files.filter((f) => f.name.endsWith(".json"));
 
     if (jsonFiles.length === 0) {
-      return NextResponse.json({ error: "No JSON files found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No JSON files found" },
+        { status: 404 }
+      );
     }
 
     const results = await Promise.all(

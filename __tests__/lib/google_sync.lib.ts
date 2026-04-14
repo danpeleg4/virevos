@@ -252,11 +252,9 @@ describe("performIncrementalSync", () => {
     jest.spyOn(console, "log").mockImplementationOnce(() => {});
 
     const goneError = Object.assign(new Error("Gone"), { code: 410 });
-    mockEventsList
-      .mockRejectedValueOnce(goneError)
-      .mockResolvedValueOnce({
-        data: { items: [], nextSyncToken: "new-token" },
-      });
+    mockEventsList.mockRejectedValueOnce(goneError).mockResolvedValueOnce({
+      data: { items: [], nextSyncToken: "new-token" },
+    });
 
     (db.insert as jest.Mock).mockReturnValue({
       values: jest.fn().mockReturnValue({

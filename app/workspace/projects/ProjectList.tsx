@@ -34,7 +34,7 @@ import { Progress } from "@/app/components/ui/progress";
 import { Project } from "@/types/projects";
 import type { clients } from "@/types/clients";
 import { ProjectEditDialog } from "./ProjectEditDialog";
-import {ProjectCreateDialog} from "@/app/workspace/projects/ProjectCreateDialog";
+import { ProjectCreateDialog } from "@/app/workspace/projects/ProjectCreateDialog";
 
 const ROW_HEIGHT = 52;
 
@@ -197,36 +197,36 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           {/* Status tabs */}
           <div className="flex items-center gap-1">
             {STATUS_TABS.map((tab) => (
-                <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
-                        activeTab === tab
-                            ? "bg-card border border-border text-foreground shadow-sm font-medium"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    }`}
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
+                  activeTab === tab
+                    ? "bg-card border border-border text-foreground shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                {TAB_LABELS[tab]}
+                <span
+                  className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                    activeTab === tab
+                      ? "bg-muted text-muted-foreground"
+                      : "text-muted-foreground"
+                  }`}
                 >
-                  {TAB_LABELS[tab]}
-                  <span
-                      className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
-                          activeTab === tab
-                              ? "bg-muted text-muted-foreground"
-                              : "text-muted-foreground"
-                      }`}
-                  >
                   {tabCounts[tab]}
                 </span>
-                </button>
+              </button>
             ))}
           </div>
 
           <div className="relative flex-1 max-w-xs ml-auto">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-                placeholder="Search projects..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-8 text-sm"
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-sm"
             />
           </div>
           <DropdownMenu>
@@ -235,49 +235,49 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                 <ArrowUpDown className="h-3 w-3" />
                 Sort
                 {sortField !== "name" || sortDir !== "asc" ? (
-                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
                 ) : null}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               {(
-                  [
-                    { label: "Name (A–Z)", field: "name", dir: "asc" },
-                    { label: "Name (Z–A)", field: "name", dir: "desc" },
-                    {
-                      label: "Progress (Highest)",
-                      field: "progress",
-                      dir: "desc",
-                    },
-                    { label: "Progress (Lowest)", field: "progress", dir: "asc" },
-                    {
-                      label: "Due Date (Earliest)",
-                      field: "dueDate",
-                      dir: "asc",
-                    },
-                    { label: "Due Date (Latest)", field: "dueDate", dir: "desc" },
-                    {
-                      label: "Priority (Highest)",
-                      field: "priority",
-                      dir: "desc",
-                    },
-                    { label: "Priority (Lowest)", field: "priority", dir: "asc" },
-                  ] as const
+                [
+                  { label: "Name (A–Z)", field: "name", dir: "asc" },
+                  { label: "Name (Z–A)", field: "name", dir: "desc" },
+                  {
+                    label: "Progress (Highest)",
+                    field: "progress",
+                    dir: "desc",
+                  },
+                  { label: "Progress (Lowest)", field: "progress", dir: "asc" },
+                  {
+                    label: "Due Date (Earliest)",
+                    field: "dueDate",
+                    dir: "asc",
+                  },
+                  { label: "Due Date (Latest)", field: "dueDate", dir: "desc" },
+                  {
+                    label: "Priority (Highest)",
+                    field: "priority",
+                    dir: "desc",
+                  },
+                  { label: "Priority (Lowest)", field: "priority", dir: "asc" },
+                ] as const
               ).map(({ label, field, dir }) => (
-                  <DropdownMenuItem
-                      key={label}
-                      onClick={() => {
-                        setSortField(field);
-                        setSortDir(dir);
-                        setCurrentPage(1);
-                      }}
-                      className="flex items-center justify-between"
-                  >
-                    {label}
-                    {sortField === field && sortDir === dir && (
-                        <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
-                    )}
-                  </DropdownMenuItem>
+                <DropdownMenuItem
+                  key={label}
+                  onClick={() => {
+                    setSortField(field);
+                    setSortDir(dir);
+                    setCurrentPage(1);
+                  }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {sortField === field && sortDir === dir && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -287,36 +287,36 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                 <SlidersHorizontal className="h-3 w-3" />
                 Filter
                 {statusFilter !== "all" ? (
-                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                  <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
                 ) : null}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               {(
-                  [
-                    { label: "All Status", value: "all" },
-                    { label: "Active", value: "active" },
-                    { label: "Inactive", value: "inactive" },
-                    { label: "Completed", value: "completed" },
-                  ] as const
+                [
+                  { label: "All Status", value: "all" },
+                  { label: "Active", value: "active" },
+                  { label: "Inactive", value: "inactive" },
+                  { label: "Completed", value: "completed" },
+                ] as const
               ).map(({ label, value }) => (
-                  <DropdownMenuItem
-                      key={value}
-                      onClick={() => {
-                        setStatusFilter(value);
-                        setCurrentPage(1);
-                      }}
-                      className="flex items-center justify-between"
-                  >
-                    {label}
-                    {statusFilter === value && (
-                        <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
-                    )}
-                  </DropdownMenuItem>
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => {
+                    setStatusFilter(value);
+                    setCurrentPage(1);
+                  }}
+                  className="flex items-center justify-between"
+                >
+                  {label}
+                  {statusFilter === value && (
+                    <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                  )}
+                </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <ProjectCreateDialog clients={clients}/>
+          <ProjectCreateDialog clients={clients} />
         </div>
         {projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
@@ -333,171 +333,175 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           </div>
         ) : (
           <>
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full">
-            <thead className="border-b border-border">
-              <tr>
-                <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <FolderOpen className="h-3.5 w-3.5" />
-                    Project
-                  </div>
-                </th>
-                <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <Briefcase className="h-3.5 w-3.5" />
-                    Client
-                  </div>
-                </th>
-                <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <Target className="h-3.5 w-3.5" />
-                    Status
-                  </div>
-                </th>
-                <th className="text-left px-4 py-2.5 min-w-[140px]">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    Progress
-                  </div>
-                </th>
-                <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <ListChecks className="h-3.5 w-3.5" />
-                    Tasks
-                  </div>
-                </th>
-                <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Due date
-                  </div>
-                </th>
-                <th className="text-left px-4 py-2.5">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <Flag className="h-3.5 w-3.5" />
-                    Priority
-                  </div>
-                </th>
-                <th className="w-10 px-2 py-2.5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {paginatedProjects.map((project) => {
-                const pct = task_percentage({
-                  completed: project.stats.completedTasks,
-                  total: project.stats.totalTasks,
-                });
-                return (
-                  <tr
-                    key={project.id}
-                    onClick={() => onSelect(project)}
-                    className="cursor-pointer transition-colors hover:bg-muted/50 group"
-                  >
-                    <td className="px-4 py-3 align-middle">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-medium text-foreground">
-                          {project.name}
-                        </span>
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full">
+                <thead className="border-b border-border">
+                  <tr>
+                    <th className="text-left px-4 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <FolderOpen className="h-3.5 w-3.5" />
+                        Project
                       </div>
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      {project.clientName && (
-                        <ClientPill name={project.clientName} />
-                      )}
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      <StatusBadge status={project.status} />
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      <div className="flex items-center gap-2 min-w-[120px]">
-                        <Progress value={pct} className="h-1.5 flex-1" />
-                        <span className="text-xs text-muted-foreground w-7 text-right shrink-0">
-                          {pct}%
-                        </span>
+                    </th>
+                    <th className="text-left px-4 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <Briefcase className="h-3.5 w-3.5" />
+                        Client
                       </div>
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
-                        {project.stats.completedTasks}/
-                        {project.stats.totalTasks}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      {project.dueDate ? (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 shrink-0" />
-                          {project.dueDate}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      <PriorityBadge priority={project.priority} />
-                    </td>
-                    <td className="px-2 py-3 align-middle">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingProject(project);
-                        }}
-                        className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
-                        aria-label="Edit project"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </td>
+                    </th>
+                    <th className="text-left px-4 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <Target className="h-3.5 w-3.5" />
+                        Status
+                      </div>
+                    </th>
+                    <th className="text-left px-4 py-2.5 min-w-[140px]">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        Progress
+                      </div>
+                    </th>
+                    <th className="text-left px-4 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <ListChecks className="h-3.5 w-3.5" />
+                        Tasks
+                      </div>
+                    </th>
+                    <th className="text-left px-4 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <Calendar className="h-3.5 w-3.5" />
+                        Due date
+                      </div>
+                    </th>
+                    <th className="text-left px-4 py-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <Flag className="h-3.5 w-3.5" />
+                        Priority
+                      </div>
+                    </th>
+                    <th className="w-10 px-2 py-2.5" />
                   </tr>
-                );
-              })}
-              {filteredProjects.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-12 text-center text-sm text-muted-foreground"
-                  >
-                    No projects found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedProjects.map((project) => {
+                    const pct = task_percentage({
+                      completed: project.stats.completedTasks,
+                      total: project.stats.totalTasks,
+                    });
+                    return (
+                      <tr
+                        key={project.id}
+                        onClick={() => onSelect(project)}
+                        className="cursor-pointer transition-colors hover:bg-muted/50 group"
+                      >
+                        <td className="px-4 py-3 align-middle">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-sm font-medium text-foreground">
+                              {project.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-middle">
+                          {project.clientName && (
+                            <ClientPill name={project.clientName} />
+                          )}
+                        </td>
+                        <td className="px-4 py-3 align-middle">
+                          <StatusBadge status={project.status} />
+                        </td>
+                        <td className="px-4 py-3 align-middle">
+                          <div className="flex items-center gap-2 min-w-[120px]">
+                            <Progress value={pct} className="h-1.5 flex-1" />
+                            <span className="text-xs text-muted-foreground w-7 text-right shrink-0">
+                              {pct}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-middle">
+                          <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
+                            {project.stats.completedTasks}/
+                            {project.stats.totalTasks}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 align-middle">
+                          {project.dueDate ? (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              {project.dueDate}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              —
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 align-middle">
+                          <PriorityBadge priority={project.priority} />
+                        </td>
+                        <td className="px-2 py-3 align-middle">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingProject(project);
+                            }}
+                            className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+                            aria-label="Edit project"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredProjects.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-12 text-center text-sm text-muted-foreground"
+                      >
+                        No projects found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Pagination */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
-          <div className="text-xs text-muted-foreground">
-            Showing {filteredProjects.length === 0 ? 0 : startIndex + 1}–
-            {Math.min(startIndex + itemsPerPage, filteredProjects.length)} of{" "}
-            {filteredProjects.length} projects
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="h-7 text-xs"
-            >
-              <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-              Previous
-            </Button>
-            <span className="px-2 py-1 text-xs text-muted-foreground">
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="h-7 text-xs"
-            >
-              Next
-              <ChevronRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
-          </div>
-        </div>
+            {/* Pagination */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
+              <div className="text-xs text-muted-foreground">
+                Showing {filteredProjects.length === 0 ? 0 : startIndex + 1}–
+                {Math.min(startIndex + itemsPerPage, filteredProjects.length)}{" "}
+                of {filteredProjects.length} projects
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-7 text-xs"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                  Previous
+                </Button>
+                <span className="px-2 py-1 text-xs text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="h-7 text-xs"
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </Card>

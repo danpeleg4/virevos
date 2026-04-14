@@ -71,13 +71,29 @@ export const tools: OpenAI.Responses.Tool[] = [
       type: "object",
       properties: {
         name: { type: "string", description: "The name of the project" },
-        description: { type: ["string", "null"], description: "Project description" },
+        description: {
+          type: ["string", "null"],
+          description: "Project description",
+        },
         status: { type: ["string", "null"], description: "Project status" },
-        dueDate: { type: ["string", "null"], description: "Due date as ISO string" },
+        dueDate: {
+          type: ["string", "null"],
+          description: "Due date as ISO string",
+        },
         priority: { type: ["string", "null"], description: "Project priority" },
-        clientId: { type: ["number", "null"], description: "Associated client ID" },
+        clientId: {
+          type: ["number", "null"],
+          description: "Associated client ID",
+        },
       },
-      required: ["name", "description", "status", "dueDate", "priority", "clientId"],
+      required: [
+        "name",
+        "description",
+        "status",
+        "dueDate",
+        "priority",
+        "clientId",
+      ],
       additionalProperties: false,
     },
     strict: true,
@@ -110,9 +126,15 @@ export const tools: OpenAI.Responses.Tool[] = [
       properties: {
         id: { type: "number", description: "The ID of the project to update" },
         name: { type: ["string", "null"], description: "New name" },
-        description: { type: ["string", "null"], description: "New description" },
+        description: {
+          type: ["string", "null"],
+          description: "New description",
+        },
         status: { type: ["string", "null"], description: "New status" },
-        dueDate: { type: ["string", "null"], description: "New due date as ISO string" },
+        dueDate: {
+          type: ["string", "null"],
+          description: "New due date as ISO string",
+        },
         priority: { type: ["string", "null"], description: "New priority" },
       },
       required: ["id", "name", "description", "status", "dueDate", "priority"],
@@ -128,10 +150,19 @@ export const tools: OpenAI.Responses.Tool[] = [
       type: "object",
       properties: {
         title: { type: "string", description: "The title of the task" },
-        description: { type: ["string", "null"], description: "Task description" },
-        projectId: { type: ["number", "null"], description: "Associated project ID" },
+        description: {
+          type: ["string", "null"],
+          description: "Task description",
+        },
+        projectId: {
+          type: ["number", "null"],
+          description: "Associated project ID",
+        },
         priority: { type: ["string", "null"], description: "Task priority" },
-        dueDate: { type: ["string", "null"], description: "Due date as ISO string" },
+        dueDate: {
+          type: ["string", "null"],
+          description: "Due date as ISO string",
+        },
       },
       required: ["title", "description", "projectId", "priority", "dueDate"],
       additionalProperties: false,
@@ -147,7 +178,10 @@ export const tools: OpenAI.Responses.Tool[] = [
       properties: {
         id: { type: "number", description: "The ID of the task to update" },
         title: { type: ["string", "null"], description: "New title" },
-        description: { type: ["string", "null"], description: "New description" },
+        description: {
+          type: ["string", "null"],
+          description: "New description",
+        },
         priority: { type: ["string", "null"], description: "New priority" },
         status: { type: ["string", "null"], description: "New status" },
         dueDate: {
@@ -173,14 +207,24 @@ export const tools: OpenAI.Responses.Tool[] = [
           description: "Start date/time as ISO string",
         },
         duration: { type: "number", description: "Duration in minutes" },
-        description: { type: ["string", "null"], description: "Event description" },
+        description: {
+          type: ["string", "null"],
+          description: "Event description",
+        },
         isMeeting: {
           type: ["boolean", "null"],
           description: "Whether this is a video meeting",
         },
         link: { type: ["string", "null"], description: "Meeting link" },
       },
-      required: ["title", "dateTime", "duration", "description", "isMeeting", "link"],
+      required: [
+        "title",
+        "dateTime",
+        "duration",
+        "description",
+        "isMeeting",
+        "link",
+      ],
       additionalProperties: false,
     },
     strict: true,
@@ -212,15 +256,28 @@ export const tools: OpenAI.Responses.Tool[] = [
       properties: {
         id: { type: "string", description: "The ID of the event to update" },
         title: { type: ["string", "null"], description: "New title" },
-        description: { type: ["string", "null"], description: "New description" },
+        description: {
+          type: ["string", "null"],
+          description: "New description",
+        },
         dateTime: {
           type: ["string", "null"],
           description: "New start date/time as ISO string",
         },
-        duration: { type: ["number", "null"], description: "New duration in minutes" },
+        duration: {
+          type: ["number", "null"],
+          description: "New duration in minutes",
+        },
         status: { type: ["string", "null"], description: "New status" },
       },
-      required: ["id", "title", "description", "dateTime", "duration", "status"],
+      required: [
+        "id",
+        "title",
+        "description",
+        "dateTime",
+        "duration",
+        "status",
+      ],
       additionalProperties: false,
     },
     strict: true,

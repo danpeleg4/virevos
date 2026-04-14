@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  AccessToken,
-} from "livekit-server-sdk";
+import { AccessToken } from "livekit-server-sdk";
 import { events } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";

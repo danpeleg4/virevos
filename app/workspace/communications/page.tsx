@@ -35,7 +35,6 @@ export default function Communications() {
       className="p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden"
       style={{ height: "calc(100dvh - 65px)" }}
     >
-
       {/* Card with embedded tabs */}
       <Card className="flex flex-col overflow-hidden" style={fillStyle}>
         {/* Tab nav */}

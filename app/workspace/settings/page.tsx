@@ -123,12 +123,18 @@ export default function Settings() {
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">Dark mode</p>
-                  <p className="text-sm text-muted-foreground">Use dark theme across the app</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Dark mode
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Use dark theme across the app
+                  </p>
                 </div>
                 <Switch
                   checked={isDark}
-                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                  onCheckedChange={(checked) =>
+                    setTheme(checked ? "dark" : "light")
+                  }
                   className="shrink-0"
                 />
               </div>

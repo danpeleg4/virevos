@@ -13,16 +13,33 @@ jest.mock("motion/react", () => {
     {},
     {
       get: (_t, _tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
+        function MC({
+          children,
+          initial,
+          animate,
+          exit,
+          variants,
+          transition,
+          viewport,
+          whileInView,
+          whileHover,
+          whileTap,
+          ...props
+        }: Record<string, unknown>) {
           return createElement(
             _tag as keyof JSX.IntrinsicElements,
             props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
-            children as React.ReactNode,
+            children as React.ReactNode
           );
         },
     }
   );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+  return {
+    motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+  };
 });
 
 import { CTA } from "@/app/components/CTA";
@@ -38,15 +55,21 @@ describe("CTA", () => {
   });
 
   it("renders 'Get started for free' button", () => {
-    expect(screen.getByRole("button", { name: /get started for free/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /get started for free/i })
+    ).toBeInTheDocument();
   });
 
   it("renders 'Schedule a demo' button", () => {
-    expect(screen.getByRole("button", { name: /schedule a demo/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /schedule a demo/i })
+    ).toBeInTheDocument();
   });
 
   it("navigates to /onboard on 'Get started for free' click", () => {
-    fireEvent.click(screen.getByRole("button", { name: /get started for free/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /get started for free/i })
+    );
     expect(mockPush).toHaveBeenCalledWith("/onboard");
   });
 
@@ -57,7 +80,9 @@ describe("CTA", () => {
 
   it("renders trust indicators", () => {
     expect(screen.getAllByText(/free plan/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/no credit card required/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/no credit card required/i).length
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText(/cancel anytime/i).length).toBeGreaterThan(0);
   });
 

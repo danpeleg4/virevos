@@ -15,15 +15,27 @@ export async function deleteProject(projectId: number) {
 
   // Delete project files
   const files = await db
-      .select({ path: projectFiles.path, size: projectFiles.size })
-      .from(projectFiles)
-      .where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
+    .select({ path: projectFiles.path, size: projectFiles.size })
+    .from(projectFiles)
+    .where(
+      and(
+        eq(projectFiles.projectId, projectId),
+        eq(projectFiles.userId, user.id)
+      )
+    );
 
   for (const file of files) {
     await deleteFile(FILES_BUCKET, file.path);
   }
 
-  await db.delete(projectFiles).where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
+  await db
+    .delete(projectFiles)
+    .where(
+      and(
+        eq(projectFiles.projectId, projectId),
+        eq(projectFiles.userId, user.id)
+      )
+    );
 
   const totalSize = files.reduce((sum, f) => sum + f.size, 0);
   if (totalSize > 0) {
@@ -53,7 +65,10 @@ export async function deleteProject(projectId: number) {
     .where(and(eq(projects.id, projectId), eq(projects.userId, user.id)));
 }
 
-export async function addFileMetadata(input: AddFileMetadataInput, formData: FormData) {
+export async function addFileMetadata(
+  input: AddFileMetadataInput,
+  formData: FormData
+) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
   const file = formData.get("file") as File | null;

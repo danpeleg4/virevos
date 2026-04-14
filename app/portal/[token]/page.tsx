@@ -237,7 +237,9 @@ export default function PortalPage() {
                 <FileText className="h-6 w-6 text-blue-600" />
               </div>
             </div>
-            <p className="text-2xl text-gray-900 mb-1">{data.projects.length}</p>
+            <p className="text-2xl text-gray-900 mb-1">
+              {data.projects.length}
+            </p>
             <p className="text-sm text-gray-600">Active Projects</p>
           </Card>
 
@@ -257,7 +259,9 @@ export default function PortalPage() {
                 <Calendar className="h-6 w-6 text-purple-600" />
               </div>
             </div>
-            <p className="text-2xl text-gray-900 mb-1">{localMessages.length}</p>
+            <p className="text-2xl text-gray-900 mb-1">
+              {localMessages.length}
+            </p>
             <p className="text-sm text-gray-600">Total Messages</p>
           </Card>
 
@@ -453,7 +457,9 @@ export default function PortalPage() {
                         <span className="text-gray-600">Due Date</span>
                         <span className="text-gray-900">
                           {project.dueDate
-                            ? parseDateOnlyString(project.dueDate).toLocaleDateString()
+                            ? parseDateOnlyString(
+                                project.dueDate
+                              ).toLocaleDateString()
                             : "—"}
                         </span>
                       </div>

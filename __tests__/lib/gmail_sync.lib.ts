@@ -1,4 +1,8 @@
-import { performGmailSync, syncSingleMessage, searchEmails } from "@/lib/gmail_sync";
+import {
+  performGmailSync,
+  syncSingleMessage,
+  searchEmails,
+} from "@/lib/gmail_sync";
 import { currentUser } from "@clerk/nextjs/server";
 
 // ─── Pinecone mock ────────────────────────────────────────────────────────────
@@ -46,15 +50,20 @@ jest.mock("@/lib/gmail_client", () => {
         },
       },
     }),
-    parseEmailBody: jest.fn().mockReturnValue({ html: "<p>body</p>", text: "body text" }),
+    parseEmailBody: jest
+      .fn()
+      .mockReturnValue({ html: "<p>body</p>", text: "body text" }),
     parseEmailAddress: jest.fn().mockImplementation((raw: string) => ({
       name: "Test User",
       email: raw?.includes("@") ? raw.trim() : "test@example.com",
     })),
-    getHeader: jest.fn().mockImplementation(
-      (headers: Array<{ name: string; value: string }>, name: string) =>
-        headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? ""
-    ),
+    getHeader: jest
+      .fn()
+      .mockImplementation(
+        (headers: Array<{ name: string; value: string }>, name: string) =>
+          headers.find((h) => h.name.toLowerCase() === name.toLowerCase())
+            ?.value ?? ""
+      ),
     parseHeaderValue: jest.fn().mockImplementation((v: string) => v),
     listAttachments: jest.fn().mockReturnValue([]),
   };
@@ -85,7 +94,9 @@ jest.mock("@db/db", () => {
   mockSelectLimit = jest.fn();
   // where() returns something both awaitable (for clients query) and with .limit (for emails query)
   mockSelectWhere = jest.fn().mockImplementation(() => {
-    const p = Promise.resolve([]) as unknown as Promise<unknown[]> & { limit: jest.Mock };
+    const p = Promise.resolve([]) as unknown as Promise<unknown[]> & {
+      limit: jest.Mock;
+    };
     p.limit = mockSelectLimit;
     return p;
   });
@@ -147,7 +158,9 @@ beforeEach(() => {
   mockSelectLimit.mockResolvedValue([]);
   // where() returns a thenable (for clients query) that also has .limit (for emails query)
   mockSelectWhere.mockImplementation(() => {
-    const p = Promise.resolve([]) as unknown as Promise<unknown[]> & { limit: jest.Mock };
+    const p = Promise.resolve([]) as unknown as Promise<unknown[]> & {
+      limit: jest.Mock;
+    };
     p.limit = mockSelectLimit;
     return p;
   });
@@ -222,7 +235,10 @@ describe("gmail_sync — performGmailSync Pinecone integration", () => {
   it("calls upsertRecords for each synced message", async () => {
     mockMessagesList
       .mockResolvedValueOnce({
-        data: { messages: [{ id: "msg1" }, { id: "msg2" }], nextPageToken: undefined },
+        data: {
+          messages: [{ id: "msg1" }, { id: "msg2" }],
+          nextPageToken: undefined,
+        },
       })
       .mockResolvedValue({
         data: { messages: [], nextPageToken: undefined },

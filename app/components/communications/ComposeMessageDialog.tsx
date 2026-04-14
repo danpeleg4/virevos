@@ -2,12 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -373,7 +368,9 @@ export function ComposeMessageDialog({
           <Button
             size="sm"
             onClick={tab === "email" ? handleSendEmail : handleSendChat}
-            disabled={isSending || (tab === "email" ? !isEmailValid : !isChatValid)}
+            disabled={
+              isSending || (tab === "email" ? !isEmailValid : !isChatValid)
+            }
             className="gap-2"
           >
             {isSending ? (

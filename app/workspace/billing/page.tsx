@@ -118,14 +118,26 @@ const PLAN_DETAILS: Record<
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300" },
-  past_due: { label: "Past Due", className: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300" },
+  active: {
+    label: "Active",
+    className:
+      "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300",
+  },
+  past_due: {
+    label: "Past Due",
+    className: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300",
+  },
   canceled: { label: "Canceled", className: "bg-muted text-muted-foreground" },
   incomplete: {
     label: "Incomplete",
-    className: "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300",
+    className:
+      "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300",
   },
-  trialing: { label: "Trialing", className: "bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300" },
+  trialing: {
+    label: "Trialing",
+    className:
+      "bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300",
+  },
 };
 
 function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
@@ -216,7 +228,8 @@ export default function Billing() {
 
   const { data: projectList } = useQuery<{ id: number }[]>({
     queryKey: ["projects"],
-    queryFn: () => axios.get("/api/projects/get-projects").then((r) => r.data.projects),
+    queryFn: () =>
+      axios.get("/api/projects/get-projects").then((r) => r.data.projects),
   });
 
   const { data: setupSecret } = useQuery<string>({
@@ -287,7 +300,6 @@ export default function Billing() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Current Plan */}
         <Card className="p-6 lg:col-span-2">
@@ -330,7 +342,9 @@ export default function Billing() {
               {planInfo.features.map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm text-muted-foreground">{feature}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {feature}
+                  </span>
                 </div>
               ))}
             </div>

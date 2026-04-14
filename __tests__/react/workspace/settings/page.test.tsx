@@ -21,17 +21,23 @@ describe("Settings Page", () => {
 
   it("renders Notifications tab", () => {
     render(<Settings />);
-    expect(screen.getByRole("button", { name: /notifications/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /notifications/i })
+    ).toBeInTheDocument();
   });
 
   it("renders Preferences tab", () => {
     render(<Settings />);
-    expect(screen.getByRole("button", { name: /preferences/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /preferences/i })
+    ).toBeInTheDocument();
   });
 
   it("renders Integrations tab", () => {
     render(<Settings />);
-    expect(screen.getByRole("button", { name: /integrations/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /integrations/i })
+    ).toBeInTheDocument();
   });
 
   it("shows notifications content by default", () => {

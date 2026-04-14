@@ -52,22 +52,21 @@ describe("POST /api/webhooks/outlook", () => {
   });
 
   it("triggers incremental sync on valid notification", async () => {
-    (db.select as jest.Mock)
-      .mockReturnValueOnce({
-        from: () => ({
-          where: () => ({
-            limit: () =>
-              Promise.resolve([
-                {
-                  userId: "user_1",
-                  clientState: "secret_state",
-                  calendarSubscriptionId: "sub_cal_1",
-                  emailSubscriptionId: "sub_email_1",
-                },
-              ]),
-          }),
+    (db.select as jest.Mock).mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () =>
+            Promise.resolve([
+              {
+                userId: "user_1",
+                clientState: "secret_state",
+                calendarSubscriptionId: "sub_cal_1",
+                emailSubscriptionId: "sub_email_1",
+              },
+            ]),
         }),
-      });
+      }),
+    });
 
     const req = makeRequest({
       value: [
@@ -87,22 +86,21 @@ describe("POST /api/webhooks/outlook", () => {
   });
 
   it("skips notification if clientState does not match", async () => {
-    (db.select as jest.Mock)
-      .mockReturnValueOnce({
-        from: () => ({
-          where: () => ({
-            limit: () =>
-              Promise.resolve([
-                {
-                  userId: "user_1",
-                  clientState: "correct_state",
-                  calendarSubscriptionId: "sub_cal_1",
-                  emailSubscriptionId: null,
-                },
-              ]),
-          }),
+    (db.select as jest.Mock).mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () =>
+            Promise.resolve([
+              {
+                userId: "user_1",
+                clientState: "correct_state",
+                calendarSubscriptionId: "sub_cal_1",
+                emailSubscriptionId: null,
+              },
+            ]),
         }),
-      });
+      }),
+    });
 
     jest.spyOn(console, "warn").mockImplementationOnce(() => {});
 

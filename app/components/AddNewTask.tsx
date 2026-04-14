@@ -248,10 +248,7 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
           <Separator />
 
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={submitTask} disabled={!title.trim()}>

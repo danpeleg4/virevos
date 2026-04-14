@@ -187,7 +187,9 @@ describe("updateTask", () => {
   it("updates dueDate to null", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     await updateTask({ id: 5, dueDate: null });
-    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ dueDate: null }));
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ dueDate: null })
+    );
   });
 });
 

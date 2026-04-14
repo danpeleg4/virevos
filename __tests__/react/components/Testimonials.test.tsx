@@ -7,16 +7,33 @@ jest.mock("motion/react", () => {
     {},
     {
       get: (_t, _tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
+        function MC({
+          children,
+          initial,
+          animate,
+          exit,
+          variants,
+          transition,
+          viewport,
+          whileInView,
+          whileHover,
+          whileTap,
+          ...props
+        }: Record<string, unknown>) {
           return createElement(
             _tag as keyof JSX.IntrinsicElements,
             props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
-            children as React.ReactNode,
+            children as React.ReactNode
           );
         },
     }
   );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+  return {
+    motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+  };
 });
 
 import { Testimonials } from "@/app/components/Testimonials";
@@ -27,7 +44,9 @@ describe("Testimonials", () => {
   });
 
   it("renders section heading", () => {
-    expect(screen.getByText(/loved by individuals worldwide/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/loved by individuals worldwide/i)
+    ).toBeInTheDocument();
   });
 
   it("renders testimonial authors", () => {
@@ -46,6 +65,8 @@ describe("Testimonials", () => {
   });
 
   it("renders trusted companies section", () => {
-    expect(screen.getByText(/trusted by leading companies/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/trusted by leading companies/i)
+    ).toBeInTheDocument();
   });
 });

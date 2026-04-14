@@ -20,7 +20,9 @@ jest.mock("drizzle-orm", () => ({
 }));
 
 const makeRequest = (token?: string) =>
-  ({ headers: new Headers(token ? { authorization: `Bearer ${token}` } : {}) }) as Request;
+  ({
+    headers: new Headers(token ? { authorization: `Bearer ${token}` } : {}),
+  }) as Request;
 
 let consoleErrorSpy: jest.SpyInstance;
 
@@ -63,7 +65,10 @@ describe("GET /api/cron/credit-reset", () => {
     const after = Date.now();
 
     expect(mockSet).toHaveBeenCalledTimes(1);
-    const setArg = (mockSet.mock.calls[0] as unknown[])[0] as { ai_credits: number; creditsResetAt: Date };
+    const setArg = (mockSet.mock.calls[0] as unknown[])[0] as {
+      ai_credits: number;
+      creditsResetAt: Date;
+    };
     expect(setArg.ai_credits).toBe(0);
     const resetMs = setArg.creditsResetAt.getTime();
     const thirtyDays = 30 * 24 * 60 * 60 * 1000;

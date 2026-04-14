@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // FileReader mock — synchronously resolves readAsDataURL
@@ -87,9 +93,7 @@ describe("ComposeMessageDialog", () => {
 
   it("shows Chat tab trigger", () => {
     renderDialog(true, onOpenChange, onSent);
-    expect(
-      screen.getByRole("button", { name: /chat/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /chat/i })).toBeInTheDocument();
   });
 
   it("Send button is disabled when email To is empty", () => {
@@ -173,7 +177,9 @@ describe("ComposeMessageDialog", () => {
 
     it("shows file name in the list after selecting a file", async () => {
       renderDialog(true, onOpenChange, onSent);
-      const file = new File(["hello"], "report.pdf", { type: "application/pdf" });
+      const file = new File(["hello"], "report.pdf", {
+        type: "application/pdf",
+      });
       const input = document.querySelector(
         'input[type="file"]'
       ) as HTMLInputElement;
@@ -294,7 +300,10 @@ describe("ComposeMessageDialog", () => {
       fireEvent.click(screen.getByRole("button", { name: /send/i }));
 
       await waitFor(() => {
-        const payload = mockAxiosPost.mock.calls[0][1] as Record<string, unknown>;
+        const payload = mockAxiosPost.mock.calls[0][1] as Record<
+          string,
+          unknown
+        >;
         expect(payload.attachments).toBeUndefined();
       });
     });
@@ -316,7 +325,9 @@ describe("ComposeMessageDialog", () => {
       // onOpenChange is called — simulate it by re-rendering with open=false then open=true
       const queryClient = makeQueryClient();
       const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       );
       rerender(
         <Wrapper>

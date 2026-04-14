@@ -178,18 +178,58 @@ describe("POST /api/chat", () => {
     expect(res.status).toBe(200);
 
     const text = await res.text();
-    const events = text.trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    const events = text
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
     expect(events.at(-1)).toEqual({ type: "done", response_id: "resp_2" });
   });
 
-  const toolTestCases: Array<{ toolName: string; args: object; resultKind: string }> = [
-    { toolName: "createProject", args: { name: "Test Project" }, resultKind: "project_created" },
-    { toolName: "updateClient", args: { id: 1, name: "Updated" }, resultKind: "client_updated" },
-    { toolName: "updateProject", args: { id: 1, status: "completed" }, resultKind: "project_updated" },
-    { toolName: "createTask", args: { title: "New Task" }, resultKind: "task_created" },
-    { toolName: "updateTask", args: { id: 1, status: "completed" }, resultKind: "task_updated" },
-    { toolName: "createEvent", args: { title: "Meeting", dateTime: "2026-06-01T10:00:00Z", duration: 60 }, resultKind: "event_created" },
-    { toolName: "updateEvent", args: { id: "ev-1", title: "Updated" }, resultKind: "event_updated" },
+  const toolTestCases: Array<{
+    toolName: string;
+    args: object;
+    resultKind: string;
+  }> = [
+    {
+      toolName: "createProject",
+      args: { name: "Test Project" },
+      resultKind: "project_created",
+    },
+    {
+      toolName: "updateClient",
+      args: { id: 1, name: "Updated" },
+      resultKind: "client_updated",
+    },
+    {
+      toolName: "updateProject",
+      args: { id: 1, status: "completed" },
+      resultKind: "project_updated",
+    },
+    {
+      toolName: "createTask",
+      args: { title: "New Task" },
+      resultKind: "task_created",
+    },
+    {
+      toolName: "updateTask",
+      args: { id: 1, status: "completed" },
+      resultKind: "task_updated",
+    },
+    {
+      toolName: "createEvent",
+      args: {
+        title: "Meeting",
+        dateTime: "2026-06-01T10:00:00Z",
+        duration: 60,
+      },
+      resultKind: "event_created",
+    },
+    {
+      toolName: "updateEvent",
+      args: { id: "ev-1", title: "Updated" },
+      resultKind: "event_updated",
+    },
   ];
 
   it.each(toolTestCases)(
@@ -201,7 +241,10 @@ describe("POST /api/chat", () => {
       (db.update as jest.Mock).mockReturnValue({ set: updateSet });
 
       const { executeTool: mockExecuteTool } = await import("@/lib/ai_tools");
-      (mockExecuteTool as jest.Mock).mockResolvedValueOnce({ kind: resultKind, message: "ok" });
+      (mockExecuteTool as jest.Mock).mockResolvedValueOnce({
+        kind: resultKind,
+        message: "ok",
+      });
 
       // First call returns tool call stream, second call returns a text completion
       (openai.responses.stream as jest.Mock)

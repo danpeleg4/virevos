@@ -16,8 +16,11 @@ export async function downloadFile(
   bucket: string,
   path: string
 ): Promise<Uint8Array> {
-  const { data, error } = await supabaseAdmin.storage.from(bucket).download(path);
-  if (error || !data) throw new Error(`Storage download failed: ${error?.message}`);
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .download(path);
+  if (error || !data)
+    throw new Error(`Storage download failed: ${error?.message}`);
   return new Uint8Array(await data.arrayBuffer());
 }
 
@@ -29,7 +32,8 @@ export async function getSignedUrl(
   const { data, error } = await supabaseAdmin.storage
     .from(bucket)
     .createSignedUrl(path, expiresIn);
-  if (error || !data) throw new Error(`Failed to create signed URL: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to create signed URL: ${error?.message}`);
   return data.signedUrl;
 }
 

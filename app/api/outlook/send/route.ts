@@ -32,7 +32,10 @@ function buildRecipient(address: string, name?: string) {
   return { emailAddress: { address, name: name ?? address } };
 }
 
-function buildBodyHtml(html: string, urlAttachments: AttachmentInput[]): string {
+function buildBodyHtml(
+  html: string,
+  urlAttachments: AttachmentInput[]
+): string {
   if (urlAttachments.length === 0) return html;
   const links = urlAttachments
     .map((a) => `<a href="${a.url}">${a.name}</a>`)
@@ -66,7 +69,12 @@ async function addSmallAttachment(
       contentType,
       contentBytes: buffer.toString("base64"),
     },
-    { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
   );
 }
 
@@ -87,7 +95,12 @@ async function addLargeAttachment(
         size: buffer.length,
       },
     },
-    { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
   );
   const { uploadUrl } = sessionRes.data;
 
@@ -122,7 +135,8 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json()) as SendEmailBody;
-  const { to, toName, subject, bodyHtml, cc, replyToOutlookId, attachments } = body;
+  const { to, toName, subject, bodyHtml, cc, replyToOutlookId, attachments } =
+    body;
 
   if (!to || !subject || !bodyHtml) {
     return NextResponse.json(
@@ -132,9 +146,14 @@ export async function POST(req: Request) {
   }
 
   const fileAttachments = (attachments ?? []).filter((a) => a.data || a.path);
-  const urlAttachments = (attachments ?? []).filter((a) => a.url && !a.data && !a.path);
+  const urlAttachments = (attachments ?? []).filter(
+    (a) => a.url && !a.data && !a.path
+  );
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
 
   const messagePayload = {
     subject,

@@ -1,10 +1,6 @@
 import { useState } from "react";
 import Image from "next/image";
-import {
-  CardContent,
-  CardTitle,
-  CardDescription,
-} from "../ui/card";
+import { CardContent, CardTitle, CardDescription } from "../ui/card";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";

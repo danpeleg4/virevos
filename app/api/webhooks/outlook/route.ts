@@ -50,9 +50,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const rows = await db
       .select()
       .from(outlookSyncState)
-      .where(
-        eq(outlookSyncState.calendarSubscriptionId, subscriptionId)
-      )
+      .where(eq(outlookSyncState.calendarSubscriptionId, subscriptionId))
       .limit(1);
 
     const emailRows = rows.length

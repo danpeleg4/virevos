@@ -184,7 +184,11 @@ export function ScheduleMessageDialog({
                     <Label>Recurring</Label>
                     <Select
                       value={recurring}
-                      onValueChange={(v) => setRecurring(v as "none" | "daily" | "weekly" | "monthly")}
+                      onValueChange={(v) =>
+                        setRecurring(
+                          v as "none" | "daily" | "weekly" | "monthly"
+                        )
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />

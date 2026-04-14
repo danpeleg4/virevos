@@ -25,9 +25,7 @@ export async function GET() {
           eq(clientPortalTokens.enabled, true)
         )
       )
-      .where(
-        and(eq(clients.userId, user.id), eq(clients.status, "active"))
-      );
+      .where(and(eq(clients.userId, user.id), eq(clients.status, "active")));
 
     return NextResponse.json(rows);
   } catch (error) {

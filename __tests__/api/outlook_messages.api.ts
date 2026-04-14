@@ -83,7 +83,9 @@ describe("GET /api/outlook/messages/[id]", () => {
 
   it("returns 400 for non-numeric id", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    const res = await GET(makeRequest(), { params: Promise.resolve({ id: "abc" }) });
+    const res = await GET(makeRequest(), {
+      params: Promise.resolve({ id: "abc" }),
+    });
     expect(res.status).toBe(400);
   });
 
@@ -116,7 +118,9 @@ describe("PATCH /api/outlook/messages/[id]", () => {
   it("returns 404 when message not found", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     mockDbEmpty();
-    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), {
+      params,
+    });
     expect(res.status).toBe(404);
   });
 
@@ -128,10 +132,14 @@ describe("PATCH /api/outlook/messages/[id]", () => {
     (db.update as jest.Mock).mockReturnValue({ set: setMock });
     (axios.patch as jest.Mock).mockResolvedValue({});
 
-    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), {
+      params,
+    });
     expect(res.status).toBe(200);
     expect(db.update).toHaveBeenCalled();
-    expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ isRead: true }));
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({ isRead: true })
+    );
     expect(axios.patch).toHaveBeenCalledWith(
       expect.stringContaining("outlook_msg_1"),
       expect.objectContaining({ isRead: true }),
@@ -147,7 +155,9 @@ describe("PATCH /api/outlook/messages/[id]", () => {
     (db.update as jest.Mock).mockReturnValue({ set: setMock });
     (axios.patch as jest.Mock).mockResolvedValue({});
 
-    const res = await PATCH(makeRequest("PATCH", { action: "star" }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "star" }), {
+      params,
+    });
     expect(res.status).toBe(200);
     expect(axios.patch).toHaveBeenCalledWith(
       expect.stringContaining("outlook_msg_1"),
@@ -165,7 +175,9 @@ describe("PATCH /api/outlook/messages/[id]", () => {
     (axios.patch as jest.Mock).mockRejectedValue(new Error("Graph error"));
     jest.spyOn(console, "error").mockImplementationOnce(() => {});
 
-    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), { params });
+    const res = await PATCH(makeRequest("PATCH", { action: "markRead" }), {
+      params,
+    });
     expect(res.status).toBe(200);
   });
 });

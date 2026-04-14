@@ -307,7 +307,9 @@ export function ProjectDetailView({
             <h1 className="text-xl sm:text-2xl text-foreground truncate">
               {project.name}
             </h1>
-            <p className="text-muted-foreground mt-1 truncate">{project.clientName}</p>
+            <p className="text-muted-foreground mt-1 truncate">
+              {project.clientName}
+            </p>
           </div>
         </div>
         <div className="flex items-center space-x-2 ml-10 sm:ml-0">

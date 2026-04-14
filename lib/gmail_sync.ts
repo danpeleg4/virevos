@@ -43,7 +43,9 @@ async function upsertEmailToPinecone(
 ): Promise<void> {
   try {
     const index = pc.index(EMAILS_INDEX).namespace(userId);
-    await index.upsertRecords([record as unknown as Parameters<typeof index.upsertRecords>[0][0]]);
+    await index.upsertRecords([
+      record as unknown as Parameters<typeof index.upsertRecords>[0][0],
+    ]);
   } catch (err) {
     console.error(
       `[gmail_sync] Failed to upsert email ${record.gmailId} to Pinecone:`,
@@ -163,7 +165,9 @@ async function processMessage(
   const existing = await db
     .select({ id: googleEmails.id })
     .from(googleEmails)
-    .where(and(eq(googleEmails.gmailId, msg.id!), eq(googleEmails.userId, userId)))
+    .where(
+      and(eq(googleEmails.gmailId, msg.id!), eq(googleEmails.userId, userId))
+    )
     .limit(1);
 
   let emailId: number;
@@ -315,7 +319,9 @@ export async function syncSingleMessage(
   await processMessage(gmail, gmailId, userId, clientsMap);
 }
 
-export async function searchEmails(text: string): Promise<EmailPineconeRecord[]> {
+export async function searchEmails(
+  text: string
+): Promise<EmailPineconeRecord[]> {
   const user = await currentUser();
   if (!user?.id) return [];
 

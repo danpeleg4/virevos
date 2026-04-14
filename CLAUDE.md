@@ -1,9 +1,11 @@
 ## **HTTP Requests**
+
 Always use Axios for making HTTP requests.
 Do not use fetch or other libraries unless explicitly instructed.
 Axios requests should handle errors gracefully with try/catch or Axios interceptors.
 
 ## **Data Fetching / State Management**
+
 Always use TanStack Query for fetching, caching, and mutating data.
 
 Use useQuery for GET requests and useMutation for POST, PATCH, or DELETE operations.

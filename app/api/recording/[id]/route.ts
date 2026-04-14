@@ -43,7 +43,10 @@ export async function GET(
     );
 
     if (participantFolders.length === 0) {
-      return NextResponse.json({ error: "No recordings found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No recordings found" },
+        { status: 404 }
+      );
     }
 
     const videos = await Promise.all(
@@ -69,12 +72,18 @@ export async function GET(
     );
 
     if (result.length === 0) {
-      return NextResponse.json({ error: "No recordings found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No recordings found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ videos: result });
   } catch (err) {
     console.error("Storage error:", err);
-    return NextResponse.json({ error: "Recordings not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Recordings not found" },
+      { status: 404 }
+    );
   }
 }

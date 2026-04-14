@@ -10,7 +10,9 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@clerk/nextjs", () => ({
   useUser: () => ({ isSignedIn: false, user: null, isLoaded: true }),
-  SignOutButton: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SignOutButton: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 jest.mock("next-themes", () => ({
@@ -23,20 +25,45 @@ jest.mock("motion/react", () => {
     {},
     {
       get: (_t, _tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
+        function MC({
+          children,
+          initial,
+          animate,
+          exit,
+          variants,
+          transition,
+          viewport,
+          whileInView,
+          whileHover,
+          whileTap,
+          ...props
+        }: Record<string, unknown>) {
           return createElement(
             _tag as keyof JSX.IntrinsicElements,
             props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
-            children as React.ReactNode,
+            children as React.ReactNode
           );
         },
     }
   );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+  return {
+    motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+  };
 });
 
 jest.mock("@/app/components/figma/ImageWithFallback", () => ({
-  ImageWithFallback: ({ src, alt, className }: { src: string; alt: string; className?: string }) => (
+  ImageWithFallback: ({
+    src,
+    alt,
+    className,
+  }: {
+    src: string;
+    alt: string;
+    className?: string;
+  }) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={alt} className={className} />
   ),
@@ -99,7 +126,9 @@ describe("Blog Post Page", () => {
 
   it("renders a different post by slug", async () => {
     await renderPost("freelance-rates-2026");
-    expect(screen.getByText(/how to set your freelance rates in 2026/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/how to set your freelance rates in 2026/i)
+    ).toBeInTheDocument();
     expect(screen.getByText("Sarah Kim")).toBeInTheDocument();
   });
 

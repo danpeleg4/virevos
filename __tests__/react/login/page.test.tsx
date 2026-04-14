@@ -14,9 +14,15 @@ jest.mock("@clerk/nextjs", () => ({
 
 jest.mock("@radix-ui/themes", () => ({
   Callout: {
-    Root: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    Icon: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
-    Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+    Root: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+    Icon: ({ children }: { children: React.ReactNode }) => (
+      <span>{children}</span>
+    ),
+    Text: ({ children }: { children: React.ReactNode }) => (
+      <span>{children}</span>
+    ),
   },
 }));
 
@@ -44,7 +50,11 @@ describe("Login Page", () => {
   });
 
   it("shows loading state when Clerk not loaded", () => {
-    mockUseSignIn.mockReturnValue({ signIn: null, isLoaded: false, setActive: null });
+    mockUseSignIn.mockReturnValue({
+      signIn: null,
+      isLoaded: false,
+      setActive: null,
+    });
     render(<Login />);
     // Loading spinner shown
     const sparkles = document.querySelector(".animate-pulse");
@@ -53,7 +63,9 @@ describe("Login Page", () => {
 
   it("renders email input", () => {
     render(<Login />);
-    expect(screen.getByPlaceholderText(/name@company\.com/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/name@company\.com/i)
+    ).toBeInTheDocument();
   });
 
   it("renders password input", () => {
@@ -63,17 +75,23 @@ describe("Login Page", () => {
 
   it("renders Sign In button", () => {
     render(<Login />);
-    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /sign in/i })
+    ).toBeInTheDocument();
   });
 
   it("renders Forgot Password link", () => {
     render(<Login />);
-    expect(screen.getByRole("button", { name: /forgot password/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /forgot password/i })
+    ).toBeInTheDocument();
   });
 
   it("renders 'Create One Now' link", () => {
     render(<Login />);
-    expect(screen.getByRole("button", { name: /create one now/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /create one now/i })
+    ).toBeInTheDocument();
   });
 
   it("navigates to /onboard when 'Create One Now' is clicked", () => {
@@ -89,6 +107,9 @@ describe("Login Page", () => {
     // Click the eye toggle
     const eyeBtn = screen.getByRole("button", { name: "" });
     fireEvent.click(eyeBtn);
-    expect(screen.getByPlaceholderText(/••••••••/)).toHaveAttribute("type", "text");
+    expect(screen.getByPlaceholderText(/••••••••/)).toHaveAttribute(
+      "type",
+      "text"
+    );
   });
 });

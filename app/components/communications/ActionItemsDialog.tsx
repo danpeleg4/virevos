@@ -168,16 +168,28 @@ export function ActionItemsDialog({
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">Total Items</p>
-            <p className="text-2xl text-blue-900 dark:text-blue-200">{items.length}</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">
+              Total Items
+            </p>
+            <p className="text-2xl text-blue-900 dark:text-blue-200">
+              {items.length}
+            </p>
           </div>
           <div className="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg p-3">
-            <p className="text-xs text-green-600 dark:text-green-400 mb-1">Completed</p>
-            <p className="text-2xl text-green-900 dark:text-green-200">{completedCount}</p>
+            <p className="text-xs text-green-600 dark:text-green-400 mb-1">
+              Completed
+            </p>
+            <p className="text-2xl text-green-900 dark:text-green-200">
+              {completedCount}
+            </p>
           </div>
           <div className="bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
-            <p className="text-xs text-orange-600 dark:text-orange-400 mb-1">Pending</p>
-            <p className="text-2xl text-orange-900 dark:text-orange-200">{pendingCount}</p>
+            <p className="text-xs text-orange-600 dark:text-orange-400 mb-1">
+              Pending
+            </p>
+            <p className="text-2xl text-orange-900 dark:text-orange-200">
+              {pendingCount}
+            </p>
           </div>
         </div>
 

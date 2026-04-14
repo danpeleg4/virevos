@@ -53,7 +53,9 @@ const ROW_HEIGHT = 52;
 export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [sortField, setSortField] = useState<"date" | "title" | "duration" | "attendees">("date");
+  const [sortField, setSortField] = useState<
+    "date" | "title" | "duration" | "attendees"
+  >("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedNote, setSelectedNote] = useState<Event | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -134,10 +136,13 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
     }) ?? []
   ).sort((a, b) => {
     let cmp = 0;
-    if (sortField === "date") cmp = new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+    if (sortField === "date")
+      cmp = new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
     else if (sortField === "title") cmp = a.title.localeCompare(b.title);
-    else if (sortField === "duration") cmp = (a.duration ?? 0) - (b.duration ?? 0);
-    else if (sortField === "attendees") cmp = (a.attendees?.length ?? 0) - (b.attendees?.length ?? 0);
+    else if (sortField === "duration")
+      cmp = (a.duration ?? 0) - (b.duration ?? 0);
+    else if (sortField === "attendees")
+      cmp = (a.attendees?.length ?? 0) - (b.attendees?.length ?? 0);
     return sortDir === "asc" ? cmp : -cmp;
   });
 
@@ -248,15 +253,35 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                   { label: "Date (Oldest)", field: "date", dir: "asc" },
                   { label: "Title (A–Z)", field: "title", dir: "asc" },
                   { label: "Title (Z–A)", field: "title", dir: "desc" },
-                  { label: "Duration (Longest)", field: "duration", dir: "desc" },
-                  { label: "Duration (Shortest)", field: "duration", dir: "asc" },
-                  { label: "Attendees (Most)", field: "attendees", dir: "desc" },
-                  { label: "Attendees (Fewest)", field: "attendees", dir: "asc" },
+                  {
+                    label: "Duration (Longest)",
+                    field: "duration",
+                    dir: "desc",
+                  },
+                  {
+                    label: "Duration (Shortest)",
+                    field: "duration",
+                    dir: "asc",
+                  },
+                  {
+                    label: "Attendees (Most)",
+                    field: "attendees",
+                    dir: "desc",
+                  },
+                  {
+                    label: "Attendees (Fewest)",
+                    field: "attendees",
+                    dir: "asc",
+                  },
                 ] as const
               ).map(({ label, field, dir }) => (
                 <DropdownMenuItem
                   key={label}
-                  onClick={() => { setSortField(field); setSortDir(dir); setPage(1); }}
+                  onClick={() => {
+                    setSortField(field);
+                    setSortDir(dir);
+                    setPage(1);
+                  }}
                   className="flex items-center justify-between"
                 >
                   {label}
@@ -286,7 +311,10 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
               ).map(({ label, value }) => (
                 <DropdownMenuItem
                   key={value}
-                  onClick={() => { setFilterStatus(value); setPage(1); }}
+                  onClick={() => {
+                    setFilterStatus(value);
+                    setPage(1);
+                  }}
                   className="flex items-center justify-between"
                 >
                   {label}
@@ -471,7 +499,9 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
           {selectedNote && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-xl">{selectedNote.title}</DialogTitle>
+                <DialogTitle className="text-xl">
+                  {selectedNote.title}
+                </DialogTitle>
                 <DialogDescription asChild>
                   <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
                     <span className="flex items-center gap-1">
@@ -480,26 +510,30 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
-                      {formatTimeOnly(new Date(selectedNote.dateTime))} · {selectedNote.duration} min
+                      {formatTimeOnly(new Date(selectedNote.dateTime))} ·{" "}
+                      {selectedNote.duration} min
                     </span>
-                    {selectedNote?.attendees && selectedNote.attendees.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
-                        {selectedNote.attendees.length} participant{selectedNote.attendees.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
+                    {selectedNote?.attendees &&
+                      selectedNote.attendees.length > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          {selectedNote.attendees.length} participant
+                          {selectedNote.attendees.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
                   </div>
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-5 mt-2">
-
                 {/* Tags */}
                 {selectedNote?.tags && selectedNote.tags.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Tags
+                      </span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedNote.tags.map((tag, index) => (
@@ -515,29 +549,32 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                 )}
 
                 {/* Attendees */}
-                {selectedNote?.attendees && selectedNote.attendees.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Attendees</span>
+                {selectedNote?.attendees &&
+                  selectedNote.attendees.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Attendees
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedNote.attendees.map((attendee, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 border border-border"
+                          >
+                            <Avatar className="h-5 w-5">
+                              <AvatarFallback className="text-[10px]">
+                                {attendee.initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{attendee.name}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedNote.attendees.map((attendee, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 border border-border"
-                        >
-                          <Avatar className="h-5 w-5">
-                            <AvatarFallback className="text-[10px]">
-                              {attendee.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm">{attendee.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  )}
 
                 <Separator />
 
@@ -547,9 +584,16 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI Summary</span>
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          AI Summary
+                        </span>
                       </div>
-                      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCopySummary}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={handleCopySummary}
+                      >
                         {copied ? (
                           <Check className="h-3.5 w-3.5 text-green-500" />
                         ) : (
@@ -564,79 +608,93 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                 )}
 
                 {/* Key Points */}
-                {selectedNote?.key_points && selectedNote.key_points.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText className="h-3.5 w-3.5 text-blue-500" />
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Key Points</span>
+                {selectedNote?.key_points &&
+                  selectedNote.key_points.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-3.5 w-3.5 text-blue-500" />
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Key Points
+                        </span>
+                      </div>
+                      <ul className="space-y-2">
+                        {selectedNote.key_points.map((point, index) => (
+                          <li
+                            key={index}
+                            className="text-sm flex items-start text-foreground"
+                          >
+                            <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500 shrink-0" />
+                            <span className="flex-1">{point}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-2">
-                      {selectedNote.key_points.map((point, index) => (
-                        <li key={index} className="text-sm flex items-start text-foreground">
-                          <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500 shrink-0" />
-                          <span className="flex-1">{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  )}
 
                 {/* Action Items */}
-                {selectedNote?.action_items && selectedNote.action_items.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckSquare className="h-3.5 w-3.5 text-orange-500" />
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Action Items ({selectedNote.action_items.length})
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedNote.action_items.map((item, index) => (
-                        <div
-                          key={index}
-                          className="p-3 bg-muted/50 border border-border rounded-lg"
-                        >
-                          <div className="flex items-start justify-between gap-3 mb-1">
-                            <p className="text-sm text-foreground">{item.task}</p>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-6 px-2 shrink-0"
-                              onClick={() => handleAddSingleTask(item, index)}
-                              disabled={addingItems.has(index) || addedItems.has(index)}
-                            >
-                              {addingItems.has(index)
-                                ? "Adding..."
-                                : addedItems.has(index)
-                                  ? "Added"
-                                  : "Add"}
-                            </Button>
+                {selectedNote?.action_items &&
+                  selectedNote.action_items.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckSquare className="h-3.5 w-3.5 text-orange-500" />
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Action Items ({selectedNote.action_items.length})
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {selectedNote.action_items.map((item, index) => (
+                          <div
+                            key={index}
+                            className="p-3 bg-muted/50 border border-border rounded-lg"
+                          >
+                            <div className="flex items-start justify-between gap-3 mb-1">
+                              <p className="text-sm text-foreground">
+                                {item.task}
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs h-6 px-2 shrink-0"
+                                onClick={() => handleAddSingleTask(item, index)}
+                                disabled={
+                                  addingItems.has(index) ||
+                                  addedItems.has(index)
+                                }
+                              >
+                                {addingItems.has(index)
+                                  ? "Adding..."
+                                  : addedItems.has(index)
+                                    ? "Added"
+                                    : "Add"}
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Due: {item.dueDate ?? "No due date"}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            Due: {item.dueDate ?? "No due date"}
-                          </p>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3"
+                        onClick={handleAddAllToTasks}
+                        disabled={allAdded}
+                      >
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        {allAdded ? "All Added" : "Add All to Tasks"}
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-3"
-                      onClick={handleAddAllToTasks}
-                      disabled={allAdded}
-                    >
-                      <CheckSquare className="h-4 w-4 mr-2" />
-                      {allAdded ? "All Added" : "Add All to Tasks"}
-                    </Button>
-                  </div>
-                )}
+                  )}
 
                 {/* Transcript */}
                 {selectedNote.hasTranscript && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Mic className="h-3.5 w-3.5 text-purple-500" />
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Transcript</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Transcript
+                      </span>
                     </div>
                     {transcriptLoading ? (
                       <div className="p-4 rounded-lg border border-border bg-muted/50 text-sm text-muted-foreground">
@@ -650,7 +708,10 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                               ? transcriptData
                               : transcriptData.slice(0, 3)
                             ).map((entry, index) => (
-                              <div key={index} className="flex items-start gap-3">
+                              <div
+                                key={index}
+                                className="flex items-start gap-3"
+                              >
                                 <span className="text-xs mt-0.5 text-muted-foreground shrink-0 tabular-nums">
                                   {entry.time}
                                 </span>
@@ -672,7 +733,9 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
                             onClick={() => setShowFullTranscript((v) => !v)}
                           >
                             <FileText className="h-3.5 w-3.5" />
-                            {showFullTranscript ? "Show less" : "View full transcript"}
+                            {showFullTranscript
+                              ? "Show less"
+                              : "View full transcript"}
                           </button>
                         )}
                       </>

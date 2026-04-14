@@ -24,12 +24,16 @@ describe("Communications Page", () => {
 
   it("renders Scheduled tab button", () => {
     render(<Communications />);
-    expect(screen.getByRole("button", { name: /scheduled/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /scheduled/i })
+    ).toBeInTheDocument();
   });
 
   it("renders Client Portal tab button", () => {
     render(<Communications />);
-    expect(screen.getByRole("button", { name: /client portal/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /client portal/i })
+    ).toBeInTheDocument();
   });
 
   it("shows UnifiedInbox by default (inbox tab active)", () => {

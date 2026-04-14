@@ -11,7 +11,11 @@ import ffmpegPath from "ffmpeg-static";
 import { db } from "@db/db";
 import { events, meetingAttendees } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { supabaseAdmin, RECORDINGS_BUCKET, TRANSCRIPTS_BUCKET } from "@/lib/supabase";
+import {
+  supabaseAdmin,
+  RECORDINGS_BUCKET,
+  TRANSCRIPTS_BUCKET,
+} from "@/lib/supabase";
 
 // TODO After upgraded vercel plan to change the maxDuration to a higher number
 export const maxDuration = 299;
@@ -94,8 +98,6 @@ async function waitForAllParticipants(
   return false;
 }
 
-
-
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.SUPABASE_WEBHOOK_SECRET}`) {
@@ -122,7 +124,10 @@ export async function POST(req: NextRequest) {
   const index = pc.index(indexName).namespace(userId);
 
   // Guard against duplicate processing when multiple participants' JSONs upload
-  const [dbEvent] = await db.select().from(events).where(eq(events.id, roomName));
+  const [dbEvent] = await db
+    .select()
+    .from(events)
+    .where(eq(events.id, roomName));
   if (!dbEvent) {
     return NextResponse.json({ status: "skipped" });
   }
@@ -137,21 +142,29 @@ export async function POST(req: NextRequest) {
     .where(eq(meetingAttendees.meetingId, roomName))
     .then((rows) => rows.length);
 
-  const allReady = await waitForAllParticipants(userId, roomName, expectedCount);
+  const allReady = await waitForAllParticipants(
+    userId,
+    roomName,
+    expectedCount
+  );
   if (!allReady) {
     // Another participant's JSON will re-trigger this webhook; bail out for now.
     return NextResponse.json({ status: "waiting for other participants" });
   }
 
   // Fallback epoch used when a participant has no JSON metadata file
-  const scheduledEpochInSeconds = Math.trunc(new Date(dbEvent.dateTime).getTime() / 1000);
+  const scheduledEpochInSeconds = Math.trunc(
+    new Date(dbEvent.dateTime).getTime() / 1000
+  );
 
   // List participant folders
   const { data: topLevel } = await supabaseAdmin.storage
     .from(RECORDINGS_BUCKET)
     .list(`recordings/${userId}/${roomName}`, { limit: 100 });
 
-  const participantFolders = (topLevel ?? []).filter((f) => !f.name.includes("."));
+  const participantFolders = (topLevel ?? []).filter(
+    (f) => !f.name.includes(".")
+  );
 
   const participants: {
     participantName: string;
@@ -254,7 +267,8 @@ export async function POST(req: NextRequest) {
         : scheduledEpochInSeconds;
 
     const sorted = flattened.sort(
-      (a, b) => a.startedAtEpoch + a.start_time - (b.startedAtEpoch + b.start_time)
+      (a, b) =>
+        a.startedAtEpoch + a.start_time - (b.startedAtEpoch + b.start_time)
     );
     const normalized = sorted.map((r) => {
       const startTime = r.startedAtEpoch + r.start_time - mainEpochInSeconds;
@@ -307,10 +321,16 @@ Rules for dueDate:
 
     const rawKeyPoints = analysis.key_points ?? [];
     const keyPoints: string[] = Array.isArray(rawKeyPoints)
-      ? rawKeyPoints.filter((v): v is string => typeof v === "string").map((s) => s.trim()).filter(Boolean)
+      ? rawKeyPoints
+          .filter((v): v is string => typeof v === "string")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : typeof rawKeyPoints === "string"
-      ? rawKeyPoints.split(",").map((s: string) => s.trim()).filter(Boolean)
-      : [];
+        ? rawKeyPoints
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter(Boolean)
+        : [];
 
     const actionItems = Array.isArray(analysis.action_items)
       ? analysis.action_items.map((item: ActionItem) => ({
@@ -342,7 +362,10 @@ Rules for dueDate:
     const jsonBuffer = Buffer.from(JSON.stringify(normalized, null, 2));
     const { error: uploadError } = await supabaseAdmin.storage
       .from(TRANSCRIPTS_BUCKET)
-      .upload(jsonKey, jsonBuffer, { contentType: "application/json", upsert: true });
+      .upload(jsonKey, jsonBuffer, {
+        contentType: "application/json",
+        upsert: true,
+      });
 
     if (uploadError) {
       console.error("Failed to upload transcript JSON:", uploadError.message);

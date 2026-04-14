@@ -13,7 +13,18 @@ jest.mock("@/lib/projects", () => ({
 }));
 
 const mockClients = [
-  { id: 1, name: "Acme Corp", email: "a@a.com", phone: "", industry: "", status: "active", activeProjects: 1, completedProjects: 0, totalProjects: 1, avatar: "A" },
+  {
+    id: 1,
+    name: "Acme Corp",
+    email: "a@a.com",
+    phone: "",
+    industry: "",
+    status: "active",
+    activeProjects: 1,
+    completedProjects: 0,
+    totalProjects: 1,
+    avatar: "A",
+  },
 ];
 
 import { ProjectCreateDialog } from "@/app/workspace/projects/ProjectCreateDialog";
@@ -25,7 +36,9 @@ describe("ProjectCreateDialog", () => {
 
   it("renders 'New Project' trigger button", () => {
     render(<ProjectCreateDialog clients={mockClients} />);
-    expect(screen.getByRole("button", { name: /new project/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /new project/i })
+    ).toBeInTheDocument();
   });
 
   it("opens dialog when button is clicked", () => {

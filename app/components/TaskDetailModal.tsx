@@ -25,9 +25,18 @@ import {
 import { Task, TaskDetailModalProps } from "@/types/tasks";
 
 const STATUS_CONFIG = {
-  completed: { label: "Completed", className: "bg-green-100 text-green-700 border-green-200" },
-  "in-progress": { label: "In Progress", className: "bg-blue-100 text-blue-700 border-blue-200" },
-  todo: { label: "To Do", className: "bg-muted text-muted-foreground border-border" },
+  completed: {
+    label: "Completed",
+    className: "bg-green-100 text-green-700 border-green-200",
+  },
+  "in-progress": {
+    label: "In Progress",
+    className: "bg-blue-100 text-blue-700 border-blue-200",
+  },
+  todo: {
+    label: "To Do",
+    className: "bg-muted text-muted-foreground border-border",
+  },
 } as const;
 
 const PRIORITY_CONFIG = {
@@ -160,8 +169,13 @@ export function TaskDetailModal({
   });
 
   const changeDueDate = useMutation({
-    mutationFn: ({ taskId, dueDate }: { taskId: number; dueDate: string | null }) =>
-      updateTaskDueDate(taskId, dueDate),
+    mutationFn: ({
+      taskId,
+      dueDate,
+    }: {
+      taskId: number;
+      dueDate: string | null;
+    }) => updateTaskDueDate(taskId, dueDate),
     onMutate: async ({ taskId, dueDate }) => {
       await queryClient.cancelQueries({ queryKey });
       await queryClient.cancelQueries({ queryKey: ["allTasks"] });
@@ -227,7 +241,10 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0" aria-describedby={undefined}>
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto p-0"
+        aria-describedby={undefined}
+      >
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b">
           <DialogHeader>
@@ -287,7 +304,10 @@ export function TaskDetailModal({
                 value={status}
                 onValueChange={(newStatus) => {
                   setStatus(newStatus);
-                  changeTaskStatus.mutate({ status: newStatus, taskId: task.id });
+                  changeTaskStatus.mutate({
+                    status: newStatus,
+                    taskId: task.id,
+                  });
                 }}
               >
                 <SelectTrigger className="h-8 text-sm bg-background">
@@ -321,7 +341,9 @@ export function TaskDetailModal({
                   <SelectValue>
                     {priorityConfig && (
                       <span className="flex items-center gap-2">
-                        <Flag className={`h-3.5 w-3.5 ${priorityConfig.color}`} />
+                        <Flag
+                          className={`h-3.5 w-3.5 ${priorityConfig.color}`}
+                        />
                         {priorityConfig.label}
                       </span>
                     )}

@@ -1,4 +1,4 @@
-import React, {JSX} from "react";
+import React, { JSX } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockQueryClient = {
@@ -21,16 +21,33 @@ jest.mock("motion/react", () => {
     {},
     {
       get: (_t, _tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
+        function MC({
+          children,
+          initial,
+          animate,
+          exit,
+          variants,
+          transition,
+          viewport,
+          whileInView,
+          whileHover,
+          whileTap,
+          ...props
+        }: Record<string, unknown>) {
           return createElement(
             _tag as keyof JSX.IntrinsicElements,
             props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
-            children as React.ReactNode,
+            children as React.ReactNode
           );
         },
     }
   );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+  return {
+    motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+  };
 });
 
 // Mock fetch for streaming
@@ -59,7 +76,9 @@ describe("AIAssistant", () => {
 
   it("renders input field when open", () => {
     render(<AIAssistant isOpen={true} onClose={onClose} />);
-    expect(screen.getByPlaceholderText(/plan, search, build/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/plan, search, build/i)
+    ).toBeInTheDocument();
   });
 
   it("send button is disabled when input is empty", () => {
@@ -86,7 +105,9 @@ describe("AIAssistant", () => {
   });
 
   it("shows error message when fetch fails", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("Network error")
+    );
     render(<AIAssistant isOpen={true} onClose={onClose} />);
     const input = screen.getByPlaceholderText(/plan, search, build/i);
     fireEvent.change(input, { target: { value: "Hello" } });
@@ -95,6 +116,9 @@ describe("AIAssistant", () => {
     const sendBtn = buttons[buttons.length - 1];
     fireEvent.click(sendBtn);
     // After submitting, the user message should appear in the chat
-    await waitFor(() => expect(screen.getAllByText("Hello").length).toBeGreaterThan(0), { timeout: 3000 });
+    await waitFor(
+      () => expect(screen.getAllByText("Hello").length).toBeGreaterThan(0),
+      { timeout: 3000 }
+    );
   });
 });

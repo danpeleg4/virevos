@@ -41,7 +41,15 @@ const mockBillingData = {
   aiCredits: 120,
   storage: 10,
   invoices: [
-    { id: "inv_1", amountPaid: 2900, currency: "usd", status: "paid", date: 1746057600, pdfUrl: "https://stripe.com/inv_1.pdf", number: "INV-001" },
+    {
+      id: "inv_1",
+      amountPaid: 2900,
+      currency: "usd",
+      status: "paid",
+      date: 1746057600,
+      pdfUrl: "https://stripe.com/inv_1.pdf",
+      number: "INV-001",
+    },
   ],
   paymentMethod: { brand: "visa", last4: "4242" },
 };
@@ -51,7 +59,11 @@ import Billing from "@/app/workspace/billing/page";
 describe("Billing Page", () => {
   beforeEach(() => {
     mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
-    mockUseQuery.mockReturnValue({ data: mockBillingData, isLoading: false, error: null });
+    mockUseQuery.mockReturnValue({
+      data: mockBillingData,
+      isLoading: false,
+      error: null,
+    });
   });
 
   it("renders current plan name", () => {

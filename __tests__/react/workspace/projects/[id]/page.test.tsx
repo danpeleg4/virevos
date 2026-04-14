@@ -51,8 +51,22 @@ const mockProject = {
 };
 
 const mockTasks = [
-  { id: 1, title: "Design mockup", status: "todo", priority: "high", completed: false, dueDate: null },
-  { id: 2, title: "Write tests", status: "completed", priority: "medium", completed: true, dueDate: null },
+  {
+    id: 1,
+    title: "Design mockup",
+    status: "todo",
+    priority: "high",
+    completed: false,
+    dueDate: null,
+  },
+  {
+    id: 2,
+    title: "Write tests",
+    status: "completed",
+    priority: "medium",
+    completed: true,
+    dueDate: null,
+  },
 ];
 
 import ProjectPage from "@/app/workspace/projects/[id]/page";
@@ -71,10 +85,14 @@ describe("Project Detail Page", () => {
   beforeEach(() => {
     mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
     mockUseQuery.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
-      if (queryKey[0] === "project") return { data: mockProject, isLoading: false, isError: false };
-      if (queryKey[0] === "projectsTasks") return { data: mockTasks, isLoading: false, isError: false };
-      if (queryKey[0] === "projectNotes") return { data: [], isLoading: false, isError: false };
-      if (queryKey[0] === "files") return { data: [], isLoading: false, isError: false };
+      if (queryKey[0] === "project")
+        return { data: mockProject, isLoading: false, isError: false };
+      if (queryKey[0] === "projectsTasks")
+        return { data: mockTasks, isLoading: false, isError: false };
+      if (queryKey[0] === "projectNotes")
+        return { data: [], isLoading: false, isError: false };
+      if (queryKey[0] === "files")
+        return { data: [], isLoading: false, isError: false };
       return { data: undefined, isLoading: false, isError: false };
     });
   });
@@ -107,6 +125,8 @@ describe("Project Detail Page", () => {
 
   it("renders Add Task button", async () => {
     await renderPage();
-    expect(screen.getByRole("button", { name: /new task/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /new task/i })
+    ).toBeInTheDocument();
   });
 });
