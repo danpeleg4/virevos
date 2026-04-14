@@ -370,7 +370,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         <p className="text-sm text-muted-foreground mb-6">
           Connect your Email account to sync emails and use the inbox.
         </p>
-        <Button onClick={() => (window.location.href = "/api/google")}>
+        <Button onClick={() => (window.location.href = "/api/outlook")}>
           <Mail className="h-4 w-4 mr-2" />
           Connect Email
         </Button>
