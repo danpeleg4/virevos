@@ -36,7 +36,7 @@ jest.mock("motion/react", () => {
         }: Record<string, unknown>) {
           return createElement(
             _tag as keyof JSX.IntrinsicElements,
-            props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
+            props,
             children as React.ReactNode
           );
         },
