@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import ffmpegPath from "ffmpeg-static";
 import { db } from "@db/db";
 import { events, meetingAttendees } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql} from "drizzle-orm";
 import {
   supabaseAdmin,
   RECORDINGS_BUCKET,
@@ -71,12 +71,12 @@ export function normalizeDueDate(value: unknown): string | null {
 
 async function waitForAllParticipants(
   userId: string,
-  roomName: string,
+  roomId: string,
   expectedCount: number,
   retries = 8,
   delayMs = 3000
 ): Promise<boolean> {
-  const prefix = `recordings/${userId}/${roomName}`;
+  const prefix = `recordings/${userId}/${roomId}`;
   for (let i = 0; i < retries; i++) {
     const { data: topLevel } = await supabaseAdmin.storage
       .from(RECORDINGS_BUCKET)
@@ -112,22 +112,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "skipped" });
   }
 
-  // Path structure for participant egress: recordings/{userId}/{roomName}/{identity}/file.json
+  // Path structure for participant egress: recordings/{userId}/{roomId}/{identity}/file.json
   const parts = filePath.split("/");
   if (parts[0] !== "recordings" || parts.length < 5) {
     return NextResponse.json({ status: "skipped" });
   }
 
   const userId = parts[1];
-  const roomName = parts[2];
+  const roomId = parts[2];
   const indexName = "vire-recording";
   const index = pc.index(indexName).namespace(userId);
 
-  // Guard against duplicate processing when multiple participants' JSONs upload
+  // Guard against duplicate processing when multiple participant JSONs upload
   const [dbEvent] = await db
     .select()
     .from(events)
-    .where(eq(events.id, roomName));
+    .where(eq(events.id, roomId));
   if (!dbEvent) {
     return NextResponse.json({ status: "skipped" });
   }
@@ -136,31 +136,27 @@ export async function POST(req: NextRequest) {
   }
 
   // Wait for all participant recordings to finish uploading before processing.
-  const expectedCount = await db
-    .select()
-    .from(meetingAttendees)
-    .where(eq(meetingAttendees.meetingId, roomName))
-    .then((rows) => rows.length);
+  const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(meetingAttendees)
+      .where(eq(meetingAttendees.meetingId, roomId));
+
+  const expectedCount = result[0].count;
 
   const allReady = await waitForAllParticipants(
     userId,
-    roomName,
+    roomId,
     expectedCount
   );
   if (!allReady) {
-    // Another participant's JSON will re-trigger this webhook; bail out for now.
+    // Another participant JSON will re-trigger this webhook; bail out for now.
     return NextResponse.json({ status: "waiting for other participants" });
   }
-
-  // Fallback epoch used when a participant has no JSON metadata file
-  const scheduledEpochInSeconds = Math.trunc(
-    new Date(dbEvent.dateTime).getTime() / 1000
-  );
 
   // List participant folders
   const { data: topLevel } = await supabaseAdmin.storage
     .from(RECORDINGS_BUCKET)
-    .list(`recordings/${userId}/${roomName}`, { limit: 100 });
+    .list(`recordings/${userId}/${roomId}`, { limit: 100 });
 
   const participantFolders = (topLevel ?? []).filter(
     (f) => !f.name.includes(".")
@@ -173,7 +169,7 @@ export async function POST(req: NextRequest) {
   }[] = [];
 
   for (const folder of participantFolders) {
-    const folderPath = `recordings/${userId}/${roomName}/${folder.name}`;
+    const folderPath = `recordings/${userId}/${roomId}/${folder.name}`;
     const { data: folderFiles } = await supabaseAdmin.storage
       .from(RECORDINGS_BUCKET)
       .list(folderPath);
@@ -193,7 +189,7 @@ export async function POST(req: NextRequest) {
 
   try {
     for (const participant of participants) {
-      if (!participant.mp4) continue;
+      if (!participant.mp4 || !participant.json) continue;
 
       const tempVideoPath = path.join(os.tmpdir(), `${uuidv4()}.mp4`);
       const tempAudioPath = tempVideoPath.replace(".mp4", ".wav");
@@ -216,8 +212,8 @@ export async function POST(req: NextRequest) {
       );
 
       // Get participant JSON metadata
-      let startedAtEpochInSeconds = scheduledEpochInSeconds;
-      let endedAtEpochInSeconds = scheduledEpochInSeconds;
+      let startedAtEpochInSeconds: number = 0;
+      let endedAtEpochInSeconds: number = 0;
       if (participant.json) {
         const { data: pJsonBlob } = await supabaseAdmin.storage
           .from(RECORDINGS_BUCKET)
@@ -226,6 +222,9 @@ export async function POST(req: NextRequest) {
           const pJson = JSON.parse(await pJsonBlob.text());
           startedAtEpochInSeconds = Math.trunc(Number(pJson.started_at) / 1e9);
           endedAtEpochInSeconds = Math.trunc(Number(pJson.ended_at) / 1e9);
+        }
+        else {
+          return NextResponse.json({ status: "no json file found" });
         }
       }
 
@@ -243,12 +242,12 @@ export async function POST(req: NextRequest) {
         const textChunks = seg.text.match(/.{1,500}(\s|$)/g) ?? [];
         for (const chunk of textChunks) {
           records.push({
-            id: `${roomName}-${uuidv4()}`,
+            id: `${roomId}-${uuidv4()}`,
             chunk_text: chunk.trim(),
             speaker: participant.participantName,
             start_time: seg.start,
             end_time: seg.end,
-            room: roomName,
+            room: roomId,
             startedAtEpoch: startedAtEpochInSeconds,
             endedAtEpoch: endedAtEpochInSeconds,
           });
@@ -260,11 +259,8 @@ export async function POST(req: NextRequest) {
     const flattened = allRecordGroups.flat();
 
     // Use the earliest actual recording start as the baseline so transcript
-    // timestamps align with video position 0 (= when the first participant joined).
-    const mainEpochInSeconds =
-      flattened.length > 0
-        ? Math.min(...flattened.map((r) => r.startedAtEpoch))
-        : scheduledEpochInSeconds;
+    // timestamps align with video position 0 (when the first participant joined).
+    const mainEpochInSeconds = Math.min(...flattened.map((r) => r.startedAtEpoch))
 
     const sorted = flattened.sort(
       (a, b) =>
@@ -352,13 +348,13 @@ Rules for dueDate:
           hasTranscript: true,
           hasNotes: true,
         })
-        .where(eq(events.id, roomName));
+        .where(eq(events.id, roomId));
     } catch (dbErr) {
       console.error("DB update failed:", dbErr);
     }
 
     // Upload transcript JSON to Supabase
-    const jsonKey = `${userId}/${roomName}/transcript.json`;
+    const jsonKey = `${userId}/${roomId}/transcript.json`;
     const jsonBuffer = Buffer.from(JSON.stringify(normalized, null, 2));
     const { error: uploadError } = await supabaseAdmin.storage
       .from(TRANSCRIPTS_BUCKET)
