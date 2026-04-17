@@ -186,6 +186,8 @@ export async function POST(req: NextRequest) {
 
   const allRecordGroups: TranscriptRecord[][] = [];
   const tempFiles: string[] = [];
+  const usersStartedAtEpoch: number[] = [];
+  const usersEndedAtEpoch: number[] = [];
 
   try {
     for (const participant of participants) {
@@ -212,21 +214,16 @@ export async function POST(req: NextRequest) {
       );
 
       // Get participant JSON metadata
-      let startedAtEpochInSeconds: number = 0;
-      let endedAtEpochInSeconds: number = 0;
-      if (participant.json) {
-        const { data: pJsonBlob } = await supabaseAdmin.storage
+        const { data: participantJsonBlob } = await supabaseAdmin.storage
           .from(RECORDINGS_BUCKET)
           .download(participant.json);
-        if (pJsonBlob) {
-          const pJson = JSON.parse(await pJsonBlob.text());
-          startedAtEpochInSeconds = Math.trunc(Number(pJson.started_at) / 1e9);
-          endedAtEpochInSeconds = Math.trunc(Number(pJson.ended_at) / 1e9);
-        }
-        else {
-          return NextResponse.json({ status: "no json file found" });
-        }
-      }
+
+        if (!participantJsonBlob) return NextResponse.json({ status: "no json file found" });
+
+        const pJson = JSON.parse(await participantJsonBlob.text());
+        usersStartedAtEpoch.push(Number(pJson.started_at))
+        usersEndedAtEpoch.push(Number(pJson.ended_at))
+
 
       // Transcribe with OpenAI
       const transcription = (await openai.audio.transcriptions.create({
@@ -248,13 +245,22 @@ export async function POST(req: NextRequest) {
             start_time: seg.start,
             end_time: seg.end,
             room: roomId,
-            startedAtEpoch: startedAtEpochInSeconds,
-            endedAtEpoch: endedAtEpochInSeconds,
+            startedAtEpoch: pJson.started_at,
+            endedAtEpoch: pJson.ended_at,
           });
         }
       }
       allRecordGroups.push(records);
     }
+
+    const globalStart = Math.min(...usersStartedAtEpoch);
+    const globalEnd   = Math.max(...usersEndedAtEpoch);
+    const durationMs = globalEnd - globalStart;
+
+    await execAsync(
+        `"ffmpeg -f lavfi -i color=c=black:s=1280x720:r=30:d=${durationMs/1000} \\
+                  -c:v libx264 -pix_fmt yuv420p base.mp4`
+    )
 
     const flattened = allRecordGroups.flat();
 
