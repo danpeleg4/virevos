@@ -83,12 +83,6 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
     return () => window.removeEventListener("resize", calculate);
   }, []);
 
-  function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  }
-
   const meetings = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => {
@@ -110,11 +104,14 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
       setTranscriptData([]);
       try {
         const res = await axios.get(`/api/transcript/${selectedNote.id}`);
-        const formatted = res.data[0].map((item: RawChunk) => ({
+        const formatted = res.data.map((item: RawChunk) => ({
           speaker: item.speaker,
-          time: formatTime(item.start_time),
-          text: item.chunk_text,
-          startTime: item.start_time,
+          time: item.createdAt
+            ? new Date(item.createdAt).toLocaleTimeString()
+            : "",
+          text: item.text,
+          startTime: 0,
+          endTime: 0,
         }));
         setTranscriptData(formatted);
       } finally {

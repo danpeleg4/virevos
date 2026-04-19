@@ -158,6 +158,17 @@ export const meetingAttendees = pgTable(
   ]
 );
 
+// MEETING TRANSCRIPTS
+export const meetingTranscripts = pgTable("meeting_transcripts", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  meetingId: text("meeting_id")
+    .notNull()
+    .references(() => events.id, { onDelete: "cascade" }),
+  speakerIdentity: text("speaker_identity").notNull(),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // OUTLOOK TOKENS
 export const outlookTokens = pgTable("outlook_tokens", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
@@ -427,6 +438,7 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     references: [users.user_id],
   }),
   attendees: many(meetingAttendees),
+  transcripts: many(meetingTranscripts),
   projectNotes: many(projectNotes),
 }));
 
@@ -435,6 +447,16 @@ export const meetingAttendeesRelations = relations(
   ({ one }) => ({
     meeting: one(events, {
       fields: [meetingAttendees.meetingId],
+      references: [events.id],
+    }),
+  })
+);
+
+export const meetingTranscriptsRelations = relations(
+  meetingTranscripts,
+  ({ one }) => ({
+    meeting: one(events, {
+      fields: [meetingTranscripts.meetingId],
       references: [events.id],
     }),
   })

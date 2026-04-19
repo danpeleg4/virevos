@@ -86,12 +86,6 @@ export function EventDetailsDialog({
     }
   }
 
-  function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  }
-
   useEffect(() => {
     if (!open) {
       setShowFullTranscript(false);
@@ -102,12 +96,14 @@ export function EventDetailsDialog({
       setTranscriptLoading(true);
       try {
         const res = await axios.get(`/api/transcript/${event.id}`);
-        const formatted = res.data[0].map((item: RawChunk) => ({
+        const formatted = res.data.map((item: RawChunk) => ({
           speaker: item.speaker,
-          time: formatTime(item.start_time),
-          text: item.chunk_text,
-          startTime: item.start_time,
-          endTime: item.end_time,
+          time: item.createdAt
+            ? new Date(item.createdAt).toLocaleTimeString()
+            : "",
+          text: item.text,
+          startTime: 0,
+          endTime: 0,
         }));
         setFormattedData(formatted);
       } finally {

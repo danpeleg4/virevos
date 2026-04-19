@@ -571,9 +571,7 @@ function TranscriptionView({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
-  const [videos, setVideos] = useState<{ participant: string; url: string }[]>(
-    []
-  );
+  const [videos, setVideos] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -604,12 +602,14 @@ function TranscriptionView({
   useEffect(() => {
     const fn = async () => {
       const res = await axios.get(`/api/transcript/${meeting.id}`);
-      const formatted = res.data[0].map((item: RawChunk) => ({
+      const formatted = res.data.map((item: RawChunk) => ({
         speaker: item.speaker,
-        time: formatTime(item.start_time),
-        text: item.chunk_text,
-        startTime: item.start_time,
-        endTime: item.end_time,
+        time: item.createdAt
+          ? new Date(item.createdAt).toLocaleTimeString()
+          : "",
+        text: item.text,
+        startTime: 0,
+        endTime: 0,
       }));
       setFormattedData(formatted);
     };
@@ -620,7 +620,7 @@ function TranscriptionView({
     const fetchRecording = async () => {
       try {
         const res = await axios.get(`/api/recording/${meeting.id}`);
-        setVideos(res.data.videos ?? []);
+        setVideos(res.data?.url ?? "");
       } catch (err) {
         console.error("Failed to fetch recording:", err);
       } finally {
@@ -748,36 +748,20 @@ function TranscriptionView({
         <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
           <Card className="p-6 flex flex-col min-h-0 shadow-sm">
             <div
-              className={`relative bg-black rounded-lg overflow-hidden mb-4${videos.length >= 2 ? " aspect-video" : ""}`}
+              className={`relative bg-black rounded-lg overflow-hidden mb-4`}
             >
-              <div
-                className={
-                  videos.length >= 2 ? "flex flex-col sm:flex-row h-full" : ""
-                }
-              >
-                {videos.length > 0 ? (
-                  videos.map((v, i) => (
-                    <div
-                      key={v.participant}
-                      className={`relative ${
-                        videos.length >= 2
-                          ? "flex-1 min-w-0 aspect-video sm:aspect-auto"
-                          : "aspect-video"
-                      }`}
-                    >
-                      <video
-                        ref={(el) => {
-                          videoRefs.current[i] = el;
-                          if (i === 0) primaryRef.current = el;
-                        }}
-                        src={v.url}
-                        className="w-full h-full object-contain"
-                      />
-                      <span className="absolute bottom-2 left-2 text-xs text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                        {v.participant}
-                      </span>
-                    </div>
-                  ))
+              <div>
+                {videos ? (
+                  <div className="relative aspect-video">
+                    <video
+                      ref={(el) => {
+                        videoRefs.current[0] = el;
+                        primaryRef.current = el;
+                      }}
+                      src={videos}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                 ) : (
                   <div className="aspect-video flex items-center justify-center text-white/60 text-sm">
                     No video found

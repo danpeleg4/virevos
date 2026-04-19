@@ -11,8 +11,6 @@ import {
 } from "@/app/components/ui/dialog";
 import {
   Video,
-  Users,
-  Check,
   VideoOff,
   Mic,
   MicOff,
@@ -27,6 +25,7 @@ import {
   RemoteTrack,
   RoomEvent,
   ParticipantEvent,
+  ParticipantKind,
   Track,
   TrackPublication,
   LocalTrackPublication,
@@ -42,7 +41,6 @@ export default function InMeetingView() {
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [copied, setCopied] = useState(false);
   const router = useRouter();
   const roomRef = useRef<Room | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -65,16 +63,20 @@ export default function InMeetingView() {
       await room.localParticipant.publishTrack(track);
     }
 
+    const isHuman = (p: Participant) => p.kind !== ParticipantKind.AGENT;
+
     setParticipants([
       room.localParticipant,
-      ...Array.from(room.remoteParticipants.values()),
+      ...Array.from(room.remoteParticipants.values()).filter(isHuman),
     ]);
 
     room.on(RoomEvent.ParticipantConnected, (p) => {
+      if (!isHuman(p)) return;
       setParticipants((prev) => [...prev, p]);
     });
 
     room.on(RoomEvent.ParticipantDisconnected, (p) => {
+      if (!isHuman(p)) return;
       setParticipants((prev) => prev.filter((x) => x.sid !== p.sid));
     });
 
@@ -96,6 +98,11 @@ export default function InMeetingView() {
     // Enable local camera/mic
     await room.localParticipant.setCameraEnabled(true);
     await room.localParticipant.setMicrophoneEnabled(true);
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => {
+      room.localParticipant.publishTrack(track);
+    });
 
     setJoined(true);
   };

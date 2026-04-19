@@ -49,12 +49,9 @@ export interface Event {
 }
 
 type RawChunk = {
-  id: string;
-  chunk_text: string;
   speaker: string;
-  start_time: number;
-  end_time: number;
-  room: string;
+  text: string;
+  createdAt: string | null;
 };
 
 type TranscribedChunk = {

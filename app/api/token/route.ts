@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, AgentDispatchClient } from "livekit-server-sdk";
 import { events } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";
@@ -66,6 +66,20 @@ export async function POST(req: NextRequest) {
     })
     .from(events)
     .where(eq(events.id, roomName));
+
+  // Dispatch transcription agent once per room (on first participant join)
+  try {
+    // AgentDispatchClient requires https:// host, not wss://
+    const livekitHost = (process.env.LIVEKIT_HOST ?? process.env.NEXT_PUBLIC_LIVEKIT_URL)!.replace(/^wss?:\/\//, "https://");
+    const dispatchClient = new AgentDispatchClient(
+      livekitHost,
+      process.env.LIVEKIT_API_KEY!,
+      process.env.LIVEKIT_API_SECRET!
+    );
+    await dispatchClient.createDispatch(roomName, "transcription-agent");
+  } catch (err) {
+    console.error("Failed to dispatch transcription agent:", err);
+  }
 
   return NextResponse.json({
     token,
