@@ -14,6 +14,7 @@
     "@livekit/agents": "^1.x",
     "@livekit/agents-plugin-openai": "^1.x",
     "@livekit/agents-plugin-silero": "^1.x",
+    "@livekit/rtc-node": "^0.13.25",
     "axios": "^1.x",
     "dotenv": "^16.0.0"
   },

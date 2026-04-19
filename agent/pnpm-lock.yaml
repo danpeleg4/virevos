@@ -17,6 +17,9 @@ importers:
       '@livekit/agents-plugin-silero':
         specifier: ^1.x
         version: 1.2.7(@livekit/agents@1.2.7(@livekit/rtc-node@0.13.25)(typescript@5.9.3)(zod@4.3.6))(@livekit/rtc-node@0.13.25)
+      '@livekit/rtc-node':
+        specifier: ^0.13.25
+        version: 0.13.25
       axios:
         specifier: ^1.x
         version: 1.15.0
