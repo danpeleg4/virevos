@@ -1,6 +1,0 @@
-allowBuilds:
-  '@ffmpeg-installer/darwin-arm64': true
-  esbuild: true
-  onnxruntime-node: true
-  protobufjs: true
-  sharp: true
