@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Virevos",
   description: "Virevos productivity app",
   icons: {
-    icon: "/sparkles.svg",
+    icon: "/favicon.ico",
   },
 };
 

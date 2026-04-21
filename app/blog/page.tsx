@@ -17,13 +17,6 @@ const categories: Category[] = [
   "Engineering",
 ];
 
-const cardIcons: Record<Exclude<Category, "Everything">, string> = {
-  Engineering: "⚙️",
-  Guides: "📖",
-  News: "📰",
-  Company: "🏢",
-};
-
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
@@ -70,8 +63,8 @@ export default function Blog() {
             transition={{ delay: 0.1 }}
             className="text-lg text-gray-500 max-w-xl"
           >
-            Insights on freelancing, product updates, and engineering deep dives
-            from the Virevos team.
+            Insights on virevos, product updates, and engineering deep dives
+            from the team.
           </motion.p>
         </div>
       </motion.section>
