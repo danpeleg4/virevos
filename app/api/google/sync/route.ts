@@ -48,9 +48,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (filter === "unread") conditions.push(eq(googleEmails.isRead, false));
-    else if (filter === "starred") conditions.push(eq(googleEmails.isStarred, true));
+    else if (filter === "starred")
+      conditions.push(eq(googleEmails.isStarred, true));
     else if (filter === "sent") conditions.push(eq(googleEmails.isSent, true));
-    else if (filter === "archived") conditions.push(eq(googleEmails.isArchived, true));
+    else if (filter === "archived")
+      conditions.push(eq(googleEmails.isArchived, true));
 
     const rows = await db
       .select({

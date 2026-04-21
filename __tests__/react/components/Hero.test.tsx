@@ -8,8 +8,6 @@ jest.mock("next/navigation", () => ({
   useParams: jest.fn(() => ({})),
 }));
 
-
-
 import { Hero } from "@/app/components/Hero";
 
 describe("Hero", () => {
@@ -27,7 +25,9 @@ describe("Hero", () => {
   });
 
   it("renders 'Start for free' button", () => {
-    expect(screen.getByRole("button", { name: /start for free/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /start for free/i })
+    ).toBeInTheDocument();
   });
 
   it("navigates to /onboard when 'Start for free' is clicked", () => {
@@ -36,7 +36,9 @@ describe("Hero", () => {
   });
 
   it("renders 'Watch demo' button", () => {
-    expect(screen.getByRole("button", { name: /watch demo/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /watch demo/i })
+    ).toBeInTheDocument();
   });
 
   it("renders social proof items", () => {

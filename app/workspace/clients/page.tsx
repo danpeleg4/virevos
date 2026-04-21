@@ -415,65 +415,76 @@ export default function Clients() {
                   <DialogContent className="max-w-md">
                     <DialogHeader>
                       <DialogTitle>Add New Client</DialogTitle>
-                      <DialogDescription>Create a new client profile</DialogDescription>
+                      <DialogDescription>
+                        Create a new client profile
+                      </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 mt-4">
                       <div>
                         <Label>Client Name</Label>
                         <Input
-                            placeholder="Acme Corporation"
-                            className="mt-2"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                          placeholder="Acme Corporation"
+                          className="mt-2"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
                         />
                       </div>
                       <div>
                         <Label>Email</Label>
                         <Input
-                            type="email"
-                            placeholder="contact@acme.com"
-                            className="mt-2"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                          type="email"
+                          placeholder="contact@acme.com"
+                          className="mt-2"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
                         />
                       </div>
                       <div>
                         <Label>Phone</Label>
                         <Input
-                            placeholder="+1 (555) 000-0000"
-                            className="mt-2"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                          placeholder="+1 (555) 000-0000"
+                          className="mt-2"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
                         />
                       </div>
                       <div>
                         <Label>Industry</Label>
                         <Input
-                            placeholder="Technology"
-                            className="mt-2"
-                            value={industry}
-                            onChange={(e) => setIndustry(e.target.value)}
+                          placeholder="Technology"
+                          className="mt-2"
+                          value={industry}
+                          onChange={(e) => setIndustry(e.target.value)}
                         />
                       </div>
                       <div>
                         <Label>Notes</Label>
                         <Textarea
-                            placeholder="Describe Notes..."
-                            className="mt-2"
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Describe Notes..."
+                          className="mt-2"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
                         />
                       </div>
 
                       <div className="flex justify-end space-x-3 pt-4">
-                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDialogOpen(false)}
+                        >
                           Cancel
                         </Button>
                         <Button
-                            onClick={() => {
-                              addClient.mutate({ name, email, phone, industry, notes });
-                            }}
+                          onClick={() => {
+                            addClient.mutate({
+                              name,
+                              email,
+                              phone,
+                              industry,
+                              notes,
+                            });
+                          }}
                         >
                           Add Client
                         </Button>
@@ -771,7 +782,9 @@ export default function Clients() {
                       <p className="text-2xl text-foreground mb-1">
                         {selectedClient.activeProjects}
                       </p>
-                      <p className="text-sm text-muted-foreground">Active Projects</p>
+                      <p className="text-sm text-muted-foreground">
+                        Active Projects
+                      </p>
                     </Card>
                     <Card className="p-4">
                       <div className="flex items-center justify-between mb-3">

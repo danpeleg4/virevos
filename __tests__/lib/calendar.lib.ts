@@ -25,7 +25,11 @@ jest.mock("googleapis", () => {
   mockEventsPatch = jest.fn();
   mockSetCredentials = jest.fn();
   mockCalendar = jest.fn(() => ({
-    events: { insert: mockEventsInsert, delete: mockEventsDelete, patch: mockEventsPatch },
+    events: {
+      insert: mockEventsInsert,
+      delete: mockEventsDelete,
+      patch: mockEventsPatch,
+    },
   }));
   return {
     google: {
@@ -157,7 +161,10 @@ describe("addMeetingToCalendar", () => {
     const inserted = { id: "meet-id", isMeeting: true };
     mockReturning.mockResolvedValueOnce([inserted]);
 
-    const result = await addMeetingToCalendar({ ...mockMeeting, isMeeting: true });
+    const result = await addMeetingToCalendar({
+      ...mockMeeting,
+      isMeeting: true,
+    });
 
     expect(db.insert).toHaveBeenCalledTimes(1);
     expect(result).toEqual(inserted);
@@ -169,7 +176,10 @@ describe("addMeetingToCalendar", () => {
     const inserted = { id: "meet-id" };
     mockReturning.mockResolvedValueOnce([inserted]);
 
-    const result = await addMeetingToCalendar({ ...mockMeeting, isMeeting: false });
+    const result = await addMeetingToCalendar({
+      ...mockMeeting,
+      isMeeting: false,
+    });
 
     expect(db.insert).toHaveBeenCalledTimes(1);
     expect(result).toEqual(inserted);
@@ -270,7 +280,9 @@ describe("updateEvent", () => {
   it("patches Google Calendar when token is available and dateTime is updated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-    mockSelectLimit.mockResolvedValueOnce([{ id: "event-1", googleEventId: "gcal-id" }]);
+    mockSelectLimit.mockResolvedValueOnce([
+      { id: "event-1", googleEventId: "gcal-id" },
+    ]);
     mockEventsPatch.mockResolvedValueOnce({});
 
     await updateEvent({ id: "event-1", dateTime: "2026-06-01T10:00:00Z" });

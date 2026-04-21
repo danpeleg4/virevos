@@ -41,7 +41,11 @@ export async function GET(
     .where(eq(projects.id, file.projectId))
     .limit(1);
 
-  if (!project || project.clientId == null || project.clientId !== portalToken.clientId) {
+  if (
+    !project ||
+    project.clientId == null ||
+    project.clientId !== portalToken.clientId
+  ) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 

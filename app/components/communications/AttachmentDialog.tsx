@@ -258,8 +258,14 @@ export function AttachmentDialog({
                 onClick={() => fileInputRef.current?.click()}
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
-                onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                }}
               >
                 {isReading ? (
                   <>

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { supabaseAdmin, TRANSCRIPTS_BUCKET } from "@/lib/supabase";
 import { db } from "@db/db";
-import { events } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { events, meetingTranscripts } from "@db/schema";
+import { and, asc, eq } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
@@ -28,44 +27,19 @@ export async function GET(
     return new NextResponse("Not Found", { status: 404 });
   }
 
-  const folderPrefix = `${user.id}/${id}`;
+  const chunks = await db
+    .select({
+      speaker: meetingTranscripts.speakerIdentity,
+      text: meetingTranscripts.text,
+      createdAt: meetingTranscripts.createdAt,
+    })
+    .from(meetingTranscripts)
+    .where(eq(meetingTranscripts.meetingId, id))
+    .orderBy(asc(meetingTranscripts.createdAt));
 
-  try {
-    const { data: files, error: listError } = await supabaseAdmin.storage
-      .from(TRANSCRIPTS_BUCKET)
-      .list(folderPrefix);
-
-    if (listError || !files || files.length === 0) {
-      return NextResponse.json({ error: "No files found in folder" }, { status: 404 });
-    }
-
-    const jsonFiles = files.filter((f) => f.name.endsWith(".json"));
-
-    if (jsonFiles.length === 0) {
-      return NextResponse.json({ error: "No JSON files found" }, { status: 404 });
-    }
-
-    const results = await Promise.all(
-      jsonFiles.map(async (file) => {
-        const { data, error } = await supabaseAdmin.storage
-          .from(TRANSCRIPTS_BUCKET)
-          .download(`${folderPrefix}/${file.name}`);
-
-        if (error || !data) {
-          throw new Error(`Failed to download ${file.name}: ${error?.message}`);
-        }
-
-        const text = await data.text();
-        return JSON.parse(text);
-      })
-    );
-
-    return NextResponse.json(results);
-  } catch (error) {
-    console.error("Storage error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch JSON files" },
-      { status: 500 }
-    );
+  if (chunks.length === 0) {
+    return NextResponse.json({ error: "No transcript found" }, { status: 404 });
   }
+
+  return NextResponse.json(chunks);
 }

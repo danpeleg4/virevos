@@ -70,9 +70,13 @@ function StatusBadge({ status }: { status: string | undefined }) {
 
 export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<"date" | "title" | "duration" | "participants">("date");
+  const [sortField, setSortField] = useState<
+    "date" | "title" | "duration" | "participants"
+  >("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "upcoming" | "ended">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "upcoming" | "ended"
+  >("all");
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [meetingName, setMeetingName] = useState("");
@@ -162,7 +166,9 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
     if (sortField === "date") {
       cmp = new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
     } else if (sortField === "title") {
-      cmp = decodeURIComponent(a.title).localeCompare(decodeURIComponent(b.title));
+      cmp = decodeURIComponent(a.title).localeCompare(
+        decodeURIComponent(b.title)
+      );
     } else if (sortField === "duration") {
       cmp = (a.duration ?? 0) - (b.duration ?? 0);
     } else if (sortField === "participants") {
@@ -186,9 +192,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
         {tabNav && (
-          <div className="flex items-center gap-1 shrink-0 mr-2">
-            {tabNav}
-          </div>
+          <div className="flex items-center gap-1 shrink-0 mr-2">{tabNav}</div>
         )}
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -220,15 +224,35 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                   { label: "Date (Oldest)", field: "date", dir: "asc" },
                   { label: "Title (A–Z)", field: "title", dir: "asc" },
                   { label: "Title (Z–A)", field: "title", dir: "desc" },
-                  { label: "Duration (Longest)", field: "duration", dir: "desc" },
-                  { label: "Duration (Shortest)", field: "duration", dir: "asc" },
-                  { label: "Participants (Most)", field: "participants", dir: "desc" },
-                  { label: "Participants (Fewest)", field: "participants", dir: "asc" },
+                  {
+                    label: "Duration (Longest)",
+                    field: "duration",
+                    dir: "desc",
+                  },
+                  {
+                    label: "Duration (Shortest)",
+                    field: "duration",
+                    dir: "asc",
+                  },
+                  {
+                    label: "Participants (Most)",
+                    field: "participants",
+                    dir: "desc",
+                  },
+                  {
+                    label: "Participants (Fewest)",
+                    field: "participants",
+                    dir: "asc",
+                  },
                 ] as const
               ).map(({ label, field, dir }) => (
                 <DropdownMenuItem
                   key={label}
-                  onClick={() => { setSortField(field); setSortDir(dir); setPage(1); }}
+                  onClick={() => {
+                    setSortField(field);
+                    setSortDir(dir);
+                    setPage(1);
+                  }}
                   className="flex items-center justify-between"
                 >
                   {label}
@@ -260,7 +284,10 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
               ).map(({ label, value }) => (
                 <DropdownMenuItem
                   key={value}
-                  onClick={() => { setStatusFilter(value); setPage(1); }}
+                  onClick={() => {
+                    setStatusFilter(value);
+                    setPage(1);
+                  }}
                   className="flex items-center justify-between"
                 >
                   {label}
@@ -471,7 +498,9 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
             ) : (
               <div className="space-y-3">
                 <div className="p-3 rounded-lg border bg-muted/50 border-border">
-                  <p className="text-xs mb-2 text-muted-foreground">Meeting Link</p>
+                  <p className="text-xs mb-2 text-muted-foreground">
+                    Meeting Link
+                  </p>
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-foreground truncate flex-1">
                       {meetingLink}
@@ -542,7 +571,7 @@ function TranscriptionView({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
-  const [videos, setVideos] = useState<{ participant: string; url: string }[]>([]);
+  const [videos, setVideos] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -573,13 +602,46 @@ function TranscriptionView({
   useEffect(() => {
     const fn = async () => {
       const res = await axios.get(`/api/transcript/${meeting.id}`);
-      const formatted = res.data[0].map((item: RawChunk) => ({
-        speaker: item.speaker,
-        time: formatTime(item.start_time),
-        text: item.chunk_text,
-        startTime: item.start_time,
-        endTime: item.end_time,
-      }));
+      const raw: RawChunk[] = res.data;
+      if (!raw.length) return;
+
+      // Use the first chunk with a valid timestamp as time-zero so positions
+      // are relative to when the recording actually started.
+      const firstWithTs = raw.find((c) => c.createdAt);
+      const anchorMs = firstWithTs
+        ? new Date(firstWithTs.createdAt!).getTime()
+        : null;
+
+      const formatted: TranscribedChunk[] = raw.map((item, i) => {
+        let startTimeSec: number;
+        let endTimeSec: number;
+
+        if (anchorMs !== null && item.createdAt) {
+          startTimeSec = Math.max(
+            0,
+            (new Date(item.createdAt).getTime() - anchorMs) / 1000
+          );
+          const nextItem = raw[i + 1];
+          const nextMs = nextItem?.createdAt
+            ? new Date(nextItem.createdAt).getTime()
+            : new Date(item.createdAt).getTime() + 5000;
+          endTimeSec = Math.max(startTimeSec + 0.1, (nextMs - anchorMs) / 1000);
+        } else {
+          // Fallback when no timestamps: evenly space chunks at 5s intervals
+          startTimeSec = i * 5;
+          endTimeSec = (i + 1) * 5;
+        }
+
+        return {
+          speaker: item.speaker,
+          time: item.createdAt
+            ? new Date(item.createdAt).toLocaleTimeString()
+            : "",
+          text: item.text,
+          startTime: startTimeSec,
+          endTime: endTimeSec,
+        };
+      });
       setFormattedData(formatted);
     };
     fn();
@@ -589,7 +651,7 @@ function TranscriptionView({
     const fetchRecording = async () => {
       try {
         const res = await axios.get(`/api/recording/${meeting.id}`);
-        setVideos(res.data.videos ?? []);
+        setVideos(res.data?.url ?? "");
       } catch (err) {
         console.error("Failed to fetch recording:", err);
       } finally {
@@ -632,7 +694,8 @@ function TranscriptionView({
     setCurrentChunkIndex(index !== -1 ? index : null);
   }, [currentTime, formattedData]);
 
-  const allVideos = () => videoRefs.current.filter((v): v is HTMLVideoElement => v !== null);
+  const allVideos = () =>
+    videoRefs.current.filter((v): v is HTMLVideoElement => v !== null);
 
   const togglePlay = () => {
     const primary = primaryRef.current;
@@ -651,7 +714,12 @@ function TranscriptionView({
   };
 
   const SPEAKER_COLORS = [
-    "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4",
+    "#3b82f6",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#06b6d4",
   ];
 
   const speakerColors = useMemo(() => {
@@ -675,7 +743,9 @@ function TranscriptionView({
     const clickX = e.clientX - rect.left;
     const percent = Math.max(0, Math.min(clickX / rect.width, 1));
     const newTime = percent * duration;
-    allVideos().forEach((v) => { v.currentTime = newTime; });
+    allVideos().forEach((v) => {
+      v.currentTime = newTime;
+    });
     setCurrentTime(newTime);
   };
 
@@ -684,7 +754,12 @@ function TranscriptionView({
   return (
     <div className="h-full min-h-0 flex flex-col p-6 bg-card overflow-hidden">
       <div className="flex items-center gap-3 mb-4">
-        <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="-ml-2 shrink-0"
+        >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Back
         </Button>
@@ -694,7 +769,8 @@ function TranscriptionView({
             {decodeURIComponent(meeting.title)}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {formatDateOnly(new Date(meeting.dateTime))} at {formatTimeOnly(new Date(meeting.dateTime))}
+            {formatDateOnly(new Date(meeting.dateTime))} at{" "}
+            {formatTimeOnly(new Date(meeting.dateTime))}
           </p>
         </div>
       </div>
@@ -702,31 +778,21 @@ function TranscriptionView({
       <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
         <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
           <Card className="p-6 flex flex-col min-h-0 shadow-sm">
-            <div className={`relative bg-black rounded-lg overflow-hidden mb-4${videos.length >= 2 ? " aspect-video" : ""}`}>
-              <div className={videos.length >= 2 ? "flex flex-col sm:flex-row h-full" : ""}>
-                {videos.length > 0 ? (
-                  videos.map((v, i) => (
-                    <div
-                      key={v.participant}
-                      className={`relative ${
-                        videos.length >= 2
-                          ? "flex-1 min-w-0 aspect-video sm:aspect-auto"
-                          : "aspect-video"
-                      }`}
-                    >
-                      <video
-                        ref={(el) => {
-                          videoRefs.current[i] = el;
-                          if (i === 0) primaryRef.current = el;
-                        }}
-                        src={v.url}
-                        className="w-full h-full object-contain"
-                      />
-                      <span className="absolute bottom-2 left-2 text-xs text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                        {v.participant}
-                      </span>
-                    </div>
-                  ))
+            <div
+              className={`relative bg-black rounded-lg overflow-hidden mb-4`}
+            >
+              <div>
+                {videos ? (
+                  <div className="relative aspect-video">
+                    <video
+                      ref={(el) => {
+                        videoRefs.current[0] = el;
+                        primaryRef.current = el;
+                      }}
+                      src={videos}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                 ) : (
                   <div className="aspect-video flex items-center justify-center text-white/60 text-sm">
                     No video found
@@ -748,18 +814,19 @@ function TranscriptionView({
                   className="relative h-2 rounded-full bg-muted cursor-pointer overflow-hidden"
                   onClick={onSeek}
                 >
-                  {duration > 0 && formattedData.map((chunk, i) => (
-                    <div
-                      key={i}
-                      className="absolute top-0 h-full"
-                      style={{
-                        left: `${(chunk.startTime / duration) * 100}%`,
-                        width: `${Math.max(0.3, ((chunk.endTime - chunk.startTime) / duration) * 100)}%`,
-                        backgroundColor: speakerColors.get(chunk.speaker),
-                        opacity: 0.85,
-                      }}
-                    />
-                  ))}
+                  {duration > 0 &&
+                    formattedData.map((chunk, i) => (
+                      <div
+                        key={i}
+                        className="absolute top-0 h-full"
+                        style={{
+                          left: `${(chunk.startTime / duration) * 100}%`,
+                          width: `${Math.max(0.3, ((chunk.endTime - chunk.startTime) / duration) * 100)}%`,
+                          backgroundColor: speakerColors.get(chunk.speaker),
+                          opacity: 0.85,
+                        }}
+                      />
+                    ))}
                   <div
                     className="absolute top-0 h-full w-0.5 bg-white/90 shadow"
                     style={{ left: `${progressPercent}%` }}
@@ -774,8 +841,13 @@ function TranscriptionView({
               <div className="flex flex-wrap gap-3 mt-3">
                 {Array.from(speakerColors.entries()).map(([speaker, color]) => (
                   <div key={speaker} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                    <span className="text-xs text-muted-foreground">{speaker}</span>
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {speaker}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -797,75 +869,94 @@ function TranscriptionView({
               className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
               ref={containerRef}
             >
-              {formattedData.length > 0 ? (() => {
-                const q = searchQuery.toLowerCase();
-                const filtered = q
-                  ? formattedData.filter(
-                      (e) =>
-                        e.text.toLowerCase().includes(q) ||
-                        e.speaker.toLowerCase().includes(q)
-                    )
-                  : formattedData;
+              {formattedData.length > 0 ? (
+                (() => {
+                  const q = searchQuery.toLowerCase();
+                  const filtered = q
+                    ? formattedData.filter(
+                        (e) =>
+                          e.text.toLowerCase().includes(q) ||
+                          e.speaker.toLowerCase().includes(q)
+                      )
+                    : formattedData;
 
-                if (filtered.length === 0) {
-                  return (
-                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
-                      No results for &quot;{searchQuery}&quot;
-                    </div>
-                  );
-                }
-
-                return filtered.map((entry, index) => {
-                  const originalIndex = formattedData.indexOf(entry);
-                  const isActive = !q && originalIndex === currentChunkIndex;
-                  const color = speakerColors.get(entry.speaker);
-
-                  const highlight = (text: string) => {
-                    if (!q) return <>{text}</>;
-                    const parts = text.split(new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+                  if (filtered.length === 0) {
                     return (
-                      <>
-                        {parts.map((part, i) =>
-                          part.toLowerCase() === q ? (
-                            <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5">
-                              {part}
-                            </mark>
-                          ) : (
-                            part
-                          )
-                        )}
-                      </>
+                      <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
+                        No results for &quot;{searchQuery}&quot;
+                      </div>
                     );
-                  };
+                  }
 
-                  return (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-xl transition-all duration-200 border shadow-sm ${
-                        isActive ? "border-transparent" : "border-transparent hover:bg-muted/50"
-                      }`}
-                      style={isActive ? { backgroundColor: `${color}18`, borderColor: `${color}40` } : undefined}
-                    >
-                      <div className="flex gap-3">
-                        <span className="text-[10px] font-mono text-muted-foreground mt-1 tabular-nums">
-                          {entry.time}
-                        </span>
-                        <div>
-                          <p
-                            className="text-xs font-bold mb-0.5"
-                            style={{ color: isActive ? color : undefined }}
-                          >
-                            {entry.speaker}
-                          </p>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {highlight(entry.text)}
-                          </p>
+                  return filtered.map((entry, index) => {
+                    const originalIndex = formattedData.indexOf(entry);
+                    const isActive = !q && originalIndex === currentChunkIndex;
+                    const color = speakerColors.get(entry.speaker);
+
+                    const highlight = (text: string) => {
+                      if (!q) return <>{text}</>;
+                      const parts = text.split(
+                        new RegExp(
+                          `(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+                          "gi"
+                        )
+                      );
+                      return (
+                        <>
+                          {parts.map((part, i) =>
+                            part.toLowerCase() === q ? (
+                              <mark
+                                key={i}
+                                className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5"
+                              >
+                                {part}
+                              </mark>
+                            ) : (
+                              part
+                            )
+                          )}
+                        </>
+                      );
+                    };
+
+                    return (
+                      <div
+                        key={index}
+                        className={`p-3 rounded-xl transition-all duration-200 border shadow-sm ${
+                          isActive
+                            ? "border-transparent"
+                            : "border-transparent hover:bg-muted/50"
+                        }`}
+                        style={
+                          isActive
+                            ? {
+                                backgroundColor: `${color}18`,
+                                borderColor: `${color}40`,
+                              }
+                            : undefined
+                        }
+                      >
+                        <div className="flex gap-3">
+                          <span className="text-[10px] font-mono text-muted-foreground mt-1 tabular-nums">
+                            {entry.time}
+                          </span>
+                          <div>
+                            <p
+                              className="text-xs font-bold mb-0.5"
+                              style={{ color }}
+                            >
+                              {entry.speaker}
+                            </p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {highlight(entry.text)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                });
-              })() : (
+                    );
+                  });
+                })()
+              ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
                   Loading transcript segments...
                 </div>

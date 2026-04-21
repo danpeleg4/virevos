@@ -67,14 +67,14 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const checkOutlookConnection = async () => {
     const { data } = await axios.get("/api/integrations/outlook");
-    return data.connected
-  }
+    return data.connected;
+  };
 
   const checkConnection = async () => {
     try {
       const { data } = await axios.get("/api/integrations/google");
       const outlookData = await checkOutlookConnection();
-      setIsConnected((data.connected === true) || outlookData);
+      setIsConnected(data.connected === true || outlookData);
     } catch {
       setIsConnected(false);
     }
@@ -276,7 +276,9 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Schedule New Message</DialogTitle>
-            <DialogDescription>Schedule a message to be sent at a specific date and time.</DialogDescription>
+            <DialogDescription>
+              Schedule a message to be sent at a specific date and time.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
@@ -291,7 +293,9 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-foreground">Recipient Name</label>
+                <label className="text-sm text-foreground">
+                  Recipient Name
+                </label>
                 <Input
                   placeholder="John Doe"
                   value={formToName}

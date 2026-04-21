@@ -1,10 +1,6 @@
 import { useState } from "react";
 import Image from "next/image";
-import {
-  CardContent,
-  CardTitle,
-  CardDescription,
-} from "../ui/card";
+import { CardContent, CardTitle, CardDescription } from "../ui/card";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
@@ -18,21 +14,6 @@ import type { Integration } from "@/types/integrations";
 import { Separator } from "@/app/components/ui/separator";
 
 const INITIAL_INTEGRATIONS: Integration[] = [
-  {
-    id: "google",
-    name: "Google",
-    description: "Sync with your Google Account",
-    icon: "/google.svg",
-    connected: false,
-    syncStatus: "synced",
-    lastSync: "1 minute ago",
-    features: [
-      "Two-way calendar sync",
-      "Conflict detection",
-      "Automatic event creation",
-      "Availability management",
-    ],
-  },
   {
     id: "outlook",
     name: "Microsoft Outlook",

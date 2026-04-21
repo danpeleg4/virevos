@@ -23,7 +23,12 @@ export async function GET(
   const files = await db
     .select()
     .from(projectFiles)
-    .where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.userId, user.id)));
+    .where(
+      and(
+        eq(projectFiles.projectId, projectId),
+        eq(projectFiles.userId, user.id)
+      )
+    );
 
   return NextResponse.json(files);
 }

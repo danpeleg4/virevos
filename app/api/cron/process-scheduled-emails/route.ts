@@ -9,7 +9,11 @@ const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 function parseEmailAddress(raw: string): { name: string; email: string } {
   const match = raw?.match(/^(.*?)\s*<(.+?)>$/);
-  if (match) return { name: match[1].trim().replace(/^"|"$/g, ""), email: match[2].trim() };
+  if (match)
+    return {
+      name: match[1].trim().replace(/^"|"$/g, ""),
+      email: match[2].trim(),
+    };
   return { name: "", email: raw?.trim() ?? "" };
 }
 
@@ -42,13 +46,17 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
     return;
   }
 
-  const headers = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
 
-  const profileRes = await axios.get<{ mail?: string; userPrincipalName?: string }>(
-    `${GRAPH_BASE}/me`,
-    { headers }
-  );
-  const fromEmail = profileRes.data.mail || profileRes.data.userPrincipalName || "";
+  const profileRes = await axios.get<{
+    mail?: string;
+    userPrincipalName?: string;
+  }>(`${GRAPH_BASE}/me`, { headers });
+  const fromEmail =
+    profileRes.data.mail || profileRes.data.userPrincipalName || "";
 
   const userRows = await db
     .select({ name: users.name })
@@ -66,7 +74,9 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
     toRecipients: [
       {
         emailAddress: {
-          address: parseEmailAddress(scheduledEmail.toEmail).email || scheduledEmail.toEmail,
+          address:
+            parseEmailAddress(scheduledEmail.toEmail).email ||
+            scheduledEmail.toEmail,
           name: scheduledEmail.toName || scheduledEmail.toEmail,
         },
       },
@@ -82,12 +92,17 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
     const outlookId = draftRes.data.id;
     const conversationId = draftRes.data.conversationId;
 
-    await axios.post(`${GRAPH_BASE}/me/messages/${outlookId}/send`, {}, { headers });
+    await axios.post(
+      `${GRAPH_BASE}/me/messages/${outlookId}/send`,
+      {},
+      { headers }
+    );
 
     let clientId: number | null = scheduledEmail.clientId;
     if (!clientId) {
       const toEmailAddr =
-        parseEmailAddress(scheduledEmail.toEmail).email || scheduledEmail.toEmail;
+        parseEmailAddress(scheduledEmail.toEmail).email ||
+        scheduledEmail.toEmail;
       const allClients = await db
         .select({ id: clients.id, email: clients.email })
         .from(clients)
@@ -135,7 +150,9 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
 }
 
 export async function GET(req: Request) {
-  const authHeader = req.headers ? new Headers(req.headers).get("authorization") : null;
+  const authHeader = req.headers
+    ? new Headers(req.headers).get("authorization")
+    : null;
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

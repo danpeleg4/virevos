@@ -26,12 +26,19 @@ const mockSubscriptionsRetrieve = jest.fn();
 jest.mock("@/lib/stripe", () => ({
   ...jest.requireActual("@/lib/stripe"),
   stripe: {
-    webhooks: { constructEvent: (...args: unknown[]) => mockConstructEvent(...args) },
-    subscriptions: { retrieve: (...args: unknown[]) => mockSubscriptionsRetrieve(...args) },
+    webhooks: {
+      constructEvent: (...args: unknown[]) => mockConstructEvent(...args),
+    },
+    subscriptions: {
+      retrieve: (...args: unknown[]) => mockSubscriptionsRetrieve(...args),
+    },
   },
 }));
 
-function makeRequest(body: string, sig: string | null = "valid-sig"): NextRequest {
+function makeRequest(
+  body: string,
+  sig: string | null = "valid-sig"
+): NextRequest {
   return {
     text: jest.fn().mockResolvedValue(body),
     headers: {

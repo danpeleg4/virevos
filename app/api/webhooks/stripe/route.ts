@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import {handleInvoicePaymentFailed,
-  handleInvoicePaymentSucceeded, handleSubscriptionDeleted, handleSubscriptionUpsert, stripe } from "@/lib/stripe";
+import {
+  handleInvoicePaymentFailed,
+  handleInvoicePaymentSucceeded,
+  handleSubscriptionDeleted,
+  handleSubscriptionUpsert,
+  stripe,
+} from "@/lib/stripe";
 import type Stripe from "stripe";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {

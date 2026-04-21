@@ -12,7 +12,12 @@ const mockUseQueryClient = jest.fn(() => ({
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (opts: { mutationFn: unknown; onMutate?: unknown; onError?: unknown; onSettled?: unknown }) => ({
+  useMutation: (opts: {
+    mutationFn: unknown;
+    onMutate?: unknown;
+    onError?: unknown;
+    onSettled?: unknown;
+  }) => ({
     mutate: mockMutate,
     isPending: false,
   }),
@@ -34,7 +39,9 @@ describe("AddNewTask", () => {
 
   it("renders 'New Task' button", () => {
     render(<AddNewTask />);
-    expect(screen.getByRole("button", { name: /new task/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /new task/i })
+    ).toBeInTheDocument();
   });
 
   it("opens dialog when 'New Task' is clicked", () => {
@@ -52,7 +59,9 @@ describe("AddNewTask", () => {
   it("renders description textarea inside dialog", () => {
     render(<AddNewTask />);
     fireEvent.click(screen.getByRole("button", { name: /new task/i }));
-    expect(screen.getByPlaceholderText(/add more details/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/add more details/i)
+    ).toBeInTheDocument();
   });
 
   it("shows project select when no projectId prop", () => {
@@ -79,7 +88,9 @@ describe("AddNewTask", () => {
     fireEvent.change(screen.getByPlaceholderText(/review designs/i), {
       target: { value: "My task" },
     });
-    expect(screen.getByRole("button", { name: /create task/i })).not.toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /create task/i })
+    ).not.toBeDisabled();
   });
 
   it("calls mutation and closes dialog on submit", async () => {

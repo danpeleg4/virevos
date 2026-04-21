@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { outlookEmails } from "@db/schema";
-import { and, eq, InferSelectModel} from "drizzle-orm";
+import { and, eq, InferSelectModel } from "drizzle-orm";
 import axios from "axios";
 import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
 
@@ -27,7 +27,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const rows = await db
     .select()
     .from(outlookEmails)
-    .where(and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id)))
+    .where(
+      and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id))
+    )
     .limit(1);
 
   if (!rows.length) {
@@ -44,10 +46,21 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   }
 
   interface MessagePatchBody {
-    action: "star" | "unstar" | "archive" | "unarchive" | "markRead" | "markUnread";
+    action:
+      | "star"
+      | "unstar"
+      | "archive"
+      | "unarchive"
+      | "markRead"
+      | "markUnread";
   }
 
-  type EmailUpdate = Partial<Pick<InferSelectModel<typeof outlookEmails>, "isStarred" | "isArchived" | "isRead">>;
+  type EmailUpdate = Partial<
+    Pick<
+      InferSelectModel<typeof outlookEmails>,
+      "isStarred" | "isArchived" | "isRead"
+    >
+  >;
 
   const { id } = await params;
   const numericId = parseInt(id, 10);
@@ -58,22 +71,26 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const [rows] = await db
     .select()
     .from(outlookEmails)
-    .where(and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id)))
-    .limit(1)
+    .where(
+      and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id))
+    )
+    .limit(1);
 
   if (!rows) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const email = rows;
-  const body = await req.json() as MessagePatchBody;
+  const body = (await req.json()) as MessagePatchBody;
 
   const dbUpdate: EmailUpdate = {};
   const graphUpdate: Record<string, unknown> = {};
 
   if (body.action === "star" || body.action === "unstar") {
     dbUpdate.isStarred = body.action === "star";
-    graphUpdate.flag = { flagStatus: body.action === "star" ? "flagged" : "notFlagged" };
+    graphUpdate.flag = {
+      flagStatus: body.action === "star" ? "flagged" : "notFlagged",
+    };
   }
 
   if (body.action === "archive" || body.action === "unarchive") {
@@ -83,7 +100,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
 
   if (body.action === "markRead" || body.action === "markUnread") {
     dbUpdate.isRead = body.action === "markRead";
-    graphUpdate.isRead = body.action === "markRead"
+    graphUpdate.isRead = body.action === "markRead";
   }
 
   if (Object.keys(dbUpdate).length > 0) {
@@ -147,25 +164,24 @@ export async function DELETE(_req: Request, { params }: RouteParams) {
   const rows = await db
     .select()
     .from(outlookEmails)
-    .where(and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id)))
+    .where(
+      and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id))
+    )
     .limit(1);
 
   if (!rows.length) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await db
-    .delete(outlookEmails)
-    .where(eq(outlookEmails.id, numericId));
+  await db.delete(outlookEmails).where(eq(outlookEmails.id, numericId));
 
   // Delete from Graph (best effort)
   try {
     const token = await getFreshOutlookAccessToken(user.id);
     if (token) {
-      await axios.delete(
-        `${GRAPH_BASE}/me/messages/${rows[0].outlookId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`${GRAPH_BASE}/me/messages/${rows[0].outlookId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
     }
   } catch (err) {
     console.error("[outlook/messages DELETE] Graph delete failed:", err);

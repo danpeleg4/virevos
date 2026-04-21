@@ -91,9 +91,13 @@ function ProjectPill({ name }: { name: string }) {
 export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
-  const [sortField, setSortField] = useState<"title" | "dueDate" | "priority">("dueDate");
+  const [sortField, setSortField] = useState<"title" | "dueDate" | "priority">(
+    "dueDate"
+  );
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [priorityFilter, setPriorityFilter] = useState<"all" | "high" | "medium" | "low">("all");
+  const [priorityFilter, setPriorityFilter] = useState<
+    "all" | "high" | "medium" | "low"
+  >("all");
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,13 +163,16 @@ export default function Tasks() {
 
   const filteredTasks = (
     getTasks?.data?.filter((task: Task) => {
-      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = task.title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
       const matchesTab =
         activeTab === "all" ||
         (activeTab === "todo" && task.status === "todo") ||
         (activeTab === "in-progress" && task.status === "in-progress") ||
         (activeTab === "completed" && task.status === "completed");
-      const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
+      const matchesPriority =
+        priorityFilter === "all" || task.priority === priorityFilter;
       return matchesSearch && matchesTab && matchesPriority;
     }) ?? []
   ).sort((a: Task, b: Task) => {
@@ -176,7 +183,8 @@ export default function Tasks() {
       const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
       cmp = da - db;
     } else if (sortField === "priority") {
-      cmp = (PRIORITY_ORDER[a.priority] ?? 0) - (PRIORITY_ORDER[b.priority] ?? 0);
+      cmp =
+        (PRIORITY_ORDER[a.priority] ?? 0) - (PRIORITY_ORDER[b.priority] ?? 0);
     }
     return sortDir === "asc" ? cmp : -cmp;
   });
@@ -207,7 +215,6 @@ export default function Tasks() {
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
-
       {/* Tasks Table */}
       <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
         <Card className="overflow-hidden flex flex-col h-full">
@@ -269,17 +276,37 @@ export default function Tasks() {
               <DropdownMenuContent align="end" className="w-48">
                 {(
                   [
-                    { label: "Due Date (Earliest)", field: "dueDate", dir: "asc" },
-                    { label: "Due Date (Latest)", field: "dueDate", dir: "desc" },
+                    {
+                      label: "Due Date (Earliest)",
+                      field: "dueDate",
+                      dir: "asc",
+                    },
+                    {
+                      label: "Due Date (Latest)",
+                      field: "dueDate",
+                      dir: "desc",
+                    },
                     { label: "Title (A–Z)", field: "title", dir: "asc" },
                     { label: "Title (Z–A)", field: "title", dir: "desc" },
-                    { label: "Priority (Highest)", field: "priority", dir: "desc" },
-                    { label: "Priority (Lowest)", field: "priority", dir: "asc" },
+                    {
+                      label: "Priority (Highest)",
+                      field: "priority",
+                      dir: "desc",
+                    },
+                    {
+                      label: "Priority (Lowest)",
+                      field: "priority",
+                      dir: "asc",
+                    },
                   ] as const
                 ).map(({ label, field, dir }) => (
                   <DropdownMenuItem
                     key={label}
-                    onClick={() => { setSortField(field); setSortDir(dir); setCurrentPage(1); }}
+                    onClick={() => {
+                      setSortField(field);
+                      setSortDir(dir);
+                      setCurrentPage(1);
+                    }}
                     className="flex items-center justify-between"
                   >
                     {label}
@@ -311,7 +338,10 @@ export default function Tasks() {
                 ).map(({ label, value }) => (
                   <DropdownMenuItem
                     key={value}
-                    onClick={() => { setPriorityFilter(value); setCurrentPage(1); }}
+                    onClick={() => {
+                      setPriorityFilter(value);
+                      setCurrentPage(1);
+                    }}
                     className="flex items-center justify-between"
                   >
                     {label}

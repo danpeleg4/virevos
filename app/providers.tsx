@@ -24,7 +24,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
     >
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           <Theme>{children}</Theme>
         </ThemeProvider>
       </QueryClientProvider>

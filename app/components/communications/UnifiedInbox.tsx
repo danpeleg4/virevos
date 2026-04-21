@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -117,17 +121,16 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     contentType: string;
   }
 
-  const { data: attachmentsData } =
-    useQuery<OutlookAttachmentMeta[]>({
-      queryKey: ["outlook-attachments", selectedMessage?.id],
-      queryFn: async () => {
-        const res = await axios.get<{ attachments: OutlookAttachmentMeta[] }>(
-          `/api/outlook/messages/${selectedMessage!.id}/attachments`
-        );
-        return res.data.attachments;
-      },
-      enabled: !!selectedMessage?.id && selectedMessage.type === "email",
-    });
+  const { data: attachmentsData } = useQuery<OutlookAttachmentMeta[]>({
+    queryKey: ["outlook-attachments", selectedMessage?.id],
+    queryFn: async () => {
+      const res = await axios.get<{ attachments: OutlookAttachmentMeta[] }>(
+        `/api/outlook/messages/${selectedMessage!.id}/attachments`
+      );
+      return res.data.attachments;
+    },
+    enabled: !!selectedMessage?.id && selectedMessage.type === "email",
+  });
 
   // Debounce search query
   useEffect(() => {
@@ -135,7 +138,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  const emailsQueryKey = ["emails", debouncedSearch, filterStatus] as const;
+  const emailsQueryKey = useMemo(
+    () => ["emails", debouncedSearch, filterStatus] as const,
+    [debouncedSearch, filterStatus]
+  );
 
   const {
     data,
@@ -153,7 +159,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       });
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (filterStatus !== "all") params.set("filter", filterStatus);
-      const { data } = await axios.get<EmailsPage>(`/api/outlook/sync?${params}`);
+      const { data } = await axios.get<EmailsPage>(
+        `/api/outlook/sync?${params}`
+      );
       return data;
     },
     getNextPageParam: (lastPage) =>
@@ -187,14 +195,14 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
 
   const checkOutlookConnection = async () => {
     const { data } = await axios.get("/api/integrations/outlook");
-    return data.connected
-  }
+    return data.connected;
+  };
 
   const checkConnection = async () => {
     try {
       const { data } = await axios.get("/api/integrations/google");
       const outlookData = await checkOutlookConnection();
-      setIsConnected((data.connected === true) || outlookData);
+      setIsConnected(data.connected === true || outlookData);
     } catch {
       setIsConnected(false);
     }
@@ -347,7 +355,13 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           replyToOutlookId: selectedMessage.outlookId,
           attachments: pendingAttachments
             .filter((f) => f.path || f.url || f.data)
-            .map((f) => ({ name: f.name, url: f.url, path: f.path, data: f.data, mimeType: f.mimeType })),
+            .map((f) => ({
+              name: f.name,
+              url: f.url,
+              path: f.path,
+              data: f.data,
+              mimeType: f.mimeType,
+            })),
         });
         toast.success("Reply sent successfully");
         setReplyText("");
@@ -438,18 +452,20 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {(["all", "unread", "starred", "sent", "archived"] as const).map((v) => (
-            <DropdownMenuItem
-              key={v}
-              onClick={() => setFilterStatus(v)}
-              className="flex items-center justify-between cursor-pointer"
-            >
-              {v === "all" ? "All" : v.charAt(0).toUpperCase() + v.slice(1)}
-              {filterStatus === v && (
-                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
-              )}
-            </DropdownMenuItem>
-          ))}
+          {(["all", "unread", "starred", "sent", "archived"] as const).map(
+            (v) => (
+              <DropdownMenuItem
+                key={v}
+                onClick={() => setFilterStatus(v)}
+                className="flex items-center justify-between cursor-pointer"
+              >
+                {v === "all" ? "All" : v.charAt(0).toUpperCase() + v.slice(1)}
+                {filterStatus === v && (
+                  <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-2" />
+                )}
+              </DropdownMenuItem>
+            )
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <Button
@@ -503,7 +519,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
             ) : filteredMessages.length === 0 ? (
               <div className="text-center py-12">
                 <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No messages found</p>
+                <p className="text-sm text-muted-foreground">
+                  No messages found
+                </p>
                 <Button
                   size="sm"
                   variant="outline"
@@ -591,7 +609,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                               </Badge>
                             ) : null}
                             {message.sent && (
-                              <Badge variant="secondary" className="text-xs gap-1">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs gap-1"
+                              >
                                 <Send className="h-2.5 w-2.5" />
                                 Sent
                               </Badge>
@@ -936,7 +957,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                             <File className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                           )}
                           <span className="max-w-32 truncate">{file.name}</span>
-                          <span className="text-muted-foreground">{file.size}</span>
+                          <span className="text-muted-foreground">
+                            {file.size}
+                          </span>
                           <button
                             onClick={() =>
                               setPendingAttachments((prev) =>

@@ -6,5 +6,4 @@ export const supabaseAdmin = createClient(
 );
 
 export const RECORDINGS_BUCKET = "recording";
-export const TRANSCRIPTS_BUCKET = "jsonFiles";
 export const FILES_BUCKET = "projectFiles";

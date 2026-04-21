@@ -42,7 +42,9 @@ describe("BookEventDialog", () => {
         addMeeting={addMeeting}
       />
     );
-    expect(screen.getByPlaceholderText(/meeting with team/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/meeting with team/i)
+    ).toBeInTheDocument();
   });
 
   it("renders description textarea", () => {
@@ -53,7 +55,9 @@ describe("BookEventDialog", () => {
         addMeeting={addMeeting}
       />
     );
-    expect(screen.getByPlaceholderText(/discuss the project plan/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/discuss the project plan/i)
+    ).toBeInTheDocument();
   });
 
   it("renders date and time inputs", () => {
@@ -96,13 +100,18 @@ describe("BookEventDialog", () => {
     // Set date and time
     const dateInput = document.querySelector("input[type='date']");
     const timeInput = document.querySelector("input[type='time']");
-    if (dateInput) fireEvent.change(dateInput, { target: { value: "2026-05-15" } });
+    if (dateInput)
+      fireEvent.change(dateInput, { target: { value: "2026-05-15" } });
     if (timeInput) fireEvent.change(timeInput, { target: { value: "10:00" } });
 
     fireEvent.click(screen.getByRole("button", { name: /^book$/i }));
     expect(addMeeting).toHaveBeenCalledTimes(1);
     expect(addMeeting).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Team Sync", isMeeting: false, attendees: [] })
+      expect.objectContaining({
+        title: "Team Sync",
+        isMeeting: false,
+        attendees: [],
+      })
     );
   });
 

@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Separator } from "../ui/separator";
@@ -80,12 +86,6 @@ export function EventDetailsDialog({
     }
   }
 
-  function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  }
-
   useEffect(() => {
     if (!open) {
       setShowFullTranscript(false);
@@ -96,12 +96,14 @@ export function EventDetailsDialog({
       setTranscriptLoading(true);
       try {
         const res = await axios.get(`/api/transcript/${event.id}`);
-        const formatted = res.data[0].map((item: RawChunk) => ({
+        const formatted = res.data.map((item: RawChunk) => ({
           speaker: item.speaker,
-          time: formatTime(item.start_time),
-          text: item.chunk_text,
-          startTime: item.start_time,
-          endTime: item.end_time,
+          time: item.createdAt
+            ? new Date(item.createdAt).toLocaleTimeString()
+            : "",
+          text: item.text,
+          startTime: 0,
+          endTime: 0,
         }));
         setFormattedData(formatted);
       } finally {
@@ -144,12 +146,14 @@ export function EventDetailsDialog({
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {formatTimeOnly(new Date(event.dateTime))} · {event.duration} min
+                {formatTimeOnly(new Date(event.dateTime))} · {event.duration}{" "}
+                min
               </span>
               {event.attendees && event.attendees.length > 0 && (
                 <span className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
-                  {event.attendees.length} participant{event.attendees.length !== 1 ? "s" : ""}
+                  {event.attendees.length} participant
+                  {event.attendees.length !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -157,13 +161,14 @@ export function EventDetailsDialog({
         </DialogHeader>
 
         <div className="space-y-5 mt-2">
-
           {/* Tags */}
           {event.tags && event.tags.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Tags
+                </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {event.tags.map((tag, i) => (
@@ -183,7 +188,9 @@ export function EventDetailsDialog({
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Attendees</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Attendees
+                </span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {event.attendees.map((attendee, i) => (
@@ -207,7 +214,9 @@ export function EventDetailsDialog({
           {event.link && (
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Link</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Link
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -219,14 +228,18 @@ export function EventDetailsDialog({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigator.clipboard.writeText(event.link || "")}
+                  onClick={() =>
+                    navigator.clipboard.writeText(event.link || "")
+                  }
                 >
                   <Copy className="h-4 w-4 mr-1.5" />
                   Copy
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => event.link && window.open(event.link, "_blank")}
+                  onClick={() =>
+                    event.link && window.open(event.link, "_blank")
+                  }
                 >
                   <ExternalLink className="h-4 w-4 mr-1.5" />
                   Open
@@ -245,9 +258,16 @@ export function EventDetailsDialog({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI Summary</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        AI Summary
+                      </span>
                     </div>
-                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCopySummary}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2"
+                      onClick={handleCopySummary}
+                    >
                       {copied ? (
                         <Check className="h-3.5 w-3.5 text-green-500" />
                       ) : (
@@ -262,79 +282,92 @@ export function EventDetailsDialog({
               )}
 
               {/* Key Points */}
-              {event.hasNotes && event.key_points && event.key_points.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-3.5 w-3.5 text-blue-500" />
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Key Points</span>
+              {event.hasNotes &&
+                event.key_points &&
+                event.key_points.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-3.5 w-3.5 text-blue-500" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Key Points
+                      </span>
+                    </div>
+                    <ul className="space-y-2">
+                      {event.key_points.map((point, i) => (
+                        <li
+                          key={i}
+                          className="text-sm flex items-start text-foreground"
+                        >
+                          <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500 shrink-0" />
+                          <span className="flex-1">{point}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-2">
-                    {event.key_points.map((point, i) => (
-                      <li key={i} className="text-sm flex items-start text-foreground">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full mt-2 mr-3 bg-blue-500 shrink-0" />
-                        <span className="flex-1">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                )}
 
               {/* Action Items */}
-              {event.hasNotes && event.action_items && event.action_items.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckSquare className="h-3.5 w-3.5 text-orange-500" />
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Action Items ({event.action_items.length})
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {event.action_items.map((item, i) => (
-                      <div
-                        key={i}
-                        className="p-3 bg-muted/50 border border-border rounded-lg"
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-1">
-                          <p className="text-sm text-foreground">{item.task}</p>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-6 px-2 shrink-0"
-                            onClick={() => handleAddSingleTask(item, i)}
-                            disabled={addingItems.has(i) || addedItems.has(i)}
-                          >
-                            {addingItems.has(i)
-                              ? "Adding..."
-                              : addedItems.has(i)
-                                ? "Added"
-                                : "Add"}
-                          </Button>
+              {event.hasNotes &&
+                event.action_items &&
+                event.action_items.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckSquare className="h-3.5 w-3.5 text-orange-500" />
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Action Items ({event.action_items.length})
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {event.action_items.map((item, i) => (
+                        <div
+                          key={i}
+                          className="p-3 bg-muted/50 border border-border rounded-lg"
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-1">
+                            <p className="text-sm text-foreground">
+                              {item.task}
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-6 px-2 shrink-0"
+                              onClick={() => handleAddSingleTask(item, i)}
+                              disabled={addingItems.has(i) || addedItems.has(i)}
+                            >
+                              {addingItems.has(i)
+                                ? "Adding..."
+                                : addedItems.has(i)
+                                  ? "Added"
+                                  : "Add"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Due: {item.dueDate ?? "No due date"}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Due: {item.dueDate ?? "No due date"}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-3"
+                      onClick={handleAddAllToTasks}
+                      disabled={allAdded}
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      {allAdded ? "All Added" : "Add All to Tasks"}
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-3"
-                    onClick={handleAddAllToTasks}
-                    disabled={allAdded}
-                  >
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    {allAdded ? "All Added" : "Add All to Tasks"}
-                  </Button>
-                </div>
-              )}
+                )}
 
               {/* Transcript */}
               {event.hasTranscript && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Mic className="h-3.5 w-3.5 text-purple-500" />
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Transcript</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Transcript
+                    </span>
                   </div>
                   {transcriptLoading ? (
                     <div className="p-4 rounded-lg border border-border bg-muted/50 text-sm text-muted-foreground">
@@ -370,7 +403,9 @@ export function EventDetailsDialog({
                           onClick={() => setShowFullTranscript((v) => !v)}
                         >
                           <FileText className="h-3.5 w-3.5" />
-                          {showFullTranscript ? "Show less" : "View full transcript"}
+                          {showFullTranscript
+                            ? "Show less"
+                            : "View full transcript"}
                         </button>
                       )}
                     </>

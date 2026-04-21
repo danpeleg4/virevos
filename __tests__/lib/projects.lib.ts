@@ -97,8 +97,14 @@ describe("deleteProject", () => {
     ]);
     await deleteProject(5);
     expect(mockDeleteFile).toHaveBeenCalledTimes(2);
-    expect(mockDeleteFile).toHaveBeenCalledWith("projectFiles", "projects/user_1/file1.pdf");
-    expect(mockDeleteFile).toHaveBeenCalledWith("projectFiles", "projects/user_1/file2.pdf");
+    expect(mockDeleteFile).toHaveBeenCalledWith(
+      "projectFiles",
+      "projects/user_1/file1.pdf"
+    );
+    expect(mockDeleteFile).toHaveBeenCalledWith(
+      "projectFiles",
+      "projects/user_1/file2.pdf"
+    );
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ storage: expect.anything() })
     );
@@ -128,9 +134,9 @@ describe("addFileMetadata", () => {
 
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(addFileMetadata({ projectId: 1 }, makeFormData())).rejects.toThrow(
-      "No user"
-    );
+    await expect(
+      addFileMetadata({ projectId: 1 }, makeFormData())
+    ).rejects.toThrow("No user");
   });
 
   it("throws storage limit error and skips upload when assertCanAddFile rejects", async () => {
@@ -138,25 +144,28 @@ describe("addFileMetadata", () => {
     (assertCanAddFile as jest.Mock).mockRejectedValueOnce(
       new Error("Storage limit reached")
     );
-    await expect(addFileMetadata({ projectId: 1 }, makeFormData())).rejects.toThrow(
-      "Storage limit reached"
-    );
+    await expect(
+      addFileMetadata({ projectId: 1 }, makeFormData())
+    ).rejects.toThrow("Storage limit reached");
     expect(mockUploadFile).not.toHaveBeenCalled();
   });
 
   it("throws when storage upload throws", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockUploadFile.mockRejectedValueOnce(new Error("Upload failed"));
-    await expect(addFileMetadata({ projectId: 1 }, makeFormData())).rejects.toThrow(
-      "Failed to upload file"
-    );
+    await expect(
+      addFileMetadata({ projectId: 1 }, makeFormData())
+    ).rejects.toThrow("Failed to upload file");
   });
 
   it("inserts metadata and returns { path, name, size } on success", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockUploadFile.mockResolvedValueOnce(undefined);
 
-    const result = await addFileMetadata({ projectId: 1 }, makeFormData("doc.pdf", 2048));
+    const result = await addFileMetadata(
+      { projectId: 1 },
+      makeFormData("doc.pdf", 2048)
+    );
 
     expect(result).toMatchObject({ name: "doc.pdf", size: 2048 });
     expect(result!.path).toContain("doc.pdf");

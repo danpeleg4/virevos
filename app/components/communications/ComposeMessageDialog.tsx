@@ -1,13 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -20,9 +15,31 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Separator } from "../ui/separator";
-import { Mail, MessageSquare, Send, Loader2 } from "lucide-react";
+import { Mail, MessageSquare, Send, Loader2, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+
+interface AttachmentFile {
+  name: string;
+  mimeType: string;
+  data: string; // base64
+  size: number;
+}
+
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024; // 25 MB total
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // strip "data:<mime>;base64," prefix
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 interface ComposeMessageDialogProps {
   open: boolean;
@@ -49,6 +66,8 @@ export function ComposeMessageDialog({
   const [emailTo, setEmailTo] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [chatClientId, setChatClientId] = useState("");
   const [chatMessage, setChatMessage] = useState("");
@@ -66,9 +85,45 @@ export function ComposeMessageDialog({
     setEmailTo("");
     setEmailSubject("");
     setEmailBody("");
+    setAttachments([]);
     setChatClientId("");
     setChatMessage("");
   };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    const currentTotal = attachments.reduce((sum, a) => sum + a.size, 0);
+    const incoming = files.reduce((sum, f) => sum + f.size, 0);
+    if (currentTotal + incoming > MAX_ATTACHMENT_BYTES) {
+      toast.error("Total attachments exceed the 25 MB limit");
+      e.target.value = "";
+      return;
+    }
+
+    const newAttachments = await Promise.all(
+      files.map(async (file) => ({
+        name: file.name,
+        mimeType: file.type || "application/octet-stream",
+        data: await readFileAsBase64(file),
+        size: file.size,
+      }))
+    );
+
+    setAttachments((prev) => [...prev, ...newAttachments]);
+    e.target.value = "";
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) resetForm();
@@ -83,6 +138,15 @@ export function ComposeMessageDialog({
         to: emailTo.trim(),
         subject: emailSubject.trim(),
         bodyHtml: `<p>${emailBody.replace(/\n/g, "<br>")}</p>`,
+        ...(attachments.length > 0
+          ? {
+              attachments: attachments.map(({ name, mimeType, data }) => ({
+                name,
+                mimeType,
+                data,
+              })),
+            }
+          : {}),
       });
       toast.success("Email sent successfully");
       resetForm();
@@ -196,6 +260,49 @@ export function ComposeMessageDialog({
                 onChange={(e) => setEmailBody(e.target.value)}
               />
             </div>
+
+            {/* Attachments */}
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground gap-1.5 px-0 hover:bg-transparent hover:text-foreground"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="h-4 w-4" />
+                Attach files
+              </Button>
+              {attachments.length > 0 && (
+                <ul className="space-y-1">
+                  {attachments.map((att, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm"
+                    >
+                      <span className="truncate flex-1">{att.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {formatBytes(att.size)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        className="shrink-0 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5 cursor-pointer" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
 
@@ -261,7 +368,9 @@ export function ComposeMessageDialog({
           <Button
             size="sm"
             onClick={tab === "email" ? handleSendEmail : handleSendChat}
-            disabled={isSending || (tab === "email" ? !isEmailValid : !isChatValid)}
+            disabled={
+              isSending || (tab === "email" ? !isEmailValid : !isChatValid)
+            }
             className="gap-2"
           >
             {isSending ? (

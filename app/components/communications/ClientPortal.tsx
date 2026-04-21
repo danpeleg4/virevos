@@ -304,11 +304,15 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                   <p className="text-2xl text-foreground">
                     {portals.filter((p) => p.enabled).length}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">Active Portals</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Active Portals
+                  </p>
                 </div>
                 <div className="text-center p-4 bg-muted/50 rounded-lg">
                   <p className="text-2xl text-foreground">{portals.length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Total Portals</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Total Portals
+                  </p>
                 </div>
                 <div className="text-center p-4 bg-muted/50 rounded-lg">
                   <p className="text-2xl text-foreground">

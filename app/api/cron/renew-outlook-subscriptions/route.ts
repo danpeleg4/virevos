@@ -5,7 +5,9 @@ import { lte } from "drizzle-orm";
 import { renewSubscriptions } from "@/lib/outlook_sync";
 
 export async function GET(req: Request) {
-  const authHeader = req.headers ? new Headers(req.headers).get("authorization") : null;
+  const authHeader = req.headers
+    ? new Headers(req.headers).get("authorization")
+    : null;
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

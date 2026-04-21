@@ -137,7 +137,9 @@ Return only the email body text, no subject line.`;
         <div className="flex items-center space-x-2">
           <Sparkles className="h-5 w-5 text-purple-600" />
           <h4 className="text-sm text-foreground">AI Draft Reply</h4>
-          <Badge className="bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">Beta</Badge>
+          <Badge className="bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+            Beta
+          </Badge>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -221,7 +223,9 @@ Return only the email body text, no subject line.`;
           className="space-y-3"
         >
           <div className="flex items-center justify-between">
-            <label className="text-sm text-muted-foreground">AI-Generated Draft</label>
+            <label className="text-sm text-muted-foreground">
+              AI-Generated Draft
+            </label>
             <Button
               size="sm"
               variant="ghost"

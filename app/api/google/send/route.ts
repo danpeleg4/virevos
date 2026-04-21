@@ -36,7 +36,13 @@ export async function POST(req: NextRequest) {
       bodyHtml: string;
       bodyText?: string;
       threadId?: string;
-      attachments?: Array<{ name: string; url?: string; path?: string; data?: string; mimeType?: string }>;
+      attachments?: Array<{
+        name: string;
+        url?: string;
+        path?: string;
+        data?: string;
+        mimeType?: string;
+      }>;
     };
 
     if (!to || !subject || !bodyHtml) {

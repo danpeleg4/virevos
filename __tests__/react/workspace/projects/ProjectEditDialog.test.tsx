@@ -23,7 +23,18 @@ const mockProject = {
 };
 
 const mockClients = [
-  { id: 1, name: "Acme Corp", email: "a@a.com", phone: "", industry: "", status: "active", activeProjects: 1, completedProjects: 0, totalProjects: 1, avatar: "A" },
+  {
+    id: 1,
+    name: "Acme Corp",
+    email: "a@a.com",
+    phone: "",
+    industry: "",
+    status: "active",
+    activeProjects: 1,
+    completedProjects: 0,
+    totalProjects: 1,
+    avatar: "A",
+  },
 ];
 
 import { ProjectEditDialog } from "@/app/workspace/projects/ProjectEditDialog";
@@ -81,7 +92,9 @@ describe("ProjectEditDialog", () => {
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /save changes/i })
+    ).toBeInTheDocument();
   });
 
   it("calls mutation on save", () => {

@@ -80,7 +80,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             ></Image>
             Virevos
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Workspace Starter</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Workspace Starter
+          </p>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">

@@ -117,7 +117,9 @@ describe("addAClient", () => {
   it("returns server error when plan limit is reached", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockAssertCanAddClient.mockRejectedValueOnce(
-      new Error("Client limit reached. The starter plan allows up to 5 clients.")
+      new Error(
+        "Client limit reached. The starter plan allows up to 5 clients."
+      )
     );
 
     const result = await addAClient(baseInput);

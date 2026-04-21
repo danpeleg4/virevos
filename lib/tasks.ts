@@ -47,7 +47,10 @@ export async function changePriorityStatus(taskId: number, priority: string) {
     .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 }
 
-export async function updateTaskDueDate(taskId: number, dueDate: string | null) {
+export async function updateTaskDueDate(
+  taskId: number,
+  dueDate: string | null
+) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
   await db
@@ -69,7 +72,8 @@ export async function updateTask(input: {
 
   const updateData: Record<string, unknown> = {};
   if (input.title !== undefined) updateData.title = input.title;
-  if (input.description !== undefined) updateData.description = input.description;
+  if (input.description !== undefined)
+    updateData.description = input.description;
   if (input.priority !== undefined) updateData.priority = input.priority;
   if (input.status !== undefined) {
     updateData.status = input.status;

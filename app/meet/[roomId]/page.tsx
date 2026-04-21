@@ -9,7 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Video, Users, Check, VideoOff, Mic, MicOff, ScreenShare, ScreenShareOff } from "lucide-react";
+import {
+  Video,
+  VideoOff,
+  Mic,
+  MicOff,
+  ScreenShare,
+  ScreenShareOff,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
   createLocalTracks,
@@ -18,6 +25,7 @@ import {
   RemoteTrack,
   RoomEvent,
   ParticipantEvent,
+  ParticipantKind,
   Track,
   TrackPublication,
   LocalTrackPublication,
@@ -31,9 +39,8 @@ export default function InMeetingView() {
   const [joined, setJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
-  const [isScreenSharing, setIsScreenSharing] = useState(false)
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [copied, setCopied] = useState(false);
   const router = useRouter();
   const roomRef = useRef<Room | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -56,16 +63,20 @@ export default function InMeetingView() {
       await room.localParticipant.publishTrack(track);
     }
 
+    const isHuman = (p: Participant) => p.kind !== ParticipantKind.AGENT;
+
     setParticipants([
       room.localParticipant,
-      ...Array.from(room.remoteParticipants.values()),
+      ...Array.from(room.remoteParticipants.values()).filter(isHuman),
     ]);
 
     room.on(RoomEvent.ParticipantConnected, (p) => {
+      if (!isHuman(p)) return;
       setParticipants((prev) => [...prev, p]);
     });
 
     room.on(RoomEvent.ParticipantDisconnected, (p) => {
+      if (!isHuman(p)) return;
       setParticipants((prev) => prev.filter((x) => x.sid !== p.sid));
     });
 
@@ -87,6 +98,11 @@ export default function InMeetingView() {
     // Enable local camera/mic
     await room.localParticipant.setCameraEnabled(true);
     await room.localParticipant.setMicrophoneEnabled(true);
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => {
+      room.localParticipant.publishTrack(track);
+    });
 
     setJoined(true);
   };
@@ -116,7 +132,6 @@ export default function InMeetingView() {
     return (
       <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-
           {/* Card */}
           <div className="bg-[oklch(0.35_0_0)] border border-[oklch(1_0_0/12%)] rounded-xl p-8">
             <div className="mb-6">
@@ -307,13 +322,17 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
     };
 
     // Attach existing tracks — use pub.track directly since isSubscribed is false for local publications
-    participant.videoTrackPublications.values().forEach((pub: TrackPublication) => {
-      if (pub.track) attachTrack(pub.track);
-    });
+    participant.videoTrackPublications
+      .values()
+      .forEach((pub: TrackPublication) => {
+        if (pub.track) attachTrack(pub.track);
+      });
 
-    participant.audioTrackPublications.values().forEach((pub: TrackPublication) => {
-      if (pub.track) attachTrack(pub.track);
-    });
+    participant.audioTrackPublications
+      .values()
+      .forEach((pub: TrackPublication) => {
+        if (pub.track) attachTrack(pub.track);
+      });
 
     const handleTrackSubscribed = (track: RemoteTrack) => attachTrack(track);
     participant.on(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
@@ -321,20 +340,35 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
     const handleLocalTrackPublished = (pub: LocalTrackPublication) => {
       if (pub.track) attachTrack(pub.track);
     };
-    participant.on(ParticipantEvent.LocalTrackPublished, handleLocalTrackPublished);
+    participant.on(
+      ParticipantEvent.LocalTrackPublished,
+      handleLocalTrackPublished
+    );
 
     const handleLocalTrackUnpublished = (pub: LocalTrackPublication) => {
       if (pub.track && containerRef.current) {
         pub.track.detach().forEach((el) => el.remove());
       }
     };
-    participant.on(ParticipantEvent.LocalTrackUnpublished, handleLocalTrackUnpublished);
+    participant.on(
+      ParticipantEvent.LocalTrackUnpublished,
+      handleLocalTrackUnpublished
+    );
 
     // Cleanup
     return () => {
-      participant.removeListener(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
-      participant.removeListener(ParticipantEvent.LocalTrackPublished, handleLocalTrackPublished);
-      participant.removeListener(ParticipantEvent.LocalTrackUnpublished, handleLocalTrackUnpublished);
+      participant.removeListener(
+        ParticipantEvent.TrackSubscribed,
+        handleTrackSubscribed
+      );
+      participant.removeListener(
+        ParticipantEvent.LocalTrackPublished,
+        handleLocalTrackPublished
+      );
+      participant.removeListener(
+        ParticipantEvent.LocalTrackUnpublished,
+        handleLocalTrackUnpublished
+      );
       if (containerRef.current) containerRef.current.innerHTML = "";
       if (audioRef.current) audioRef.current.innerHTML = "";
     };

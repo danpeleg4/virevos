@@ -25,16 +25,33 @@ jest.mock("motion/react", () => {
     {},
     {
       get: (_t, _tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
+        function MC({
+          children,
+          initial,
+          animate,
+          exit,
+          variants,
+          transition,
+          viewport,
+          whileInView,
+          whileHover,
+          whileTap,
+          ...props
+        }: Record<string, unknown>) {
           return createElement(
-            _tag as keyof JSX.IntrinsicElements,
-            props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
-            children as React.ReactNode,
+            _tag,
+            props,
+            children as React.ReactNode
           );
         },
     }
   );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+  return {
+    motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+  };
 });
 
 jest.mock("next/image", () => ({
@@ -74,27 +91,52 @@ describe("AppLayout", () => {
 
   it("shows loading spinner when user not loaded", () => {
     mockUseUser.mockReturnValue({ user: null, isLoaded: false });
-    const { container } = render(<AppLayout><div /></AppLayout>);
+    const { container } = render(
+      <AppLayout>
+        <div />
+      </AppLayout>
+    );
     // Loading state renders a pulsing animation container
     expect(container.firstChild).toBeInTheDocument();
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
   });
 
   it("renders all 8 nav items in the desktop sidebar", () => {
-    render(<AppLayout><div /></AppLayout>);
-    const navLabels = ["Dashboard", "Clients", "Projects", "Tasks", "Calendar", "Communications", "Billing", "Settings"];
+    render(
+      <AppLayout>
+        <div />
+      </AppLayout>
+    );
+    const navLabels = [
+      "Dashboard",
+      "Clients",
+      "Projects",
+      "Tasks",
+      "Calendar",
+      "Communications",
+      "Billing",
+      "Settings",
+    ];
     navLabels.forEach((label) => {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     });
   });
 
   it("renders user email in sidebar", () => {
-    render(<AppLayout><div /></AppLayout>);
+    render(
+      <AppLayout>
+        <div />
+      </AppLayout>
+    );
     expect(screen.getAllByText("john@example.com").length).toBeGreaterThan(0);
   });
 
   it("opens AI assistant when AI Assistant button is clicked", () => {
-    render(<AppLayout><div /></AppLayout>);
+    render(
+      <AppLayout>
+        <div />
+      </AppLayout>
+    );
     expect(screen.queryByTestId("ai-assistant")).not.toBeInTheDocument();
     // Click the header AI button
     const aiButtons = screen.getAllByRole("button", { name: /ai assistant/i });
@@ -103,7 +145,11 @@ describe("AppLayout", () => {
   });
 
   it("opens mobile sidebar when menu button is clicked", () => {
-    render(<AppLayout><div /></AppLayout>);
+    render(
+      <AppLayout>
+        <div />
+      </AppLayout>
+    );
     // Multiple icon-only buttons exist — Dashboard nav items are always present
     expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
   });

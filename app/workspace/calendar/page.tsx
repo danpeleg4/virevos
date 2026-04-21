@@ -44,7 +44,6 @@ function CalendarContent() {
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 gap-6">
-
       {/* Main Card */}
       <Card className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Content — each tab component owns its own toolbar row with tabNav on the left */}

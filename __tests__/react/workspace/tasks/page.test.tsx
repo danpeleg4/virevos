@@ -26,9 +26,33 @@ jest.mock("@/lib/date_utils", () => ({
 }));
 
 const mockTasks = [
-  { id: 1, title: "Design UI mockups", status: "todo", priority: "high", dueDate: "2026-05-01", projectName: "Alpha", completed: false },
-  { id: 2, title: "Write unit tests", status: "in-progress", priority: "medium", dueDate: "2026-05-10", projectName: "Beta", completed: false },
-  { id: 3, title: "Deploy to staging", status: "completed", priority: "low", dueDate: null, projectName: "Alpha", completed: true },
+  {
+    id: 1,
+    title: "Design UI mockups",
+    status: "todo",
+    priority: "high",
+    dueDate: "2026-05-01",
+    projectName: "Alpha",
+    completed: false,
+  },
+  {
+    id: 2,
+    title: "Write unit tests",
+    status: "in-progress",
+    priority: "medium",
+    dueDate: "2026-05-10",
+    projectName: "Beta",
+    completed: false,
+  },
+  {
+    id: 3,
+    title: "Deploy to staging",
+    status: "completed",
+    priority: "low",
+    dueDate: null,
+    projectName: "Alpha",
+    completed: true,
+  },
 ];
 
 import Tasks from "@/app/workspace/tasks/page";
@@ -36,7 +60,11 @@ import Tasks from "@/app/workspace/tasks/page";
 describe("Tasks Page", () => {
   beforeEach(() => {
     mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
-    mockUseQuery.mockReturnValue({ data: mockTasks, isLoading: false, error: null });
+    mockUseQuery.mockReturnValue({
+      data: mockTasks,
+      isLoading: false,
+      error: null,
+    });
   });
 
   it("renders tasks table with task titles", () => {
@@ -54,13 +82,19 @@ describe("Tasks Page", () => {
     render(<Tasks />);
     expect(screen.getByRole("button", { name: /all/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /to do/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /in progress/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /completed/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /in progress/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /completed/i })
+    ).toBeInTheDocument();
   });
 
   it("renders 'New Task' button", () => {
     render(<Tasks />);
-    expect(screen.getByRole("button", { name: /new task/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /new task/i })
+    ).toBeInTheDocument();
   });
 
   it("filters tasks by search query", () => {
@@ -87,7 +121,9 @@ describe("Tasks Page", () => {
 
   it("renders pagination controls", () => {
     render(<Tasks />);
-    expect(screen.getByRole("button", { name: /previous/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /previous/i })
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next/i })).toBeInTheDocument();
   });
 

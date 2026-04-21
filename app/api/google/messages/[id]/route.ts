@@ -49,7 +49,12 @@ export async function PATCH(
     const emailRow = await db
       .select()
       .from(googleEmails)
-      .where(and(eq(googleEmails.id, parseInt(id, 10)), eq(googleEmails.userId, user.id)))
+      .where(
+        and(
+          eq(googleEmails.id, parseInt(id, 10)),
+          eq(googleEmails.userId, user.id)
+        )
+      )
       .limit(1);
 
     if (!emailRow.length) {
@@ -87,7 +92,10 @@ export async function PATCH(
     if (action === "markUnread") dbUpdate.isRead = false;
 
     if (Object.keys(dbUpdate).length > 0) {
-      await db.update(googleEmails).set(dbUpdate).where(eq(googleEmails.id, email.id));
+      await db
+        .update(googleEmails)
+        .set(dbUpdate)
+        .where(eq(googleEmails.id, email.id));
     }
 
     return NextResponse.json({ success: true });
@@ -114,7 +122,12 @@ export async function DELETE(
 
     await db
       .delete(googleEmails)
-      .where(and(eq(googleEmails.id, parseInt(id, 10)), eq(googleEmails.userId, user.id)));
+      .where(
+        and(
+          eq(googleEmails.id, parseInt(id, 10)),
+          eq(googleEmails.userId, user.id)
+        )
+      );
 
     return NextResponse.json({ success: true });
   } catch (err) {

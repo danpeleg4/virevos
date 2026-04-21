@@ -52,7 +52,7 @@ const mockEmail = {
   clientName: null,
 };
 
-function mockDbSelect(rows: typeof mockEmail[]) {
+function mockDbSelect(rows: (typeof mockEmail)[]) {
   (db.select as jest.Mock).mockReturnValue({
     from: () => ({
       leftJoin: () => ({

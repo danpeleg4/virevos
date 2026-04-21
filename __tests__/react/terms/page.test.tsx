@@ -6,7 +6,9 @@ import TermsPage from "@/app/terms/page";
 describe("Terms of Service Page", () => {
   it("renders Terms heading", () => {
     render(<TermsPage />);
-    expect(screen.getByRole("heading", { name: /terms of service/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /terms of service/i })
+    ).toBeInTheDocument();
   });
 
   it("renders Acceptance of Terms section", () => {

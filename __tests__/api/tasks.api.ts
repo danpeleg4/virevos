@@ -32,7 +32,11 @@ jest.mock("@db/db", () => {
   };
 });
 
-const { where, returning, values: dbValues } = jest.requireMock("@db/db") as {
+const {
+  where,
+  returning,
+  values: dbValues,
+} = jest.requireMock("@db/db") as {
   where: jest.Mock;
   returning: jest.Mock;
   values: jest.Mock;
@@ -111,7 +115,9 @@ describe("POST /tasks", () => {
   it("uses ISO string as default dueDate when none provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
-    returning.mockResolvedValueOnce([{ id: 1, title: "Task", userId: "user_1" }]);
+    returning.mockResolvedValueOnce([
+      { id: 1, title: "Task", userId: "user_1" },
+    ]);
 
     await POST(req({ title: "Task" }));
 

@@ -167,11 +167,9 @@ describe("GET /api/google/callback", () => {
     });
     mockDbSelectEmpty();
     (db.insert as jest.Mock).mockReturnValue({
-      values: jest
-        .fn()
-        .mockReturnValue({
-          onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
-        }),
+      values: jest.fn().mockReturnValue({
+        onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+      }),
     });
     (performFullSync as jest.Mock).mockRejectedValueOnce(
       new Error("sync error")
@@ -198,11 +196,9 @@ describe("GET /api/google/callback", () => {
     });
     mockDbSelectEmpty();
     (db.insert as jest.Mock).mockReturnValue({
-      values: jest
-        .fn()
-        .mockReturnValue({
-          onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
-        }),
+      values: jest.fn().mockReturnValue({
+        onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+      }),
     });
     (setupWatchChannel as jest.Mock).mockRejectedValueOnce(
       new Error("watch error")

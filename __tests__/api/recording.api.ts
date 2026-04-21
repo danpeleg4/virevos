@@ -44,8 +44,12 @@ function mockCtx(id: string) {
   return { params: Promise.resolve({ id }) };
 }
 
-function mockStorage(topLevel: { name: string }[], folderFiles: { name: string }[]) {
-  const listMock = jest.fn()
+function mockStorage(
+  topLevel: { name: string }[],
+  folderFiles: { name: string }[]
+) {
+  const listMock = jest
+    .fn()
     .mockResolvedValueOnce({ data: topLevel, error: null })
     .mockResolvedValue({ data: folderFiles, error: null });
   (supabaseAdmin.storage.from as jest.Mock).mockReturnValue({ list: listMock });
@@ -100,11 +104,17 @@ describe("GET /api/recording/[id]", () => {
   it("returns signed urls for all participants on success", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
-    const listMock = jest.fn()
-      .mockResolvedValueOnce({ data: [{ name: "Alice" }, { name: "Bob" }], error: null })
+    const listMock = jest
+      .fn()
+      .mockResolvedValueOnce({
+        data: [{ name: "Alice" }, { name: "Bob" }],
+        error: null,
+      })
       .mockResolvedValueOnce({ data: [{ name: "abc12.mp4" }], error: null })
       .mockResolvedValueOnce({ data: [{ name: "def34.mp4" }], error: null });
-    (supabaseAdmin.storage.from as jest.Mock).mockReturnValue({ list: listMock });
+    (supabaseAdmin.storage.from as jest.Mock).mockReturnValue({
+      list: listMock,
+    });
 
     mockGetSignedUrl
       .mockResolvedValueOnce("https://signed-url-alice")
@@ -115,14 +125,22 @@ describe("GET /api/recording/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(json.videos).toHaveLength(2);
-    expect(json.videos[0]).toEqual({ participant: "Alice", url: "https://signed-url-alice" });
-    expect(json.videos[1]).toEqual({ participant: "Bob", url: "https://signed-url-bob" });
+    expect(json.videos[0]).toEqual({
+      participant: "Alice",
+      url: "https://signed-url-alice",
+    });
+    expect(json.videos[1]).toEqual({
+      participant: "Bob",
+      url: "https://signed-url-bob",
+    });
   });
 
   it("returns 404 if storage list throws", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     (supabaseAdmin.storage.from as jest.Mock).mockReturnValue({
-      list: jest.fn().mockResolvedValue({ data: null, error: { message: "bucket error" } }),
+      list: jest
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: "bucket error" } }),
     });
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));

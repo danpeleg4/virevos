@@ -114,7 +114,9 @@ describe("GET /api/outlook/callback", () => {
       from: () => ({
         where: () => ({
           limit: () =>
-            Promise.resolve([{ refresh_token: "old_refresh", connected: false }]),
+            Promise.resolve([
+              { refresh_token: "old_refresh", connected: false },
+            ]),
         }),
       }),
     });

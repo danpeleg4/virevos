@@ -59,7 +59,7 @@ function CheckoutForm({ planId }: { planId: string }) {
       const pmId =
         typeof result.setupIntent?.payment_method === "string"
           ? result.setupIntent.payment_method
-          : result.setupIntent?.payment_method?.id ?? null;
+          : (result.setupIntent?.payment_method?.id ?? null);
 
       if (!pmId) {
         setError("Could not retrieve payment method. Please try again.");
@@ -107,7 +107,11 @@ function CheckoutForm({ planId }: { planId: string }) {
 }
 
 export default function PaymentStep({ formData }: PaymentStepProps) {
-  const { data: clientSecret, isLoading, isError } = useQuery({
+  const {
+    data: clientSecret,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["setup-intent"],
     queryFn: createSetupIntent,
     staleTime: Infinity,

@@ -33,19 +33,19 @@ Virevos is a SaaS platform that centralises the tools freelancers need to run th
 
 ## Tech Stack
 
-| Layer | Technologies |
-|---|---|
-| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion |
-| Backend | Next.js API Routes, Server Actions |
-| AI | OpenAI GPT-5 (Responses API, streaming, tool use) |
-| Video | LiveKit (recording, transcription) |
-| Database | PostgreSQL, Drizzle ORM |
-| Vector Search | Pinecone (meeting transcript semantic search) |
-| Auth | Clerk |
-| Storage | Supabase (S3-compatible) |
-| Email | Gmail API |
-| Payments | Stripe |
-| Testing | Jest, babel-jest |
+| Layer         | Technologies                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| Frontend      | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion |
+| Backend       | Next.js API Routes, Server Actions                                                               |
+| AI            | OpenAI GPT-5 (Responses API, streaming, tool use)                                                |
+| Video         | LiveKit (recording, transcription)                                                               |
+| Database      | PostgreSQL, Drizzle ORM                                                                          |
+| Vector Search | Pinecone (meeting transcript semantic search)                                                    |
+| Auth          | Clerk                                                                                            |
+| Storage       | Supabase (S3-compatible)                                                                         |
+| Email         | Gmail API                                                                                        |
+| Payments      | Stripe                                                                                           |
+| Testing       | Jest, babel-jest                                                                                 |
 
 ---
 

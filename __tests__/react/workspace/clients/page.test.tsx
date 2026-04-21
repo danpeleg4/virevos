@@ -24,8 +24,30 @@ jest.mock("@/lib/clients", () => ({
 }));
 
 const mockClients = [
-  { id: 1, name: "Acme Corp", email: "acme@example.com", phone: "555-1234", status: "active", activeProjects: 2, completedProjects: 1, totalProjects: 3, avatar: "A", industry: "Technology" },
-  { id: 2, name: "Beta LLC", email: "beta@example.com", phone: "555-5678", status: "inactive", activeProjects: 0, completedProjects: 2, totalProjects: 2, avatar: "B", industry: "Finance" },
+  {
+    id: 1,
+    name: "Acme Corp",
+    email: "acme@example.com",
+    phone: "555-1234",
+    status: "active",
+    activeProjects: 2,
+    completedProjects: 1,
+    totalProjects: 3,
+    avatar: "A",
+    industry: "Technology",
+  },
+  {
+    id: 2,
+    name: "Beta LLC",
+    email: "beta@example.com",
+    phone: "555-5678",
+    status: "inactive",
+    activeProjects: 0,
+    completedProjects: 2,
+    totalProjects: 2,
+    avatar: "B",
+    industry: "Finance",
+  },
 ];
 
 import Clients from "@/app/workspace/clients/page";
@@ -33,7 +55,11 @@ import Clients from "@/app/workspace/clients/page";
 describe("Clients Page", () => {
   beforeEach(() => {
     mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
-    mockUseQuery.mockReturnValue({ data: mockClients, isLoading: false, error: null });
+    mockUseQuery.mockReturnValue({
+      data: mockClients,
+      isLoading: false,
+      error: null,
+    });
   });
 
   it("renders clients table with client names", () => {
@@ -49,7 +75,9 @@ describe("Clients Page", () => {
 
   it("renders Add Client button", () => {
     render(<Clients />);
-    expect(screen.getByRole("button", { name: /add client/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /add client/i })
+    ).toBeInTheDocument();
   });
 
   it("opens add client dialog when button is clicked", () => {
@@ -75,7 +103,9 @@ describe("Clients Page", () => {
 
   it("renders pagination controls", () => {
     render(<Clients />);
-    expect(screen.getByRole("button", { name: /previous/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /previous/i })
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next/i })).toBeInTheDocument();
   });
 

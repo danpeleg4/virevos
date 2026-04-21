@@ -60,7 +60,12 @@ async function graphGet<T>(
     return response.data;
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      console.error("[graphGet] status:", err.response?.status, "body:", JSON.stringify(err.response?.data));
+      console.error(
+        "[graphGet] status:",
+        err.response?.status,
+        "body:",
+        JSON.stringify(err.response?.data)
+      );
       console.error("[graphGet] url:", url);
     }
     throw err;
@@ -151,7 +156,15 @@ async function applyOutlookEventsToDb(
       if (hasChanged) {
         await db
           .update(events)
-          .set({ title, description, link, dateTime: start, duration: durationMinutes, status, isMeeting })
+          .set({
+            title,
+            description,
+            link,
+            dateTime: start,
+            duration: durationMinutes,
+            status,
+            isMeeting,
+          })
           .where(eq(events.id, m.id));
       }
       continue;
@@ -210,9 +223,7 @@ async function applyOutlookEmailsToDb(
     if (isRemoved) {
       const existing = existingMap.get(msg.id);
       if (existing) {
-        await db
-          .delete(outlookEmails)
-          .where(eq(outlookEmails.id, existing.id));
+        await db.delete(outlookEmails).where(eq(outlookEmails.id, existing.id));
       }
       continue;
     }
@@ -222,12 +233,14 @@ async function applyOutlookEmailsToDb(
 
     const fromEmail = msg.from?.emailAddress.address ?? null;
     const fromName = msg.from?.emailAddress.name ?? null;
-    const toEmails = (msg.toRecipients ?? []).map((r) => r.emailAddress.address);
-    const ccEmails = (msg.ccRecipients ?? []).map((r) => r.emailAddress.address);
-    const bodyHtml =
-      msg.body?.contentType === "html" ? msg.body.content : null;
-    const bodyText =
-      msg.body?.contentType === "text" ? msg.body.content : null;
+    const toEmails = (msg.toRecipients ?? []).map(
+      (r) => r.emailAddress.address
+    );
+    const ccEmails = (msg.ccRecipients ?? []).map(
+      (r) => r.emailAddress.address
+    );
+    const bodyHtml = msg.body?.contentType === "html" ? msg.body.content : null;
+    const bodyText = msg.body?.contentType === "text" ? msg.body.content : null;
     const isRead = msg.isRead ?? false;
     const isStarred = msg.flag?.flagStatus === "flagged";
     const hasAttachments = msg.hasAttachments ?? false;
@@ -359,8 +372,8 @@ export async function performIncrementalSync(userId: string): Promise<void> {
       await applyOutlookEventsToDb(items, userId, false);
       newCalendarDeltaLink = deltaLink ?? calendarDeltaLink;
     } catch (err: unknown) {
-      const status =
-        (err as { response?: { status?: number } }).response?.status;
+      const status = (err as { response?: { status?: number } }).response
+        ?.status;
       if (status === 410) {
         await performFullSync(userId);
         return;
@@ -378,8 +391,8 @@ export async function performIncrementalSync(userId: string): Promise<void> {
       await applyOutlookEmailsToDb(items, userId, false);
       newEmailDeltaLink = deltaLink ?? emailDeltaLink;
     } catch (err: unknown) {
-      const status =
-        (err as { response?: { status?: number } }).response?.status;
+      const status = (err as { response?: { status?: number } }).response
+        ?.status;
       if (status === 410) {
         newEmailDeltaLink = null;
       } else {
@@ -397,8 +410,8 @@ export async function performIncrementalSync(userId: string): Promise<void> {
       await applyOutlookEmailsToDb(items, userId, true);
       newSentEmailDeltaLink = deltaLink ?? sentEmailDeltaLink;
     } catch (err: unknown) {
-      const status =
-        (err as { response?: { status?: number } }).response?.status;
+      const status = (err as { response?: { status?: number } }).response
+        ?.status;
       if (status === 410) {
         newSentEmailDeltaLink = null;
       } else {
@@ -514,7 +527,10 @@ export async function renewSubscriptions(userId: string): Promise<void> {
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch (err) {
-      console.error(`[outlook_sync] Failed to renew subscription ${subId}:`, err);
+      console.error(
+        `[outlook_sync] Failed to renew subscription ${subId}:`,
+        err
+      );
       anyFailed = true;
     }
   }
@@ -559,7 +575,5 @@ export async function removeSubscriptions(userId: string): Promise<void> {
     }
   }
 
-  await db
-    .delete(outlookSyncState)
-    .where(eq(outlookSyncState.userId, userId));
+  await db.delete(outlookSyncState).where(eq(outlookSyncState.userId, userId));
 }

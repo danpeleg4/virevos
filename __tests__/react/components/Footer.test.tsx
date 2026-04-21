@@ -27,7 +27,9 @@ describe("Footer", () => {
   it("renders Product links", () => {
     expect(screen.getByRole("link", { name: /features/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /pricing/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /changelog/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /changelog/i })
+    ).toBeInTheDocument();
   });
 
   it("renders Company links", () => {
@@ -37,9 +39,15 @@ describe("Footer", () => {
   });
 
   it("renders Legal links", () => {
-    expect(screen.getAllByRole("link", { name: /privacy/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: /terms/i }).length).toBeGreaterThan(0);
-    expect(screen.getByRole("link", { name: /cookie policy/i })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: /privacy/i }).length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("link", { name: /terms/i }).length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("link", { name: /cookie policy/i })
+    ).toBeInTheDocument();
   });
 
   it("renders copyright notice", () => {

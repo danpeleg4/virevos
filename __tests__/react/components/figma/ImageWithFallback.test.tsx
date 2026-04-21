@@ -5,14 +5,21 @@ import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 
 describe("ImageWithFallback", () => {
   it("renders an img with the provided src", () => {
-    render(<ImageWithFallback src="https://example.com/image.jpg" alt="test image" />);
+    render(
+      <ImageWithFallback src="https://example.com/image.jpg" alt="test image" />
+    );
     const img = screen.getByRole("img");
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute("src", "https://example.com/image.jpg");
   });
 
   it("preserves alt attribute", () => {
-    render(<ImageWithFallback src="https://example.com/image.jpg" alt="my alt text" />);
+    render(
+      <ImageWithFallback
+        src="https://example.com/image.jpg"
+        alt="my alt text"
+      />
+    );
     expect(screen.getByAltText("my alt text")).toBeInTheDocument();
   });
 

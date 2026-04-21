@@ -23,7 +23,9 @@ async function resolveEmail(numericId: number, userId: string) {
   const [email] = await db
     .select({ outlookId: outlookEmails.outlookId })
     .from(outlookEmails)
-    .where(and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, userId)))
+    .where(
+      and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, userId))
+    )
     .limit(1);
   return email ?? null;
 }
@@ -50,7 +52,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
   const token = await getFreshOutlookAccessToken(user.id);
   if (!token) {
-    return NextResponse.json({ error: "Outlook account not connected" }, { status: 403 });
+    return NextResponse.json(
+      { error: "Outlook account not connected" },
+      { status: 403 }
+    );
   }
 
   // ── List mode ────────────────────────────────────────────────────────────────
@@ -61,8 +66,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     );
     return NextResponse.json({ attachments: res.data.value });
   } catch (err: unknown) {
-    const status = (err as { response?: { status?: number } }).response?.status ?? 500;
+    const status =
+      (err as { response?: { status?: number } }).response?.status ?? 500;
     console.error("[outlook/attachments list]", err);
-    return NextResponse.json({ error: "Failed to fetch attachments" }, { status });
+    return NextResponse.json(
+      { error: "Failed to fetch attachments" },
+      { status }
+    );
   }
 }

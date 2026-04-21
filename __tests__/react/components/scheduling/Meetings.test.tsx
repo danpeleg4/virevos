@@ -102,7 +102,11 @@ describe("Meetings", () => {
   });
 
   it("shows loading state while fetching", () => {
-    mockUseQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    });
     render(<Meetings />);
     // Still renders the layout
     expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();

@@ -85,9 +85,13 @@ export async function POST(req: NextRequest) {
     let record;
     if (existing.length > 0) {
       type PortalSettings = {
-        brandColor?: string; welcomeMessage?: string;
-        customDomain?: string; chatEnabled?: boolean; fileSharing?: boolean;
-        aiChatBot?: boolean; emailNotifications?: boolean;
+        brandColor?: string;
+        welcomeMessage?: string;
+        customDomain?: string;
+        chatEnabled?: boolean;
+        fileSharing?: boolean;
+        aiChatBot?: boolean;
+        emailNotifications?: boolean;
       };
       const updateData: { settings?: PortalSettings; enabled?: boolean } = {};
       if (settings !== undefined) updateData.settings = settings;

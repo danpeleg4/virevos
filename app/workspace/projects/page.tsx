@@ -80,9 +80,7 @@ export default function ProjectsPage() {
       <ProjectList
         projects={filtered}
         clients={projectsQuery.data?.allClients ?? []}
-        onSelect={(project) =>
-          router.push(`/workspace/projects/${project.id}`)
-        }
+        onSelect={(project) => router.push(`/workspace/projects/${project.id}`)}
       />
     </div>
   );

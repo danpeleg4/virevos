@@ -18,16 +18,33 @@ jest.mock("motion/react", () => {
     {},
     {
       get: (_t, _tag: string) =>
-        function MC({ children, initial, animate, exit, variants, transition, viewport, whileInView, whileHover, whileTap, ...props }: Record<string, unknown>) {
+        function MC({
+          children,
+          initial,
+          animate,
+          exit,
+          variants,
+          transition,
+          viewport,
+          whileInView,
+          whileHover,
+          whileTap,
+          ...props
+        }: Record<string, unknown>) {
           return createElement(
-            _tag as keyof JSX.IntrinsicElements,
-            props as JSX.IntrinsicElements[keyof JSX.IntrinsicElements],
-            children as React.ReactNode,
+            _tag,
+            props,
+            children as React.ReactNode
           );
         },
     }
   );
-  return { motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+  return {
+    motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+  };
 });
 
 jest.mock("@radix-ui/react-icons", () => ({
@@ -63,7 +80,11 @@ describe("Onboarding Page", () => {
   });
 
   it("shows loading state when Clerk not loaded", () => {
-    mockUseSignUp.mockReturnValue({ signUp: null, isLoaded: false, setActive: null });
+    mockUseSignUp.mockReturnValue({
+      signUp: null,
+      isLoaded: false,
+      setActive: null,
+    });
     render(<Onboarding />);
     expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
   });
@@ -81,7 +102,9 @@ describe("Onboarding Page", () => {
 
   it("renders 'Get Started' button on welcome step", () => {
     render(<Onboarding />);
-    expect(screen.getByRole("button", { name: /get started/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /get started/i })
+    ).toBeInTheDocument();
   });
 
   it("navigates to account step when 'Get Started' is clicked", () => {

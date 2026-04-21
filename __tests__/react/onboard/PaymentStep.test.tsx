@@ -19,7 +19,11 @@ jest.mock("next/navigation", () => ({
 jest.mock("axios");
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: jest.fn(() => ({ data: "secret_123", isLoading: false, isError: false })),
+  useQuery: jest.fn(() => ({
+    data: "secret_123",
+    isLoading: false,
+    isError: false,
+  })),
   useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })),
   useQueryClient: jest.fn(() => ({ invalidateQueries: jest.fn() })),
 }));
