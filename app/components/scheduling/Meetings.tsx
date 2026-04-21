@@ -602,15 +602,46 @@ function TranscriptionView({
   useEffect(() => {
     const fn = async () => {
       const res = await axios.get(`/api/transcript/${meeting.id}`);
-      const formatted = res.data.map((item: RawChunk) => ({
-        speaker: item.speaker,
-        time: item.createdAt
-          ? new Date(item.createdAt).toLocaleTimeString()
-          : "",
-        text: item.text,
-        startTime: 0,
-        endTime: 0,
-      }));
+      const raw: RawChunk[] = res.data;
+      if (!raw.length) return;
+
+      // Use the first chunk with a valid timestamp as time-zero so positions
+      // are relative to when the recording actually started.
+      const firstWithTs = raw.find((c) => c.createdAt);
+      const anchorMs = firstWithTs
+        ? new Date(firstWithTs.createdAt!).getTime()
+        : null;
+
+      const formatted: TranscribedChunk[] = raw.map((item, i) => {
+        let startTimeSec: number;
+        let endTimeSec: number;
+
+        if (anchorMs !== null && item.createdAt) {
+          startTimeSec = Math.max(
+            0,
+            (new Date(item.createdAt).getTime() - anchorMs) / 1000
+          );
+          const nextItem = raw[i + 1];
+          const nextMs = nextItem?.createdAt
+            ? new Date(nextItem.createdAt).getTime()
+            : new Date(item.createdAt).getTime() + 5000;
+          endTimeSec = Math.max(startTimeSec + 0.1, (nextMs - anchorMs) / 1000);
+        } else {
+          // Fallback when no timestamps: evenly space chunks at 5s intervals
+          startTimeSec = i * 5;
+          endTimeSec = (i + 1) * 5;
+        }
+
+        return {
+          speaker: item.speaker,
+          time: item.createdAt
+            ? new Date(item.createdAt).toLocaleTimeString()
+            : "",
+          text: item.text,
+          startTime: startTimeSec,
+          endTime: endTimeSec,
+        };
+      });
       setFormattedData(formatted);
     };
     fn();
@@ -912,7 +943,7 @@ function TranscriptionView({
                           <div>
                             <p
                               className="text-xs font-bold mb-0.5"
-                              style={{ color: isActive ? color : undefined }}
+                              style={{ color }}
                             >
                               {entry.speaker}
                             </p>
