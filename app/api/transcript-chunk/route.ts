@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
 
   const body: TranscriptChunkBody = await req.json();
   const { roomId, speakerIdentity, text } = body;
+  console.log("body", body);
+  console.log(roomId, speakerIdentity, text);
 
   if (!roomId || !speakerIdentity || !text) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });

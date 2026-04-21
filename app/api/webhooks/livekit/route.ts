@@ -52,23 +52,34 @@ export async function POST(req: NextRequest) {
     if (meeting?.recordingStatus) {
       try {
         const egressClient = new EgressClient(process.env.LIVEKIT_HOST!);
-        const outputs: EncodedOutputs = {
-          file: new EncodedFileOutput({
-            filepath: `recordings/${meeting.userId}/${roomName}/composite.mp4`,
-            output: {
-              case: "s3",
-              value: {
-                accessKey: process.env.SUPABASE_S3_ACCESS_KEY_ID,
-                secret: process.env.SUPABASE_S3_SECRET_ACCESS_KEY,
-                endpoint: `${process.env.SUPABASE_URL}/storage/v1/s3`,
-                bucket: "recording",
-                region: "auto",
-                forcePathStyle: true,
+
+        // Check if egress is already running for this room to avoid duplicates
+        const existingEgresses = await egressClient.listEgress({ roomName });
+        const alreadyRunning = existingEgresses.some(
+          (e) => e.status === 0 || e.status === 1 // STARTING or ACTIVE
+        );
+
+        if (alreadyRunning) {
+          console.log(`Egress already running for room ${roomName}, skipping`);
+        } else {
+          const outputs: EncodedOutputs = {
+            file: new EncodedFileOutput({
+              filepath: `recordings/${meeting.userId}/${roomName}/composite.mp4`,
+              output: {
+                case: "s3",
+                value: {
+                  accessKey: process.env.SUPABASE_S3_ACCESS_KEY_ID,
+                  secret: process.env.SUPABASE_S3_SECRET_ACCESS_KEY,
+                  endpoint: `${process.env.SUPABASE_URL}/storage/v1/s3`,
+                  bucket: "recording",
+                  region: "auto",
+                  forcePathStyle: true,
+                },
               },
-            },
-          }),
-        };
-        await egressClient.startRoomCompositeEgress(roomName, outputs);
+            }),
+          };
+          await egressClient.startRoomCompositeEgress(roomName, outputs);
+        }
       } catch (err) {
         console.error("Failed to start composite egress:", err);
       }
