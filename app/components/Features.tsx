@@ -19,58 +19,58 @@ import { useRouter } from "next/navigation";
 const features = [
   {
     icon: Zap,
-    title: "Client Workflow Automation",
+    title: "Case Lifecycle Automation",
     description:
-      "Automate client onboarding, follow-ups, and project pipelines to save time and stay organized.",
+      "Automate the entire F-1 to H-1B journey. From onboarding to filing, keep cases moving without manual data entry.",
     gradient: "from-yellow-400 to-orange-500",
     benefits: [
-      "No-code workflow builder",
-      "Email & task automation",
-      "Custom triggers",
+      "Visa-specific pipelines",
+      "Automated USCIS reminders",
+      "Custom status triggers",
     ],
   },
   {
     icon: Users,
-    title: "Client Collaboration",
+    title: "Secure Client Portal",
     description:
-      "Manage clients in one place with shared projects, messages, and task updates.",
+      "Provide students and professionals with a secure environment to upload sensitive documents and track their visa status.",
     gradient: "from-blue-400 to-blue-600",
-    benefits: ["Shared projects", "Client messaging", "File & task sharing"],
+    benefits: ["Secure document uploads", "Direct student messaging", "Family/Employer access"],
   },
   {
     icon: Calendar,
-    title: "Smart Project Scheduling",
+    title: "Critical Deadline Tracking",
     description:
-      "Organize deadlines, milestones, and client meetings with AI-assisted scheduling and reminders.",
+      "Never miss a filing window. Virevos tracks OPT reporting dates, H-1B lottery deadlines, and RFE responses automatically.",
     gradient: "from-purple-400 to-purple-600",
-    benefits: ["AI-assisted scheduling", "Deadline tracking", "Calendar sync"],
+    benefits: ["Statutory deadline alerts", "Priority date tracking", "Automated calendar sync"],
   },
   {
     icon: Bot,
-    title: "AI Assistant",
+    title: "Autonomous AI Audit",
     description:
-      "Get instant help with proposals, emails, and content creation. AI suggests next steps for your projects.",
+      "Eliminate human error. Our AI cross-references every form and document to ensure signatures are present and dates are consistent.",
     gradient: "from-pink-400 to-rose-600",
-    benefits: ["Smart suggestions", "Auto-drafts", "Project context aware"],
+    benefits: ["Document consistency checks", "Automated form auditing", "Smart RFE preparation"],
   },
   {
     icon: BarChart3,
-    title: "Freelancer Analytics",
+    title: "Practice Insights",
     description:
-      "Track earnings, client activity, and productivity metrics to make better business decisions.",
+      "Track your firm’s performance. Monitor case approval rates, lawyer workload, and upcoming filing volumes in one dashboard.",
     gradient: "from-green-400 to-emerald-600",
-    benefits: ["Revenue tracking", "Client insights", "Productivity reports"],
+    benefits: ["Approval rate analytics", "Filing volume trends", "Practice growth reports"],
   },
   {
     icon: Video,
-    title: "Built-In Meetings",
+    title: "AI Consultations",
     description:
-      "Run client meetings directly inside the app with notes, recordings, and action items automatically captured.",
-    gradient: "from-blue-500 to-emerald-600",
+      "Run secure legal consultations directly in the app. Virevos automatically transcribes the meeting and drafts the initial case checklist.",
+    gradient: "from-purple-400 to-emerald-600",
     benefits: [
-      "In-app video meetings",
-      "Auto meeting notes & summaries",
-      "Action items & follow-ups",
+      "Legal-grade video hub",
+      "Automated meeting summaries",
+      "Instant action item triggers",
     ],
   },
 ];
@@ -100,7 +100,7 @@ export default function Features() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl text-gray-900 mb-6"
           >
-            Built for Freelancers
+            Built for Immigration Experts
           </motion.h2>
 
           <motion.p
@@ -110,8 +110,7 @@ export default function Features() {
             transition={{ delay: 0.2 }}
             className="text-xl text-gray-600"
           >
-            Everything you need to manage projects, automate workflows, and
-            scale your business.
+            Everything you need to automate the F-1 to H-1B pipeline, track critical deadlines, and scale your practice without the risk.
           </motion.p>
         </div>
 
