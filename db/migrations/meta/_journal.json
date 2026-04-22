@@ -43,6 +43,13 @@
       "when": 1776561321678,
       "tag": "0005_meeting_transcripts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776815354071,
+      "tag": "0006_pretty_nextwave",
+      "breakpoints": true
     }
   ]
 }

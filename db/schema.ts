@@ -116,6 +116,7 @@ export const events = pgTable("events", {
   dateTime: timestamp("date_time").notNull(),
   duration: integer("duration").notNull(),
   isMeeting: boolean().default(false),
+  meetingStartTimeEpoch: integer("meeting_start_time"),
   status: text("status"),
   tags: text("tags").array().default([]),
   hasNotes: boolean("has_notes").default(false),
