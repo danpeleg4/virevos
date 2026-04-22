@@ -6,6 +6,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { SignOutButton, useUser } from "@clerk/nextjs";
+import Image from "next/image";
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,10 +30,8 @@ export function Navigation() {
             onClick={() => handleNavigation("/")}
           >
             <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 bg-gray-900 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm">V</span>
-              </div>
-              <h1 className="text-xl text-gray-900">Virevos</h1>
+              <Image src="/note.png" alt="123" width="50" height="50"></Image>
+              <h1 className="text-xl text-gray-900 font-medium">Virevos</h1>
             </div>
           </motion.div>
 

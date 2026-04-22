@@ -19,11 +19,11 @@ export async function GET(
   }
 
   const [meeting] = await db
-    .select({ id: events.id })
+    .select({ id: events.id, meetingStartTimeEpoch: events.meetingStartTimeEpoch })
     .from(events)
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
 
-  if (!meeting) {
+  if (!meeting || !meeting.meetingStartTimeEpoch) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
@@ -41,5 +41,7 @@ export async function GET(
     return NextResponse.json({ error: "No transcript found" }, { status: 404 });
   }
 
-  return NextResponse.json(chunks);
+  const meetingStartTimeEpoch = meeting.meetingStartTimeEpoch
+
+  return NextResponse.json({ chunks: chunks, meetingStartTimeEpoch: meetingStartTimeEpoch });
 }

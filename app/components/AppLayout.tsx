@@ -72,12 +72,6 @@ export function AppLayout({ children }: AppLayoutProps) {
             className="text-2xl text-foreground cursor-pointer flex items-center gap-2"
             onClick={() => router.push("/")}
           >
-            <Image
-              src="/sparkles.svg"
-              alt="logo"
-              width={25}
-              height={25}
-            ></Image>
             Virevos
           </h1>
           <p className="text-sm text-muted-foreground mt-1">

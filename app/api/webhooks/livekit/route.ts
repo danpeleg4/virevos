@@ -79,6 +79,9 @@ export async function POST(req: NextRequest) {
             }),
           };
           await egressClient.startRoomCompositeEgress(roomName, outputs);
+          await db.update(events).set({
+            meetingStartTimeEpoch: Math.floor(Date.now() / 1000)
+          }).where(eq(events.id, roomName))
         }
       } catch (err) {
         console.error("Failed to start composite egress:", err);

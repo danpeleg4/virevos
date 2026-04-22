@@ -583,34 +583,30 @@ function TranscriptionView({
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  }
-
   useEffect(() => {
     if (typeof currentChunkIndex !== "number") return;
     const container = containerRef.current;
     if (!container) return;
     const children = Array.from(container.children) as HTMLElement[];
     const activeElem = children[currentChunkIndex];
-    if (activeElem)
-      activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [currentChunkIndex]);
 
   useEffect(() => {
-    const fn = async () => {
+    const transcript = async () => {
       const res = await axios.get(`/api/transcript/${meeting.id}`);
-      const raw: RawChunk[] = res.data;
+      const { chunks: raw, meetingStartTimeEpoch }: { chunks: RawChunk[], meetingStartTimeEpoch: number } = res.data;
       if (!raw.length) return;
 
-      // Use the first chunk with a valid timestamp as time-zero so positions
-      // are relative to when the recording actually started.
-      const firstWithTs = raw.find((c) => c.createdAt);
-      const anchorMs = firstWithTs
-        ? new Date(firstWithTs.createdAt!).getTime()
-        : null;
+      const firstChunkMs = raw[0]?.createdAt ? new Date(raw[0].createdAt).getTime() : null;
+      const epochAnchorMs = meetingStartTimeEpoch ? meetingStartTimeEpoch * 1000 : null;
+
+      // Use meetingStartTimeEpoch if it's before the first chunk (valid data).
+      // Fall back to first chunk's timestamp if the stored value is corrupted (in the future).
+      const anchorMs =
+        epochAnchorMs !== null && firstChunkMs !== null && epochAnchorMs <= firstChunkMs
+          ? epochAnchorMs
+          : firstChunkMs;
 
       const formatted: TranscribedChunk[] = raw.map((item, i) => {
         let startTimeSec: number;
@@ -632,11 +628,11 @@ function TranscriptionView({
           endTimeSec = (i + 1) * 5;
         }
 
+        const m = Math.floor(startTimeSec / 60);
+        const s = Math.floor(startTimeSec % 60);
         return {
           speaker: item.speaker,
-          time: item.createdAt
-            ? new Date(item.createdAt).toLocaleTimeString()
-            : "",
+          time: `${m}:${String(s).padStart(2, "0")}`,
           text: item.text,
           startTime: startTimeSec,
           endTime: endTimeSec,
@@ -644,7 +640,7 @@ function TranscriptionView({
       });
       setFormattedData(formatted);
     };
-    fn();
+    transcript();
   }, [meeting.id]);
 
   useEffect(() => {

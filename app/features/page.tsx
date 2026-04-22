@@ -350,7 +350,7 @@ export default function FeaturesPage() {
               Six tools. One workspace.
             </h2>
             <p className="text-xl text-gray-500">
-              Replace the stack of apps you're juggling with a single platform
+              Replace the stack of apps you&#39;re juggling with a single platform
               that connects every part of your business.
             </p>
           </motion.div>
@@ -488,48 +488,7 @@ export default function FeaturesPage() {
         </section>
       ))}
 
-      {/* Additional Features */}
-      <section className="py-20 sm:py-28 bg-gray-50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-14"
-          >
-            <h2 className="text-3xl sm:text-4xl text-gray-900 mb-4">
-              And much more
-            </h2>
-            <p className="text-lg text-gray-500">
-              Every detail you need to run a professional freelance business.
-            </p>
-          </motion.div>
 
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
-          >
-            {additionalFeatures.map((item, index) => (
-              <motion.div key={index} variants={fadeInUp}>
-                <div className="flex items-start gap-4 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 h-full">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center mt-0.5">
-                    <item.icon className="h-5 w-5 text-gray-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-gray-900 mb-1">
-                      {item.title}
-                    </p>
-                    <p className="text-sm text-gray-500">{item.description}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="py-24 sm:py-32 relative overflow-hidden bg-white">

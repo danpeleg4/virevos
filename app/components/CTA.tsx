@@ -31,7 +31,7 @@ export function CTA() {
             <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-2">
               <Sparkles className="h-4 w-4 text-white" />
               <span className="text-sm text-white">
-                Join 1,000+ people already using Virevos
+                Join Virevos Today!
               </span>
             </div>
           </motion.div>
@@ -103,31 +103,6 @@ export function CTA() {
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-green-300" />
               <span>Cancel anytime</span>
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
-            className="mt-20 pt-12 border-t border-white/20"
-          >
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
-              {[
-                { value: "1000+", label: "Active users" },
-                { value: "99.9%", label: "Uptime SLA" },
-                { value: "4.9/5", label: "Customer rating" },
-                { value: "24/7", label: "Support" },
-              ].map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-3xl sm:text-4xl text-white mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-white/80">{stat.label}</div>
-                </div>
-              ))}
             </div>
           </motion.div>
         </div>
