@@ -40,7 +40,7 @@ export function Hero() {
               transition={{ delay: 0.1 }}
               className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 mb-6 leading-tight"
             >
-              Work flows better with{" "}
+              Practice flows better with{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Virevos
               </span>
@@ -52,8 +52,7 @@ export function Hero() {
               transition={{ delay: 0.2 }}
               className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
-              The all-in-one productivity platform that combines project
-              management, automation, and AI to help you work smarter.
+              From F-1 and OPT to H-1B. Virevos uses AI to turn consultations into audited workflows, catching the manual errors that put student visas at risk.
             </motion.p>
 
             {/* CTA Buttons */}
