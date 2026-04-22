@@ -104,7 +104,8 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
       setTranscriptData([]);
       try {
         const res = await axios.get(`/api/transcript/${selectedNote.id}`);
-        const formatted = res.data.map((item: RawChunk) => ({
+        const { chunks }: { chunks: RawChunk[] } = res.data;
+        const formatted = chunks.map((item: RawChunk) => ({
           speaker: item.speaker,
           time: item.createdAt
             ? new Date(item.createdAt).toLocaleTimeString()

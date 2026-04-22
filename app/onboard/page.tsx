@@ -310,11 +310,10 @@ export default function Onboarding() {
 
         <div className="relative z-10 w-full max-w-2xl text-center lg:text-left">
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-            Effortlessly manage your clients and operations.
+            Effortlessly manage your pathway to success.
           </h2>
           <p className="text-blue-100 text-lg mb-12 max-w-lg leading-relaxed">
-            Get organized with real-time insights, automated workflows, and
-            high-performance communication tools.
+            Get organized with AI-driven consultation transcripts, automated filing workflows, and a secure portal designed for students and professionals.
           </p>
 
           <div className="relative group"></div>
@@ -333,18 +332,18 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         {[
           {
             icon: Zap,
-            title: "Supercharged Workflows",
-            desc: "Automate repetitive tasks with ease.",
+            title: "Automated Visa Pipelines",
+            desc: "Streamline the entire journey from F-1 and OPT to H-1B filings.",
           },
           {
             icon: Brain,
-            title: "AI Assistant",
-            desc: "Smarter insights for your daily operations.",
+            title: "Autonomous AI Audit",
+            desc: "Catch manual errors and ensure 100% compliance in every document.",
           },
           {
             icon: Users,
-            title: "Client Management",
-            desc: "Track every client, project, and invoice in one place.",
+            title: "Practice Management",
+            desc: "Track every beneficiary, deadline, and RFE in one central hub.",
           },
         ].map((item, i) => (
           <div
