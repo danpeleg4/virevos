@@ -849,7 +849,7 @@ export default function Clients() {
                                   status: "active",
                                 })
                               }
-                              className="flex items-center gap-2"
+                              className="cursor-pointer flex items-center gap-2"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
                               Active
@@ -864,9 +864,9 @@ export default function Clients() {
                                   status: "inactive",
                                 })
                               }
-                              className="flex items-center gap-2"
+                              className="cursor-pointer flex items-center gap-2"
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
                               Inactive
                               {selectedClient.status === "inactive" && (
                                 <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
@@ -953,7 +953,7 @@ export default function Clients() {
                   {(() => {
                     const clientProjects = (getProjects.data?.projects ?? [])
                       .filter((p: Project) => p.clientId === selectedClient.id)
-                      .sort((a, b) => b.id - a.id)
+                      .sort((a: { id: number; }, b: { id: number; }) => b.id - a.id)
                       .slice(0, 5);
 
                     if (getProjects.isLoading) {
@@ -1019,7 +1019,7 @@ export default function Clients() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">
-                            {clientProjects.map((project) => {
+                            {clientProjects.map((project: Project) => {
                               const pct = task_percentage({
                                 completed: project.stats.completedTasks,
                                 total: project.stats.totalTasks,
