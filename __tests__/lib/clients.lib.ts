@@ -3,6 +3,7 @@ import {
   updateExistingClient,
   deleteClient,
   updateNotes,
+  toggleClientStatus,
 } from "@/lib/clients";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -203,6 +204,31 @@ describe("updateNotes", () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     await updateNotes({ id: 7, notes: "my notes" });
     expect(mockSet).toHaveBeenCalledWith({ notes: "my notes" });
+    expect(mockWhere).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── toggleClientStatus ───────────────────────────────────────────────────
+
+describe("toggleClientStatus", () => {
+  it("throws when unauthenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+    await expect(
+      toggleClientStatus({ id: 1, status: "inactive" })
+    ).rejects.toThrow("No user");
+  });
+
+  it("sets status to inactive", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await toggleClientStatus({ id: 5, status: "inactive" });
+    expect(mockSet).toHaveBeenCalledWith({ status: "inactive" });
+    expect(mockWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it("sets status to active", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await toggleClientStatus({ id: 5, status: "active" });
+    expect(mockSet).toHaveBeenCalledWith({ status: "active" });
     expect(mockWhere).toHaveBeenCalledTimes(1);
   });
 });

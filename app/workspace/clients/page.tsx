@@ -43,7 +43,12 @@ import {
 import axios from "axios";
 import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addAClient, deleteClient, updateExistingClient } from "@/lib/clients";
+import {
+  addAClient,
+  deleteClient,
+  toggleClientStatus,
+  updateExistingClient,
+} from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
@@ -292,6 +297,46 @@ export default function Clients() {
         );
       }
       alert("Failed to update client");
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: number;
+      status: "active" | "inactive";
+    }) => {
+      await toggleClientStatus({ id, status });
+    },
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["clients"] });
+
+      const previousClients =
+        queryClient.getQueryData<clients[]>(["clients"]) ?? [];
+
+      queryClient.setQueryData<clients[]>(
+        ["clients"],
+        previousClients.map((c) => (c.id === id ? { ...c, status } : c))
+      );
+
+      setSelectedClient((prev) =>
+        prev && prev.id === id ? { ...prev, status } : prev
+      );
+
+      return { previousClients };
+    },
+
+    onError: (_err, _vars, context) => {
+      if (context?.previousClients) {
+        queryClient.setQueryData(["clients"], context.previousClients);
+      }
+      alert("Failed to update client status");
     },
 
     onSettled: () => {
@@ -567,7 +612,7 @@ export default function Clients() {
                     <tr
                       key={client?.id ?? `temp-${index}-${client.name}`}
                       onClick={() => handleClientClick(client)}
-                      className="cursor-pointer transition-colors hover:bg-muted/50 group"
+                      className=" transition-colors hover:bg-muted/50 group"
                     >
                       <td
                         className="px-3 py-2.5"
@@ -599,8 +644,49 @@ export default function Clients() {
                           <IndustryPill industry={client.industry} />
                         )}
                       </td>
-                      <td className="px-3 py-2.5">
-                        <StatusBadge status={client.status} />
+                      <td
+                        className="px-3 py-2.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="cursor-pointer">
+                              <StatusBadge status={client.status} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-32">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: client.id,
+                                  status: "active",
+                                })
+                              }
+                              className="cursor-pointer flex items-center gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                              Active
+                              {client.status === "active" && (
+                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: client.id,
+                                  status: "inactive",
+                                })
+                              }
+                              className="cursor-pointer flex items-center gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+                              Inactive
+                              {client.status === "inactive" && (
+                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                       <td className="px-3 py-2.5">
                         <ProjectsBadge
@@ -695,7 +781,45 @@ export default function Clients() {
                             ? new Date(selectedClient.createdAt).toDateString()
                             : "—"}
                         </span>
-                        <StatusBadge status={selectedClient.status} />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="cursor-pointer">
+                              <StatusBadge status={selectedClient.status} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-32">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: selectedClient.id,
+                                  status: "active",
+                                })
+                              }
+                              className="flex items-center gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                              Active
+                              {selectedClient.status === "active" && (
+                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: selectedClient.id,
+                                  status: "inactive",
+                                })
+                              }
+                              className="flex items-center gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block" />
+                              Inactive
+                              {selectedClient.status === "inactive" && (
+                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         {selectedClient.industry && (
                           <IndustryPill industry={selectedClient.industry} />
                         )}

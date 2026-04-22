@@ -102,3 +102,18 @@ export async function updateNotes({
     .set({ notes: notes })
     .where(and(eq(clients.id, id), eq(clients.userId, user.id)));
 }
+
+export async function toggleClientStatus({
+  id,
+  status,
+}: {
+  id: number;
+  status: "active" | "inactive";
+}) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("No user");
+  await db
+    .update(clients)
+    .set({ status })
+    .where(and(eq(clients.id, id), eq(clients.userId, user.id)));
+}
