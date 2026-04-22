@@ -30,15 +30,16 @@ import {
   ChevronLeft,
   FolderOpen,
   Trash2,
-  Globe,
   ArrowUpDown,
   SlidersHorizontal,
   Building2,
   Briefcase,
   Target,
   CheckIcon,
-  CheckCircle,
   TrendingUp,
+  Clock,
+  Flag,
+  ListChecks,
 } from "lucide-react";
 import axios from "axios";
 import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
@@ -51,6 +52,9 @@ import {
 } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { Progress } from "@/app/components/ui/progress";
+import { Project } from "@/types/projects";
+import { task_percentage } from "@/lib/task_percentage";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -84,6 +88,48 @@ function ProjectsBadge({ active, total }: { active: number; total: number }) {
   return (
     <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
       {active} active · {total} total
+    </span>
+  );
+}
+
+function ProjectStatusBadge({ status }: { status: string }) {
+  if (status === "completed") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+        <CheckIcon className="h-2.5 w-2.5" />
+        Completed
+      </span>
+    );
+  }
+  if (status === "inactive") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
+        <Clock className="h-2.5 w-2.5" />
+        Inactive
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+      <TrendingUp className="h-2.5 w-2.5" />
+      Active
+    </span>
+  );
+}
+
+function ProjectPriorityBadge({ priority }: { priority: string }) {
+  const styles =
+    priority === "high"
+      ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+      : priority === "medium"
+        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+        : "bg-muted text-muted-foreground border border-border";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${styles}`}
+    >
+      <Flag className="h-2.5 w-2.5" />
+      {priority}
     </span>
   );
 }
@@ -132,6 +178,14 @@ export default function Clients() {
     queryFn: async () => {
       const res = await axios.get("/api/clients");
       return res.data as clients[];
+    },
+  });
+
+  const getProjects = useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const res = await axios.get("/api/projects/get-projects");
+      return res.data;
     },
   });
 
@@ -750,7 +804,7 @@ export default function Clients() {
           if (!open) setIsEditing(false);
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedClient && (
             <>
               {/* Header */}
@@ -891,39 +945,142 @@ export default function Clients() {
                   </div>
                 </div>
 
-                {/* Projects Summary */}
+                {/* Projects Mini Table */}
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                    Projects
+                    Recent Projects
                   </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="p-2 rounded-lg bg-green-100">
-                          <TrendingUp className="h-5 w-5 text-green-600" />
+                  {(() => {
+                    const clientProjects = (getProjects.data?.projects ?? [])
+                      .filter((p: Project) => p.clientId === selectedClient.id)
+                      .sort((a, b) => b.id - a.id)
+                      .slice(0, 5);
+
+                    if (getProjects.isLoading) {
+                      return (
+                        <div className="text-xs text-muted-foreground py-4 text-center">
+                          Loading projects...
                         </div>
-                      </div>
-                      <p className="text-2xl text-foreground mb-1">
-                        {selectedClient.activeProjects}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Active Projects
-                      </p>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="p-2 rounded-lg bg-blue-100">
-                          <CheckCircle className="h-5 w-5 text-blue-600" />
+                      );
+                    }
+
+                    if (clientProjects.length === 0) {
+                      return (
+                        <div className="flex flex-col items-center gap-1.5 py-6 text-center bg-muted/30 rounded-lg border border-border">
+                          <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">
+                            No projects yet
+                          </p>
                         </div>
+                      );
+                    }
+
+                    return (
+                      <div className="rounded-lg border border-border overflow-hidden">
+                        <table className="w-full">
+                          <thead className="border-b border-border bg-muted/50">
+                            <tr>
+                              <th className="text-left px-3 py-2">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                  <FolderOpen className="h-3 w-3" />
+                                  Project
+                                </div>
+                              </th>
+                              <th className="text-left px-3 py-2">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                  <Target className="h-3 w-3" />
+                                  Status
+                                </div>
+                              </th>
+                              <th className="text-left px-3 py-2 min-w-[100px]">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                  <TrendingUp className="h-3 w-3" />
+                                  Progress
+                                </div>
+                              </th>
+                              <th className="text-left px-3 py-2">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                  <ListChecks className="h-3 w-3" />
+                                  Tasks
+                                </div>
+                              </th>
+                              <th className="text-left px-3 py-2">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                  <Calendar className="h-3 w-3" />
+                                  Due
+                                </div>
+                              </th>
+                              <th className="text-left px-3 py-2">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                  <Flag className="h-3 w-3" />
+                                  Priority
+                                </div>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {clientProjects.map((project) => {
+                              const pct = task_percentage({
+                                completed: project.stats.completedTasks,
+                                total: project.stats.totalTasks,
+                              });
+                              return (
+                                <tr
+                                  key={project.id}
+                                  className="hover:bg-muted/40 transition-colors"
+                                >
+                                  <td className="px-3 py-2">
+                                    <span className="text-xs font-medium text-foreground">
+                                      {project.name}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <ProjectStatusBadge
+                                      status={project.status}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <div className="flex items-center gap-1.5 min-w-[90px]">
+                                      <Progress
+                                        value={pct}
+                                        className="h-1.5 flex-1"
+                                      />
+                                      <span className="text-xs text-muted-foreground w-6 text-right shrink-0">
+                                        {pct}%
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
+                                      {project.stats.completedTasks}/
+                                      {project.stats.totalTasks}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    {project.dueDate ? (
+                                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Clock className="h-2.5 w-2.5 shrink-0" />
+                                        {project.dueDate}
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">
+                                        —
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <ProjectPriorityBadge
+                                      priority={project.priority}
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
-                      <p className="text-2xl text-foreground mb-1">
-                        {selectedClient.completedProjects}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Completed Projects
-                      </p>
-                    </Card>
-                  </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Notes */}
