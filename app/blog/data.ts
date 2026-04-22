@@ -33,5 +33,4 @@ export const categoryColors: Record<Exclude<Category, "Everything">, string> = {
   Engineering: "bg-orange-100 text-orange-700",
 };
 
-export const posts: BlogPost[] = [
-];
+export const posts: BlogPost[] = [];

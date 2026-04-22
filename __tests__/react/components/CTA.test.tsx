@@ -86,8 +86,7 @@ describe("CTA", () => {
     expect(screen.getAllByText(/cancel anytime/i).length).toBeGreaterThan(0);
   });
 
-  it("renders stats section", () => {
-    expect(screen.getByText(/1000\+/)).toBeInTheDocument();
-    expect(screen.getByText(/active users/i)).toBeInTheDocument();
+  it("renders the badge text", () => {
+    expect(screen.getByText(/join virevos today/i)).toBeInTheDocument();
   });
 });

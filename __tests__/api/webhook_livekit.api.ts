@@ -3,6 +3,11 @@ import { db } from "@db/db";
 import { NextRequest } from "next/server";
 import { ParticipantInfo_Kind } from "@livekit/protocol";
 
+jest.mock("next/server", () => ({
+  ...jest.requireActual("next/server"),
+  after: jest.fn(),
+}));
+
 // db mock
 jest.mock("@db/db", () => ({
   db: {
@@ -13,6 +18,9 @@ jest.mock("@db/db", () => ({
     })),
     select: jest.fn(() => ({
       from: jest.fn(() => ({
+        innerJoin: jest.fn(() => ({
+          where: jest.fn(() => []),
+        })),
         where: jest.fn(() => []),
       })),
     })),

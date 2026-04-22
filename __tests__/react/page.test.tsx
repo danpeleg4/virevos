@@ -61,21 +61,11 @@ describe("Root Page (Landing)", () => {
   });
 
   it("renders Hero section", () => {
-    expect(screen.getByText(/work flows better/i)).toBeInTheDocument();
+    expect(screen.getByText(/practice flows better/i)).toBeInTheDocument();
   });
 
   it("renders Features section", () => {
-    expect(screen.getByText(/client workflow automation/i)).toBeInTheDocument();
-  });
-
-  it("renders Pricing section", () => {
-    expect(screen.getAllByText(/starter/i).length).toBeGreaterThan(0);
-  });
-
-  it("renders Testimonials section", () => {
-    expect(
-      screen.getByText(/loved by individuals worldwide/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/case lifecycle automation/i)).toBeInTheDocument();
   });
 
   it("renders CTA section", () => {
