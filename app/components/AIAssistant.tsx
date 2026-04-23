@@ -18,6 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import { clients } from "@/types/clients";
 import type {
   AIMessage,
@@ -106,39 +107,33 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
     abortRef.current = new AbortController();
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: abortRef.current.signal,
-        body: JSON.stringify({
+      let lastProcessedLength = 0;
+      let buffer = "";
+
+      await axios.post(
+        "/api/chat",
+        {
           messages: [{ role: userMessage.role, content: userMessage.content }],
           ...(previousResponseIdRef.current && {
             previousResponseId: previousResponseIdRef.current,
           }),
-        }),
-      });
+        },
+        {
+          signal: abortRef.current.signal,
+          responseType: "text",
+          onDownloadProgress: (progressEvent) => {
+            const text = (progressEvent.event.target as XMLHttpRequest).responseText;
+            const newText = text.slice(lastProcessedLength);
+            lastProcessedLength = text.length;
 
-      if (!response.ok || !response.body) {
-        throw new Error("Request failed");
-      }
+            buffer += newText;
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          // Check if line is empty
-          if (!line.trim()) continue;
-          try {
-            const event: StreamEvent = JSON.parse(line);
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const event: StreamEvent = JSON.parse(line);
             if (event.type === "text_delta") {
               setMessages((prev) =>
                 prev.map((m) =>
@@ -240,12 +235,16 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
               );
             }
           } catch {
-            // ignore parse errors for malformed lines
-          }
+                // ignore parse errors for malformed lines
+              }
+            }
+          },
         }
-      }
+      );
     } catch (err) {
-      if ((err as Error).name !== "AbortError") {
+      if (axios.isAxiosError(err) && err.code === "ERR_CANCELED") {
+        // aborted — no error message needed
+      } else if ((err as Error).name !== "AbortError") {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
