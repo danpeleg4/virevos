@@ -60,6 +60,14 @@ jest.mock("next/image", () => ({
 }));
 
 // Mock AIAssistant so we don't need to worry about its complex deps
+jest.mock("@tanstack/react-query", () => ({
+  useQuery: jest.fn(() => ({ data: undefined, isLoading: false })),
+}));
+
+jest.mock("axios", () => ({
+  get: jest.fn(() => Promise.resolve({ data: { bookings: [] } })),
+}));
+
 jest.mock("@/app/components/AIAssistant", () => ({
   AIAssistant: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="ai-assistant" /> : null,

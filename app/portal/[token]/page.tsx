@@ -9,6 +9,8 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 import {
   Tabs,
   TabsContent,
@@ -17,8 +19,10 @@ import {
 } from "../../components/ui/tabs";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { Textarea } from "../../components/ui/textarea";
+import { Calendar } from "../../components/ui/calendar";
+import { Badge } from "../../components/ui/badge";
 import {
-  Calendar,
+  CalendarDays,
   FileText,
   MessageSquare,
   Download,
@@ -27,13 +31,18 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
+  CheckCircle2,
   TrendingUp,
   Clock,
+  ArrowLeft,
+  FolderKanban,
+  Flag,
+  Calendar as CalendarIcon,
 } from "lucide-react";
-import { motion } from "motion/react";
 import { toast } from "sonner";
-import type { PortalData } from "@/types/portal";
+import type { PortalData, TimeSlot } from "@/types/portal";
 import { parseDateOnlyString } from "@/lib/date_utils";
+import axios from "axios";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -41,38 +50,66 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function PortalStatusBadge({ status }: { status: string }) {
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+function StatusBadge({ status }: { status: string }) {
   switch (status.toLowerCase()) {
     case "completed":
       return (
-        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
           <CheckCircle className="h-3 w-3" />
           Completed
         </span>
       );
     case "in-progress":
       return (
-        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
           <TrendingUp className="h-3 w-3" />
           In Progress
         </span>
       );
     case "on-hold":
       return (
-        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
           <Clock className="h-3 w-3" />
           On Hold
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
+          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block" />
           {status}
         </span>
       );
   }
 }
+
+function PriorityBadge({ priority }: { priority: string }) {
+  const styles =
+    priority === "high"
+      ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+      : priority === "medium"
+      ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+      : "bg-muted text-muted-foreground border border-border";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${styles}`}
+    >
+      <Flag className="h-2.5 w-2.5" />
+      {priority}
+    </span>
+  );
+}
+
+type BookingStep = "calendar" | "form" | "confirmed";
 
 export default function PortalPage() {
   const params = useParams();
@@ -84,26 +121,48 @@ export default function PortalPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [localMessages, setLocalMessages] = useState<PortalData["messages"]>(
-    []
-  );
+  const [localMessages, setLocalMessages] = useState<PortalData["messages"]>([]);
+
+  // Scheduling state
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDuration, setSelectedDuration] = useState<number>(30);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [bookingStep, setBookingStep] = useState<BookingStep>("calendar");
+  const [bookingForm, setBookingForm] = useState({
+    clientName: "",
+    clientEmail: "",
+    notes: "",
+  });
+  const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
     if (token) fetchPortalData();
   }, [token]);
 
+  useEffect(() => {
+    if (selectedDate && selectedDuration) {
+      fetchSlots(selectedDate, selectedDuration);
+    }
+  }, [selectedDate, selectedDuration]);
+
   const fetchPortalData = async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/portal/${token}`);
-      if (res.status === 404) {
-        setNotFound(true);
-        return;
-      }
+      if (res.status === 404) { setNotFound(true); return; }
       if (res.ok) {
         const portalData = await res.json();
         setData(portalData);
         setLocalMessages(portalData.messages || []);
+        setBookingForm((prev) => ({
+          ...prev,
+          clientName: portalData.client?.name || "",
+          clientEmail: portalData.client?.email || "",
+        }));
+        const durations = portalData.settings?.availability?.meetingDurations;
+        if (durations?.length > 0) setSelectedDuration(durations[0]);
       } else {
         setNotFound(true);
       }
@@ -112,6 +171,24 @@ export default function PortalPage() {
       setNotFound(true);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchSlots = async (date: Date, duration: number) => {
+    setIsFetchingSlots(true);
+    setAvailableSlots([]);
+    setSelectedSlot(null);
+    try {
+      const dateStr = date.toISOString().split("T")[0];
+      const res = await fetch(`/api/portal/${token}/availability?date=${dateStr}&duration=${duration}`);
+      if (res.ok) {
+        const json = await res.json();
+        setAvailableSlots(json.slots ?? []);
+      }
+    } catch {
+      toast.error("Failed to load available times");
+    } finally {
+      setIsFetchingSlots(false);
     }
   };
 
@@ -125,16 +202,18 @@ export default function PortalPage() {
         body: JSON.stringify({ message: newMessage }),
       });
       if (res.ok) {
-        const sentMsg = {
-          id: Date.now(),
-          subject: null,
-          preview: newMessage,
-          from: data?.client.name || "You",
-          isSent: false,
-          sentAt: new Date().toISOString(),
-          isRead: true,
-        };
-        setLocalMessages((prev) => [sentMsg, ...prev]);
+        setLocalMessages((prev) => [
+          {
+            id: Date.now(),
+            subject: null,
+            preview: newMessage,
+            from: data?.client.name || "You",
+            isSent: false,
+            sentAt: new Date().toISOString(),
+            isRead: true,
+          },
+          ...prev,
+        ]);
         setNewMessage("");
         toast.success("Message sent successfully");
       } else {
@@ -147,24 +226,58 @@ export default function PortalPage() {
     }
   };
 
+  const handleBookMeeting = async () => {
+    if (!selectedSlot || !bookingForm.clientName.trim() || !bookingForm.clientEmail.trim()) return;
+    setIsBooking(true);
+    try {
+      const res = await axios.post(`/api/portal/${token}/book`, {
+        clientName: bookingForm.clientName,
+        clientEmail: bookingForm.clientEmail,
+        dateTime: selectedSlot,
+        duration: selectedDuration,
+        notes: bookingForm.notes || undefined,
+      })
+      if (res.status === 200) {
+        setBookingStep("confirmed");
+      }
+      else {
+        toast.error("Failed to book meeting");
+      }
+
+    } catch {
+      toast.error("Failed to book meeting");
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
+  const resetBooking = () => {
+    setSelectedDate(undefined);
+    setSelectedSlot(null);
+    setAvailableSlots([]);
+    setBookingStep("calendar");
+    setBookingForm((prev) => ({ ...prev, notes: "" }));
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <p className="text-sm text-muted-foreground">Loading your portal...</p>
+        </div>
       </div>
     );
   }
 
   if (notFound || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Portal Not Found
-            </h2>
-            <p className="text-gray-600">
+            <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">Portal Not Found</h2>
+            <p className="text-sm text-muted-foreground">
               This client portal is not available or has been disabled.
             </p>
           </CardContent>
@@ -173,171 +286,153 @@ export default function PortalPage() {
     );
   }
 
-  const portalTitle = data.settings?.title || "Virevos";
+  const portalTitle = data.settings?.title || "Client Portal";
   const unreadCount = localMessages.filter((m) => !m.isRead).length;
+  const schedulingEnabled = !!data.settings?.meetingSchedulingEnabled;
+  const allowedDurations = data.settings?.availability?.meetingDurations ?? [30];
+  const upcomingBookings = data.bookings?.filter((b) => b.status !== "cancelled") ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header
-        className="border-b border-gray-200 sticky top-0 z-50"
-        style={{ backgroundColor: "white" }}
-      >
+      <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-blue-500">
-                <span className="text-white text-sm font-bold">V</span>
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-foreground">
+                <span className="text-background text-xs font-bold">
+                  {portalTitle.charAt(0).toUpperCase()}
+                </span>
               </div>
-              <span className="text-xl text-gray-900">{portalTitle}</span>
+              <span className="text-sm font-semibold text-foreground">{portalTitle}</span>
             </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <Avatar>
-                  <AvatarFallback>
-                    {data.client.name
-                      .split(" ")
-                      .slice(0, 2)
-                      .map((w) => w[0])
-                      .join("")
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden md:block">
-                  <p className="text-sm text-gray-900">{data.client.name}</p>
-                  {data.client.email && (
-                    <p className="text-xs text-gray-500">{data.client.email}</p>
-                  )}
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden md:block text-right">
+                <p className="text-sm font-medium text-foreground">{data.client.name}</p>
+                {data.client.email && (
+                  <p className="text-xs text-muted-foreground">{data.client.email}</p>
+                )}
               </div>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="text-xs bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300">
+                  {getInitials(data.client.name)}
+                </AvatarFallback>
+              </Avatar>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl text-gray-900 mb-2">
-            Welcome back, {data.client.name.split(" ")[0]}!
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 p-4 sm:p-6 space-y-6">
+        {/* Welcome */}
+        <div>
+          <h1 className="text-2xl text-foreground">
+            Welcome back, {data.client.name.split(" ")[0]}
           </h1>
-          <p className="text-gray-600">
-            {data.settings?.welcomeMessage ||
-              "Here's what's happening with your projects"}
+          <p className="text-muted-foreground mt-1">
+            {data.settings?.welcomeMessage || "Here's what's happening with your projects"}
           </p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-blue-100">
-                <FileText className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <p className="text-2xl text-gray-900 mb-1">
-              {data.projects.length}
-            </p>
-            <p className="text-sm text-gray-600">Active Projects</p>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-green-100">
-                <MessageSquare className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-            <p className="text-2xl text-gray-900 mb-1">{unreadCount}</p>
-            <p className="text-sm text-gray-600">Unread Messages</p>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-purple-100">
-                <Calendar className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <p className="text-2xl text-gray-900 mb-1">
-              {localMessages.length}
-            </p>
-            <p className="text-sm text-gray-600">Total Messages</p>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-orange-100">
-                <Paperclip className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-            <p className="text-2xl text-gray-900 mb-1">{data.files.length}</p>
-            <p className="text-sm text-gray-600">Files Shared</p>
-          </Card>
-        </div>
-
-        {/* Main Tabs */}
+        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="overflow-x-auto pb-1 mb-6">
+          <div className="overflow-x-auto pb-1">
             <TabsList className="min-w-max">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="messages">Messages</TabsTrigger>
+              <TabsTrigger value="messages">
+                Messages
+                {unreadCount > 0 && (
+                  <Badge className="ml-2 h-4 px-1.5 text-[10px] bg-blue-500 text-white border-0">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
+              {schedulingEnabled && (
+                <TabsTrigger value="schedule">Schedule Meeting</TabsTrigger>
+              )}
             </TabsList>
           </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          {/* ── Overview ── */}
+          <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Active Projects */}
+              {/* Left */}
               <div className="lg:col-span-2 space-y-6">
+                {/* Projects table */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Active Projects</CardTitle>
+                    <CardTitle className="flex items-center text-base">
+                      <FolderKanban className="h-4 w-4 mr-2 text-blue-600" />
+                      Active Projects
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="p-0">
                     {data.projects.length === 0 ? (
-                      <p className="text-sm text-gray-500 text-center py-4">
-                        No projects yet
-                      </p>
+                      <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
+                        <FolderKanban className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">No projects yet</p>
+                      </div>
                     ) : (
-                      data.projects.map((project, index) => (
-                        <motion.div
-                          key={project.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="p-4 border border-gray-200 rounded-lg"
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="border-b border-border">
+                            <tr>
+                              <th className="text-left px-4 py-2.5">
+                                <span className="text-xs text-muted-foreground font-medium">Project</span>
+                              </th>
+                              <th className="text-left px-4 py-2.5">
+                                <span className="text-xs text-muted-foreground font-medium">Status</span>
+                              </th>
+                              <th className="text-left px-4 py-2.5">
+                                <span className="text-xs text-muted-foreground font-medium">Priority</span>
+                              </th>
+                              <th className="text-left px-4 py-2.5">
+                                <span className="text-xs text-muted-foreground font-medium">Due</span>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {data.projects.slice(0, 5).map((project) => (
+                              <tr key={project.id} className="hover:bg-muted/50 transition-colors">
+                                <td className="px-4 py-2.5">
+                                  <p className="text-sm font-medium text-foreground">{project.name}</p>
+                                  {project.description && (
+                                    <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">
+                                      {project.description}
+                                    </p>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <StatusBadge status={project.status} />
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <PriorityBadge priority={project.priority} />
+                                </td>
+                                <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                                  {project.dueDate
+                                    ? parseDateOnlyString(project.dueDate).toLocaleDateString()
+                                    : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {data.projects.length > 5 && (
+                      <div className="px-4 py-3 border-t border-border">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => setActiveTab("projects")}
                         >
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h3 className="text-lg text-gray-900">
-                                {project.name}
-                              </h3>
-                              {project.dueDate && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  Due:{" "}
-                                  {new Date(
-                                    project.dueDate
-                                  ).toLocaleDateString()}
-                                </p>
-                              )}
-                            </div>
-                            <PortalStatusBadge status={project.status} />
-                          </div>
-                          {project.description && (
-                            <p className="text-sm text-gray-600 mb-3">
-                              {project.description}
-                            </p>
-                          )}
-                          <div className="mt-2 pt-2 border-t border-gray-100">
-                            <p className="text-xs text-gray-500">
-                              Priority: {project.priority}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))
+                          View all {data.projects.length} projects
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -345,207 +440,295 @@ export default function PortalPage() {
                 {/* Recent Messages */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Messages</CardTitle>
+                    <CardTitle className="flex items-center text-base">
+                      <MessageSquare className="h-4 w-4 mr-2 text-purple-600" />
+                      Recent Messages
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {localMessages.slice(0, 3).map((msg) => (
+                  <CardContent className="space-y-2">
+                    {localMessages.length === 0 ? (
+                      <div className="flex flex-col items-center gap-2 py-8 text-center">
+                        <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">No messages yet</p>
+                      </div>
+                    ) : (
+                      localMessages.slice(0, 3).map((msg) => (
                         <div
                           key={msg.id}
-                          className={`p-3 rounded-lg ${
+                          className={`p-3 rounded-lg border ${
                             !msg.isRead
-                              ? "bg-blue-50 border border-blue-200"
-                              : "bg-gray-50"
+                              ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+                              : "bg-muted/50 border-border"
                           }`}
                         >
-                          <div className="flex items-start justify-between mb-2">
-                            <p className="text-sm text-gray-900">{msg.from}</p>
-                            <span className="text-xs text-gray-500">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs font-medium text-foreground">{msg.from}</p>
+                            <span className="text-xs text-muted-foreground">
                               {new Date(msg.sentAt).toLocaleDateString()}
                             </span>
                           </div>
                           {msg.subject && (
-                            <p className="text-xs text-gray-600 font-medium mb-1">
-                              {msg.subject}
-                            </p>
+                            <p className="text-xs font-medium text-foreground mb-0.5">{msg.subject}</p>
                           )}
-                          <p className="text-sm text-gray-600 line-clamp-2">
-                            {msg.preview}
-                          </p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">{msg.preview}</p>
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    )}
                     <Button
-                      variant="outline"
-                      className="w-full mt-4"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs mt-1"
                       onClick={() => setActiveTab("messages")}
                     >
-                      View All Messages
+                      View all messages
                     </Button>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Sidebar */}
+              {/* Right sidebar */}
               <div className="space-y-6">
                 {/* Quick Actions */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Quick Actions</CardTitle>
+                    <CardTitle className="text-sm">Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {(data.settings?.chatEnabled ?? true) && (
                       <Button
                         variant="outline"
-                        className="w-full justify-start"
+                        size="sm"
+                        className="w-full justify-start gap-2"
                         onClick={() => setActiveTab("messages")}
                       >
-                        <MessageSquare className="h-4 w-4 mr-2" />
+                        <MessageSquare className="h-4 w-4" />
                         Send Message
                       </Button>
                     )}
                     {(data.settings?.fileSharing ?? true) && (
                       <Button
                         variant="outline"
-                        className="w-full justify-start"
+                        size="sm"
+                        className="w-full justify-start gap-2"
                         onClick={() => setActiveTab("files")}
                       >
-                        <Paperclip className="h-4 w-4 mr-2" />
+                        <Paperclip className="h-4 w-4" />
                         View Files
                       </Button>
                     )}
                     <Button
                       variant="outline"
-                      className="w-full justify-start"
+                      size="sm"
+                      className="w-full justify-start gap-2"
                       onClick={() => setActiveTab("projects")}
                     >
-                      <Calendar className="h-4 w-4 mr-2" />
+                      <FolderKanban className="h-4 w-4" />
                       View Projects
                     </Button>
+                    {schedulingEnabled && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start gap-2"
+                        onClick={() => setActiveTab("schedule")}
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        Schedule Meeting
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
+
+                {/* Upcoming Meetings */}
+                {schedulingEnabled && upcomingBookings.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-green-600" />
+                        Upcoming Meetings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {upcomingBookings.slice(0, 3).map((b) => (
+                        <div
+                          key={b.id}
+                          className="p-3 rounded-lg bg-muted/50 border border-border"
+                        >
+                          <p className="text-xs font-medium text-foreground">
+                            {new Date(b.dateTime).toLocaleDateString(undefined, {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(b.dateTime).toLocaleTimeString(undefined, {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
+                            · {b.duration} min ·{" "}
+                            <span className="capitalize">{b.status}</span>
+                          </p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </TabsContent>
 
-          {/* Projects Tab */}
-          <TabsContent value="projects">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {data.projects.length === 0 ? (
-                <Card className="col-span-2">
-                  <CardContent className="py-12 text-center">
-                    <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">No projects yet</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                data.projects.map((project) => (
-                  <Card key={project.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <CardTitle>{project.name}</CardTitle>
-                        <PortalStatusBadge status={project.status} />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {project.description && (
-                        <p className="text-sm text-gray-600">
-                          {project.description}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Due Date</span>
-                        <span className="text-gray-900">
-                          {project.dueDate
-                            ? parseDateOnlyString(
-                                project.dueDate
-                              ).toLocaleDateString()
-                            : "—"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Priority</span>
-                        <span className="text-gray-900">
-                          {project.priority}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Messages Tab */}
-          <TabsContent value="messages">
+          {/* ── Projects ── */}
+          <TabsContent value="projects" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Messages</CardTitle>
+                <CardTitle className="flex items-center text-base">
+                  <FolderKanban className="h-4 w-4 mr-2 text-blue-600" />
+                  All Projects
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {data.projects.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
+                    <FolderKanban className="h-10 w-10 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">No projects yet</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="border-b border-border bg-muted/50">
+                        <tr>
+                          <th className="text-left px-4 py-2.5">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                              <FolderKanban className="h-3.5 w-3.5" />
+                              Project
+                            </div>
+                          </th>
+                          <th className="text-left px-4 py-2.5">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                              Status
+                            </div>
+                          </th>
+                          <th className="text-left px-4 py-2.5">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                              <Flag className="h-3.5 w-3.5" />
+                              Priority
+                            </div>
+                          </th>
+                          <th className="text-left px-4 py-2.5">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                              <CalendarIcon className="h-3.5 w-3.5" />
+                              Due Date
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {data.projects.map((project) => (
+                          <tr key={project.id} className="hover:bg-muted/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="text-sm font-medium text-foreground">{project.name}</p>
+                              {project.description && (
+                                <p className="text-xs text-muted-foreground mt-0.5 max-w-sm truncate">
+                                  {project.description}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <StatusBadge status={project.status} />
+                            </td>
+                            <td className="px-4 py-3">
+                              <PriorityBadge priority={project.priority} />
+                            </td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">
+                              {project.dueDate ? (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3 shrink-0" />
+                                  {parseDateOnlyString(project.dueDate).toLocaleDateString()}
+                                </div>
+                              ) : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── Messages ── */}
+          <TabsContent value="messages" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-base">
+                  <MessageSquare className="h-4 w-4 mr-2 text-purple-600" />
+                  Messages
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-2 max-h-[480px] overflow-y-auto">
                   {localMessages.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">No messages yet</p>
+                    <div className="flex flex-col items-center gap-2 py-12 text-center">
+                      <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No messages yet</p>
                     </div>
                   ) : (
                     localMessages.map((msg) => (
                       <div
                         key={msg.id}
-                        className={`p-4 rounded-lg ${
+                        className={`p-4 rounded-lg border ${
                           !msg.isRead
-                            ? "bg-blue-50 border border-blue-200"
-                            : "bg-gray-50"
+                            ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+                            : "bg-muted/50 border-border"
                         }`}
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-7 w-7">
+                              <AvatarFallback className="text-xs bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
                                 {msg.from.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <p className="text-sm text-gray-900">{msg.from}</p>
+                            <p className="text-sm font-medium text-foreground">{msg.from}</p>
+                            {!msg.isRead && (
+                              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                            )}
                           </div>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {new Date(msg.sentAt).toLocaleString()}
                           </span>
                         </div>
                         {msg.subject && (
-                          <p className="text-sm font-medium text-gray-700 ml-10 mb-1">
-                            {msg.subject}
-                          </p>
+                          <p className="text-xs font-medium text-foreground ml-9 mb-1">{msg.subject}</p>
                         )}
-                        <p className="text-sm text-gray-700 ml-10">
-                          {msg.preview}
-                        </p>
+                        <p className="text-sm text-muted-foreground ml-9">{msg.preview}</p>
                       </div>
                     ))
                   )}
                 </div>
 
                 {(data.settings?.chatEnabled ?? true) && (
-                  <div className="border-t border-gray-200 pt-4">
-                    <div className="flex space-x-2">
-                      <Textarea
-                        placeholder="Type your message..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        rows={3}
-                        className="flex-1"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2 mt-2">
+                  <div className="border-t border-border pt-4">
+                    <Textarea
+                      placeholder="Write a message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      rows={3}
+                      className="resize-none"
+                    />
+                    <div className="flex justify-end mt-2">
                       <Button
                         size="sm"
                         onClick={handleSendMessage}
                         disabled={isSending || !newMessage.trim()}
+                        className="gap-2"
                       >
                         {isSending ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Send className="h-4 w-4 mr-2" />
+                          <Send className="h-4 w-4" />
                         )}
                         Send
                       </Button>
@@ -556,34 +739,33 @@ export default function PortalPage() {
             </Card>
           </TabsContent>
 
-          {/* Files Tab */}
-          <TabsContent value="files">
+          {/* ── Files ── */}
+          <TabsContent value="files" className="mt-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Shared Files</CardTitle>
-                </div>
+                <CardTitle className="flex items-center text-base">
+                  <Paperclip className="h-4 w-4 mr-2 text-orange-600" />
+                  Shared Files
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {data.files.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Paperclip className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No files shared yet</p>
+                  <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
+                    <Paperclip className="h-10 w-10 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">No files shared yet</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="divide-y divide-border">
                     {data.files.map((file) => (
                       <div
                         key={file.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 rounded-lg bg-blue-50 flex-shrink-0">
-                            <FileText className="h-5 w-5 text-blue-500" />
-                          </div>
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-8 w-8 text-blue-500 flex-shrink-0" />
                           <div>
-                            <p className="text-sm text-gray-900">{file.name}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-sm text-foreground font-medium">{file.name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {formatFileSize(file.size)}
                               {file.createdAt
                                 ? ` · ${new Date(file.createdAt).toLocaleDateString()}`
@@ -591,7 +773,7 @@ export default function PortalPage() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="outline" size="icon" asChild>
+                        <Button variant="ghost" size="icon" asChild>
                           <a
                             href={`/api/portal/${token}/files/${file.id}/download`}
                             download={file.name}
@@ -606,6 +788,253 @@ export default function PortalPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ── Schedule Meeting ── */}
+          {schedulingEnabled && (
+            <TabsContent value="schedule" className="mt-6">
+              {bookingStep === "calendar" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-xl text-foreground">Schedule a Meeting</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Pick a date and time that works for you
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left: Calendar + Duration */}
+                    <div className="lg:col-span-1 space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">Select Date</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            disabled={{ before: new Date() }}
+                          />
+                          <div className="space-y-2 pt-2 border-t border-border">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                              Duration
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {allowedDurations.map((d) => (
+                                <Button
+                                  key={d}
+                                  size="sm"
+                                  variant={selectedDuration === d ? "default" : "outline"}
+                                  onClick={() => setSelectedDuration(d)}
+                                  className="h-8 text-xs"
+                                >
+                                  {d} min
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Right: Time Slots */}
+                    <div className="lg:col-span-2">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">
+                            {selectedDate
+                              ? `Available Times — ${selectedDate.toLocaleDateString(undefined, {
+                                  weekday: "long",
+                                  month: "long",
+                                  day: "numeric",
+                                })}`
+                              : "Available Times"}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {!selectedDate ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                              <CalendarDays className="h-10 w-10 text-muted-foreground mb-3" />
+                              <p className="text-sm text-muted-foreground">
+                                Choose a date to see available slots
+                              </p>
+                            </div>
+                          ) : isFetchingSlots ? (
+                            <div className="flex flex-col items-center justify-center py-16">
+                              <Loader2 className="h-6 w-6 animate-spin text-blue-500 mb-2" />
+                              <p className="text-sm text-muted-foreground">Loading available times...</p>
+                            </div>
+                          ) : availableSlots.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                              <Clock className="h-10 w-10 text-muted-foreground mb-3" />
+                              <p className="text-sm text-muted-foreground">No available slots on this day</p>
+                              <p className="text-xs text-muted-foreground mt-1">Try another date</p>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
+                              {availableSlots.map((slot) => (
+                                <Button
+                                  key={slot.startTime}
+                                  variant={slot.available ? "outline" : "ghost"}
+                                  size="sm"
+                                  disabled={!slot.available}
+                                  onClick={() => {
+                                    setSelectedSlot(slot.startTime);
+                                    setBookingStep("form");
+                                  }}
+                                  className={`text-xs h-9 ${
+                                    !slot.available
+                                      ? "text-muted-foreground/40 cursor-not-allowed"
+                                      : ""
+                                  }`}
+                                >
+                                  {new Date(slot.startTime).toLocaleTimeString(undefined, {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {bookingStep === "form" && selectedSlot && (
+                <div className="max-w-lg space-y-6">
+                  <button
+                    onClick={() => { setBookingStep("calendar"); setSelectedSlot(null); }}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to calendar
+                  </button>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Confirm Your Meeting</CardTitle>
+                      <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border">
+                        <p className="text-sm font-medium text-foreground">
+                          {new Date(selectedSlot).toLocaleDateString(undefined, {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {new Date(selectedSlot).toLocaleTimeString(undefined, {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          · {selectedDuration} minutes
+                        </p>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="booking-name">Your Name</Label>
+                        <Input
+                          id="booking-name"
+                          value={bookingForm.clientName}
+                          onChange={(e) =>
+                            setBookingForm((prev) => ({ ...prev, clientName: e.target.value }))
+                          }
+                          placeholder="Enter your name"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="booking-email">Email Address</Label>
+                        <Input
+                          id="booking-email"
+                          type="email"
+                          value={bookingForm.clientEmail}
+                          onChange={(e) =>
+                            setBookingForm((prev) => ({ ...prev, clientEmail: e.target.value }))
+                          }
+                          placeholder="your@email.com"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="booking-notes">
+                          Notes{" "}
+                          <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                        </Label>
+                        <Textarea
+                          id="booking-notes"
+                          value={bookingForm.notes}
+                          onChange={(e) =>
+                            setBookingForm((prev) => ({ ...prev, notes: e.target.value }))
+                          }
+                          placeholder="Anything you'd like to discuss..."
+                          rows={3}
+                          className="resize-none"
+                        />
+                      </div>
+                      <Button
+                        className="w-full gap-2"
+                        onClick={handleBookMeeting}
+                        disabled={
+                          isBooking ||
+                          !bookingForm.clientName.trim() ||
+                          !bookingForm.clientEmail.trim()
+                        }
+                      >
+                        {isBooking ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CalendarDays className="h-4 w-4" />
+                        )}
+                        Book Meeting
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {bookingStep === "confirmed" && (
+                <div className="max-w-md mx-auto text-center">
+                  <Card>
+                    <CardContent className="py-14 space-y-5">
+                      <div className="p-5 rounded-full bg-green-100 dark:bg-green-950/50 w-fit mx-auto">
+                        <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl text-foreground mb-2">Meeting Request Submitted!</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Your request for a <strong>{selectedDuration}-minute</strong> meeting on{" "}
+                          <strong>
+                            {selectedSlot &&
+                              new Date(selectedSlot).toLocaleDateString(undefined, {
+                                weekday: "long",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                          </strong>{" "}
+                          at{" "}
+                          <strong>
+                            {selectedSlot &&
+                              new Date(selectedSlot).toLocaleTimeString(undefined, {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                          </strong>{" "}
+                          has been received. We&apos;ll be in touch to confirm.
+                        </p>
+                      </div>
+                      <Button variant="outline" onClick={resetBooking} className="gap-2">
+                        <CalendarDays className="h-4 w-4" />
+                        Book Another Meeting
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

@@ -598,15 +598,10 @@ function TranscriptionView({
       const { chunks: raw, meetingStartTimeEpoch }: { chunks: RawChunk[], meetingStartTimeEpoch: number } = res.data;
       if (!raw.length) return;
 
-      const firstChunkMs = raw[0]?.createdAt ? new Date(raw[0].createdAt).getTime() : null;
-      const epochAnchorMs = meetingStartTimeEpoch ? meetingStartTimeEpoch * 1000 : null;
-
-      // Use meetingStartTimeEpoch if it's before the first chunk (valid data).
-      // Fall back to first chunk's timestamp if the stored value is corrupted (in the future).
-      const anchorMs =
-        epochAnchorMs !== null && firstChunkMs !== null && epochAnchorMs <= firstChunkMs
-          ? epochAnchorMs
-          : firstChunkMs;
+      const firstWithTs = meetingStartTimeEpoch
+      const anchorMs = firstWithTs
+        ? firstWithTs * 1000  // stored as epoch seconds, convert to ms
+        : null;
 
       const formatted: TranscribedChunk[] = raw.map((item, i) => {
         let startTimeSec: number;

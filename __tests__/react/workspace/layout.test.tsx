@@ -62,6 +62,14 @@ jest.mock("next/image", () => ({
   default: (props: Record<string, unknown>) => <img {...props} />,
 }));
 
+jest.mock("@tanstack/react-query", () => ({
+  useQuery: jest.fn(() => ({ data: undefined, isLoading: false })),
+}));
+
+jest.mock("axios", () => ({
+  get: jest.fn(() => Promise.resolve({ data: { bookings: [] } })),
+}));
+
 jest.mock("@/app/components/AIAssistant", () => ({
   AIAssistant: () => null,
 }));

@@ -6,8 +6,9 @@ import {
   projects,
   googleEmails,
   projectFiles,
+  portalMeetingBookings,
 } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
@@ -94,6 +95,22 @@ export async function GET(
       }
     }
 
+    // Fetch upcoming bookings for this portal
+    const upcomingBookings = await db
+      .select({
+        id: portalMeetingBookings.id,
+        dateTime: portalMeetingBookings.dateTime,
+        duration: portalMeetingBookings.duration,
+        status: portalMeetingBookings.status,
+      })
+      .from(portalMeetingBookings)
+      .where(
+        and(
+          eq(portalMeetingBookings.portalId, portalToken.id),
+          gte(portalMeetingBookings.dateTime, new Date())
+        )
+      );
+
     return NextResponse.json({
       client: {
         id: client.id,
@@ -126,6 +143,12 @@ export async function GET(
         mimeType: f.mimeType,
         path: f.path,
         createdAt: f.createdAt,
+      })),
+      bookings: upcomingBookings.map((b) => ({
+        id: b.id,
+        dateTime: b.dateTime.toISOString(),
+        duration: b.duration,
+        status: b.status,
       })),
     });
   } catch (err) {

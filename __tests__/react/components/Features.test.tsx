@@ -47,28 +47,28 @@ describe("Features", () => {
     render(<Features />);
   });
 
-  it("renders 'Client Workflow Automation' feature", () => {
-    expect(screen.getByText(/client workflow automation/i)).toBeInTheDocument();
+  it("renders 'Case Lifecycle Automation' feature", () => {
+    expect(screen.getByText(/case lifecycle automation/i)).toBeInTheDocument();
   });
 
-  it("renders 'Client Collaboration' feature", () => {
-    expect(screen.getByText(/client collaboration/i)).toBeInTheDocument();
+  it("renders 'Secure Client Portal' feature", () => {
+    expect(screen.getByText(/secure client portal/i)).toBeInTheDocument();
   });
 
-  it("renders 'Smart Project Scheduling' feature", () => {
-    expect(screen.getByText(/smart project scheduling/i)).toBeInTheDocument();
+  it("renders 'Critical Deadline Tracking' feature", () => {
+    expect(screen.getByText(/critical deadline tracking/i)).toBeInTheDocument();
   });
 
-  it("renders 'AI Assistant' feature", () => {
-    expect(screen.getByText(/ai assistant/i)).toBeInTheDocument();
+  it("renders 'Autonomous AI Audit' feature", () => {
+    expect(screen.getByText(/autonomous ai audit/i)).toBeInTheDocument();
   });
 
-  it("renders 'Freelancer Analytics' feature", () => {
-    expect(screen.getByText(/freelancer analytics/i)).toBeInTheDocument();
+  it("renders 'Practice Insights' feature", () => {
+    expect(screen.getByText(/practice insights/i)).toBeInTheDocument();
   });
 
-  it("renders 'Built-In Meetings' feature", () => {
-    expect(screen.getByText(/built-in meetings/i)).toBeInTheDocument();
+  it("renders 'AI Consultations' feature", () => {
+    expect(screen.getByText(/ai consultations/i)).toBeInTheDocument();
   });
 
   it("renders 'Explore all features' CTA", () => {

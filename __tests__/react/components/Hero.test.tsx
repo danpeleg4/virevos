@@ -17,11 +17,11 @@ describe("Hero", () => {
   });
 
   it("renders the brand name", () => {
-    expect(screen.getByText(/virevos/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/virevos/i).length).toBeGreaterThan(0);
   });
 
   it("renders the main tagline", () => {
-    expect(screen.getByText(/work flows better/i)).toBeInTheDocument();
+    expect(screen.getByText(/practice flows better/i)).toBeInTheDocument();
   });
 
   it("renders 'Start for free' button", () => {

@@ -23,11 +23,6 @@ jest.mock("drizzle-orm", () => ({ and: jest.fn(), eq: jest.fn() }));
 
 jest.mock("@/lib/supabase", () => ({
   RECORDINGS_BUCKET: "recording",
-  supabaseAdmin: {
-    storage: {
-      from: jest.fn(),
-    },
-  },
 }));
 
 // eslint-disable-next-line no-var
@@ -38,21 +33,8 @@ jest.mock("@/lib/storage", () => {
   return { getSignedUrl: mockGetSignedUrl };
 });
 
-import { supabaseAdmin } from "@/lib/supabase";
-
 function mockCtx(id: string) {
   return { params: Promise.resolve({ id }) };
-}
-
-function mockStorage(
-  topLevel: { name: string }[],
-  folderFiles: { name: string }[]
-) {
-  const listMock = jest
-    .fn()
-    .mockResolvedValueOnce({ data: topLevel, error: null })
-    .mockResolvedValue({ data: folderFiles, error: null });
-  (supabaseAdmin.storage.from as jest.Mock).mockReturnValue({ list: listMock });
 }
 
 describe("GET /api/recording/[id]", () => {
@@ -83,65 +65,38 @@ describe("GET /api/recording/[id]", () => {
     expect(await res.json()).toEqual({ error: "Invalid meetingId" });
   });
 
-  it("returns 404 if no participant folders found", async () => {
+  it("returns 404 if recording not found in storage", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    mockStorage([], []);
+    mockGetSignedUrl.mockRejectedValueOnce(new Error("not found"));
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 
     expect(res.status).toBe(404);
   });
 
-  it("returns 404 if participant folders have no mp4 files", async () => {
+  it("returns 404 if getSignedUrl throws", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    mockStorage([{ name: "Alice" }], [{ name: "meta.json" }]);
+    mockGetSignedUrl.mockRejectedValueOnce(new Error("storage error"));
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 
     expect(res.status).toBe(404);
   });
 
-  it("returns signed urls for all participants on success", async () => {
+  it("returns signed url on success", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-
-    const listMock = jest
-      .fn()
-      .mockResolvedValueOnce({
-        data: [{ name: "Alice" }, { name: "Bob" }],
-        error: null,
-      })
-      .mockResolvedValueOnce({ data: [{ name: "abc12.mp4" }], error: null })
-      .mockResolvedValueOnce({ data: [{ name: "def34.mp4" }], error: null });
-    (supabaseAdmin.storage.from as jest.Mock).mockReturnValue({
-      list: listMock,
-    });
-
-    mockGetSignedUrl
-      .mockResolvedValueOnce("https://signed-url-alice")
-      .mockResolvedValueOnce("https://signed-url-bob");
+    mockGetSignedUrl.mockResolvedValueOnce("https://signed-url");
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json.videos).toHaveLength(2);
-    expect(json.videos[0]).toEqual({
-      participant: "Alice",
-      url: "https://signed-url-alice",
-    });
-    expect(json.videos[1]).toEqual({
-      participant: "Bob",
-      url: "https://signed-url-bob",
-    });
+    expect(json.url).toBe("https://signed-url");
   });
 
-  it("returns 404 if storage list throws", async () => {
+  it("returns 404 if event not found in db", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (supabaseAdmin.storage.from as jest.Mock).mockReturnValue({
-      list: jest
-        .fn()
-        .mockResolvedValue({ data: null, error: { message: "bucket error" } }),
-    });
+    mockDbWhere.mockResolvedValue([]);
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 

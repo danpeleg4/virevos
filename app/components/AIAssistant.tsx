@@ -9,12 +9,15 @@ import {
   X,
   Send,
   Sparkles,
-  Lightbulb,
-  TrendingUp,
-  Calendar,
   Loader2,
+  CalendarDays,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  User,
+  Bell,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { clients } from "@/types/clients";
 import type {
   AIMessage,
@@ -28,34 +31,22 @@ import type {
   CreateEventToolResult,
   UpdateEventToolResult,
 } from "@/types/ai";
+import type { PortalMeetingBooking } from "@/types/portal";
+import { acceptBookingWithCalendar, updateBookingStatus } from "@/lib/portal_bookings";
+import { toast } from "sonner";
+
+type BookingWithClient = PortalMeetingBooking & {
+  clientDisplayName: string | null;
+};
 
 interface AIAssistantProps {
   isOpen: boolean;
   onClose: () => void;
+  pendingBookings: BookingWithClient[];
 }
 
-const nextBestActions = [
-  {
-    icon: Lightbulb,
-    title: "Follow up with TechCorp",
-    description: "Project milestone due in 2 days - send status update",
-    priority: "high",
-  },
-  {
-    icon: Calendar,
-    title: "Schedule DesignCo kickoff",
-    description: "New client onboarding scheduled for tomorrow",
-    priority: "medium",
-  },
-  {
-    icon: TrendingUp,
-    title: "Review Q4 automation performance",
-    description: "3 automations completed today with 95% success rate",
-    priority: "low",
-  },
-];
 
-export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
+export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantProps) {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming">("idle");
   const [input, setInput] = useState("");
@@ -63,6 +54,24 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const abortRef = useRef<AbortController | null>(null);
   const previousResponseIdRef = useRef<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const acceptMutation = useMutation({
+    mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+      toast.success("Meeting confirmed and added to calendar");
+    },
+    onError: () => toast.error("Failed to confirm meeting"),
+  });
+
+  const denyMutation = useMutation({
+    mutationFn: (bookingId: number) => updateBookingStatus(bookingId, "cancelled"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+      toast.success("Meeting request declined");
+    },
+    onError: () => toast.error("Failed to decline meeting"),
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -359,6 +368,100 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
             </div>
           </div>
           */}
+
+          {/* Meeting Requests */}
+          {pendingBookings.length > 0 && (
+            <div className="border-b border-border bg-card">
+              <div className="px-4 py-2.5 flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
+                <Bell className="h-3.5 w-3.5 text-red-500" />
+                <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                  {pendingBookings.length} Meeting Request{pendingBookings.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="divide-y divide-border max-h-72 overflow-y-auto">
+                {pendingBookings.map((booking) => {
+                  const dt = new Date(booking.dateTime);
+                  const isAccepting = acceptMutation.isPending && acceptMutation.variables === booking.id;
+                  const isDenying = denyMutation.isPending && denyMutation.variables === booking.id;
+                  return (
+                    <div key={booking.id} className="p-4 space-y-3">
+                      {/* Booking summary */}
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 shrink-0">
+                          <CalendarDays className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {booking.clientDisplayName || booking.clientName}
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{booking.clientEmail}</p>
+                          <div className="mt-2 flex items-center gap-3">
+                            <div className="flex items-center gap-1 text-xs text-foreground">
+                              <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                              {dt.toLocaleDateString(undefined, {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-foreground">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              {dt.toLocaleTimeString(undefined, {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                              {" · "}{booking.duration} min
+                            </div>
+                          </div>
+                          {booking.notes && (
+                            <p className="mt-1.5 text-xs text-muted-foreground italic line-clamp-2">
+                              &ldquo;{booking.notes}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50"
+                          style={{ backgroundColor: '#059669' }}
+                          onClick={() => acceptMutation.mutate(booking.id)}
+                          disabled={isAccepting || isDenying}
+                          onMouseEnter={(e) => { if (!isAccepting && !isDenying) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#047857'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#059669'; }}
+                        >
+                          {isAccepting ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                          )}
+                          Accept
+                        </button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 h-8 text-xs border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 gap-1.5"
+                          onClick={() => denyMutation.mutate(booking.id)}
+                          disabled={isAccepting || isDenying}
+                        >
+                          {isDenying ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5" />
+                          )}
+                          Decline
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-muted/50">

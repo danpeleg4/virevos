@@ -7,43 +7,50 @@ jest.mock("@clerk/nextjs/server", () => ({
 }));
 
 // eslint-disable-next-line no-var
-var mockWhere: jest.Mock;
+var mockSelect: jest.Mock;
 
 jest.mock("@db/db", () => {
-  mockWhere = jest.fn();
-  return {
-    db: {
-      select: () => ({ from: () => ({ where: mockWhere }) }),
-    },
-  };
+  mockSelect = jest.fn();
+  return { db: { select: mockSelect } };
 });
 
-jest.mock("@db/schema", () => ({ events: {} }));
-jest.mock("drizzle-orm", () => ({ and: jest.fn(), eq: jest.fn() }));
-
-const mockList = jest.fn();
-const mockDownload = jest.fn();
-
-jest.mock("@/lib/supabase", () => ({
-  supabaseAdmin: {
-    storage: {
-      from: jest.fn(() => ({
-        list: mockList,
-        download: mockDownload,
-      })),
-    },
-  },
-  TRANSCRIPTS_BUCKET: "jsonFiles",
+jest.mock("@db/schema", () => ({ events: {}, meetingTranscripts: {} }));
+jest.mock("drizzle-orm", () => ({
+  and: jest.fn(),
+  eq: jest.fn(),
+  asc: jest.fn(),
 }));
 
 function mockCtx(id: string) {
   return { params: Promise.resolve({ id }) };
 }
 
+function makeEventsChain(result: unknown[]) {
+  return {
+    from: jest.fn(() => ({
+      where: jest.fn().mockResolvedValue(result),
+    })),
+  };
+}
+
+function makeTranscriptsChain(result: unknown[]) {
+  return {
+    from: jest.fn(() => ({
+      where: jest.fn(() => ({
+        orderBy: jest.fn().mockResolvedValue(result),
+      })),
+    })),
+  };
+}
+
 describe("GET /api/transcript/[id]", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockWhere.mockResolvedValue([{ id: "abc123_xyz" }]);
+    mockSelect
+      .mockReturnValueOnce(
+        makeEventsChain([{ id: "abc123_xyz", meetingStartTimeEpoch: 1700000000 }])
+      )
+      .mockReturnValueOnce(makeTranscriptsChain([]));
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -69,65 +76,58 @@ describe("GET /api/transcript/[id]", () => {
     expect(await res.json()).toEqual({ error: "Invalid meetingId" });
   });
 
-  it("returns 404 if storage folder is empty", async () => {
+  it("returns 404 if meeting not found", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    mockList.mockResolvedValueOnce({ data: [], error: null });
-
-    const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
-
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: "No files found in folder" });
-  });
-
-  it("returns 404 if folder has no JSON files", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    mockList.mockResolvedValueOnce({
-      data: [{ name: "audio.mp3" }],
-      error: null,
-    });
-
-    const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
-
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: "No JSON files found" });
-  });
-
-  it("returns 500 if storage throws an error", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    mockList.mockResolvedValueOnce({
-      data: null,
-      error: { message: "Storage unavailable" },
-    });
+    mockSelect.mockReset().mockReturnValueOnce(makeEventsChain([]));
 
     const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
 
     expect(res.status).toBe(404);
   });
 
-  it("returns parsed JSON from all matching files", async () => {
+  it("returns 404 if no transcript chunks found", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    // default beforeEach gives empty chunks
+
+    const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "No transcript found" });
+  });
+
+  it("returns 404 if meeting has no meetingStartTimeEpoch", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    mockSelect
+      .mockReset()
+      .mockReturnValueOnce(makeEventsChain([{ id: "abc123_xyz" }]));
+
+    const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns parsed chunks from all transcript rows", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
-    const file1 = { speaker: "Alice", text: "Hello" };
-    const file2 = { speaker: "Bob", text: "Hi" };
+    const chunks = [
+      { speaker: "Alice", text: "Hello", createdAt: new Date("2026-01-01") },
+      { speaker: "Bob", text: "Hi", createdAt: new Date("2026-01-01") },
+    ];
 
-    mockList.mockResolvedValueOnce({
-      data: [{ name: "chunk1.json" }, { name: "chunk2.json" }],
-      error: null,
-    });
-
-    mockDownload
-      .mockResolvedValueOnce({
-        data: new Blob([JSON.stringify(file1)], { type: "application/json" }),
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: new Blob([JSON.stringify(file2)], { type: "application/json" }),
-        error: null,
-      });
+    mockSelect
+      .mockReset()
+      .mockReturnValueOnce(
+        makeEventsChain([{ id: "abc123_xyz", meetingStartTimeEpoch: 1700000000 }])
+      )
+      .mockReturnValueOnce(makeTranscriptsChain(chunks));
 
     const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual([file1, file2]);
+    const json = await res.json();
+    expect(json.meetingStartTimeEpoch).toBe(1700000000);
+    expect(json.chunks).toHaveLength(2);
+    expect(json.chunks[0].speaker).toBe("Alice");
+    expect(json.chunks[1].speaker).toBe("Bob");
   });
 });
