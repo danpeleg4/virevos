@@ -13,6 +13,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import {
   ArrowLeft,
   Calendar,
@@ -27,6 +28,8 @@ import {
   Loader2,
   AlertCircle,
   TrendingUp,
+  StickyNote,
+  FileUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -48,6 +51,32 @@ import {
 import { deleteTask, updateTaskStatus } from "@/lib/tasks";
 import { Project, ProjectFile, ProjectNote } from "@/types/projects";
 import { Task } from "@/types/tasks";
+import { toast } from "sonner";
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatNoteDate(raw: Date | string | null | undefined): string {
+  if (!raw) return "";
+  const utcStr =
+    raw instanceof Date
+      ? raw.toISOString()
+      : typeof raw === "string" && !raw.endsWith("Z") && !raw.includes("+")
+        ? raw.replace(" ", "T") + "Z"
+        : String(raw);
+  return new Date(utcStr).toLocaleString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  });
+}
 
 export default function ProjectPage({
   params,
@@ -102,17 +131,19 @@ export function ProjectDetailView({
   const [newNote, setNewNote] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+  const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "completed">("all");
+  const [isDragging, setIsDragging] = useState(false);
   const queryClient = useQueryClient();
 
   const handleUpload = async (file: File) => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const result = await addFileMetadata({ projectId: project.id }, formData);
-      console.log("Uploaded:", result);
+      await addFileMetadata({ projectId: project.id }, formData);
       await queryClient.invalidateQueries({ queryKey: ["files", project.id] });
     } catch (err) {
       console.error("Upload failed:", err);
+      toast.error("Failed to upload file. You may have reached your storage limit.");
     }
   };
 
@@ -208,7 +239,6 @@ export function ProjectDetailView({
         project.id,
       ]);
 
-      // Update ONLY the task, keep order
       queryClient.setQueryData<Task[]>(["projectsTasks", project.id], (old) =>
         old?.map((task) => (task.id === taskId ? { ...task, status } : task))
       );
@@ -216,7 +246,6 @@ export function ProjectDetailView({
     },
 
     onError: (_err, _vars, context) => {
-      // rollback if API fails
       queryClient.setQueryData(
         ["projectsTasks", project.id],
         context?.previousTasks
@@ -288,6 +317,23 @@ export function ProjectDetailView({
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setTaskDetailOpen(true);
+  };
+
+  const allTasks: Task[] = projectsTasksQuery.data ?? [];
+  const filteredTasks =
+    taskFilter === "all"
+      ? allTasks
+      : allTasks.filter((t) =>
+          taskFilter === "completed"
+            ? t.status === "completed"
+            : t.status !== "completed"
+        );
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) addFile.mutate(file);
   };
 
   return (
@@ -390,237 +436,350 @@ export function ProjectDetailView({
         </Card>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Stages Timeline */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Tasks List */}
+      {/* Tabbed Main Content */}
+      <Tabs defaultValue="tasks">
+        <TabsList>
+          <TabsTrigger value="tasks" className="gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Tasks
+            {allTasks.length > 0 && (
+              <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+                {allTasks.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="files" className="gap-2">
+            <Paperclip className="h-4 w-4" />
+            Files
+            {(fileQuery?.data?.length ?? 0) > 0 && (
+              <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+                {fileQuery.data.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="gap-2">
+            <StickyNote className="h-4 w-4" />
+            Notes
+            {(projectNotesQuery.data?.length ?? 0) > 0 && (
+              <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+                {projectNotesQuery.data.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── Tasks Tab ── */}
+        <TabsContent value="tasks" className="mt-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-                  Tasks & To-Dos
-                </CardTitle>
-                <AddNewTask projectId={project.id} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {projectsTasksQuery.data?.map((task: Task) => (
-                  <div
-                    key={task.id}
-                    className={`flex items-center space-x-3 p-3 rounded-lg border ${
-                      task.status === "completed"
-                        ? "bg-muted/50 border-border"
-                        : "bg-card border-border hover:border-blue-300"
-                    }`}
-                  >
-                    <Checkbox
-                      className="cursor-pointer"
-                      checked={task.status === "completed"}
-                      onCheckedChange={() => toggleTaskStatus(task.id)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-sm ${
-                          task.status === "completed"
-                            ? "line-through text-muted-foreground"
-                            : "text-foreground"
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <CardTitle className="flex items-center">
+                    <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                    Tasks & To-Dos
+                  </CardTitle>
+                  <span className="text-xs text-muted-foreground">
+                    {filteredTasks.length} of {allTasks.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Filter buttons */}
+                  <div className="flex rounded-lg border border-border overflow-hidden text-xs">
+                    {(["all", "todo", "completed"] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setTaskFilter(f)}
+                        className={`px-3 py-1.5 capitalize transition-colors ${
+                          taskFilter === f
+                            ? "bg-foreground text-background"
+                            : "hover:bg-muted text-muted-foreground"
                         }`}
                       >
-                        {task.title}
-                      </p>
-                      <div className="flex items-center space-x-3 mt-1">
-                        {task.dueDate && (
-                          <span className="text-xs text-muted-foreground">
-                            Due {task.dueDate}
-                          </span>
-                        )}
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${
-                            task.priority === "high"
-                              ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
-                              : task.priority === "medium"
-                                ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
-                                : "bg-muted text-muted-foreground border border-border"
-                          }`}
-                        >
-                          <Flag className="h-3 w-3" />
-                          {task.priority}
-                        </span>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="cursor-pointer"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleTaskClick(task)}
-                          className="cursor-pointer"
-                        >
-                          View
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600 cursor-pointer"
-                          onClick={() => deleteSomeTask.mutate(task.id)}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        {f === "todo" ? "To-Do" : f === "all" ? "All" : "Done"}
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Files & Notes */}
-        <div className="space-y-6">
-          {/* Files */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center text-base">
-                  <Paperclip className="h-4 w-4 mr-2 text-blue-600" />
-                  Files
-                </CardTitle>
-                <input
-                  type="file"
-                  id="fileInput"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) addFile.mutate(file);
-                  }}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => document.getElementById("fileInput")?.click()}
-                  disabled={fileQuery?.data?.length >= 3}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
+                  <AddNewTask projectId={project.id} />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {fileQuery?.data?.slice(0, 8).map((file: ProjectFile) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50"
-                  >
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      <FileText className="h-8 w-8 text-blue-500 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground truncate">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {file.size} • {file.uploadedAt}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        window.location.href = `/api/files/${file.id}/download`;
-                      }}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => deleteProjectFileMutation.mutate(file.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+              {filteredTasks.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-14 text-center">
+                  <div className="p-4 rounded-full bg-muted">
+                    <CheckCircle className="h-8 w-8 text-muted-foreground" />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {taskFilter === "all"
+                        ? "No tasks yet"
+                        : taskFilter === "completed"
+                          ? "No completed tasks"
+                          : "No pending tasks"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {taskFilter === "all"
+                        ? "Add a task to get started"
+                        : "Change the filter to see other tasks"}
+                    </p>
+                  </div>
+                  {taskFilter === "all" && <AddNewTask projectId={project.id} />}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredTasks.map((task: Task) => (
+                    <div
+                      key={task.id}
+                      className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                        task.status === "completed"
+                          ? "bg-muted/50 border-border"
+                          : "bg-card border-border hover:border-blue-300"
+                      }`}
+                    >
+                      <Checkbox
+                        className="cursor-pointer"
+                        checked={task.status === "completed"}
+                        onCheckedChange={() => toggleTaskStatus(task.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-sm ${
+                            task.status === "completed"
+                              ? "line-through text-muted-foreground"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {task.title}
+                        </p>
+                        <div className="flex items-center space-x-3 mt-1">
+                          {task.dueDate && (
+                            <span className="text-xs text-muted-foreground">
+                              Due {task.dueDate}
+                            </span>
+                          )}
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${
+                              task.priority === "high"
+                                ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+                                : task.priority === "medium"
+                                  ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+                                  : "bg-muted text-muted-foreground border border-border"
+                            }`}
+                          >
+                            <Flag className="h-3 w-3" />
+                            {task.priority}
+                          </span>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="cursor-pointer"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleTaskClick(task)}
+                            className="cursor-pointer"
+                          >
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600 cursor-pointer"
+                            onClick={() => deleteSomeTask.mutate(task.id)}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Notes */}
+        {/* ── Files Tab ── */}
+        <TabsContent value="files" className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-base">
-                <FileText className="h-4 w-4 mr-2 text-green-600" />
+                <Paperclip className="h-4 w-4 mr-2 text-blue-600" />
+                Files
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Upload Zone */}
+              <input
+                type="file"
+                id="fileInput"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) addFile.mutate(file);
+                  e.target.value = "";
+                }}
+              />
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("fileInput")?.click()}
+                className={`flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                  isDragging
+                    ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20"
+                    : "border-border hover:border-blue-300 hover:bg-muted/50"
+                }`}
+              >
+                {addFile.isPending ? (
+                  <>
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                    <p className="text-sm text-muted-foreground">Uploading...</p>
+                  </>
+                ) : (
+                  <>
+                    <FileUp className="h-8 w-8 text-muted-foreground" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-foreground">
+                        Click to upload or drag & drop
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Any file type supported
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="mt-1 pointer-events-none">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Browse Files
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* File List */}
+              {fileQuery?.data?.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-8 text-center">
+                  <Paperclip className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No files uploaded yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {fileQuery?.data?.map((file: ProjectFile) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex-shrink-0">
+                          <FileText className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-foreground truncate font-medium">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {file.size} · {file.uploadedAt}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            window.location.href = `/api/files/${file.id}/download`;
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => deleteProjectFileMutation.mutate(file.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Notes Tab ── */}
+        <TabsContent value="notes" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-base">
+                <StickyNote className="h-4 w-4 mr-2 text-green-600" />
                 Notes
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              {/* Add Note Input */}
+              <div className="space-y-2">
                 <Textarea
-                  placeholder="Add a note..."
+                  placeholder="Write a note..."
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  rows={3}
+                  rows={4}
+                  className="resize-none"
                 />
                 <Button
                   size="sm"
-                  className="cursor-pointer mt-2"
+                  className="cursor-pointer"
                   disabled={addSomeNote.isPending || !newNote.trim()}
                   onClick={() =>
                     addSomeNote.mutate({ newNote, projectId: project.id })
                   }
                 >
-                  {addSomeNote.isPending ? "Adding..." : "Add Note"}
+                  {addSomeNote.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Add Note"
+                  )}
                 </Button>
               </div>
 
-              <div className="space-y-3">
-                {projectNotesQuery.data?.map((note: ProjectNote) => (
-                  <div
-                    key={note.id}
-                    className="p-3 bg-muted/50 rounded-lg border border-border"
-                  >
-                    <p className="text-sm  mb-2">{note.content}</p>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>
-                        {(() => {
-                          const raw = note.createdAt;
-                          if (!raw) return "";
-                          const utcStr =
-                            raw instanceof Date
-                              ? raw.toISOString()
-                              : typeof raw === "string" &&
-                                  !raw.endsWith("Z") &&
-                                  !raw.includes("+")
-                                ? raw.replace(" ", "T") + "Z"
-                                : String(raw);
-                          return new Date(utcStr).toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                            timeZone:
-                              Intl.DateTimeFormat().resolvedOptions().timeZone,
-                          });
-                        })()}
-                      </span>
-                    </div>
+              {/* Notes List */}
+              {projectNotesQuery.data?.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <div className="p-4 rounded-full bg-muted">
+                    <StickyNote className="h-8 w-8 text-muted-foreground" />
                   </div>
-                ))}
-              </div>
+                  <p className="text-sm text-muted-foreground">No notes yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projectNotesQuery.data?.map((note: ProjectNote) => (
+                    <div
+                      key={note.id}
+                      className="p-4 bg-muted/50 rounded-xl border border-border"
+                    >
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                        {note.content}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                        {formatNoteDate(note.createdAt)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
+
       {/* Task Detail Modal */}
       {selectedTask && (
         <TaskDetailModal

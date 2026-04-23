@@ -38,6 +38,8 @@ import {
   FolderKanban,
   Flag,
   Calendar as CalendarIcon,
+  FileUp,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { PortalData, TimeSlot } from "@/types/portal";
@@ -137,6 +139,13 @@ export default function PortalPage() {
   });
   const [isBooking, setIsBooking] = useState(false);
 
+  // File upload state
+  const [localFiles, setLocalFiles] = useState<PortalData["files"]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
   useEffect(() => {
     if (token) fetchPortalData();
   }, [token]);
@@ -156,6 +165,10 @@ export default function PortalPage() {
         const portalData = await res.json();
         setData(portalData);
         setLocalMessages(portalData.messages || []);
+        setLocalFiles(portalData.files || []);
+        if (portalData.projects?.length > 0) {
+          setSelectedProjectId(portalData.projects[0].id);
+        }
         setBookingForm((prev) => ({
           ...prev,
           clientName: portalData.client?.name || "",
@@ -248,6 +261,36 @@ export default function PortalPage() {
       toast.error("Failed to book meeting");
     } finally {
       setIsBooking(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (selectedProjectId) {
+        formData.append("projectId", String(selectedProjectId));
+      }
+      const res = await fetch(`/api/portal/${token}/files/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        const newFile = await res.json();
+        setLocalFiles((prev) => [newFile, ...prev]);
+        toast.success("File uploaded successfully");
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setUploadError(body.error || "Upload failed");
+        toast.error(body.error || "Upload failed");
+      }
+    } catch {
+      setUploadError("Upload failed");
+      toast.error("Upload failed");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -513,7 +556,7 @@ export default function PortalPage() {
                         onClick={() => setActiveTab("files")}
                       >
                         <Paperclip className="h-4 w-4" />
-                        View Files
+                        Files
                       </Button>
                     )}
                     <Button
@@ -745,26 +788,114 @@ export default function PortalPage() {
               <CardHeader>
                 <CardTitle className="flex items-center text-base">
                   <Paperclip className="h-4 w-4 mr-2 text-orange-600" />
-                  Shared Files
+                  Files
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
-                {data.files.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
+              <CardContent className="space-y-4">
+                {/* Upload zone — only shown when fileSharing is not disabled */}
+                {(data.settings?.fileSharing ?? true) && (
+                  <>
+                    <input
+                      type="file"
+                      id="portalFileInput"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                        e.target.value = "";
+                      }}
+                    />
+
+                    {/* Project selector when multiple projects exist */}
+                    {data.projects.length > 1 && (
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-muted-foreground whitespace-nowrap">
+                          Upload to:
+                        </label>
+                        <select
+                          className="flex-1 text-sm border border-border rounded-md px-3 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          value={selectedProjectId ?? ""}
+                          onChange={(e) =>
+                            setSelectedProjectId(Number(e.target.value))
+                          }
+                        >
+                          {data.projects.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+                      onDragLeave={() => setIsDraggingFile(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDraggingFile(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                      onClick={() => document.getElementById("portalFileInput")?.click()}
+                      className={`flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                        isDraggingFile
+                          ? "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
+                          : "border-border hover:border-orange-300 hover:bg-muted/50"
+                      }`}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                          <p className="text-sm text-muted-foreground">Uploading...</p>
+                        </>
+                      ) : (
+                        <>
+                          <FileUp className="h-8 w-8 text-muted-foreground" />
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-foreground">
+                              Click to upload or drag & drop
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Max 10 MB per file
+                            </p>
+                          </div>
+                          <Button size="sm" variant="outline" className="mt-1 pointer-events-none">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Browse Files
+                          </Button>
+                        </>
+                      )}
+                    </div>
+
+                    {uploadError && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        {uploadError}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* File list */}
+                {localFiles.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
                     <Paperclip className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">No files shared yet</p>
+                    <p className="text-sm text-muted-foreground">No files yet</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-border">
-                    {data.files.map((file) => (
+                  <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+                    {localFiles.map((file) => (
                       <div
                         key={file.id}
                         className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-8 w-8 text-blue-500 flex-shrink-0" />
-                          <div>
-                            <p className="text-sm text-foreground font-medium">{file.name}</p>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex-shrink-0">
+                            <FileText className="h-5 w-5 text-blue-500" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm text-foreground font-medium truncate">{file.name}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {formatFileSize(file.size)}
                               {file.createdAt
@@ -773,7 +904,7 @@ export default function PortalPage() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" asChild className="shrink-0">
                           <a
                             href={`/api/portal/${token}/files/${file.id}/download`}
                             download={file.name}
