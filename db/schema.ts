@@ -340,12 +340,50 @@ export const clientPortalTokens = pgTable("client_portal_tokens", {
       fileSharing?: boolean;
       aiChatBot?: boolean;
       emailNotifications?: boolean;
+      meetingSchedulingEnabled?: boolean;
+      availability?: {
+        weeklySchedule: {
+          [day: string]: {
+            enabled: boolean;
+            startTime: string;
+            endTime: string;
+          };
+        };
+        meetingDurations: number[];
+        bufferMinutes: number;
+        timezone: string;
+      };
     }>()
     .default({}),
   lastAccessedAt: timestamp("last_accessed_at"),
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// PORTAL MEETING BOOKINGS
+export const portalMeetingBookings = pgTable("portal_meeting_bookings", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  portalId: integer("portal_id")
+    .notNull()
+    .references(() => clientPortalTokens.id, { onDelete: "cascade" }),
+  clientId: integer("client_id")
+    .notNull()
+    .references(() => clients.id, { onDelete: "cascade" }),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+  clientName: text("client_name").notNull(),
+  clientEmail: text("client_email").notNull(),
+  dateTime: timestamp("date_time").notNull(),
+  duration: integer("duration").notNull(),
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
+  meetingLink: text("meeting_link"),
+  eventId: text("event_id").references(() => events.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -550,7 +588,7 @@ export const outlookEmailsRelations = relations(outlookEmails, ({ one }) => ({
 
 export const clientPortalTokensRelations = relations(
   clientPortalTokens,
-  ({ one }) => ({
+  ({ one, many }) => ({
     user: one(users, {
       fields: [clientPortalTokens.userId],
       references: [users.user_id],
@@ -558,6 +596,29 @@ export const clientPortalTokensRelations = relations(
     client: one(clients, {
       fields: [clientPortalTokens.clientId],
       references: [clients.id],
+    }),
+    bookings: many(portalMeetingBookings),
+  })
+);
+
+export const portalMeetingBookingsRelations = relations(
+  portalMeetingBookings,
+  ({ one }) => ({
+    portal: one(clientPortalTokens, {
+      fields: [portalMeetingBookings.portalId],
+      references: [clientPortalTokens.id],
+    }),
+    client: one(clients, {
+      fields: [portalMeetingBookings.clientId],
+      references: [clients.id],
+    }),
+    user: one(users, {
+      fields: [portalMeetingBookings.userId],
+      references: [users.user_id],
+    }),
+    event: one(events, {
+      fields: [portalMeetingBookings.eventId],
+      references: [events.id],
     }),
   })
 );

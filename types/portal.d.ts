@@ -1,3 +1,45 @@
+export interface AvailabilityDay {
+  enabled: boolean;
+  startTime: string; // "HH:MM" 24h format
+  endTime: string; // "HH:MM" 24h format
+}
+
+export interface PortalAvailability {
+  weeklySchedule: Record<string, AvailabilityDay>;
+  meetingDurations: number[];
+  bufferMinutes: number;
+  timezone: string;
+}
+
+export interface PortalMeetingBooking {
+  id: number;
+  portalId: number;
+  clientId: number;
+  userId: string;
+  clientName: string;
+  clientEmail: string;
+  dateTime: string; // ISO string
+  duration: number;
+  status: "pending" | "confirmed" | "cancelled";
+  notes: string | null;
+  meetingLink: string | null;
+  eventId: string | null;
+  createdAt: string | null;
+}
+
+export interface BookingInput {
+  clientName: string;
+  clientEmail: string;
+  dateTime: string; // ISO string of selected slot
+  duration: number;
+  notes?: string;
+}
+
+export interface TimeSlot {
+  startTime: string; // ISO string
+  available: boolean;
+}
+
 export interface PortalRecord {
   id: number;
   clientId: number;
@@ -13,6 +55,8 @@ export interface PortalRecord {
     fileSharing?: boolean;
     aiChatBot?: boolean;
     emailNotifications?: boolean;
+    meetingSchedulingEnabled?: boolean;
+    availability?: PortalAvailability;
   };
   portalUrl: string;
   lastAccessedAt: string | null;
@@ -31,6 +75,8 @@ export interface PortalData {
     welcomeMessage?: string;
     chatEnabled?: boolean;
     fileSharing?: boolean;
+    meetingSchedulingEnabled?: boolean;
+    availability?: PortalAvailability;
   };
   projects: Array<{
     id: number;
@@ -56,5 +102,11 @@ export interface PortalData {
     mimeType: string | null;
     path: string;
     createdAt: string | null;
+  }>;
+  bookings: Array<{
+    id: number;
+    dateTime: string;
+    duration: number;
+    status: string;
   }>;
 }

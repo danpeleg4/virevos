@@ -3,9 +3,12 @@
 import { ReactNode, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter, usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import type { PortalMeetingBooking } from "@/types/portal";
 
 import {
   LayoutDashboard,
@@ -43,11 +46,30 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
+type BookingWithClient = PortalMeetingBooking & {
+  clientDisplayName: string | null;
+};
+
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
 
   const { user, isLoaded } = useUser();
+
+  const { data: allBookings } = useQuery({
+    queryKey: ["portalBookings"],
+    queryFn: async () => {
+      const { data } = await axios.get<{ bookings: BookingWithClient[] }>(
+        "/api/portal/bookings"
+      );
+      return data.bookings;
+    },
+    refetchInterval: 60000,
+    enabled: isLoaded && !!user,
+  });
+
+  const pendingBookings = allBookings?.filter((b) => b.status === "pending") ?? [];
+  const pendingCount = pendingBookings.length;
   const router = useRouter();
   const currentPath = usePathname();
 
@@ -106,9 +128,22 @@ export function AppLayout({ children }: AppLayoutProps) {
             className="w-full justify-start"
             onClick={() => setAiOpen(!aiOpen)}
           >
-            <Sparkles className="h-4 w-4 mr-2" />
+            <span className="relative mr-2">
+              <Sparkles className="h-4 w-4" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-1.5 -left-1.5 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
+                  {pendingCount > 9 ? "9+" : pendingCount}
+                </span>
+              )}
+            </span>
             AI Assistant
-            <Badge className="ml-auto bg-purple-100 text-purple-700">New</Badge>
+            {pendingCount > 0 ? (
+              <Badge className="ml-auto bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800">
+                {pendingCount}
+              </Badge>
+            ) : (
+              <Badge className="ml-auto bg-purple-100 text-purple-700">New</Badge>
+            )}
           </Button>
         </div>
 
@@ -201,11 +236,22 @@ export function AppLayout({ children }: AppLayoutProps) {
                     setSidebarOpen(false);
                   }}
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span className="relative mr-2">
+                    <Sparkles className="h-4 w-4" />
+                    {pendingCount > 0 && (
+                      <span className="absolute -top-1.5 -left-1.5 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
+                        {pendingCount > 9 ? "9+" : pendingCount}
+                      </span>
+                    )}
+                  </span>
                   AI Assistant
-                  <Badge className="ml-auto bg-purple-100 text-purple-700">
-                    New
-                  </Badge>
+                  {pendingCount > 0 ? (
+                    <Badge className="ml-auto bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800">
+                      {pendingCount}
+                    </Badge>
+                  ) : (
+                    <Badge className="ml-auto bg-purple-100 text-purple-700">New</Badge>
+                  )}
                 </Button>
               </div>
 
@@ -251,8 +297,16 @@ export function AppLayout({ children }: AppLayoutProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setAiOpen(!aiOpen)}
+                className="relative"
               >
-                <Sparkles className="h-4 w-4 sm:mr-2" />
+                <span className="relative sm:mr-2">
+                  <Sparkles className="h-4 w-4" />
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-2 -left-2 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                      {pendingCount > 9 ? "9+" : pendingCount}
+                    </span>
+                  )}
+                </span>
                 <span className="hidden sm:inline">AI Assistant</span>
               </Button>
             </div>
@@ -264,7 +318,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         </main>
       </div>
 
-      <AIAssistant isOpen={aiOpen} onClose={() => setAiOpen(false)} />
+      <AIAssistant
+        isOpen={aiOpen}
+        onClose={() => setAiOpen(false)}
+        pendingBookings={pendingBookings}
+      />
     </div>
   );
 }

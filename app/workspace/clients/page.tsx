@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Card } from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
-import { Input } from "@/app/components/ui/input";
+import {useEffect, useRef, useState} from "react";
+import {Card} from "@/app/components/ui/card";
+import {Button} from "@/app/components/ui/button";
+import {Avatar, AvatarFallback} from "@/app/components/ui/avatar";
+import {Input} from "@/app/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/app/components/ui/dialog";
-import { Label } from "@/app/components/ui/label";
+import {Label} from "@/app/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,40 +21,35 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import {
-  Plus,
-  Search,
-  Mail,
-  Phone,
-  Calendar,
-  ChevronRight,
-  ChevronLeft,
-  FolderOpen,
-  Trash2,
   ArrowUpDown,
-  SlidersHorizontal,
-  Building2,
   Briefcase,
-  Target,
+  Building2,
+  Calendar,
   CheckIcon,
-  TrendingUp,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Flag,
+  FolderOpen,
   ListChecks,
+  Mail,
+  Phone,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Target,
+  Trash2,
+  TrendingUp,
 } from "lucide-react";
 import axios from "axios";
-import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  addAClient,
-  deleteClient,
-  toggleClientStatus,
-  updateExistingClient,
-} from "@/lib/clients";
-import { Textarea } from "@/app/components/ui/textarea";
-import { Checkbox } from "@/app/components/ui/checkbox";
-import { Progress } from "@/app/components/ui/progress";
-import { Project } from "@/types/projects";
-import { task_percentage } from "@/lib/task_percentage";
+import {clients, CreateClientInput, UpdateClientInput} from "@/types/clients";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {addAClient, deleteClient, toggleClientStatus, updateExistingClient,} from "@/lib/clients";
+import {Textarea} from "@/app/components/ui/textarea";
+import {Checkbox} from "@/app/components/ui/checkbox";
+import {Progress} from "@/app/components/ui/progress";
+import {Project} from "@/types/projects";
+import {task_percentage} from "@/lib/task_percentage";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -261,8 +256,7 @@ export default function Clients() {
 
   const addClient = useMutation({
     mutationFn: async (newClient: CreateClientInput) => {
-      const res = await addAClient(newClient);
-      return res;
+      return await addAClient(newClient);
     },
 
     onMutate: async (newClient) => {
@@ -314,8 +308,7 @@ export default function Clients() {
 
   const updateClient = useMutation({
     mutationFn: async (newClient: UpdateClientInput) => {
-      const res = updateExistingClient(newClient);
-      return res;
+      return updateExistingClient(newClient);
     },
     onMutate: async (newClient: UpdateClientInput) => {
       await queryClient.cancelQueries({ queryKey: ["clients"] });

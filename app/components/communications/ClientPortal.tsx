@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { createPortal } from "react-dom";
 import {
-  Card,
   CardContent,
   CardHeader,
   CardTitle,
@@ -15,6 +15,7 @@ import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
+import { Checkbox } from "../ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -25,24 +26,85 @@ import {
 import {
   Globe,
   Palette,
-  MessageSquare,
-  Bell,
   ExternalLink,
   Copy,
   Eye,
   Sparkles,
   Loader2,
+  CalendarDays,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  User,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { toast } from "sonner";
-import type { PortalRecord } from "@/types/portal";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { PortalRecord, PortalAvailability, PortalMeetingBooking } from "@/types/portal";
 import type { ClientSummary } from "@/types/clients";
+import { updateBookingStatus } from "@/lib/portal_bookings";
 
 interface ClientPortalProps {
   navContainer: HTMLDivElement | null;
 }
 
+const DAYS_OF_WEEK = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+const DAY_LABELS: Record<string, string> = {
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+  saturday: "Saturday",
+  sunday: "Sunday",
+};
+
+const DURATION_OPTIONS = [15, 30, 45, 60];
+const BUFFER_OPTIONS = [0, 5, 10, 15, 30];
+
+function generateTimeOptions(): { value: string; label: string }[] {
+  const options: { value: string; label: string }[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of [0, 30]) {
+      const hh = String(h).padStart(2, "0");
+      const mm = String(m).padStart(2, "0");
+      const value = `${hh}:${mm}`;
+      const period = h < 12 ? "AM" : "PM";
+      const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      options.push({ value, label: `${displayH}:${mm} ${period}` });
+    }
+  }
+  return options;
+}
+
+const TIME_OPTIONS = generateTimeOptions();
+
+const DEFAULT_AVAILABILITY: PortalAvailability = {
+  weeklySchedule: {
+    monday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    tuesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    wednesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    thursday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    friday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    sunday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+  },
+  meetingDurations: [15, 30, 45, 60],
+  bufferMinutes: 15,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+};
+
 export function ClientPortal({ navContainer }: ClientPortalProps) {
+  const queryClient = useQueryClient();
   const [portals, setPortals] = useState<PortalRecord[]>([]);
   const [clients, setClients] = useState<ClientSummary[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
@@ -59,6 +121,10 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
   const [welcomeMessage, setWelcomeMessage] = useState(
     "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
   );
+  const [meetingSchedulingEnabled, setMeetingSchedulingEnabled] =
+    useState(false);
+  const [availability, setAvailability] =
+    useState<PortalAvailability>(DEFAULT_AVAILABILITY);
 
   useEffect(() => {
     fetchPortals();
@@ -68,11 +134,8 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
   const fetchPortals = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/portal/settings");
-      if (res.ok) {
-        const data = await res.json();
-        setPortals(data.portals || []);
-      }
+      const { data } = await axios.get("/api/portal/settings");
+      setPortals(data.portals || []);
     } catch (err) {
       console.error("Failed to fetch portals:", err);
     } finally {
@@ -102,6 +165,10 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
       setFileSharing(portal.settings?.fileSharing ?? true);
       setAiChatBot(portal.settings?.aiChatBot ?? true);
       setEmailNotifications(portal.settings?.emailNotifications ?? true);
+      setMeetingSchedulingEnabled(
+        portal.settings?.meetingSchedulingEnabled ?? false
+      );
+      setAvailability(portal.settings?.availability ?? DEFAULT_AVAILABILITY);
     } else {
       setPortalEnabled(true);
       setTitle("");
@@ -112,6 +179,8 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
       setFileSharing(true);
       setAiChatBot(true);
       setEmailNotifications(true);
+      setMeetingSchedulingEnabled(false);
+      setAvailability(DEFAULT_AVAILABILITY);
     }
   };
 
@@ -136,6 +205,8 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
             fileSharing,
             aiChatBot,
             emailNotifications,
+            meetingSchedulingEnabled,
+            availability,
           },
         }),
       });
@@ -153,6 +224,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
           }
           return [...prev, data];
         });
+        queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
         toast.success("Portal settings saved");
       } else {
         const data = await res.json();
@@ -163,6 +235,72 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const { data: bookingsData } = useQuery({
+    queryKey: ["portalBookings"],
+    queryFn: async () => {
+      const { data } = await axios.get<{ bookings: (PortalMeetingBooking & { clientDisplayName: string | null })[] }>("/api/portal/bookings");
+      return data.bookings;
+    },
+    enabled: !!selectedClientId && meetingSchedulingEnabled,
+  });
+
+  const currentPortalId = portals.find(
+    (p) => String(p.clientId) === selectedClientId
+  )?.id;
+
+  const portalBookings = bookingsData?.filter(
+    (b) => b.portalId === currentPortalId
+  ) ?? [];
+
+  const confirmBooking = useMutation({
+    mutationFn: (bookingId: number) =>
+      updateBookingStatus(bookingId, "confirmed"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+      toast.success("Booking confirmed");
+    },
+    onError: () => toast.error("Failed to confirm booking"),
+  });
+
+  const cancelBooking = useMutation({
+    mutationFn: (bookingId: number) =>
+      updateBookingStatus(bookingId, "cancelled"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+      toast.success("Booking cancelled");
+    },
+    onError: () => toast.error("Failed to cancel booking"),
+  });
+
+  const updateDaySchedule = (
+    day: string,
+    field: "enabled" | "startTime" | "endTime",
+    value: boolean | string
+  ) => {
+    setAvailability((prev) => ({
+      ...prev,
+      weeklySchedule: {
+        ...prev.weeklySchedule,
+        [day]: {
+          ...prev.weeklySchedule[day],
+          [field]: value,
+        },
+      },
+    }));
+  };
+
+  const toggleDuration = (duration: number) => {
+    setAvailability((prev) => {
+      const current = prev.meetingDurations;
+      const next = current.includes(duration)
+        ? current.filter((d) => d !== duration)
+        : [...current, duration].sort((a, b) => a - b);
+      // Ensure at least one duration remains
+      if (next.length === 0) return prev;
+      return { ...prev, meetingDurations: next };
+    });
   };
 
   const currentPortal = portals.find(
@@ -476,6 +614,254 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                   />
                 </div>
               </CardContent>
+            </div>
+
+            {/* Meeting Scheduling */}
+            <div>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="flex items-center">
+                      <CalendarDays className="h-5 w-5 mr-2 text-emerald-600" />
+                      Meeting Scheduling
+                    </CardTitle>
+                    <CardDescription className="mt-2">
+                      Allow clients to book meetings directly from their portal
+                    </CardDescription>
+                  </div>
+                  <Switch
+                    checked={meetingSchedulingEnabled}
+                    onCheckedChange={setMeetingSchedulingEnabled}
+                  />
+                </div>
+              </CardHeader>
+
+              {meetingSchedulingEnabled && (
+                <CardContent className="space-y-6">
+                  {/* Weekly Availability */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">
+                      Weekly Availability
+                    </Label>
+                    <div className="space-y-2">
+                      {DAYS_OF_WEEK.map((day) => {
+                        const dayConfig = availability.weeklySchedule[day] ?? {
+                          enabled: false,
+                          startTime: "09:00",
+                          endTime: "17:00",
+                        };
+                        return (
+                          <div
+                            key={day}
+                            className="flex items-center gap-3 py-1"
+                          >
+                            <Switch
+                              checked={dayConfig.enabled}
+                              onCheckedChange={(val) =>
+                                updateDaySchedule(day, "enabled", val)
+                              }
+                            />
+                            <span className="w-24 text-sm text-foreground">
+                              {DAY_LABELS[day]}
+                            </span>
+                            <Select
+                              value={dayConfig.startTime}
+                              onValueChange={(val) =>
+                                updateDaySchedule(day, "startTime", val)
+                              }
+                              disabled={!dayConfig.enabled}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TIME_OPTIONS.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <span className="text-sm text-muted-foreground">
+                              to
+                            </span>
+                            <Select
+                              value={dayConfig.endTime}
+                              onValueChange={(val) =>
+                                updateDaySchedule(day, "endTime", val)
+                              }
+                              disabled={!dayConfig.enabled}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TIME_OPTIONS.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Meeting Durations */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">
+                      Allowed Meeting Durations
+                    </Label>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      {DURATION_OPTIONS.map((d) => (
+                        <div key={d} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`duration-${d}`}
+                            checked={availability.meetingDurations.includes(d)}
+                            onCheckedChange={() => toggleDuration(d)}
+                          />
+                          <Label
+                            htmlFor={`duration-${d}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {d} min
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Buffer Time */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        Buffer Between Meetings
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Gap to block before and after each booking
+                      </p>
+                    </div>
+                    <Select
+                      value={String(availability.bufferMinutes)}
+                      onValueChange={(val) =>
+                        setAvailability((prev) => ({
+                          ...prev,
+                          bufferMinutes: parseInt(val, 10),
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUFFER_OPTIONS.map((b) => (
+                          <SelectItem key={b} value={String(b)}>
+                            {b === 0 ? "None" : `${b} min`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Separator />
+
+                  {/* Timezone */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Timezone</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Availability is shown in this timezone
+                      </p>
+                    </div>
+                    <p className="text-sm text-foreground">
+                      {availability.timezone}
+                    </p>
+                  </div>
+
+                  {/* Bookings Table */}
+                  {currentPortal && portalBookings.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold">
+                          Meeting Requests
+                        </Label>
+                        <div className="space-y-2">
+                          {portalBookings.map((booking) => (
+                            <div
+                              key={booking.id}
+                              className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30"
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <p className="text-sm font-medium">
+                                    {booking.clientName}
+                                  </p>
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      booking.status === "confirmed"
+                                        ? "border-green-200 text-green-700 bg-green-50"
+                                        : booking.status === "cancelled"
+                                        ? "border-red-200 text-red-700 bg-red-50"
+                                        : "border-yellow-200 text-yellow-700 bg-yellow-50"
+                                    }
+                                  >
+                                    {booking.status}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(booking.dateTime).toLocaleString()}{" "}
+                                  · {booking.duration} min
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {booking.clientEmail}
+                                </p>
+                              </div>
+                              {booking.status === "pending" && (
+                                <div className="flex items-center gap-1.5">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50"
+                                    onClick={() =>
+                                      confirmBooking.mutate(booking.id)
+                                    }
+                                    disabled={confirmBooking.isPending}
+                                  >
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                    Confirm
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50"
+                                    onClick={() =>
+                                      cancelBooking.mutate(booking.id)
+                                    }
+                                    disabled={cancelBooking.isPending}
+                                  >
+                                    <XCircle className="h-3.5 w-3.5 mr-1" />
+                                    Cancel
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              )}
             </div>
           </>
         )}

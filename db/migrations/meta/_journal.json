@@ -50,6 +50,13 @@
       "when": 1776815354071,
       "tag": "0006_pretty_nextwave",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776899447687,
+      "tag": "0007_slippery_absorbing_man",
+      "breakpoints": true
     }
   ]
 }
