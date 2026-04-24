@@ -31,9 +31,8 @@ import {
   Clock,
   Flag,
   FolderOpen,
-  ListChecks,
   Mail,
-  Phone,
+  Pencil,
   Plus,
   Search,
   SlidersHorizontal,
@@ -54,7 +53,6 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Progress } from "@/app/components/ui/progress";
 import { Project } from "@/types/projects";
-import { task_percentage } from "@/lib/task_percentage";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -144,15 +142,14 @@ export default function Clients() {
     "all" | "active" | "inactive"
   >("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [selectedClient, setSelectedClient] = useState<clients | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [industry, setIndustry] = useState("");
   const [notes, setNotes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isEditing, setIsEditing] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -230,8 +227,7 @@ export default function Clients() {
   );
 
   const handleClientClick = (client: clients) => {
-    setSelectedClient(client);
-    setDetailsOpen(true);
+    setSelectedClient((prev) => (prev?.id === client.id ? null : client));
   };
 
   const handlePreviousPage = () => {
@@ -457,7 +453,7 @@ export default function Clients() {
                         setSortDir(dir);
                         setCurrentPage(1);
                       }}
-                      className="flex items-center justify-between"
+                      className="flex items-center justify-between cursor-pointer"
                     >
                       {label}
                       {sortField === field && sortDir === dir && (
@@ -491,7 +487,7 @@ export default function Clients() {
                         setStatusFilter(value);
                         setCurrentPage(1);
                       }}
-                      className="flex items-center justify-between"
+                      className="flex items-center justify-between cursor-pointer"
                     >
                       {label}
                       {statusFilter === value && (
@@ -502,6 +498,22 @@ export default function Clients() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <Button
+                  variant="outline"
+                  disabled={!selectedClient || selectedIds.size > 1}
+                  onClick={() => {
+                    if (!selectedClient) return;
+                    setName(selectedClient.name ?? "");
+                    setEmail(selectedClient.email ?? "");
+                    setIndustry(selectedClient.industry ?? "");
+                    setNotes(selectedClient.notes ?? "");
+                    setPhone(selectedClient.phone ?? "");
+                    setEditOpen(true);
+                  }}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
@@ -663,8 +675,7 @@ export default function Clients() {
                   {paginatedClients.map((client, index) => (
                     <tr
                       key={client?.id ?? `temp-${index}-${client.name}`}
-                      onClick={() => handleClientClick(client)}
-                      className=" transition-colors hover:bg-muted/50 group"
+                      className="transition-colors group hover:bg-muted/50"
                     >
                       <td
                         className="px-3 py-2.5"
@@ -673,7 +684,10 @@ export default function Clients() {
                         <Checkbox
                           className="rounded border-border h-3.5 w-3.5 cursor-pointer transition-opacity"
                           checked={selectedIds.has(client.id)}
-                          onCheckedChange={() => toggleSelect(client.id)}
+                          onCheckedChange={() => {
+                            handleClientClick(client)
+                            toggleSelect(client.id)
+                          }}
                         />
                       </td>
                       <td className="px-3 py-2.5">
@@ -794,347 +808,69 @@ export default function Clients() {
         </Card>
       </div>
 
-      {/* Client Details Modal */}
-      <Dialog
-        open={detailsOpen}
-        onOpenChange={(open) => {
-          setDetailsOpen(open);
-          if (!open) setIsEditing(false);
-        }}
-      >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedClient && (
-            <>
-              {/* Header */}
-              <DialogHeader className="pb-4 border-b border-border">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-14 w-14 flex-shrink-0">
-                      <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
-                        {selectedClient.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <DialogTitle className="text-xl text-foreground">
-                        {isEditing ? (
-                          <Input
-                            defaultValue={selectedClient.name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="h-8 text-base"
-                          />
-                        ) : (
-                          selectedClient.name
-                        )}
-                      </DialogTitle>
-                      <DialogDescription className="mt-1 flex items-center gap-2">
-                        <span>
-                          Client since{" "}
-                          {selectedClient?.createdAt
-                            ? new Date(selectedClient.createdAt).toDateString()
-                            : "—"}
-                        </span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="cursor-pointer">
-                              <StatusBadge status={selectedClient.status} />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-32">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: selectedClient.id,
-                                  status: "active",
-                                })
-                              }
-                              className="cursor-pointer flex items-center gap-2"
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                              Active
-                              {selectedClient.status === "active" && (
-                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: selectedClient.id,
-                                  status: "inactive",
-                                })
-                              }
-                              className="cursor-pointer flex items-center gap-2"
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-                              Inactive
-                              {selectedClient.status === "inactive" && (
-                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        {selectedClient.industry && (
-                          <IndustryPill industry={selectedClient.industry} />
-                        )}
-                      </DialogDescription>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="cursor-pointer flex-shrink-0"
-                    onClick={() => {
-                      setDetailsOpen(false);
-                      deleteMutation.mutate({ id: selectedClient?.id });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </DialogHeader>
-
-              <div className="space-y-5 mt-5">
-                {/* Contact Information */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                    Contact Information
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 bg-muted/50 rounded-lg border border-border px-4 py-3">
-                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      {isEditing ? (
-                        <Input
-                          defaultValue={selectedClient.email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0"
-                          placeholder="Email address"
-                        />
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          {selectedClient.email || "—"}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 bg-muted/50 rounded-lg border border-border px-4 py-3">
-                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      {isEditing ? (
-                        <Input
-                          defaultValue={selectedClient.phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0"
-                          placeholder="Phone number"
-                        />
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          {selectedClient.phone || "—"}
-                        </span>
-                      )}
-                    </div>
-                    {isEditing && (
-                      <div className="flex items-center gap-3 bg-muted/50 rounded-lg border border-border px-4 py-3">
-                        <Briefcase className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <Input
-                          defaultValue={selectedClient.industry}
-                          onChange={(e) => setIndustry(e.target.value)}
-                          className="h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0"
-                          placeholder="Industry"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Projects Mini Table */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                    Recent Projects
-                  </h3>
-                  {(() => {
-                    const clientProjects = (getProjects.data?.projects ?? [])
-                      .filter((p: Project) => p.clientId === selectedClient.id)
-                      .sort(
-                        (a: { id: number }, b: { id: number }) => b.id - a.id
-                      )
-                      .slice(0, 5);
-
-                    if (getProjects.isLoading) {
-                      return (
-                        <div className="text-xs text-muted-foreground py-4 text-center">
-                          Loading projects...
-                        </div>
-                      );
-                    }
-
-                    if (clientProjects.length === 0) {
-                      return (
-                        <div className="flex flex-col items-center gap-1.5 py-6 text-center bg-muted/30 rounded-lg border border-border">
-                          <FolderOpen className="h-5 w-5 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">
-                            No projects yet
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="rounded-lg border border-border overflow-hidden">
-                        <table className="w-full">
-                          <thead className="border-b border-border bg-muted/50">
-                            <tr>
-                              <th className="text-left px-3 py-2">
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                                  <FolderOpen className="h-3 w-3" />
-                                  Project
-                                </div>
-                              </th>
-                              <th className="text-left px-3 py-2">
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                                  <Target className="h-3 w-3" />
-                                  Status
-                                </div>
-                              </th>
-                              <th className="text-left px-3 py-2 min-w-[100px]">
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                                  <TrendingUp className="h-3 w-3" />
-                                  Progress
-                                </div>
-                              </th>
-                              <th className="text-left px-3 py-2">
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                                  <ListChecks className="h-3 w-3" />
-                                  Tasks
-                                </div>
-                              </th>
-                              <th className="text-left px-3 py-2">
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                                  <Calendar className="h-3 w-3" />
-                                  Due
-                                </div>
-                              </th>
-                              <th className="text-left px-3 py-2">
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                                  <Flag className="h-3 w-3" />
-                                  Priority
-                                </div>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {clientProjects.map((project: Project) => {
-                              const pct = task_percentage({
-                                completed: project.stats.completedTasks,
-                                total: project.stats.totalTasks,
-                              });
-                              return (
-                                <tr
-                                  key={project.id}
-                                  className="hover:bg-muted/40 transition-colors"
-                                >
-                                  <td className="px-3 py-2">
-                                    <span className="text-xs font-medium text-foreground">
-                                      {project.name}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <ProjectStatusBadge
-                                      status={project.status}
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <div className="flex items-center gap-1.5 min-w-[90px]">
-                                      <Progress
-                                        value={pct}
-                                        className="h-1.5 flex-1"
-                                      />
-                                      <span className="text-xs text-muted-foreground w-6 text-right shrink-0">
-                                        {pct}%
-                                      </span>
-                                    </div>
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
-                                      {project.stats.completedTasks}/
-                                      {project.stats.totalTasks}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    {project.dueDate ? (
-                                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                        <Clock className="h-2.5 w-2.5 shrink-0" />
-                                        {project.dueDate}
-                                      </div>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">
-                                        —
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <ProjectPriorityBadge
-                                      priority={project.priority}
-                                    />
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                    Notes
-                  </h3>
-                  {isEditing ? (
-                    <Textarea
-                      defaultValue={selectedClient.notes ?? ""}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add notes..."
-                      rows={3}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg border border-border px-4 py-3 min-h-[60px]">
-                      {selectedClient.notes || "—"}
-                    </p>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end space-x-3 pt-2 border-t border-border">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setDetailsOpen(false);
-                      setIsEditing(false);
-                    }}
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      if (isEditing) {
-                        const updatedData = {
-                          id: selectedClient.id,
-                          name: name || selectedClient.name,
-                          email: email || selectedClient.email,
-                          phone: phone || selectedClient.phone,
-                          industry: industry || selectedClient.industry,
-                          notes: notes || selectedClient.notes,
-                        };
-                        updateClient.mutate(updatedData);
-                      }
-                      setIsEditing(!isEditing);
-                    }}
-                  >
-                    {isEditing ? "Save Client" : "Edit Client"}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+      {/* Edit Client Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit Client</DialogTitle>
+            <DialogDescription>
+              Update name, email, and industry for{" "}
+              <span className="font-medium text-foreground">
+                {selectedClient?.name}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Name</Label>
+              <Input
+                className="mt-2"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Client name"
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                className="mt-2"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="contact@example.com"
+              />
+            </div>
+            <div>
+              <Label>Industry</Label>
+              <Input
+                className="mt-2"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                placeholder="Technology"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!selectedClient) return;
+                  updateClient.mutate({
+                    id: selectedClient.id,
+                    name: name || selectedClient.name,
+                    email: email || selectedClient.email,
+                    phone: phone || selectedClient.phone,
+                    industry: industry || selectedClient.industry,
+                    notes: notes || selectedClient.notes,
+                  });
+                  setEditOpen(false);
+                }}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
