@@ -36,9 +36,6 @@ export async function GET(
     return NextResponse.json({ url });
   } catch (err) {
     console.error("Storage error:", err);
-    return NextResponse.json(
-      { error: "Recording not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Recording not found" }, { status: 404 });
   }
 }

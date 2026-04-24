@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { db } from "@db/db";
-import { meetingAttendees, meetingTranscripts, events, users } from "@db/schema";
-import { asc, eq } from "drizzle-orm";
+import {
+  meetingAttendees,
+  meetingTranscripts,
+  events,
+  users,
+} from "@db/schema";
+import { asc, eq, sql} from "drizzle-orm";
 import {
   EgressClient,
   EncodedFileOutput,
@@ -79,9 +84,12 @@ export async function POST(req: NextRequest) {
             }),
           };
           await egressClient.startRoomCompositeEgress(roomName, outputs);
-          await db.update(events).set({
-            meetingStartTimeEpoch: Math.floor(Date.now() / 1000)
-          }).where(eq(events.id, roomName))
+          await db
+            .update(events)
+            .set({
+              meetingStartTimeEpoch: Math.floor(Date.now() / 1000),
+            })
+            .where(eq(events.id, roomName));
         }
       } catch (err) {
         console.error("Failed to start composite egress:", err);
@@ -159,6 +167,15 @@ export async function POST(req: NextRequest) {
         })
         .where(eq(events.id, roomName));
     });
+
+    const [eventUser] = await db.select({
+      userId: events.userId
+    }).from(events).where(eq(events.id, roomName));
+
+    await db
+        .update(users)
+        .set({ ai_credits: sql`${users.ai_credits} + 1` })
+        .where(eq(users.user_id, eventUser.userId));
   }
 
   if (event.event === "participant_joined") {

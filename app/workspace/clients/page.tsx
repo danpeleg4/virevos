@@ -1,10 +1,10 @@
 "use client";
 
-import {useEffect, useRef, useState} from "react";
-import {Card} from "@/app/components/ui/card";
-import {Button} from "@/app/components/ui/button";
-import {Avatar, AvatarFallback} from "@/app/components/ui/avatar";
-import {Input} from "@/app/components/ui/input";
+import { useEffect, useRef, useState } from "react";
+import { Card } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Input } from "@/app/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/app/components/ui/dialog";
-import {Label} from "@/app/components/ui/label";
+import { Label } from "@/app/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,14 +42,19 @@ import {
   TrendingUp,
 } from "lucide-react";
 import axios from "axios";
-import {clients, CreateClientInput, UpdateClientInput} from "@/types/clients";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {addAClient, deleteClient, toggleClientStatus, updateExistingClient,} from "@/lib/clients";
-import {Textarea} from "@/app/components/ui/textarea";
-import {Checkbox} from "@/app/components/ui/checkbox";
-import {Progress} from "@/app/components/ui/progress";
-import {Project} from "@/types/projects";
-import {task_percentage} from "@/lib/task_percentage";
+import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  addAClient,
+  deleteClient,
+  toggleClientStatus,
+  updateExistingClient,
+} from "@/lib/clients";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import { Progress } from "@/app/components/ui/progress";
+import { Project } from "@/types/projects";
+import { task_percentage } from "@/lib/task_percentage";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -946,7 +951,9 @@ export default function Clients() {
                   {(() => {
                     const clientProjects = (getProjects.data?.projects ?? [])
                       .filter((p: Project) => p.clientId === selectedClient.id)
-                      .sort((a: { id: number; }, b: { id: number; }) => b.id - a.id)
+                      .sort(
+                        (a: { id: number }, b: { id: number }) => b.id - a.id
+                      )
                       .slice(0, 5);
 
                     if (getProjects.isLoading) {

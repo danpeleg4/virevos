@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
   //console.log(roomId, speakerIdentity, text);
 
   if (!roomId || !speakerIdentity || !text) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 }
+    );
   }
 
   const [meeting] = await db
@@ -44,15 +47,18 @@ export async function POST(req: NextRequest) {
     text,
   });
 
-  await pc.index("vire-recording").namespace(userId).upsertRecords([
-    {
-      id: `${roomId}-${crypto.randomUUID()}`,
-      chunk_text: text,
-      speaker: speakerIdentity,
-      room: roomId,
-      startedAtEpoch: Date.now(),
-    },
-  ]);
+  await pc
+    .index("vire-recording")
+    .namespace(userId)
+    .upsertRecords([
+      {
+        id: `${roomId}-${crypto.randomUUID()}`,
+        chunk_text: text,
+        speaker: speakerIdentity,
+        room: roomId,
+        startedAtEpoch: Date.now(),
+      },
+    ]);
 
   return NextResponse.json({ status: "ok" });
 }

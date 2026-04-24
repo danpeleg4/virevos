@@ -266,27 +266,33 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   });
 
   const applyAction = async (id: string, action: string) => {
-    // TODO add optimistic updates
+    const updater = (msg: InboxMessage): InboxMessage => {
+      const updated = { ...msg };
+      if (action === "star") updated.starred = true;
+      if (action === "unstar") updated.starred = false;
+      if (action === "archive") updated.archived = true;
+      if (action === "unarchive") updated.archived = false;
+      if (action === "markRead") updated.unread = false;
+      if (action === "markUnread") updated.unread = true;
+      return updated;
+    };
+
+    // Snapshot for rollback
+    const previousData = queryClient.getQueryData(emailsQueryKey);
+    const previousSelected = selectedMessage;
+
+    // Optimistic update
+    updateMessageInCache(id, updater);
+    if (selectedMessage?.id === id) {
+      setSelectedMessage((prev) => (prev ? updater(prev) : prev));
+    }
+
     try {
       await axios.patch(`/api/outlook/messages/${id}`, { action });
-
-      const updater = (msg: InboxMessage): InboxMessage => {
-        const updated = { ...msg };
-        if (action === "star") updated.starred = true;
-        if (action === "unstar") updated.starred = false;
-        if (action === "archive") updated.archived = true;
-        if (action === "unarchive") updated.archived = false;
-        if (action === "markRead") updated.unread = false;
-        if (action === "markUnread") updated.unread = true;
-        return updated;
-      };
-
-      updateMessageInCache(id, updater);
-
-      if (selectedMessage?.id === id) {
-        setSelectedMessage((prev) => (prev ? updater(prev) : prev));
-      }
     } catch {
+      // Revert optimistic update on failure
+      queryClient.setQueryData(emailsQueryKey, previousData);
+      setSelectedMessage(previousSelected);
       toast.error("Action failed");
     }
   };
@@ -811,42 +817,84 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
               {/* Attachments — always fetched for Outlook emails; panel only renders when results arrive */}
               {selectedMessage.type === "email" &&
                 (attachmentsData ?? []).length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                       <Paperclip className="h-3.5 w-3.5" />
                       Attachments
                     </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {attachmentsData!.map((att) => (
-                        <a
-                          key={att.id}
-                          className="flex items-center gap-2 bg-muted/60 hover:bg-muted border border-border rounded-md px-3 py-2 text-sm transition-colors group"
-                        >
-                          {att.contentType.startsWith("image/") ? (
-                            <Image className="h-4 w-4 text-green-500 flex-shrink-0" />
-                          ) : att.contentType.includes("pdf") ||
-                            att.contentType.includes("document") ||
-                            att.contentType.includes("spreadsheet") ||
-                            att.contentType.includes("text") ? (
-                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                          ) : (
-                            <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          )}
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-medium truncate max-w-40">
-                              {att.name}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {att.size < 1024
-                                ? `${att.size} B`
-                                : att.size < 1024 * 1024
-                                  ? `${(att.size / 1024).toFixed(1)} KB`
-                                  : `${(att.size / (1024 * 1024)).toFixed(1)} MB`}
-                            </span>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
+
+                    {/* Inline image previews */}
+                    {attachmentsData!.some((att) =>
+                      att.contentType.startsWith("image/")
+                    ) && (
+                      <div className="flex flex-wrap gap-3">
+                        {attachmentsData!
+                          .filter((att) =>
+                            att.contentType.startsWith("image/")
+                          )
+                          .map((att) => (
+                            <a
+                              key={att.id}
+                              href={`/api/outlook/messages/${selectedMessage.id}/attachments?attachmentId=${encodeURIComponent(att.id)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={att.name}
+                              className="block rounded-md overflow-hidden border border-border hover:border-blue-400 transition-colors"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={`/api/outlook/messages/${selectedMessage.id}/attachments?attachmentId=${encodeURIComponent(att.id)}`}
+                                alt={att.name}
+                                className="max-h-48 max-w-xs object-contain bg-muted/30"
+                              />
+                            </a>
+                          ))}
+                      </div>
+                    )}
+
+                    {/* Non-image attachment chips */}
+                    {attachmentsData!.some(
+                      (att) => !att.contentType.startsWith("image/")
+                    ) && (
+                      <div className="flex flex-wrap gap-2">
+                        {attachmentsData!
+                          .filter(
+                            (att) => !att.contentType.startsWith("image/")
+                          )
+                          .map((att) => (
+                            <a
+                              key={att.id}
+                              href={`/api/outlook/messages/${selectedMessage.id}/attachments?attachmentId=${encodeURIComponent(att.id)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download={att.name}
+                              className="flex items-center gap-2 bg-muted/60 hover:bg-muted border border-border rounded-md px-3 py-2 text-sm transition-colors group"
+                            >
+                              {att.contentType.includes("pdf") ||
+                              att.contentType.includes("document") ||
+                              att.contentType.includes("spreadsheet") ||
+                              att.contentType.includes("text") ? (
+                                <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                              ) : (
+                                <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-medium truncate max-w-40">
+                                  {att.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {att.size < 1024
+                                    ? `${att.size} B`
+                                    : att.size < 1024 * 1024
+                                      ? `${(att.size / 1024).toFixed(1)} KB`
+                                      : `${(att.size / (1024 * 1024)).toFixed(1)} MB`}
+                                </span>
+                              </div>
+                              <Download className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0" />
+                            </a>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

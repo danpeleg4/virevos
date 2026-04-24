@@ -33,7 +33,11 @@ jest.mock("@/lib/meetings", () => ({
 // Mock TanStack Query — return a resolved active meeting so the name-input renders
 jest.mock("@tanstack/react-query", () => ({
   useQuery: jest.fn(() => ({
-    data: { status: "active", dateTime: new Date().toISOString(), title: "Test Meeting" },
+    data: {
+      status: "active",
+      dateTime: new Date().toISOString(),
+      title: "Test Meeting",
+    },
     isLoading: false,
   })),
   useMutation: jest.fn(() => ({
@@ -68,7 +72,10 @@ describe("InMeetingView Page", () => {
 
   it("renders loading state when meeting info is loading", () => {
     const { useQuery } = require("@tanstack/react-query");
-    (useQuery as jest.Mock).mockReturnValueOnce({ data: undefined, isLoading: true });
+    (useQuery as jest.Mock).mockReturnValueOnce({
+      data: undefined,
+      isLoading: true,
+    });
     const { container } = render(<InMeetingView />);
     // Loading spinner is a div, not a heading/button
     expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
@@ -77,7 +84,11 @@ describe("InMeetingView Page", () => {
   it("renders pre-meeting screen for upcoming meetings", () => {
     const { useQuery } = require("@tanstack/react-query");
     (useQuery as jest.Mock).mockReturnValueOnce({
-      data: { status: "upcoming", dateTime: new Date().toISOString(), title: "Team Sync" },
+      data: {
+        status: "upcoming",
+        dateTime: new Date().toISOString(),
+        title: "Team Sync",
+      },
       isLoading: false,
     });
     render(<InMeetingView />);

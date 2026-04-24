@@ -52,7 +52,9 @@ export function Hero() {
               transition={{ delay: 0.2 }}
               className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
-              From F-1 and OPT to H-1B. Virevos uses AI to turn consultations into audited workflows, catching the manual errors that put student visas at risk.
+              From F-1 and OPT to H-1B. Virevos uses AI to turn consultations
+              into audited workflows, catching the manual errors that put
+              student visas at risk.
             </motion.p>
 
             {/* CTA Buttons */}

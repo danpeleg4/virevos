@@ -7,7 +7,7 @@ import {
   act,
 } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { toast } from "sonner"
+import { toast } from "sonner";
 
 // FileReader mock — synchronously resolves readAsDataURL
 class MockFileReader {
@@ -158,7 +158,6 @@ describe("ComposeMessageDialog", () => {
   });
 
   describe("attachments", () => {
-
     beforeEach(() => {
       (toast.error as jest.Mock).mockClear();
     });

@@ -91,8 +91,7 @@ export async function acceptBookingWithCalendar(
     const calEvent = await addMeetingToCalendar({
       id: "",
       title: `Meeting with ${booking.clientName}`,
-      description:
-        booking.notes || `${booking.duration}-minute client meeting`,
+      description: booking.notes || `${booking.duration}-minute client meeting`,
       dateTime: booking.dateTime,
       duration: booking.duration,
       isMeeting: true,

@@ -68,7 +68,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     enabled: isLoaded && !!user,
   });
 
-  const pendingBookings = allBookings?.filter((b) => b.status === "pending") ?? [];
+  const pendingBookings =
+    allBookings?.filter((b) => b.status === "pending") ?? [];
   const pendingCount = pendingBookings.length;
   const router = useRouter();
   const currentPath = usePathname();
@@ -142,7 +143,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                 {pendingCount}
               </Badge>
             ) : (
-              <Badge className="ml-auto bg-purple-100 text-purple-700">New</Badge>
+              <Badge className="ml-auto bg-purple-100 text-purple-700">
+                New
+              </Badge>
             )}
           </Button>
         </div>
@@ -250,7 +253,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                       {pendingCount}
                     </Badge>
                   ) : (
-                    <Badge className="ml-auto bg-purple-100 text-purple-700">New</Badge>
+                    <Badge className="ml-auto bg-purple-100 text-purple-700">
+                      New
+                    </Badge>
                   )}
                 </Button>
               </div>

@@ -48,7 +48,9 @@ describe("GET /api/transcript/[id]", () => {
     jest.clearAllMocks();
     mockSelect
       .mockReturnValueOnce(
-        makeEventsChain([{ id: "abc123_xyz", meetingStartTimeEpoch: 1700000000 }])
+        makeEventsChain([
+          { id: "abc123_xyz", meetingStartTimeEpoch: 1700000000 },
+        ])
       )
       .mockReturnValueOnce(makeTranscriptsChain([]));
     jest.spyOn(console, "error").mockImplementation(() => {});
@@ -117,7 +119,9 @@ describe("GET /api/transcript/[id]", () => {
     mockSelect
       .mockReset()
       .mockReturnValueOnce(
-        makeEventsChain([{ id: "abc123_xyz", meetingStartTimeEpoch: 1700000000 }])
+        makeEventsChain([
+          { id: "abc123_xyz", meetingStartTimeEpoch: 1700000000 },
+        ])
       )
       .mockReturnValueOnce(makeTranscriptsChain(chunks));
 

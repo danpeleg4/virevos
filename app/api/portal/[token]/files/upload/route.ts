@@ -81,14 +81,20 @@ export async function POST(
     if (projectIdRaw) {
       const parsedId = parseInt(String(projectIdRaw), 10);
       if (isNaN(parsedId)) {
-        return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid projectId" },
+          { status: 400 }
+        );
       }
       // Verify the project belongs to this client
       const projectRows = await db
         .select({ id: projects.id })
         .from(projects)
         .where(
-          and(eq(projects.id, parsedId), eq(projects.clientId, portalToken.clientId))
+          and(
+            eq(projects.id, parsedId),
+            eq(projects.clientId, portalToken.clientId)
+          )
         )
         .limit(1);
 

@@ -40,7 +40,11 @@ import {
 import { Separator } from "../ui/separator";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { PortalRecord, PortalAvailability, PortalMeetingBooking } from "@/types/portal";
+import type {
+  PortalRecord,
+  PortalAvailability,
+  PortalMeetingBooking,
+} from "@/types/portal";
 import type { ClientSummary } from "@/types/clients";
 import { updateBookingStatus } from "@/lib/portal_bookings";
 
@@ -119,7 +123,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
   const [aiChatBot, setAiChatBot] = useState(true);
   const [title, setTitle] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState(
-    "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
+    "Your Visa Readiness Dashboard. Monitor your deadlines and keep your documents audit-ready"
   );
   const [meetingSchedulingEnabled, setMeetingSchedulingEnabled] =
     useState(false);
@@ -170,7 +174,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
       setPortalEnabled(true);
       setTitle("");
       setWelcomeMessage(
-        "Welcome to our client portal! We're here to help you track your project progress and stay in touch."
+        "Your Visa Readiness Dashboard. Monitor your deadlines and keep your documents audit-ready"
       );
       setChatEnabled(true);
       setFileSharing(true);
@@ -190,19 +194,19 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
     setIsSaving(true);
     try {
       const res = await axios.post("/api/portal/settings", {
-          clientId: parseInt(selectedClientId, 10),
-          enabled: portalEnabled,
-          settings: {
-            title,
-            welcomeMessage,
-            chatEnabled,
-            fileSharing,
-            aiChatBot,
-            emailNotifications,
-            meetingSchedulingEnabled,
-            availability,
-          },
-        });
+        clientId: parseInt(selectedClientId, 10),
+        enabled: portalEnabled,
+        settings: {
+          title,
+          welcomeMessage,
+          chatEnabled,
+          fileSharing,
+          aiChatBot,
+          emailNotifications,
+          meetingSchedulingEnabled,
+          availability,
+        },
+      });
 
       const data = res.data;
       setPortals((prev) => {
@@ -232,7 +236,11 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
   const { data: bookingsData } = useQuery({
     queryKey: ["portalBookings"],
     queryFn: async () => {
-      const { data } = await axios.get<{ bookings: (PortalMeetingBooking & { clientDisplayName: string | null })[] }>("/api/portal/bookings");
+      const { data } = await axios.get<{
+        bookings: (PortalMeetingBooking & {
+          clientDisplayName: string | null;
+        })[];
+      }>("/api/portal/bookings");
       return data.bookings;
     },
     enabled: !!selectedClientId && meetingSchedulingEnabled,
@@ -242,9 +250,8 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
     (p) => String(p.clientId) === selectedClientId
   )?.id;
 
-  const portalBookings = bookingsData?.filter(
-    (b) => b.portalId === currentPortalId
-  ) ?? [];
+  const portalBookings =
+    bookingsData?.filter((b) => b.portalId === currentPortalId) ?? [];
 
   const confirmBooking = useMutation({
     mutationFn: (bookingId: number) =>
@@ -803,8 +810,8 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                                       booking.status === "confirmed"
                                         ? "border-green-200 text-green-700 bg-green-50"
                                         : booking.status === "cancelled"
-                                        ? "border-red-200 text-red-700 bg-red-50"
-                                        : "border-yellow-200 text-yellow-700 bg-yellow-50"
+                                          ? "border-red-200 text-red-700 bg-red-50"
+                                          : "border-yellow-200 text-yellow-700 bg-yellow-50"
                                     }
                                   >
                                     {booking.status}

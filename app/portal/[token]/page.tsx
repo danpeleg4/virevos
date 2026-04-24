@@ -99,8 +99,8 @@ function PriorityBadge({ priority }: { priority: string }) {
     priority === "high"
       ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
       : priority === "medium"
-      ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
-      : "bg-muted text-muted-foreground border border-border";
+        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+        : "bg-muted text-muted-foreground border border-border";
   return (
     <span
       className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${styles}`}
@@ -123,7 +123,9 @@ export default function PortalPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [localMessages, setLocalMessages] = useState<PortalData["messages"]>([]);
+  const [localMessages, setLocalMessages] = useState<PortalData["messages"]>(
+    []
+  );
 
   // Scheduling state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -144,7 +146,9 @@ export default function PortalPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     if (token) fetchPortalData();
@@ -230,7 +234,12 @@ export default function PortalPage() {
   };
 
   const handleBookMeeting = async () => {
-    if (!selectedSlot || !bookingForm.clientName.trim() || !bookingForm.clientEmail.trim()) return;
+    if (
+      !selectedSlot ||
+      !bookingForm.clientName.trim() ||
+      !bookingForm.clientEmail.trim()
+    )
+      return;
     setIsBooking(true);
     try {
       const res = await axios.post(`/api/portal/${token}/book`, {
@@ -239,14 +248,12 @@ export default function PortalPage() {
         dateTime: selectedSlot,
         duration: selectedDuration,
         notes: bookingForm.notes || undefined,
-      })
+      });
       if (res.status === 200) {
         setBookingStep("confirmed");
-      }
-      else {
+      } else {
         toast.error("Failed to book meeting");
       }
-
     } catch {
       toast.error("Failed to book meeting");
     } finally {
@@ -263,7 +270,10 @@ export default function PortalPage() {
       if (selectedProjectId) {
         formData.append("projectId", String(selectedProjectId));
       }
-      const res = await axios.post(`/api/portal/${token}/files/upload`, formData);
+      const res = await axios.post(
+        `/api/portal/${token}/files/upload`,
+        formData
+      );
       setLocalFiles((prev) => [res.data, ...prev]);
       toast.success("File uploaded successfully");
     } catch (err: unknown) {
@@ -291,7 +301,9 @@ export default function PortalPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-muted-foreground">Loading your portal...</p>
+          <p className="text-sm text-muted-foreground">
+            Loading your portal...
+          </p>
         </div>
       </div>
     );
@@ -303,7 +315,9 @@ export default function PortalPage() {
         <Card className="max-w-md w-full mx-4">
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-foreground mb-2">Portal Not Found</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              Portal Not Found
+            </h2>
             <p className="text-sm text-muted-foreground">
               This client portal is not available or has been disabled.
             </p>
@@ -316,8 +330,11 @@ export default function PortalPage() {
   const portalTitle = data.settings?.title || "Client Portal";
   const unreadCount = localMessages.filter((m) => !m.isRead).length;
   const schedulingEnabled = !!data.settings?.meetingSchedulingEnabled;
-  const allowedDurations = data.settings?.availability?.meetingDurations ?? [30];
-  const upcomingBookings = data.bookings?.filter((b) => b.status !== "cancelled") ?? [];
+  const allowedDurations = data.settings?.availability?.meetingDurations ?? [
+    30,
+  ];
+  const upcomingBookings =
+    data.bookings?.filter((b) => b.status !== "cancelled") ?? [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -331,13 +348,19 @@ export default function PortalPage() {
                   {portalTitle.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-foreground">{portalTitle}</span>
+              <span className="text-sm font-semibold text-foreground">
+                {portalTitle}
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-foreground">{data.client.name}</p>
+                <p className="text-sm font-medium text-foreground">
+                  {data.client.name}
+                </p>
                 {data.client.email && (
-                  <p className="text-xs text-muted-foreground">{data.client.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {data.client.email}
+                  </p>
                 )}
               </div>
               <Avatar className="h-8 w-8">
@@ -358,7 +381,8 @@ export default function PortalPage() {
             Welcome back, {data.client.name.split(" ")[0]}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {data.settings?.welcomeMessage || "Here's what's happening with your projects"}
+            {data.settings?.welcomeMessage ||
+              "Here's what's happening with your projects"}
           </p>
         </div>
 
@@ -400,7 +424,9 @@ export default function PortalPage() {
                     {data.projects.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
                         <FolderKanban className="h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">No projects yet</p>
+                        <p className="text-sm text-muted-foreground">
+                          No projects yet
+                        </p>
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
@@ -408,24 +434,37 @@ export default function PortalPage() {
                           <thead className="border-b border-border">
                             <tr>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">Project</span>
+                                <span className="text-xs text-muted-foreground font-medium">
+                                  Project
+                                </span>
                               </th>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">Status</span>
+                                <span className="text-xs text-muted-foreground font-medium">
+                                  Status
+                                </span>
                               </th>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">Priority</span>
+                                <span className="text-xs text-muted-foreground font-medium">
+                                  Priority
+                                </span>
                               </th>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">Due</span>
+                                <span className="text-xs text-muted-foreground font-medium">
+                                  Due
+                                </span>
                               </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">
                             {data.projects.slice(0, 5).map((project) => (
-                              <tr key={project.id} className="hover:bg-muted/50 transition-colors">
+                              <tr
+                                key={project.id}
+                                className="hover:bg-muted/50 transition-colors"
+                              >
                                 <td className="px-4 py-2.5">
-                                  <p className="text-sm font-medium text-foreground">{project.name}</p>
+                                  <p className="text-sm font-medium text-foreground">
+                                    {project.name}
+                                  </p>
                                   {project.description && (
                                     <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">
                                       {project.description}
@@ -440,7 +479,9 @@ export default function PortalPage() {
                                 </td>
                                 <td className="px-4 py-2.5 text-xs text-muted-foreground">
                                   {project.dueDate
-                                    ? parseDateOnlyString(project.dueDate).toLocaleDateString()
+                                    ? parseDateOnlyString(
+                                        project.dueDate
+                                      ).toLocaleDateString()
                                     : "—"}
                                 </td>
                               </tr>
@@ -476,7 +517,9 @@ export default function PortalPage() {
                     {localMessages.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-8 text-center">
                         <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">No messages yet</p>
+                        <p className="text-sm text-muted-foreground">
+                          No messages yet
+                        </p>
                       </div>
                     ) : (
                       localMessages.slice(0, 3).map((msg) => (
@@ -489,15 +532,21 @@ export default function PortalPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs font-medium text-foreground">{msg.from}</p>
+                            <p className="text-xs font-medium text-foreground">
+                              {msg.from}
+                            </p>
                             <span className="text-xs text-muted-foreground">
                               {new Date(msg.sentAt).toLocaleDateString()}
                             </span>
                           </div>
                           {msg.subject && (
-                            <p className="text-xs font-medium text-foreground mb-0.5">{msg.subject}</p>
+                            <p className="text-xs font-medium text-foreground mb-0.5">
+                              {msg.subject}
+                            </p>
                           )}
-                          <p className="text-xs text-muted-foreground line-clamp-2">{msg.preview}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {msg.preview}
+                          </p>
                         </div>
                       ))
                     )}
@@ -582,17 +631,23 @@ export default function PortalPage() {
                           className="p-3 rounded-lg bg-muted/50 border border-border"
                         >
                           <p className="text-xs font-medium text-foreground">
-                            {new Date(b.dateTime).toLocaleDateString(undefined, {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {new Date(b.dateTime).toLocaleDateString(
+                              undefined,
+                              {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(b.dateTime).toLocaleTimeString(undefined, {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}{" "}
+                            {new Date(b.dateTime).toLocaleTimeString(
+                              undefined,
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}{" "}
                             · {b.duration} min ·{" "}
                             <span className="capitalize">{b.status}</span>
                           </p>
@@ -618,7 +673,9 @@ export default function PortalPage() {
                 {data.projects.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
                     <FolderKanban className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">No projects yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      No projects yet
+                    </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -652,9 +709,14 @@ export default function PortalPage() {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {data.projects.map((project) => (
-                          <tr key={project.id} className="hover:bg-muted/50 transition-colors">
+                          <tr
+                            key={project.id}
+                            className="hover:bg-muted/50 transition-colors"
+                          >
                             <td className="px-4 py-3">
-                              <p className="text-sm font-medium text-foreground">{project.name}</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {project.name}
+                              </p>
                               {project.description && (
                                 <p className="text-xs text-muted-foreground mt-0.5 max-w-sm truncate">
                                   {project.description}
@@ -671,9 +733,13 @@ export default function PortalPage() {
                               {project.dueDate ? (
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3 shrink-0" />
-                                  {parseDateOnlyString(project.dueDate).toLocaleDateString()}
+                                  {parseDateOnlyString(
+                                    project.dueDate
+                                  ).toLocaleDateString()}
                                 </div>
-                              ) : "—"}
+                              ) : (
+                                "—"
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -699,7 +765,9 @@ export default function PortalPage() {
                   {localMessages.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 py-12 text-center">
                       <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">No messages yet</p>
+                      <p className="text-sm text-muted-foreground">
+                        No messages yet
+                      </p>
                     </div>
                   ) : (
                     localMessages.map((msg) => (
@@ -718,7 +786,9 @@ export default function PortalPage() {
                                 {msg.from.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <p className="text-sm font-medium text-foreground">{msg.from}</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {msg.from}
+                            </p>
                             {!msg.isRead && (
                               <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
                             )}
@@ -728,9 +798,13 @@ export default function PortalPage() {
                           </span>
                         </div>
                         {msg.subject && (
-                          <p className="text-xs font-medium text-foreground ml-9 mb-1">{msg.subject}</p>
+                          <p className="text-xs font-medium text-foreground ml-9 mb-1">
+                            {msg.subject}
+                          </p>
                         )}
-                        <p className="text-sm text-muted-foreground ml-9">{msg.preview}</p>
+                        <p className="text-sm text-muted-foreground ml-9">
+                          {msg.preview}
+                        </p>
                       </div>
                     ))
                   )}
@@ -813,7 +887,10 @@ export default function PortalPage() {
                     )}
 
                     <div
-                      onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDraggingFile(true);
+                      }}
                       onDragLeave={() => setIsDraggingFile(false)}
                       onDrop={(e) => {
                         e.preventDefault();
@@ -821,7 +898,9 @@ export default function PortalPage() {
                         const file = e.dataTransfer.files?.[0];
                         if (file) handleFileUpload(file);
                       }}
-                      onClick={() => document.getElementById("portalFileInput")?.click()}
+                      onClick={() =>
+                        document.getElementById("portalFileInput")?.click()
+                      }
                       className={`flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
                         isDraggingFile
                           ? "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
@@ -831,7 +910,9 @@ export default function PortalPage() {
                       {isUploading ? (
                         <>
                           <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-                          <p className="text-sm text-muted-foreground">Uploading...</p>
+                          <p className="text-sm text-muted-foreground">
+                            Uploading...
+                          </p>
                         </>
                       ) : (
                         <>
@@ -844,7 +925,11 @@ export default function PortalPage() {
                               Max 10 MB per file
                             </p>
                           </div>
-                          <Button size="sm" variant="outline" className="mt-1 pointer-events-none">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-1 pointer-events-none"
+                          >
                             <Upload className="h-4 w-4 mr-2" />
                             Browse Files
                           </Button>
@@ -865,7 +950,9 @@ export default function PortalPage() {
                 {localFiles.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
                     <Paperclip className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">No files yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      No files yet
+                    </p>
                   </div>
                 ) : (
                   <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
@@ -879,7 +966,9 @@ export default function PortalPage() {
                             <FileText className="h-5 w-5 text-blue-500" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm text-foreground font-medium truncate">{file.name}</p>
+                            <p className="text-sm text-foreground font-medium truncate">
+                              {file.name}
+                            </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {formatFileSize(file.size)}
                               {file.createdAt
@@ -888,7 +977,12 @@ export default function PortalPage() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" asChild className="shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          className="shrink-0"
+                        >
                           <a
                             href={`/api/portal/${token}/files/${file.id}/download`}
                             download={file.name}
@@ -910,7 +1004,9 @@ export default function PortalPage() {
               {bookingStep === "calendar" && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl text-foreground">Schedule a Meeting</h2>
+                    <h2 className="text-xl text-foreground">
+                      Schedule a Meeting
+                    </h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       Pick a date and time that works for you
                     </p>
@@ -939,7 +1035,11 @@ export default function PortalPage() {
                                 <Button
                                   key={d}
                                   size="sm"
-                                  variant={selectedDuration === d ? "default" : "outline"}
+                                  variant={
+                                    selectedDuration === d
+                                      ? "default"
+                                      : "outline"
+                                  }
                                   onClick={() => setSelectedDuration(d)}
                                   className="h-8 text-xs"
                                 >
@@ -958,11 +1058,14 @@ export default function PortalPage() {
                         <CardHeader>
                           <CardTitle className="text-sm">
                             {selectedDate
-                              ? `Available Times — ${selectedDate.toLocaleDateString(undefined, {
-                                  weekday: "long",
-                                  month: "long",
-                                  day: "numeric",
-                                })}`
+                              ? `Available Times — ${selectedDate.toLocaleDateString(
+                                  undefined,
+                                  {
+                                    weekday: "long",
+                                    month: "long",
+                                    day: "numeric",
+                                  }
+                                )}`
                               : "Available Times"}
                           </CardTitle>
                         </CardHeader>
@@ -977,13 +1080,19 @@ export default function PortalPage() {
                           ) : isFetchingSlots ? (
                             <div className="flex flex-col items-center justify-center py-16">
                               <Loader2 className="h-6 w-6 animate-spin text-blue-500 mb-2" />
-                              <p className="text-sm text-muted-foreground">Loading available times...</p>
+                              <p className="text-sm text-muted-foreground">
+                                Loading available times...
+                              </p>
                             </div>
                           ) : availableSlots.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16 text-center">
                               <Clock className="h-10 w-10 text-muted-foreground mb-3" />
-                              <p className="text-sm text-muted-foreground">No available slots on this day</p>
-                              <p className="text-xs text-muted-foreground mt-1">Try another date</p>
+                              <p className="text-sm text-muted-foreground">
+                                No available slots on this day
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Try another date
+                              </p>
                             </div>
                           ) : (
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
@@ -1003,10 +1112,13 @@ export default function PortalPage() {
                                       : ""
                                   }`}
                                 >
-                                  {new Date(slot.startTime).toLocaleTimeString(undefined, {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                                  {new Date(slot.startTime).toLocaleTimeString(
+                                    undefined,
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )}
                                 </Button>
                               ))}
                             </div>
@@ -1021,7 +1133,10 @@ export default function PortalPage() {
               {bookingStep === "form" && selectedSlot && (
                 <div className="max-w-lg space-y-6">
                   <button
-                    onClick={() => { setBookingStep("calendar"); setSelectedSlot(null); }}
+                    onClick={() => {
+                      setBookingStep("calendar");
+                      setSelectedSlot(null);
+                    }}
                     className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <ArrowLeft className="h-4 w-4" />
@@ -1030,21 +1145,29 @@ export default function PortalPage() {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Confirm Your Meeting</CardTitle>
+                      <CardTitle className="text-base">
+                        Confirm Your Meeting
+                      </CardTitle>
                       <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border">
                         <p className="text-sm font-medium text-foreground">
-                          {new Date(selectedSlot).toLocaleDateString(undefined, {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                          {new Date(selectedSlot).toLocaleDateString(
+                            undefined,
+                            {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )}
                         </p>
                         <p className="text-sm text-muted-foreground mt-0.5">
-                          {new Date(selectedSlot).toLocaleTimeString(undefined, {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}{" "}
+                          {new Date(selectedSlot).toLocaleTimeString(
+                            undefined,
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}{" "}
                           · {selectedDuration} minutes
                         </p>
                       </div>
@@ -1056,7 +1179,10 @@ export default function PortalPage() {
                           id="booking-name"
                           value={bookingForm.clientName}
                           onChange={(e) =>
-                            setBookingForm((prev) => ({ ...prev, clientName: e.target.value }))
+                            setBookingForm((prev) => ({
+                              ...prev,
+                              clientName: e.target.value,
+                            }))
                           }
                           placeholder="Enter your name"
                         />
@@ -1068,7 +1194,10 @@ export default function PortalPage() {
                           type="email"
                           value={bookingForm.clientEmail}
                           onChange={(e) =>
-                            setBookingForm((prev) => ({ ...prev, clientEmail: e.target.value }))
+                            setBookingForm((prev) => ({
+                              ...prev,
+                              clientEmail: e.target.value,
+                            }))
                           }
                           placeholder="your@email.com"
                         />
@@ -1076,13 +1205,18 @@ export default function PortalPage() {
                       <div className="space-y-1.5">
                         <Label htmlFor="booking-notes">
                           Notes{" "}
-                          <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                          <span className="text-muted-foreground font-normal text-xs">
+                            (optional)
+                          </span>
                         </Label>
                         <Textarea
                           id="booking-notes"
                           value={bookingForm.notes}
                           onChange={(e) =>
-                            setBookingForm((prev) => ({ ...prev, notes: e.target.value }))
+                            setBookingForm((prev) => ({
+                              ...prev,
+                              notes: e.target.value,
+                            }))
                           }
                           placeholder="Anything you'd like to discuss..."
                           rows={3}
@@ -1118,29 +1252,42 @@ export default function PortalPage() {
                         <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
-                        <h2 className="text-xl text-foreground mb-2">Meeting Request Submitted!</h2>
+                        <h2 className="text-xl text-foreground mb-2">
+                          Meeting Request Submitted!
+                        </h2>
                         <p className="text-sm text-muted-foreground">
-                          Your request for a <strong>{selectedDuration}-minute</strong> meeting on{" "}
+                          Your request for a{" "}
+                          <strong>{selectedDuration}-minute</strong> meeting on{" "}
                           <strong>
                             {selectedSlot &&
-                              new Date(selectedSlot).toLocaleDateString(undefined, {
-                                weekday: "long",
-                                month: "long",
-                                day: "numeric",
-                              })}
+                              new Date(selectedSlot).toLocaleDateString(
+                                undefined,
+                                {
+                                  weekday: "long",
+                                  month: "long",
+                                  day: "numeric",
+                                }
+                              )}
                           </strong>{" "}
                           at{" "}
                           <strong>
                             {selectedSlot &&
-                              new Date(selectedSlot).toLocaleTimeString(undefined, {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              new Date(selectedSlot).toLocaleTimeString(
+                                undefined,
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
                           </strong>{" "}
                           has been received. We&apos;ll be in touch to confirm.
                         </p>
                       </div>
-                      <Button variant="outline" onClick={resetBooking} className="gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={resetBooking}
+                        className="gap-2"
+                      >
                         <CalendarDays className="h-4 w-4" />
                         Book Another Meeting
                       </Button>

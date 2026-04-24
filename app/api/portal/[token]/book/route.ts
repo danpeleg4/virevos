@@ -38,10 +38,7 @@ export async function POST(
       .limit(1);
 
     if (!tokenRows.length || !tokenRows[0].enabled) {
-      return NextResponse.json(
-        { error: "Portal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     const portalRecord = tokenRows[0];
@@ -53,8 +50,8 @@ export async function POST(
       );
     }
 
-    const allowedDurations =
-      portalRecord.settings.availability?.meetingDurations ?? [30];
+    const allowedDurations = portalRecord.settings.availability
+      ?.meetingDurations ?? [30];
     if (!allowedDurations.includes(duration)) {
       return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
     }

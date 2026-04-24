@@ -29,9 +29,7 @@ export function getOutlookAuthUrl(): string {
   return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
 }
 
-export async function exchangeOutlookCode(
-  code: string
-): Promise<{
+export async function exchangeOutlookCode(code: string): Promise<{
   access_token: string;
   refresh_token: string;
   expires_at: number;

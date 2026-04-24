@@ -13,7 +13,12 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
 import {
   ArrowLeft,
   Calendar,
@@ -131,7 +136,9 @@ export function ProjectDetailView({
   const [newNote, setNewNote] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
-  const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "completed">("all");
+  const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "completed">(
+    "all"
+  );
   const [isDragging, setIsDragging] = useState(false);
   const queryClient = useQueryClient();
 
@@ -143,7 +150,9 @@ export function ProjectDetailView({
       await queryClient.invalidateQueries({ queryKey: ["files", project.id] });
     } catch (err) {
       console.error("Upload failed:", err);
-      toast.error("Failed to upload file. You may have reached your storage limit.");
+      toast.error(
+        "Failed to upload file. You may have reached your storage limit."
+      );
     }
   };
 
@@ -523,7 +532,9 @@ export function ProjectDetailView({
                         : "Change the filter to see other tasks"}
                     </p>
                   </div>
-                  {taskFilter === "all" && <AddNewTask projectId={project.id} />}
+                  {taskFilter === "all" && (
+                    <AddNewTask projectId={project.id} />
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -626,7 +637,10 @@ export function ProjectDetailView({
                 }}
               />
               <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 onClick={() => document.getElementById("fileInput")?.click()}
@@ -639,7 +653,9 @@ export function ProjectDetailView({
                 {addFile.isPending ? (
                   <>
                     <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                    <p className="text-sm text-muted-foreground">Uploading...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Uploading...
+                    </p>
                   </>
                 ) : (
                   <>
@@ -652,7 +668,11 @@ export function ProjectDetailView({
                         Any file type supported
                       </p>
                     </div>
-                    <Button size="sm" variant="outline" className="mt-1 pointer-events-none">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-1 pointer-events-none"
+                    >
                       <Upload className="h-4 w-4 mr-2" />
                       Browse Files
                     </Button>
@@ -664,7 +684,9 @@ export function ProjectDetailView({
               {fileQuery?.data?.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-8 text-center">
                   <Paperclip className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No files uploaded yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    No files uploaded yet
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -699,7 +721,9 @@ export function ProjectDetailView({
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => deleteProjectFileMutation.mutate(file.id)}
+                          onClick={() =>
+                            deleteProjectFileMutation.mutate(file.id)
+                          }
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>

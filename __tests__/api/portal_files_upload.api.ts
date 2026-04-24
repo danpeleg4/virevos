@@ -35,7 +35,11 @@ jest.mock("@/lib/supabase", () => ({
 // ── Helpers ────────────────────────────────────────────────────────────────
 const makeParams = (token: string) => Promise.resolve({ token });
 
-function makeFormData(fileName = "test.pdf", fileSizeBytes = 1024, projectId?: number) {
+function makeFormData(
+  fileName = "test.pdf",
+  fileSizeBytes = 1024,
+  projectId?: number
+) {
   const file = new File(["x".repeat(fileSizeBytes)], fileName, {
     type: "application/pdf",
   });
@@ -119,7 +123,7 @@ describe("POST /api/portal/[token]/files/upload", () => {
 
   describe("file validation", () => {
     it("returns 400 when no file is provided", async () => {
-      mockSelectChain([mockToken]);   // token
+      mockSelectChain([mockToken]); // token
       mockSelectChain([{ id: 10 }]); // client
 
       const fd = new FormData(); // no file
@@ -132,11 +136,14 @@ describe("POST /api/portal/[token]/files/upload", () => {
     });
 
     it("returns 400 when file exceeds 10 MB", async () => {
-      mockSelectChain([mockToken]);   // token
+      mockSelectChain([mockToken]); // token
       mockSelectChain([{ id: 10 }]); // client
 
       const oversizedBytes = 11 * 1024 * 1024;
-      const req = makeRequest("valid-token", makeFormData("big.pdf", oversizedBytes));
+      const req = makeRequest(
+        "valid-token",
+        makeFormData("big.pdf", oversizedBytes)
+      );
       const res = await POST(req, { params: makeParams("valid-token") });
 
       expect(res.status).toBe(400);
@@ -147,9 +154,9 @@ describe("POST /api/portal/[token]/files/upload", () => {
 
   describe("project resolution", () => {
     it("returns 400 when client has no projects and no projectId supplied", async () => {
-      mockSelectChain([mockToken]);   // token
+      mockSelectChain([mockToken]); // token
       mockSelectChain([{ id: 10 }]); // client
-      mockSelectChain([]);            // no projects found
+      mockSelectChain([]); // no projects found
 
       const req = makeRequest("valid-token", makeFormData());
       const res = await POST(req, { params: makeParams("valid-token") });
@@ -160,9 +167,9 @@ describe("POST /api/portal/[token]/files/upload", () => {
     });
 
     it("returns 403 when supplied projectId does not belong to client", async () => {
-      mockSelectChain([mockToken]);   // token
+      mockSelectChain([mockToken]); // token
       mockSelectChain([{ id: 10 }]); // client
-      mockSelectChain([]);            // project ownership check → empty
+      mockSelectChain([]); // project ownership check → empty
 
       const fd = makeFormData("doc.pdf", 512, 999);
       const req = makeRequest("valid-token", fd);
@@ -176,9 +183,9 @@ describe("POST /api/portal/[token]/files/upload", () => {
 
   describe("successful upload", () => {
     it("uploads file and returns 201 with metadata (auto project)", async () => {
-      mockSelectChain([mockToken]);          // token
-      mockSelectChain([{ id: 10 }]);        // client
-      mockSelectChain([mockProject]);        // first project for client
+      mockSelectChain([mockToken]); // token
+      mockSelectChain([{ id: 10 }]); // client
+      mockSelectChain([mockProject]); // first project for client
 
       const mockReturning = jest.fn().mockResolvedValue([mockInsertedFile]);
       const mockValues = jest.fn(() => ({ returning: mockReturning }));
@@ -197,9 +204,9 @@ describe("POST /api/portal/[token]/files/upload", () => {
     });
 
     it("uploads file and returns 201 when projectId is explicitly supplied", async () => {
-      mockSelectChain([mockToken]);                    // token
-      mockSelectChain([{ id: 10 }]);                  // client
-      mockSelectChain([{ id: mockProject.id }]);      // ownership check
+      mockSelectChain([mockToken]); // token
+      mockSelectChain([{ id: 10 }]); // client
+      mockSelectChain([{ id: mockProject.id }]); // ownership check
 
       const mockReturning = jest.fn().mockResolvedValue([mockInsertedFile]);
       const mockValues = jest.fn(() => ({ returning: mockReturning }));

@@ -87,7 +87,8 @@ Return only the email body text, no subject line.`;
         {
           responseType: "text",
           onDownloadProgress: (progressEvent) => {
-            const text = (progressEvent.event.target as XMLHttpRequest).responseText;
+            const text = (progressEvent.event.target as XMLHttpRequest)
+              .responseText;
             const newText = text.slice(lastProcessedLength);
             lastProcessedLength = text.length;
 
