@@ -99,11 +99,17 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("updates duration and status on room_finished", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce({
-      from: () => ({
-        where: () => [{ id: "room_123", duration: 10 }],
-      }),
-    });
+    (db.select as jest.Mock)
+      .mockReturnValueOnce({
+        from: () => ({
+          where: () => [{ id: "room_123", duration: 10 }],
+        }),
+      })
+      .mockReturnValueOnce({
+        from: () => ({
+          where: () => [{ userId: "user_1" }],
+        }),
+      });
 
     const req = mockRequest({
       event: "room_finished",
