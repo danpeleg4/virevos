@@ -145,11 +145,8 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
 
   const fetchClients = async () => {
     try {
-      const res = await fetch("/api/clients");
-      if (res.ok) {
-        const data = await res.json();
-        setClients(data.clients || data || []);
-      }
+      const { data } = await axios.get("/api/clients");
+      setClients(data.clients || data || []);
     } catch (err) {
       console.error("Failed to fetch clients:", err);
     }
@@ -192,10 +189,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
 
     setIsSaving(true);
     try {
-      const res = await fetch("/api/portal/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const res = await axios.post("/api/portal/settings", {
           clientId: parseInt(selectedClientId, 10),
           enabled: portalEnabled,
           settings: {
@@ -208,30 +202,28 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
             meetingSchedulingEnabled,
             availability,
           },
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setPortals((prev) => {
-          const existing = prev.find(
-            (p) => String(p.clientId) === selectedClientId
-          );
-          if (existing) {
-            return prev.map((p) =>
-              String(p.clientId) === selectedClientId ? { ...p, ...data } : p
-            );
-          }
-          return [...prev, data];
         });
-        queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-        toast.success("Portal settings saved");
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to save settings");
-      }
-    } catch {
-      toast.error("Failed to save settings");
+
+      const data = res.data;
+      setPortals((prev) => {
+        const existing = prev.find(
+          (p) => String(p.clientId) === selectedClientId
+        );
+        if (existing) {
+          return prev.map((p) =>
+            String(p.clientId) === selectedClientId ? { ...p, ...data } : p
+          );
+        }
+        return [...prev, data];
+      });
+      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+      toast.success("Portal settings saved");
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : "Failed to save settings";
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }

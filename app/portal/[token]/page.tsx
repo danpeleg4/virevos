@@ -159,29 +159,28 @@ export default function PortalPage() {
   const fetchPortalData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/portal/${token}`);
-      if (res.status === 404) { setNotFound(true); return; }
-      if (res.ok) {
-        const portalData = await res.json();
-        setData(portalData);
-        setLocalMessages(portalData.messages || []);
-        setLocalFiles(portalData.files || []);
-        if (portalData.projects?.length > 0) {
-          setSelectedProjectId(portalData.projects[0].id);
-        }
-        setBookingForm((prev) => ({
-          ...prev,
-          clientName: portalData.client?.name || "",
-          clientEmail: portalData.client?.email || "",
-        }));
-        const durations = portalData.settings?.availability?.meetingDurations;
-        if (durations?.length > 0) setSelectedDuration(durations[0]);
+      const res = await axios.get(`/api/portal/${token}`);
+      const portalData = res.data;
+      setData(portalData);
+      setLocalMessages(portalData.messages || []);
+      setLocalFiles(portalData.files || []);
+      if (portalData.projects?.length > 0) {
+        setSelectedProjectId(portalData.projects[0].id);
+      }
+      setBookingForm((prev) => ({
+        ...prev,
+        clientName: portalData.client?.name || "",
+        clientEmail: portalData.client?.email || "",
+      }));
+      const durations = portalData.settings?.availability?.meetingDurations;
+      if (durations?.length > 0) setSelectedDuration(durations[0]);
+    } catch (err: unknown) {
+      console.error("Failed to fetch portal data:", err);
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        setNotFound(true);
       } else {
         setNotFound(true);
       }
-    } catch (err) {
-      console.error("Failed to fetch portal data:", err);
-      setNotFound(true);
     } finally {
       setIsLoading(false);
     }
@@ -193,11 +192,10 @@ export default function PortalPage() {
     setSelectedSlot(null);
     try {
       const dateStr = date.toISOString().split("T")[0];
-      const res = await fetch(`/api/portal/${token}/availability?date=${dateStr}&duration=${duration}`);
-      if (res.ok) {
-        const json = await res.json();
-        setAvailableSlots(json.slots ?? []);
-      }
+      const res = await axios.get(`/api/portal/${token}/availability`, {
+        params: { date: dateStr, duration },
+      });
+      setAvailableSlots(res.data.slots ?? []);
     } catch {
       toast.error("Failed to load available times");
     } finally {
@@ -209,29 +207,21 @@ export default function PortalPage() {
     if (!newMessage.trim()) return;
     setIsSending(true);
     try {
-      const res = await fetch(`/api/portal/${token}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: newMessage }),
-      });
-      if (res.ok) {
-        setLocalMessages((prev) => [
-          {
-            id: Date.now(),
-            subject: null,
-            preview: newMessage,
-            from: data?.client.name || "You",
-            isSent: false,
-            sentAt: new Date().toISOString(),
-            isRead: true,
-          },
-          ...prev,
-        ]);
-        setNewMessage("");
-        toast.success("Message sent successfully");
-      } else {
-        toast.error("Failed to send message");
-      }
+      await axios.post(`/api/portal/${token}/message`, { message: newMessage });
+      setLocalMessages((prev) => [
+        {
+          id: Date.now(),
+          subject: null,
+          preview: newMessage,
+          from: data?.client.name || "You",
+          isSent: false,
+          sentAt: new Date().toISOString(),
+          isRead: true,
+        },
+        ...prev,
+      ]);
+      setNewMessage("");
+      toast.success("Message sent successfully");
     } catch {
       toast.error("Failed to send message");
     } finally {
@@ -273,22 +263,16 @@ export default function PortalPage() {
       if (selectedProjectId) {
         formData.append("projectId", String(selectedProjectId));
       }
-      const res = await fetch(`/api/portal/${token}/files/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      if (res.ok) {
-        const newFile = await res.json();
-        setLocalFiles((prev) => [newFile, ...prev]);
-        toast.success("File uploaded successfully");
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setUploadError(body.error || "Upload failed");
-        toast.error(body.error || "Upload failed");
-      }
-    } catch {
-      setUploadError("Upload failed");
-      toast.error("Upload failed");
+      const res = await axios.post(`/api/portal/${token}/files/upload`, formData);
+      setLocalFiles((prev) => [res.data, ...prev]);
+      toast.success("File uploaded successfully");
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : "Upload failed";
+      setUploadError(message);
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }

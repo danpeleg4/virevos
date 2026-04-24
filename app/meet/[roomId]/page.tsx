@@ -16,6 +16,8 @@ import {
   MicOff,
   ScreenShare,
   ScreenShareOff,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -31,12 +33,16 @@ import {
   LocalTrackPublication,
 } from "livekit-client";
 import axios from "axios";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { startMeeting } from "@/lib/meetings";
+import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 export default function InMeetingView() {
   const params = useParams();
   const meetingId = params.roomId as string;
   const [name, setName] = useState("");
   const [joined, setJoined] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -45,6 +51,19 @@ export default function InMeetingView() {
   const roomRef = useRef<Room | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [meetingTitle, setMeetingTitle] = useState("");
+
+  const meetingInfo = useQuery({
+    queryKey: ["meeting", meetingId],
+    queryFn: async () => {
+      const res = await axios.get(`/api/events/${meetingId}`);
+      return res.data as { status: string; dateTime: string; title: string; link?: string };
+    },
+  });
+
+  const startMeetingMutation = useMutation({
+    mutationFn: () => startMeeting(meetingId),
+    onSuccess: () => setHasStarted(true),
+  });
 
   const joinRoom = async () => {
     const res = await axios.post(`/api/token`, {
@@ -127,6 +146,50 @@ export default function InMeetingView() {
     await roomRef.current.localParticipant.setScreenShareEnabled(next);
     setIsScreenSharing(next);
   };
+
+  const isUpcoming = !hasStarted && meetingInfo.data?.status === "upcoming";
+
+  if (meetingInfo.isLoading) {
+    return (
+      <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center">
+        <div className="w-2.5 h-2.5 rounded-full bg-white/40 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (isUpcoming) {
+    const scheduledDate = new Date(meetingInfo.data!.dateTime);
+    return (
+      <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-[oklch(0.35_0_0)] border border-[oklch(1_0_0/12%)] rounded-xl p-8 text-center">
+            <div className="w-14 h-14 rounded-full bg-[oklch(1_0_0/8%)] flex items-center justify-center mx-auto mb-5">
+              <Calendar className="w-6 h-6 text-[oklch(0.7_0_0)]" />
+            </div>
+            <h1 className="text-[oklch(0.985_0_0)] text-xl font-semibold mb-1">
+              {meetingInfo.data!.title
+                ? decodeURIComponent(meetingInfo.data!.title)
+                : "Upcoming Meeting"}
+            </h1>
+            <div className="flex items-center justify-center gap-2 text-[oklch(0.556_0_0)] text-sm mb-6">
+              <Clock className="w-3.5 h-3.5" />
+              <span>
+                Scheduled for {formatDateOnly(scheduledDate)} at{" "}
+                {formatTimeOnly(scheduledDate)}
+              </span>
+            </div>
+            <button
+              className="w-full h-9 px-4 rounded-md bg-gray-700 text-white text-sm font-medium transition-colors hover:bg-[oklch(0.44_0.243_264.376)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              onClick={() => startMeetingMutation.mutate()}
+              disabled={startMeetingMutation.isPending}
+            >
+              {startMeetingMutation.isPending ? "Starting…" : "Start Meeting Now"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!joined) {
     return (

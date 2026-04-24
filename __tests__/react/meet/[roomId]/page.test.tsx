@@ -19,9 +19,27 @@ jest.mock("livekit-client", () => ({
   createLocalTracks: jest.fn(() => Promise.resolve([])),
   RoomEvent: {},
   ParticipantEvent: {},
+  ParticipantKind: {},
   Track: {},
   TrackPublication: {},
   LocalTrackPublication: {},
+}));
+
+// Prevent Clerk ESM import chain from failing in Jest
+jest.mock("@/lib/meetings", () => ({
+  startMeeting: jest.fn(),
+}));
+
+// Mock TanStack Query — return a resolved active meeting so the name-input renders
+jest.mock("@tanstack/react-query", () => ({
+  useQuery: jest.fn(() => ({
+    data: { status: "active", dateTime: new Date().toISOString(), title: "Test Meeting" },
+    isLoading: false,
+  })),
+  useMutation: jest.fn(() => ({
+    mutate: jest.fn(),
+    isPending: false,
+  })),
 }));
 
 import InMeetingView from "@/app/meet/[roomId]/page";
@@ -39,7 +57,6 @@ describe("InMeetingView Page", () => {
 
   it("renders audio/video controls in pre-join UI", () => {
     render(<InMeetingView />);
-    // Mic and camera toggle buttons should be present
     const buttons = screen.getAllByRole("button");
     expect(buttons.length).toBeGreaterThan(0);
   });
@@ -47,5 +64,24 @@ describe("InMeetingView Page", () => {
   it("renders 'Ready to join?' heading", () => {
     render(<InMeetingView />);
     expect(screen.getByText(/ready to join/i)).toBeInTheDocument();
+  });
+
+  it("renders loading state when meeting info is loading", () => {
+    const { useQuery } = require("@tanstack/react-query");
+    (useQuery as jest.Mock).mockReturnValueOnce({ data: undefined, isLoading: true });
+    const { container } = render(<InMeetingView />);
+    // Loading spinner is a div, not a heading/button
+    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+  });
+
+  it("renders pre-meeting screen for upcoming meetings", () => {
+    const { useQuery } = require("@tanstack/react-query");
+    (useQuery as jest.Mock).mockReturnValueOnce({
+      data: { status: "upcoming", dateTime: new Date().toISOString(), title: "Team Sync" },
+      isLoading: false,
+    });
+    render(<InMeetingView />);
+    expect(screen.getByText(/start meeting now/i)).toBeInTheDocument();
+    expect(screen.getByText(/scheduled for/i)).toBeInTheDocument();
   });
 });

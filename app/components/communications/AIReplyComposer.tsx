@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Sparkles, RefreshCw, Send, Clock, Copy, X } from "lucide-react";
+import axios from "axios";
 import { motion } from "motion/react";
 
 interface AIReplyComposerProps {
@@ -68,10 +69,13 @@ Original email preview: "${message.preview}"
 Generate a ${tone} reply email. ${customInstructions ? `Additional instructions: ${customInstructions}` : ""}
 Return only the email body text, no subject line.`;
 
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      let lastProcessedLength = 0;
+      let buffer = "";
+      let fullText = "";
+
+      await axios.post(
+        "/api/chat",
+        {
           messages: [
             { role: "system", content: systemPrompt },
             {
@@ -79,32 +83,33 @@ Return only the email body text, no subject line.`;
               content: `Generate a ${tone} reply to this email from ${message.from}: "${message.preview}"`,
             },
           ],
-        }),
-      });
+        },
+        {
+          responseType: "text",
+          onDownloadProgress: (progressEvent) => {
+            const text = (progressEvent.event.target as XMLHttpRequest).responseText;
+            const newText = text.slice(lastProcessedLength);
+            lastProcessedLength = text.length;
 
-      if (!res.ok || !res.body) throw new Error("AI request failed");
+            buffer += newText;
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n").filter(Boolean);
-        for (const line of lines) {
-          try {
-            const event = JSON.parse(line);
-            if (event.type === "text_delta" && event.delta) {
-              fullText += event.delta;
-              setDraft(fullText);
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const event = JSON.parse(line);
+                if (event.type === "text_delta" && event.delta) {
+                  fullText += event.delta;
+                  setDraft(fullText);
+                }
+              } catch {
+                // skip non-JSON lines
+              }
             }
-          } catch {
-            // skip non-JSON lines
-          }
+          },
         }
-      }
+      );
     } catch (err) {
       console.error("AI generation error:", err);
     } finally {

@@ -7,6 +7,15 @@ import { currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
+export async function startMeeting(meetingId: string) {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  await db
+    .update(events)
+    .set({ status: "active" })
+    .where(and(eq(events.id, meetingId), eq(events.userId, user.id)));
+}
+
 export async function createInstantMeeting(title: string) {
   const user = await currentUser();
   if (!user?.id) {

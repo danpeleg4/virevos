@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { CardContent, Card } from "../../components/ui/card";
+import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import {
   Dialog,
@@ -82,6 +82,8 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [meetingName, setMeetingName] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [detailsMeeting, setDetailsMeeting] = useState<Event | null>(null);
+  const [detailsCopied, setDetailsCopied] = useState(false);
   const [activeView, setActiveView] = useState<"home" | "summary">("home");
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
@@ -407,6 +409,10 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
+                        onClick={() => {
+                          setDetailsMeeting(meeting);
+                          setDetailsCopied(false);
+                        }}
                       >
                         <Calendar className="h-3 w-3 mr-1" />
                         Details
@@ -465,6 +471,68 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
           </Button>
         </div>
       </div>
+
+      {/* Meeting Details Dialog */}
+      <Dialog
+        open={!!detailsMeeting}
+        onOpenChange={(open) => !open && setDetailsMeeting(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {detailsMeeting
+                ? decodeURIComponent(detailsMeeting.title)
+                : "Meeting Details"}
+            </DialogTitle>
+            <DialogDescription>Upcoming meeting information</DialogDescription>
+          </DialogHeader>
+          {detailsMeeting && (
+            <div className="space-y-4 mt-2">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span>{formatDateOnly(new Date(detailsMeeting.dateTime))}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>{formatTimeOnly(new Date(detailsMeeting.dateTime))}</span>
+              </div>
+              {detailsMeeting.link && (
+                <div className="p-3 rounded-lg border bg-muted/50">
+                  <p className="text-xs text-muted-foreground mb-2">Meeting Link</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-foreground truncate flex-1">
+                      {detailsMeeting.link.slice(0,35) + "..."}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(detailsMeeting.link!);
+                        setDetailsCopied(true);
+                        setTimeout(() => setDetailsCopied(false), 2000);
+                      }}
+                    >
+                      {detailsCopied ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <Button
+                className="w-full"
+                onClick={() => handleJoinMeeting(detailsMeeting)}
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Join Meeting
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Start Meeting Modal */}
       <Dialog open={startModalOpen} onOpenChange={setStartModalOpen}>
@@ -569,74 +637,13 @@ function TranscriptionView({
   meeting: Event;
   onBack: () => void;
 }) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [formattedData, setFormattedData] = useState<TranscribedChunk[]>([]);
   const [videos, setVideos] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [currentChunkIndex, setCurrentChunkIndex] = useState<
-    number | null | string
-  >(null);
   const primaryRef = useRef<HTMLVideoElement | null>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (typeof currentChunkIndex !== "number") return;
-    const container = containerRef.current;
-    if (!container) return;
-    const children = Array.from(container.children) as HTMLElement[];
-    const activeElem = children[currentChunkIndex];
-    if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [currentChunkIndex]);
-
-  useEffect(() => {
-    const transcript = async () => {
-      const res = await axios.get(`/api/transcript/${meeting.id}`);
-      const { chunks: raw, meetingStartTimeEpoch }: { chunks: RawChunk[], meetingStartTimeEpoch: number } = res.data;
-      if (!raw.length) return;
-
-      const firstWithTs = meetingStartTimeEpoch
-      const anchorMs = firstWithTs
-        ? firstWithTs * 1000  // stored as epoch seconds, convert to ms
-        : null;
-
-      const formatted: TranscribedChunk[] = raw.map((item, i) => {
-        let startTimeSec: number;
-        let endTimeSec: number;
-
-        if (anchorMs !== null && item.createdAt) {
-          startTimeSec = Math.max(
-            0,
-            (new Date(item.createdAt).getTime() - anchorMs) / 1000
-          );
-          const nextItem = raw[i + 1];
-          const nextMs = nextItem?.createdAt
-            ? new Date(nextItem.createdAt).getTime()
-            : new Date(item.createdAt).getTime() + 5000;
-          endTimeSec = Math.max(startTimeSec + 0.1, (nextMs - anchorMs) / 1000);
-        } else {
-          // Fallback when no timestamps: evenly space chunks at 5s intervals
-          startTimeSec = i * 5;
-          endTimeSec = (i + 1) * 5;
-        }
-
-        const m = Math.floor(startTimeSec / 60);
-        const s = Math.floor(startTimeSec % 60);
-        return {
-          speaker: item.speaker,
-          time: `${m}:${String(s).padStart(2, "0")}`,
-          text: item.text,
-          startTime: startTimeSec,
-          endTime: endTimeSec,
-        };
-      });
-      setFormattedData(formatted);
-    };
-    transcript();
-  }, [meeting.id]);
 
   useEffect(() => {
     const fetchRecording = async () => {
@@ -674,17 +681,6 @@ function TranscriptionView({
     };
   }, [videos]);
 
-  useEffect(() => {
-    if (!formattedData.length) return;
-    const index = formattedData.findIndex(
-      (chunk, i) =>
-        currentTime >= chunk.startTime &&
-        (i === formattedData.length - 1 ||
-          currentTime < formattedData[i + 1].startTime)
-    );
-    setCurrentChunkIndex(index !== -1 ? index : null);
-  }, [currentTime, formattedData]);
-
   const allVideos = () =>
     videoRefs.current.filter((v): v is HTMLVideoElement => v !== null);
 
@@ -703,27 +699,6 @@ function TranscriptionView({
     const s = Math.floor(seconds % 60);
     return `${m}:${String(s).padStart(2, "0")}`;
   };
-
-  const SPEAKER_COLORS = [
-    "#3b82f6",
-    "#10b981",
-    "#f59e0b",
-    "#ef4444",
-    "#8b5cf6",
-    "#06b6d4",
-  ];
-
-  const speakerColors = useMemo(() => {
-    const map = new Map<string, string>();
-    let i = 0;
-    for (const chunk of formattedData) {
-      if (!map.has(chunk.speaker)) {
-        map.set(chunk.speaker, SPEAKER_COLORS[i % SPEAKER_COLORS.length]);
-        i++;
-      }
-    }
-    return map;
-  }, [formattedData]);
 
   const progressPercent =
     duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
@@ -766,194 +741,54 @@ function TranscriptionView({
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-y-auto">
-        <div className="lg:col-span-2 flex flex-col min-h-0 gap-6">
-          <Card className="p-6 flex flex-col min-h-0 shadow-sm">
-            <div
-              className={`relative bg-black rounded-lg overflow-hidden mb-4`}
-            >
-              <div>
-                {videos ? (
-                  <div className="relative aspect-video">
-                    <video
-                      ref={(el) => {
-                        videoRefs.current[0] = el;
-                        primaryRef.current = el;
-                      }}
-                      src={videos}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-video flex items-center justify-center text-white/60 text-sm">
-                    No video found
-                  </div>
-                )}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <Card className="p-6 flex flex-col min-h-0 shadow-sm">
+          <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+            {videos ? (
+              <div className="relative aspect-video">
+                <video
+                  ref={(el) => {
+                    videoRefs.current[0] = el;
+                    primaryRef.current = el;
+                  }}
+                  src={videos}
+                  className="w-full h-full object-contain"
+                />
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button size="sm" onClick={togglePlay} className="shrink-0">
-                {isPlaying ? (
-                  <Pause className="h-4 w-4 mr-2" />
-                ) : (
-                  <PlayCircle className="h-4 w-4 mr-2" />
-                )}
-                {isPlaying ? "Pause" : "Play"}
-              </Button>
-              <div className="flex-1">
-                <div
-                  className="relative h-2 rounded-full bg-muted cursor-pointer overflow-hidden"
-                  onClick={onSeek}
-                >
-                  {duration > 0 &&
-                    formattedData.map((chunk, i) => (
-                      <div
-                        key={i}
-                        className="absolute top-0 h-full"
-                        style={{
-                          left: `${(chunk.startTime / duration) * 100}%`,
-                          width: `${Math.max(0.3, ((chunk.endTime - chunk.startTime) / duration) * 100)}%`,
-                          backgroundColor: speakerColors.get(chunk.speaker),
-                          opacity: 0.85,
-                        }}
-                      />
-                    ))}
-                  <div
-                    className="absolute top-0 h-full w-0.5 bg-white/90 shadow"
-                    style={{ left: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
-              <span className="text-sm font-mono text-muted-foreground tabular-nums">
-                {formatClock(currentTime)} / {formatClock(duration)}
-              </span>
-            </div>
-            {speakerColors.size > 0 && (
-              <div className="flex flex-wrap gap-3 mt-3">
-                {Array.from(speakerColors.entries()).map(([speaker, color]) => (
-                  <div key={speaker} className="flex items-center gap-1.5">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      {speaker}
-                    </span>
-                  </div>
-                ))}
+            ) : (
+              <div className="aspect-video flex items-center justify-center text-white/60 text-sm">
+                No video found
               </div>
             )}
-          </Card>
-        </div>
-
-        <Card className="lg:col-span-1 flex flex-col shadow-sm border-l overflow-y-auto">
-          <CardContent className="flex-1 min-h-0 p-0 overflow-y-auto">
-            <div className="p-4 border-b bg-muted/50">
-              <Input
-                placeholder="Search transcript..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-card"
-              />
-            </div>
-            <div
-              className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
-              ref={containerRef}
-            >
-              {formattedData.length > 0 ? (
-                (() => {
-                  const q = searchQuery.toLowerCase();
-                  const filtered = q
-                    ? formattedData.filter(
-                        (e) =>
-                          e.text.toLowerCase().includes(q) ||
-                          e.speaker.toLowerCase().includes(q)
-                      )
-                    : formattedData;
-
-                  if (filtered.length === 0) {
-                    return (
-                      <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
-                        No results for &quot;{searchQuery}&quot;
-                      </div>
-                    );
-                  }
-
-                  return filtered.map((entry, index) => {
-                    const originalIndex = formattedData.indexOf(entry);
-                    const isActive = !q && originalIndex === currentChunkIndex;
-                    const color = speakerColors.get(entry.speaker);
-
-                    const highlight = (text: string) => {
-                      if (!q) return <>{text}</>;
-                      const parts = text.split(
-                        new RegExp(
-                          `(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-                          "gi"
-                        )
-                      );
-                      return (
-                        <>
-                          {parts.map((part, i) =>
-                            part.toLowerCase() === q ? (
-                              <mark
-                                key={i}
-                                className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5"
-                              >
-                                {part}
-                              </mark>
-                            ) : (
-                              part
-                            )
-                          )}
-                        </>
-                      );
-                    };
-
-                    return (
-                      <div
-                        key={index}
-                        className={`p-3 rounded-xl transition-all duration-200 border shadow-sm ${
-                          isActive
-                            ? "border-transparent"
-                            : "border-transparent hover:bg-muted/50"
-                        }`}
-                        style={
-                          isActive
-                            ? {
-                                backgroundColor: `${color}18`,
-                                borderColor: `${color}40`,
-                              }
-                            : undefined
-                        }
-                      >
-                        <div className="flex gap-3">
-                          <span className="text-[10px] font-mono text-muted-foreground mt-1 tabular-nums">
-                            {entry.time}
-                          </span>
-                          <div>
-                            <p
-                              className="text-xs font-bold mb-0.5"
-                              style={{ color }}
-                            >
-                              {entry.speaker}
-                            </p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {highlight(entry.text)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()
+          </div>
+          <div className="flex items-center space-x-4">
+            <Button size="sm" onClick={togglePlay} className="shrink-0">
+              {isPlaying ? (
+                <Pause className="h-4 w-4 mr-2" />
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic">
-                  Loading transcript segments...
-                </div>
+                <PlayCircle className="h-4 w-4 mr-2" />
               )}
+              {isPlaying ? "Pause" : "Play"}
+            </Button>
+            <div className="flex-1 py-2">
+              <div
+                className="relative h-1.5 rounded-full bg-muted cursor-pointer group"
+                onClick={onSeek}
+              >
+                <div
+                  className="absolute top-0 left-0 h-full bg-primary rounded-full transition-none"
+                  style={{ width: `${progressPercent}%` }}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary shadow ring-2 ring-background opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ left: `${progressPercent}%` }}
+                />
+              </div>
             </div>
-          </CardContent>
+            <span className="text-sm font-mono text-muted-foreground tabular-nums">
+              {formatClock(currentTime)} / {formatClock(duration)}
+            </span>
+          </div>
         </Card>
       </div>
     </div>
