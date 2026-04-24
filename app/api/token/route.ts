@@ -37,13 +37,13 @@ export async function POST(req: NextRequest) {
     startTime.getTime() + (meeting.duration || 0) * 60000
   );
   const now = new Date();
-  if (now < startTime) {
+  if (meeting.status !== "active" && now < startTime) {
     return NextResponse.json(
       { error: "Meeting has not started yet" },
       { status: 403 }
     );
   }
-  if (now > endTime) {
+  if (meeting.status === "ended" || now > endTime) {
     return NextResponse.json({ error: "Meeting has ended" }, { status: 410 });
   }
 

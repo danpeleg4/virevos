@@ -82,6 +82,8 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [meetingName, setMeetingName] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [detailsMeeting, setDetailsMeeting] = useState<Event | null>(null);
+  const [detailsCopied, setDetailsCopied] = useState(false);
   const [activeView, setActiveView] = useState<"home" | "summary">("home");
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
@@ -407,6 +409,10 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
+                        onClick={() => {
+                          setDetailsMeeting(meeting);
+                          setDetailsCopied(false);
+                        }}
                       >
                         <Calendar className="h-3 w-3 mr-1" />
                         Details
@@ -465,6 +471,68 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
           </Button>
         </div>
       </div>
+
+      {/* Meeting Details Dialog */}
+      <Dialog
+        open={!!detailsMeeting}
+        onOpenChange={(open) => !open && setDetailsMeeting(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {detailsMeeting
+                ? decodeURIComponent(detailsMeeting.title)
+                : "Meeting Details"}
+            </DialogTitle>
+            <DialogDescription>Upcoming meeting information</DialogDescription>
+          </DialogHeader>
+          {detailsMeeting && (
+            <div className="space-y-4 mt-2">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span>{formatDateOnly(new Date(detailsMeeting.dateTime))}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>{formatTimeOnly(new Date(detailsMeeting.dateTime))}</span>
+              </div>
+              {detailsMeeting.link && (
+                <div className="p-3 rounded-lg border bg-muted/50">
+                  <p className="text-xs text-muted-foreground mb-2">Meeting Link</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-foreground truncate flex-1">
+                      {detailsMeeting.link.slice(0,35) + "..."}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(detailsMeeting.link!);
+                        setDetailsCopied(true);
+                        setTimeout(() => setDetailsCopied(false), 2000);
+                      }}
+                    >
+                      {detailsCopied ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <Button
+                className="w-full"
+                onClick={() => handleJoinMeeting(detailsMeeting)}
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Join Meeting
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Start Meeting Modal */}
       <Dialog open={startModalOpen} onOpenChange={setStartModalOpen}>
