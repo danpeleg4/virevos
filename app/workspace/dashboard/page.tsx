@@ -318,7 +318,7 @@ export default function Dashboard() {
                           task.priority === "high"
                             ? "border-red-200 text-red-700"
                             : task.priority === "medium"
-                              ? "border-yellow-200 text-yellow-700"
+                              ? "border-yellow-300 text-yellow-700 bg-yellow-100"
                               : "border-border text-muted-foreground"
                         }`}
                       >

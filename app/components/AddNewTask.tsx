@@ -110,7 +110,7 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
       caseName:
         casesQuery?.data?.find((p) => p.id === selectedCaseId)?.name || "",
       dueDate: dueDate || null,
-      status: "todo",
+      status: "in-progress",
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),

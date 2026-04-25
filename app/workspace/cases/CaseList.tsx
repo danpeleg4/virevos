@@ -77,7 +77,7 @@ function PriorityBadge({ priority }: { priority: string }) {
     priority === "high"
       ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
       : priority === "medium"
-        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+        ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
         : "bg-muted text-muted-foreground border border-border";
   return (
     <span

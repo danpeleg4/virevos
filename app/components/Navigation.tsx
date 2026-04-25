@@ -30,7 +30,7 @@ export function Navigation() {
             onClick={() => handleNavigation("/")}
           >
             <div className="flex items-center space-x-2">
-              <Image src="/note.png" alt="123" width="50" height="50"></Image>
+              <Image src="/virevos.svg" alt="123" width="50" height="50"></Image>
               <h1 className="text-xl text-gray-900 font-medium">Virevos</h1>
             </div>
           </motion.div>

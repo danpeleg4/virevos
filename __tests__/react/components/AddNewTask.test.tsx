@@ -102,7 +102,7 @@ describe("AddNewTask", () => {
     fireEvent.click(screen.getByRole("button", { name: /create task/i }));
     expect(mockMutate).toHaveBeenCalledTimes(1);
     expect(mockMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Test Task", status: "todo" })
+      expect.objectContaining({ title: "Test Task", status: "in-progress" })
     );
     await waitFor(() => {
       expect(screen.queryByText("Create New Task")).not.toBeInTheDocument();

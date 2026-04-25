@@ -255,7 +255,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                     setSortDir(dir);
                     setPage(1);
                   }}
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between cursor-pointer"
                 >
                   {label}
                   {sortField === field && sortDir === dir && (
@@ -290,7 +290,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                     setStatusFilter(value);
                     setPage(1);
                   }}
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between cursor-pointer"
                 >
                   {label}
                   {statusFilter === value && (

@@ -34,7 +34,7 @@ import { Task } from "@/types/tasks";
 
 const ROW_HEIGHT = 48;
 
-const STATUS_TABS = ["all", "todo", "in-progress", "completed"] as const;
+const STATUS_TABS = ["all", "in-progress", "completed"] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
 
 function PriorityBadge({ priority }: { priority: string }) {
@@ -42,7 +42,7 @@ function PriorityBadge({ priority }: { priority: string }) {
     priority === "high"
       ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
       : priority === "medium"
-        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+        ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
         : "bg-muted text-muted-foreground border border-border";
   return (
     <span
@@ -63,18 +63,10 @@ function StatusBadge({ status }: { status: string }) {
       </span>
     );
   }
-  if (status === "in-progress") {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
-        In Progress
-      </span>
-    );
-  }
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
-      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block" />
-      To Do
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+      In Progress
     </span>
   );
 }
@@ -168,7 +160,6 @@ export default function Tasks() {
         .includes(searchQuery.toLowerCase());
       const matchesTab =
         activeTab === "all" ||
-        (activeTab === "todo" && task.status === "todo") ||
         (activeTab === "in-progress" && task.status === "in-progress") ||
         (activeTab === "completed" && task.status === "completed");
       const matchesPriority =
@@ -191,7 +182,6 @@ export default function Tasks() {
 
   const taskCounts = {
     all: getTasks?.data?.length ?? 0,
-    todo: getTasks?.data?.filter((t: Task) => t.status === "todo").length ?? 0,
     "in-progress":
       getTasks?.data?.filter((t: Task) => t.status === "in-progress").length ??
       0,
@@ -208,7 +198,6 @@ export default function Tasks() {
 
   const TAB_LABELS: Record<StatusTab, string> = {
     all: "All",
-    todo: "To Do",
     "in-progress": "In Progress",
     completed: "Completed",
   };
@@ -243,9 +232,7 @@ export default function Tasks() {
                         : "text-muted-foreground"
                     }`}
                   >
-                    {tab === "in-progress"
-                      ? taskCounts["in-progress"]
-                      : taskCounts[tab as keyof typeof taskCounts]}
+                    {taskCounts[tab as keyof typeof taskCounts]}
                   </span>
                 </button>
               ))}
@@ -407,7 +394,7 @@ export default function Tasks() {
                         checked={task.status === "completed"}
                         onCheckedChange={(checked) =>
                           changeTaskStatus.mutate({
-                            status: checked ? "completed" : "todo",
+                            status: checked ? "completed" : "in-progress",
                             taskId: task.id,
                           })
                         }
