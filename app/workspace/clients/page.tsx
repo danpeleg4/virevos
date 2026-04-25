@@ -759,13 +759,27 @@ export default function Clients() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Edit Client</DialogTitle>
-            <DialogDescription>
-              Update name, email, and industry for{" "}
-              <span className="font-medium text-foreground">
-                {selectedClient?.name}
-              </span>
-            </DialogDescription>
+            <div className="flex items-start justify-between">
+              <div>
+                <DialogTitle>Edit Client</DialogTitle>
+                <DialogDescription className="mt-1">
+                  Update name, email, and industry
+                </DialogDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 -mt-1 -mr-1 flex-shrink-0"
+                onClick={() => {
+                  if (!selectedClient) return;
+                  setEditOpen(false);
+                  setSelectedClient(null);
+                  deleteMutation.mutate({ id: selectedClient.id });
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
