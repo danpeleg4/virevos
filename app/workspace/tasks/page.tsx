@@ -356,7 +356,7 @@ export default function Tasks() {
                   <th className="text-left px-3 py-2.5">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                       <Briefcase className="h-3.5 w-3.5" />
-                      Project
+                      Case
                     </div>
                   </th>
                   <th className="text-left px-3 py-2.5">

@@ -146,7 +146,7 @@ export default function PortalPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+  const [selectedCaseId, setSelectedCaseId] = useState<number | null>(
     null
   );
 
@@ -168,8 +168,8 @@ export default function PortalPage() {
       setData(portalData);
       setLocalMessages(portalData.messages || []);
       setLocalFiles(portalData.files || []);
-      if (portalData.projects?.length > 0) {
-        setSelectedProjectId(portalData.projects[0].id);
+      if (portalData.cases?.length > 0) {
+        setSelectedCaseId(portalData.cases[0].id);
       }
       setBookingForm((prev) => ({
         ...prev,
@@ -267,8 +267,8 @@ export default function PortalPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      if (selectedProjectId) {
-        formData.append("caseId", String(selectedProjectId));
+      if (selectedCaseId) {
+        formData.append("caseId", String(selectedCaseId));
       }
       const res = await axios.post(
         `/api/portal/${token}/files/upload`,
@@ -382,7 +382,7 @@ export default function PortalPage() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {data.settings?.welcomeMessage ||
-              "Here's what's happening with your projects"}
+              "Here's what's happening with your cases"}
           </p>
         </div>
 
@@ -391,7 +391,7 @@ export default function PortalPage() {
           <div className="overflow-x-auto pb-1">
             <TabsList className="min-w-max">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="cases">Cases</TabsTrigger>
               <TabsTrigger value="messages">
                 Messages
                 {unreadCount > 0 && (
@@ -412,20 +412,20 @@ export default function PortalPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Projects table */}
+                {/* Cases table */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center text-base">
                       <FolderKanban className="h-4 w-4 mr-2 text-blue-600" />
-                      Active Projects
+                      Active Cases
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    {data.projects.length === 0 ? (
+                    {data.cases.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
                         <FolderKanban className="h-8 w-8 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
-                          No projects yet
+                          No cases yet
                         </p>
                       </div>
                     ) : (
@@ -435,7 +435,7 @@ export default function PortalPage() {
                             <tr>
                               <th className="text-left px-4 py-2.5">
                                 <span className="text-xs text-muted-foreground font-medium">
-                                  Project
+                                  Case
                                 </span>
                               </th>
                               <th className="text-left px-4 py-2.5">
@@ -456,31 +456,31 @@ export default function PortalPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">
-                            {data.projects.slice(0, 5).map((project) => (
+                            {data.cases.slice(0, 5).map((aCase) => (
                               <tr
-                                key={project.id}
+                                key={aCase.id}
                                 className="hover:bg-muted/50 transition-colors"
                               >
                                 <td className="px-4 py-2.5">
                                   <p className="text-sm font-medium text-foreground">
-                                    {project.name}
+                                    {aCase.name}
                                   </p>
-                                  {project.description && (
+                                  {aCase.description && (
                                     <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">
-                                      {project.description}
+                                      {aCase.description}
                                     </p>
                                   )}
                                 </td>
                                 <td className="px-4 py-2.5">
-                                  <StatusBadge status={project.status} />
+                                  <StatusBadge status={aCase.status} />
                                 </td>
                                 <td className="px-4 py-2.5">
-                                  <PriorityBadge priority={project.priority} />
+                                  <PriorityBadge priority={aCase.priority} />
                                 </td>
                                 <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                                  {project.dueDate
+                                  {aCase.dueDate
                                     ? parseDateOnlyString(
-                                        project.dueDate
+                                        aCase.dueDate
                                       ).toLocaleDateString()
                                     : "—"}
                                 </td>
@@ -490,15 +490,15 @@ export default function PortalPage() {
                         </table>
                       </div>
                     )}
-                    {data.projects.length > 5 && (
+                    {data.cases.length > 5 && (
                       <div className="px-4 py-3 border-t border-border">
                         <Button
                           variant="ghost"
                           size="sm"
                           className="text-xs"
-                          onClick={() => setActiveTab("projects")}
+                          onClick={() => setActiveTab("cases")}
                         >
-                          View all {data.projects.length} projects
+                          View all {data.cases.length} cases
                         </Button>
                       </div>
                     )}
@@ -596,10 +596,10 @@ export default function PortalPage() {
                       variant="outline"
                       size="sm"
                       className="w-full justify-start gap-2"
-                      onClick={() => setActiveTab("projects")}
+                      onClick={() => setActiveTab("cases")}
                     >
                       <FolderKanban className="h-4 w-4" />
-                      View Projects
+                      View Cases
                     </Button>
                     {schedulingEnabled && (
                       <Button
@@ -660,21 +660,21 @@ export default function PortalPage() {
             </div>
           </TabsContent>
 
-          {/* ── Projects ── */}
-          <TabsContent value="projects" className="mt-6">
+          {/* ── Cases ── */}
+          <TabsContent value="cases" className="mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-base">
                   <FolderKanban className="h-4 w-4 mr-2 text-blue-600" />
-                  All Projects
+                  All Cases
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {data.projects.length === 0 ? (
+                {data.cases.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
                     <FolderKanban className="h-10 w-10 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
-                      No projects yet
+                      No cases yet
                     </p>
                   </div>
                 ) : (
@@ -685,7 +685,7 @@ export default function PortalPage() {
                           <th className="text-left px-4 py-2.5">
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                               <FolderKanban className="h-3.5 w-3.5" />
-                              Project
+                              Case
                             </div>
                           </th>
                           <th className="text-left px-4 py-2.5">
@@ -708,33 +708,33 @@ export default function PortalPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {data.projects.map((project) => (
+                        {data.cases.map((aCase) => (
                           <tr
-                            key={project.id}
+                            key={aCase.id}
                             className="hover:bg-muted/50 transition-colors"
                           >
                             <td className="px-4 py-3">
                               <p className="text-sm font-medium text-foreground">
-                                {project.name}
+                                {aCase.name}
                               </p>
-                              {project.description && (
+                              {aCase.description && (
                                 <p className="text-xs text-muted-foreground mt-0.5 max-w-sm truncate">
-                                  {project.description}
+                                  {aCase.description}
                                 </p>
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <StatusBadge status={project.status} />
+                              <StatusBadge status={aCase.status} />
                             </td>
                             <td className="px-4 py-3">
-                              <PriorityBadge priority={project.priority} />
+                              <PriorityBadge priority={aCase.priority} />
                             </td>
                             <td className="px-4 py-3 text-xs text-muted-foreground">
-                              {project.dueDate ? (
+                              {aCase.dueDate ? (
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3 shrink-0" />
                                   {parseDateOnlyString(
-                                    project.dueDate
+                                    aCase.dueDate
                                   ).toLocaleDateString()}
                                 </div>
                               ) : (
@@ -864,20 +864,20 @@ export default function PortalPage() {
                       }}
                     />
 
-                    {/* Project selector when multiple projects exist */}
-                    {data.projects.length > 1 && (
+                    {/* Case selector when multiple cases exist */}
+                    {data.cases.length > 1 && (
                       <div className="flex items-center gap-2">
                         <label className="text-xs text-muted-foreground whitespace-nowrap">
                           Upload to:
                         </label>
                         <select
                           className="flex-1 text-sm border border-border rounded-md px-3 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                          value={selectedProjectId ?? ""}
+                          value={selectedCaseId ?? ""}
                           onChange={(e) =>
-                            setSelectedProjectId(Number(e.target.value))
+                            setSelectedCaseId(Number(e.target.value))
                           }
                         >
-                          {data.projects.map((p) => (
+                          {data.cases.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name}
                             </option>
