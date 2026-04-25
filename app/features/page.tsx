@@ -47,7 +47,7 @@ const mainFeatures = [
     icon: Users,
     title: "Client Management",
     description:
-      "A full CRM built for freelancers. Organize every client, track project history, and keep all communications in one centralized workspace.",
+      "A full CRM built for immigration lawyers. Organize every client, track case history, and keep all communications in one centralized workspace.",
     iconStyle: {
       backgroundImage: "linear-gradient(to right, #3b82f6, #1d4ed8)",
     },
@@ -107,7 +107,7 @@ const mainFeatures = [
     icon: BarChart3,
     title: "Analytics & Insights",
     description:
-      "Track revenue, client activity, and productivity trends. Get the data you need to grow your freelance business and make smarter decisions.",
+      "Track revenue, client activity, and productivity trends. Get the data you need to grow your immigration law practice and make smarter decisions.",
     iconStyle: {
       backgroundImage: "linear-gradient(to right, #2dd4bf, #0891b2)",
     },
