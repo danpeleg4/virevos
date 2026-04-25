@@ -56,7 +56,12 @@ export default function InMeetingView() {
     queryKey: ["meeting", meetingId],
     queryFn: async () => {
       const res = await axios.get(`/api/events/${meetingId}`);
-      return res.data as { status: string; dateTime: string; title: string; link?: string };
+      return res.data as {
+        status: string;
+        dateTime: string;
+        title: string;
+        link?: string;
+      };
     },
   });
 
@@ -119,7 +124,7 @@ export default function InMeetingView() {
     await room.localParticipant.setMicrophoneEnabled(true);
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach(track => {
+    stream.getTracks().forEach((track) => {
       room.localParticipant.publishTrack(track);
     });
 
@@ -183,7 +188,9 @@ export default function InMeetingView() {
               onClick={() => startMeetingMutation.mutate()}
               disabled={startMeetingMutation.isPending}
             >
-              {startMeetingMutation.isPending ? "Starting…" : "Start Meeting Now"}
+              {startMeetingMutation.isPending
+                ? "Starting…"
+                : "Start Meeting Now"}
             </button>
           </div>
         </div>

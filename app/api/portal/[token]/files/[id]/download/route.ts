@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import { clientPortalTokens, projectFiles, projects } from "@db/schema";
+import { clientPortalTokens, caseFiles, cases } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { downloadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
@@ -26,19 +26,19 @@ export async function GET(
   // Fetch the file
   const [file] = await db
     .select()
-    .from(projectFiles)
-    .where(eq(projectFiles.id, fileId))
+    .from(caseFiles)
+    .where(eq(caseFiles.id, fileId))
     .limit(1);
 
   if (!file) {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  // Verify the file belongs to a project owned by this portal's client
+  // Verify the file belongs to a case owned by this portal's client
   const [project] = await db
     .select()
-    .from(projects)
-    .where(eq(projects.id, file.projectId))
+    .from(cases)
+    .where(eq(cases.id, file.caseId))
     .limit(1);
 
   if (

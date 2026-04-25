@@ -3,10 +3,10 @@ import { CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { addAClient, updateExistingClient } from "@/lib/clients";
 import { getPastMeetingTranscript } from "@/lib/meetings";
 import { searchEmails } from "@/lib/gmail_sync";
-import { createProject, updateProject } from "@/lib/projects";
+import { createCase, updateCase } from "@/lib/cases";
 import { addProjectTasksAction, updateTask } from "@/lib/tasks";
 import { addMeetingToCalendar, updateEvent } from "@/lib/calendar";
-import { Project } from "@/types/projects";
+import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { Event } from "@/types/meeting";
 
@@ -65,22 +65,22 @@ export const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "createProject",
-    description: "Create a new project",
+    name: "createCase",
+    description: "Create a new case",
     parameters: {
       type: "object",
       properties: {
-        name: { type: "string", description: "The name of the project" },
+        name: { type: "string", description: "The name of the case" },
         description: {
           type: ["string", "null"],
-          description: "Project description",
+          description: "Case description",
         },
-        status: { type: ["string", "null"], description: "Project status" },
+        status: { type: ["string", "null"], description: "Case status" },
         dueDate: {
           type: ["string", "null"],
           description: "Due date as ISO string",
         },
-        priority: { type: ["string", "null"], description: "Project priority" },
+        priority: { type: ["string", "null"], description: "Case priority" },
         clientId: {
           type: ["number", "null"],
           description: "Associated client ID",
@@ -119,12 +119,12 @@ export const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "updateProject",
-    description: "Update an existing project",
+    name: "updateCase",
+    description: "Update an existing case",
     parameters: {
       type: "object",
       properties: {
-        id: { type: "number", description: "The ID of the project to update" },
+        id: { type: "number", description: "The ID of the case to update" },
         name: { type: ["string", "null"], description: "New name" },
         description: {
           type: ["string", "null"],
@@ -310,12 +310,12 @@ export async function executeTool(
       emails: res,
     };
   }
-  if (name === "createProject") {
-    const res = await createProject(args as unknown as Project);
+  if (name === "createCase") {
+    const res = await createCase(args as unknown as Case);
     return {
-      kind: "project_created",
-      project: res,
-      message: "Project created successfully",
+      kind: "case_created",
+      case: res,
+      message: "Case created successfully",
     };
   }
   if (name === "updateClient") {
@@ -325,8 +325,8 @@ export async function executeTool(
       message: "Client updated successfully",
     };
   }
-  if (name === "updateProject") {
-    await updateProject(
+  if (name === "updateCase") {
+    await updateCase(
       args as unknown as {
         id: number;
         name?: string;
@@ -337,8 +337,8 @@ export async function executeTool(
       }
     );
     return {
-      kind: "project_updated",
-      message: "Project updated successfully",
+      kind: "case_updated",
+      message: "Case updated successfully",
     };
   }
   if (name === "createTask") {

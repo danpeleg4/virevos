@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@db/db";
-import { clients, projects, users } from "@db/schema";
+import { clients, cases, users } from "@db/schema";
 import { eq, count } from "drizzle-orm";
 import { getUserSubscriptionByUserId } from "./billing";
 
@@ -21,12 +21,12 @@ const PLAN_LIMITS: Record<
   PlanId,
   {
     maxClients: number | null;
-    maxProjects: number | null;
+    maxCases: number | null;
   }
 > = {
-  starter: { maxClients: 5, maxProjects: 5 },
-  professional: { maxClients: null, maxProjects: null },
-  business: { maxClients: null, maxProjects: null },
+  starter: { maxClients: 5, maxCases: 5 },
+  professional: { maxClients: null, maxCases: null },
+  business: { maxClients: null, maxCases: null },
 };
 
 export async function getUserPlan(userId: string): Promise<PlanId> {
@@ -51,19 +51,19 @@ export async function assertCanAddClient(userId: string): Promise<void> {
   }
 }
 
-export async function assertCanAddProject(userId: string): Promise<void> {
+export async function assertCanAddCase(userId: string): Promise<void> {
   const plan = await getUserPlan(userId);
-  const limit = PLAN_LIMITS[plan].maxProjects;
+  const limit = PLAN_LIMITS[plan].maxCases;
   if (limit === null) return;
 
   const [result] = await db
     .select({ count: count() })
-    .from(projects)
-    .where(eq(projects.userId, userId));
+    .from(cases)
+    .where(eq(cases.userId, userId));
 
   if (result.count >= limit) {
     throw new Error(
-      `Project limit reached. The ${plan} plan allows up to ${limit} projects. Please upgrade to add more.`
+      `Case limit reached. The ${plan} plan allows up to ${limit} cases. Please upgrade to add more.`
     );
   }
 }

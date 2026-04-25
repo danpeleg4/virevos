@@ -26,7 +26,7 @@ jest.mock("@tanstack/react-query", () => ({
 
 jest.mock("axios");
 jest.mock("@/lib/tasks", () => ({
-  addProjectTasksAction: jest.fn(),
+  addCaseTasksAction: jest.fn(),
 }));
 
 import AddNewTask from "@/app/components/AddNewTask";
@@ -64,16 +64,16 @@ describe("AddNewTask", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows project select when no projectId prop", () => {
+  it("shows case select when no caseId prop", () => {
     render(<AddNewTask />);
     fireEvent.click(screen.getByRole("button", { name: /new task/i }));
-    expect(screen.getByText(/select a project/i)).toBeInTheDocument();
+    expect(screen.getByText(/select a case/i)).toBeInTheDocument();
   });
 
-  it("hides project select when projectId prop is provided", () => {
-    render(<AddNewTask projectId={5} />);
+  it("hides case select when caseId prop is provided", () => {
+    render(<AddNewTask caseId={5} />);
     fireEvent.click(screen.getByRole("button", { name: /new task/i }));
-    expect(screen.queryByText(/select a project/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/select a case/i)).not.toBeInTheDocument();
   });
 
   it("'Create Task' button is disabled when title is empty", () => {
@@ -102,7 +102,7 @@ describe("AddNewTask", () => {
     fireEvent.click(screen.getByRole("button", { name: /create task/i }));
     expect(mockMutate).toHaveBeenCalledTimes(1);
     expect(mockMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Test Task", status: "todo" })
+      expect.objectContaining({ title: "Test Task", status: "in-progress" })
     );
     await waitFor(() => {
       expect(screen.queryByText("Create New Task")).not.toBeInTheDocument();

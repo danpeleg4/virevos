@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import { projects, tasks } from "@db/schema";
+import { cases, tasks } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { Task } from "@/types/tasks";
@@ -11,14 +11,14 @@ export async function GET() {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  // Fetch all tasks with project name
+  // Fetch all tasks with case name
   const allTasks = await db
     .select({
       tasks: tasks,
-      projectName: projects.name,
+      caseName: cases.name,
     })
     .from(tasks)
-    .leftJoin(projects, eq(tasks.projectId, projects.id))
+    .leftJoin(cases, eq(tasks.caseId, cases.id))
     .where(eq(tasks.userId, user.id));
 
   return NextResponse.json(allTasks);
@@ -32,51 +32,51 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, priority, dueDate, projectName } = body as Pick<
+    const { title, description, priority, dueDate, caseName } = body as Pick<
       Task,
-      "title" | "description" | "dueDate" | "priority" | "projectName"
+      "title" | "description" | "dueDate" | "priority" | "caseName"
     >;
 
     if (!title || !title.trim()) {
       return new NextResponse("Missing title", { status: 400 });
     }
 
-    // Validate project if provided
-    let projectId: number | null = null;
+    // Validate case if provided
+    let caseId: number | null = null;
 
     if (
-      projectName !== undefined &&
-      projectName !== null &&
-      String(projectName).trim() !== ""
+      caseName !== undefined &&
+      caseName !== null &&
+      String(caseName).trim() !== ""
     ) {
-      const maybeId = Number(projectName);
+      const maybeId = Number(caseName);
       if (!Number.isNaN(maybeId)) {
         const byId = await db
           .select()
-          .from(projects)
-          .where(eq(projects.id, maybeId));
+          .from(cases)
+          .where(eq(cases.id, maybeId));
 
         if (!byId.length) {
-          return new NextResponse("Project not found", { status: 400 });
+          return new NextResponse("Case not found", { status: 400 });
         }
         if (byId[0].userId !== user.id) {
-          return new NextResponse("Unauthorized project", { status: 403 });
+          return new NextResponse("Unauthorized case", { status: 403 });
         }
-        projectId = maybeId;
+        caseId = maybeId;
       } else {
-        // Treat as project name; find for this user
+        // Treat as case name; find for this user
         const byName = await db
           .select()
-          .from(projects)
-          .where(eq(projects.name, String(projectName)));
+          .from(cases)
+          .where(eq(cases.name, String(caseName)));
 
         if (!byName.length) {
-          return new NextResponse("Project not found", { status: 400 });
+          return new NextResponse("Case not found", { status: 400 });
         }
         if (byName[0].userId !== user.id) {
-          return new NextResponse("Unauthorized project", { status: 403 });
+          return new NextResponse("Unauthorized case", { status: 403 });
         }
-        projectId = byName[0].id;
+        caseId = byName[0].id;
       }
     }
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       | "description"
       | "priority"
       | "dueDate"
-      | "projectId"
+      | "caseId"
       | "userId"
       | "status"
       | "completed"
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       title: title.trim(),
       description,
       priority,
-      projectId,
+      caseId,
       userId: user.id,
       status: "in-progress",
       completed: false,

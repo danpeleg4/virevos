@@ -18,7 +18,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { task_percentage } from "@/lib/task_percentage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Project } from "@/types/projects";
+import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { updateTaskStatus } from "@/lib/tasks";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -45,17 +45,17 @@ export default function Dashboard() {
     ? clientsQuery.data.length
     : 0;
 
-  // Fetch projects count and all projects
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
+  // Fetch cases count and all cases
+  const casesQuery = useQuery({
+    queryKey: ["cases"],
     queryFn: async () => {
-      const res = await axios.get("/api/projects/get-projects");
+      const res = await axios.get("/api/cases/get-cases");
       return res.data;
     },
   });
 
-  const allProjects: Project[] = Array.isArray(projectsQuery.data?.projects)
-    ? projectsQuery.data.projects.map((p: Project) => {
+  const allCases: Case[] = Array.isArray(casesQuery.data?.cases)
+    ? casesQuery.data.cases.map((p: Case) => {
         const isCompleted =
           p.stats.totalTasks > 0 &&
           p.stats.completedTasks === p.stats.totalTasks;
@@ -72,9 +72,9 @@ export default function Dashboard() {
     queryFn: async () => {
       const res = await axios.get("/api/tasks");
       if (!Array.isArray(res.data)) return [];
-      return res.data.map((t: { tasks: Task; projectName: string }) => ({
+      return res.data.map((t: { tasks: Task; caseName: string }) => ({
         ...t.tasks,
-        projectName: t.projectName || "No Project",
+        caseName: t.caseName || "No Case",
       }));
     },
   });
@@ -122,8 +122,8 @@ export default function Dashboard() {
       color: "blue",
     },
     {
-      label: "Active Projects",
-      value: allProjects.length,
+      label: "Active Cases",
+      value: allCases.length,
       icon: FolderKanban,
       color: "green",
     },
@@ -199,20 +199,20 @@ export default function Dashboard() {
 
       {/* Recent Projects & Tasks */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* Recent Projects */}
+        {/* Recent Cases */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl text-foreground">Recent Projects</h2>
+            <h2 className="text-xl text-foreground">Recent Cases</h2>
             <Button variant="ghost" size="sm">
-              <Link href="/workspace/projects">View All</Link>
+              <Link href="/workspace/cases">View All</Link>
             </Button>
           </div>
 
           <div className="space-y-4">
-            {allProjects.slice(0, 3).map((project) => (
+            {allCases.slice(0, 3).map((aCase) => (
               <Link
-                key={project.id}
-                href={`/workspace/projects/${project.id}`}
+                key={aCase.id}
+                href={`/workspace/cases/${aCase.id}`}
                 className="block"
               >
                 <div className="space-y-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer p-3">
@@ -220,55 +220,55 @@ export default function Dashboard() {
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
                         <h3 className="text-foreground">
-                          {project.name ?? "Untitled"}
+                          {aCase.name ?? "Untitled"}
                         </h3>
                         <Badge
                           variant="outline"
                           className={
-                            project.status === "completed"
+                            aCase.status === "completed"
                               ? "border-blue-200 text-blue-700"
-                              : project.status === "inactive"
+                              : aCase.status === "inactive"
                                 ? "border-border text-muted-foreground"
                                 : "border-green-200 text-green-700"
                           }
                         >
-                          {project.status === "completed" && (
+                          {aCase.status === "completed" && (
                             <CheckCircle className="h-3 w-3 mr-1" />
                           )}
-                          {project.status === "inactive"
+                          {aCase.status === "inactive"
                             ? "Inactive"
-                            : project.status === "completed"
+                            : aCase.status === "completed"
                               ? "Completed"
                               : "Active"}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {project.clientName ?? "Unknown Client"}
+                        {aCase.clientName ?? "Unknown Client"}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-foreground">
                         {task_percentage({
-                          completed: project.stats.completedTasks ?? 0,
-                          total: project.stats.totalTasks ?? 0,
+                          completed: aCase.stats.completedTasks ?? 0,
+                          total: aCase.stats.totalTasks ?? 0,
                         })}
                         %
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {project.stats.completedTasks ?? 0}/
-                        {project.stats.totalTasks ?? 0} tasks
+                        {aCase.stats.completedTasks ?? 0}/
+                        {aCase.stats.totalTasks ?? 0} tasks
                       </p>
                     </div>
                   </div>
                   <Progress
                     value={task_percentage({
-                      completed: project.stats.completedTasks ?? 0,
-                      total: project.stats.totalTasks ?? 0,
+                      completed: aCase.stats.completedTasks ?? 0,
+                      total: aCase.stats.totalTasks ?? 0,
                     })}
                   />
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Clock className="h-3 w-3 mr-1" />
-                    Due: {project.dueDate ?? "No due date"}
+                    Due: {aCase.dueDate ?? "No due date"}
                   </div>
                 </div>
               </Link>
@@ -318,7 +318,7 @@ export default function Dashboard() {
                           task.priority === "high"
                             ? "border-red-200 text-red-700"
                             : task.priority === "medium"
-                              ? "border-yellow-200 text-yellow-700"
+                              ? "border-yellow-300 text-yellow-700 bg-yellow-100"
                               : "border-border text-muted-foreground"
                         }`}
                       >
@@ -326,7 +326,7 @@ export default function Dashboard() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {task.projectName ?? "No Project"}
+                      {task.caseName ?? "No Case"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {task.dueDate ?? "No due date"}

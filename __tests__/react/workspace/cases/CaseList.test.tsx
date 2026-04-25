@@ -10,17 +10,17 @@ jest.mock("@/lib/task_percentage", () => ({
   task_percentage: jest.fn(() => 60),
 }));
 
-jest.mock("@/lib/projects", () => ({
-  createProject: jest.fn(),
-  updateProject: jest.fn(),
-  deleteProject: jest.fn(),
+jest.mock("@/lib/cases", () => ({
+  createCase: jest.fn(),
+  updateCase: jest.fn(),
+  deleteCase: jest.fn(),
 }));
 
-const mockProjects = [
+const mockCases = [
   {
     id: 1,
     clientId: null,
-    name: "Alpha Project",
+    name: "Alpha Case",
     status: "active",
     clientName: "Acme",
     dueDate: "2026-06-01",
@@ -30,7 +30,7 @@ const mockProjects = [
   {
     id: 2,
     clientId: null,
-    name: "Beta Project",
+    name: "Beta Case",
     status: "completed",
     clientName: "Beta",
     dueDate: "2026-05-01",
@@ -47,38 +47,38 @@ const mockClients = [
     phone: "",
     industry: undefined,
     status: "active",
-    activeProjects: 1,
-    completedProjects: 0,
-    totalProjects: 1,
+    activeCases: 1,
+    completedCases: 0,
+    totalCases: 1,
     avatar: "A",
   },
 ];
 
-import { ProjectList } from "@/app/workspace/projects/ProjectList";
+import { CaseList } from "@/app/workspace/cases/CaseList";
 
-describe("ProjectList", () => {
+describe("CaseList", () => {
   const onSelect = jest.fn();
 
   beforeEach(() => {
     onSelect.mockClear();
   });
 
-  it("renders project names", () => {
+  it("renders case names", () => {
     render(
-      <ProjectList
-        projects={mockProjects}
+      <CaseList
+        cases={mockCases}
         clients={mockClients}
         onSelect={onSelect}
       />
     );
-    expect(screen.getByText("Alpha Project")).toBeInTheDocument();
-    expect(screen.getByText("Beta Project")).toBeInTheDocument();
+    expect(screen.getByText("Alpha Case")).toBeInTheDocument();
+    expect(screen.getByText("Beta Case")).toBeInTheDocument();
   });
 
   it("renders status badges", () => {
     render(
-      <ProjectList
-        projects={mockProjects}
+      <CaseList
+        cases={mockCases}
         clients={mockClients}
         onSelect={onSelect}
       />
@@ -87,35 +87,35 @@ describe("ProjectList", () => {
     expect(screen.getAllByText(/completed/i).length).toBeGreaterThan(0);
   });
 
-  it("calls onSelect when a project row is clicked", () => {
+  it("calls onSelect when a case row is clicked", () => {
     render(
-      <ProjectList
-        projects={mockProjects}
+      <CaseList
+        cases={mockCases}
         clients={mockClients}
         onSelect={onSelect}
       />
     );
-    fireEvent.click(screen.getByText("Alpha Project"));
-    expect(onSelect).toHaveBeenCalledWith(mockProjects[0]);
+    fireEvent.click(screen.getByText("Alpha Case"));
+    expect(onSelect).toHaveBeenCalledWith(mockCases[0]);
   });
 
-  it("renders 'New Project' button", () => {
+  it("renders 'New Case' button", () => {
     render(
-      <ProjectList
-        projects={mockProjects}
+      <CaseList
+        cases={mockCases}
         clients={mockClients}
         onSelect={onSelect}
       />
     );
     expect(
-      screen.getByRole("button", { name: /new project/i })
+      screen.getByRole("button", { name: /new case/i })
     ).toBeInTheDocument();
   });
 
   it("renders search input", () => {
     render(
-      <ProjectList
-        projects={mockProjects}
+      <CaseList
+        cases={mockCases}
         clients={mockClients}
         onSelect={onSelect}
       />

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { projectFiles } from "@db/schema";
+import { caseFiles } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { downloadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
@@ -20,8 +20,8 @@ export async function GET(
 
   const [file] = await db
     .select()
-    .from(projectFiles)
-    .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
+    .from(caseFiles)
+    .where(and(eq(caseFiles.id, fileId), eq(caseFiles.userId, user.id)));
 
   if (!file) {
     return new NextResponse("Not found", { status: 404 });

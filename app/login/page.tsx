@@ -116,21 +116,6 @@ export default function Login() {
     }
   };
 
-  const handleSocialLogin = async (
-    strategy: "oauth_google" | "oauth_apple"
-  ) => {
-    setError(null);
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy,
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/",
-      });
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err));
-    }
-  };
-
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-white font-sans overflow-hidden">
       <div className="fixed top-6 right-6 z-50 pointer-events-none">
@@ -180,7 +165,7 @@ export default function Login() {
               Welcome Back
             </h1>
             <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
-              Login to access your dashboard and manage your tasks.
+              Login to access your dashboard and manage your cases.
             </p>
           </div>
 
@@ -342,11 +327,12 @@ export default function Login() {
 
         <div className="relative z-10 w-full max-w-2xl text-center lg:text-left">
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-            Ready to streamline your workflow?
+            Secure the future of your practice.
           </h2>
           <p className="text-blue-100 text-lg mb-12 max-w-lg leading-relaxed">
-            Virevos provides everything you need to manage your business
-            operations in one unified dashboard.
+            Virevos is the AI-native hub for modern immigration. Automate your
+            audits, track every deadline, and grow your client pipeline from F-1
+            to Green Card.
           </p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/projects/get-projects/route";
+import { GET } from "@/app/api/cases/get-cases/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
@@ -9,7 +9,7 @@ jest.mock("@clerk/nextjs/server", () => ({
 jest.mock("@db/db", () => ({
   db: {
     query: {
-      projects: {
+      cases: {
         findMany: jest.fn(),
       },
     },
@@ -17,7 +17,7 @@ jest.mock("@db/db", () => ({
   },
 }));
 
-describe("GET /api/projects", () => {
+describe("GET /api/cases", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -31,12 +31,12 @@ describe("GET /api/projects", () => {
     expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
-  it("returns projects with stats and clients", async () => {
+  it("returns cases with stats and clients", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.query.projects.findMany as jest.Mock).mockResolvedValue([
+    (db.query.cases.findMany as jest.Mock).mockResolvedValue([
       {
         id: 1,
-        name: "Project A",
+        name: "Case A",
         tasks: [
           { id: 1, completed: true },
           { id: 2, completed: false },
@@ -45,7 +45,7 @@ describe("GET /api/projects", () => {
       },
       {
         id: 2,
-        name: "Project B",
+        name: "Case B",
         tasks: [],
         client: null,
       },
@@ -68,7 +68,7 @@ describe("GET /api/projects", () => {
 
     const json = await res.json();
 
-    expect(json.projects).toEqual([
+    expect(json.cases).toEqual([
       expect.objectContaining({
         id: 1,
         clientName: "Client A",

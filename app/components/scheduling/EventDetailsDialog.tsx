@@ -96,7 +96,7 @@ export function EventDetailsDialog({
       setTranscriptLoading(true);
       try {
         const res = await axios.get(`/api/transcript/${event.id}`);
-        const formatted = res.data.map((item: RawChunk) => ({
+        const formatted = res.data.chunks.map((item: RawChunk) => ({
           speaker: item.speaker,
           time: item.createdAt
             ? new Date(item.createdAt).toLocaleTimeString()

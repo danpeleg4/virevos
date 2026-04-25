@@ -35,7 +35,11 @@ const features = [
     description:
       "Provide students and professionals with a secure environment to upload sensitive documents and track their visa status.",
     gradient: "from-blue-400 to-blue-600",
-    benefits: ["Secure document uploads", "Direct student messaging", "Family/Employer access"],
+    benefits: [
+      "Secure document uploads",
+      "Direct student messaging",
+      "Family/Employer access",
+    ],
   },
   {
     icon: Calendar,
@@ -43,7 +47,11 @@ const features = [
     description:
       "Never miss a filing window. Virevos tracks OPT reporting dates, H-1B lottery deadlines, and RFE responses automatically.",
     gradient: "from-purple-400 to-purple-600",
-    benefits: ["Statutory deadline alerts", "Priority date tracking", "Automated calendar sync"],
+    benefits: [
+      "Statutory deadline alerts",
+      "Priority date tracking",
+      "Automated calendar sync",
+    ],
   },
   {
     icon: Bot,
@@ -51,7 +59,11 @@ const features = [
     description:
       "Eliminate human error. Our AI cross-references every form and document to ensure signatures are present and dates are consistent.",
     gradient: "from-pink-400 to-rose-600",
-    benefits: ["Document consistency checks", "Automated form auditing", "Smart RFE preparation"],
+    benefits: [
+      "Document consistency checks",
+      "Automated form auditing",
+      "Smart RFE preparation",
+    ],
   },
   {
     icon: BarChart3,
@@ -59,7 +71,11 @@ const features = [
     description:
       "Track your firm’s performance. Monitor case approval rates, lawyer workload, and upcoming filing volumes in one dashboard.",
     gradient: "from-green-400 to-emerald-600",
-    benefits: ["Approval rate analytics", "Filing volume trends", "Practice growth reports"],
+    benefits: [
+      "Approval rate analytics",
+      "Filing volume trends",
+      "Practice growth reports",
+    ],
   },
   {
     icon: Video,
@@ -110,7 +126,8 @@ export default function Features() {
             transition={{ delay: 0.2 }}
             className="text-xl text-gray-600"
           >
-            Everything you need to automate the F-1 to H-1B pipeline, track critical deadlines, and scale your practice without the risk.
+            Everything you need to automate the F-1 to H-1B pipeline, track
+            critical deadlines, and scale your practice without the risk.
           </motion.p>
         </div>
 

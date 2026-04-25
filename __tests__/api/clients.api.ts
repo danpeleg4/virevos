@@ -47,9 +47,9 @@ describe("GET /api/clients", () => {
       {
         id: "1",
         name: "Client A",
-        totalProjects: 3,
-        completedProjects: 1,
-        activeProjects: 2,
+        totalCases: 3,
+        completedCases: 1,
+        activeCases: 2,
       },
     ];
 

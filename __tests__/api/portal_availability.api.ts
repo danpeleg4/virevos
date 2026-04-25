@@ -25,8 +25,7 @@ const makeRequest = (token: string, params: Record<string, string>) => {
   return new NextRequest(url);
 };
 
-const makeParams = (token: string) =>
-  Promise.resolve({ token });
+const makeParams = (token: string) => Promise.resolve({ token });
 
 const mockPortal = {
   id: 1,
@@ -75,7 +74,10 @@ describe("GET /api/portal/[token]/availability", () => {
   });
 
   it("returns 400 for invalid duration (not in allowed list)", async () => {
-    const req = makeRequest("test-token", { date: "2026-05-01", duration: "25" });
+    const req = makeRequest("test-token", {
+      date: "2026-05-01",
+      duration: "25",
+    });
     const res = await GET(req, { params: makeParams("test-token") });
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -88,18 +90,26 @@ describe("GET /api/portal/[token]/availability", () => {
     const mockFrom = jest.fn(() => ({ where: mockWhere }));
     (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
 
-    const req = makeRequest("bad-token", { date: "2026-05-05", duration: "30" });
+    const req = makeRequest("bad-token", {
+      date: "2026-05-05",
+      duration: "30",
+    });
     const res = await GET(req, { params: makeParams("bad-token") });
     expect(res.status).toBe(404);
   });
 
   it("returns 404 when portal is disabled", async () => {
-    const mockLimit = jest.fn().mockResolvedValue([{ ...mockPortal, enabled: false }]);
+    const mockLimit = jest
+      .fn()
+      .mockResolvedValue([{ ...mockPortal, enabled: false }]);
     const mockWhere = jest.fn(() => ({ limit: mockLimit }));
     const mockFrom = jest.fn(() => ({ where: mockWhere }));
     (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
 
-    const req = makeRequest("test-token", { date: "2026-05-05", duration: "30" });
+    const req = makeRequest("test-token", {
+      date: "2026-05-05",
+      duration: "30",
+    });
     const res = await GET(req, { params: makeParams("test-token") });
     expect(res.status).toBe(404);
   });
@@ -114,7 +124,10 @@ describe("GET /api/portal/[token]/availability", () => {
     const mockFrom = jest.fn(() => ({ where: mockWhere }));
     (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
 
-    const req = makeRequest("test-token", { date: "2026-05-05", duration: "30" });
+    const req = makeRequest("test-token", {
+      date: "2026-05-05",
+      duration: "30",
+    });
     const res = await GET(req, { params: makeParams("test-token") });
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -128,7 +141,10 @@ describe("GET /api/portal/[token]/availability", () => {
     const mockFrom = jest.fn(() => ({ where: mockWhere }));
     (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
 
-    const req = makeRequest("test-token", { date: "2026-05-09", duration: "30" });
+    const req = makeRequest("test-token", {
+      date: "2026-05-09",
+      duration: "30",
+    });
     const res = await GET(req, { params: makeParams("test-token") });
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -154,13 +170,18 @@ describe("GET /api/portal/[token]/availability", () => {
     });
 
     // Use a far-future date so isPast won't filter slots out
-    const req = makeRequest("test-token", { date: "2030-05-06", duration: "30" });
+    const req = makeRequest("test-token", {
+      date: "2030-05-06",
+      duration: "30",
+    });
     const res = await GET(req, { params: makeParams("test-token") });
     expect(res.status).toBe(200);
     const json = await res.json();
     // 09:00–17:00 in 30-min increments = 16 slots
     expect(json.slots).toHaveLength(16);
-    expect(json.slots.every((s: { available: boolean }) => s.available)).toBe(true);
+    expect(json.slots.every((s: { available: boolean }) => s.available)).toBe(
+      true
+    );
   });
 
   it("marks conflicting slots as unavailable", async () => {
@@ -175,14 +196,17 @@ describe("GET /api/portal/[token]/availability", () => {
       } else {
         // Booked slot at 09:00 for 30 min
         const bookedDateTime = new Date("2030-05-06T09:00:00");
-        const mockWhere = jest.fn().mockResolvedValue([
-          { dateTime: bookedDateTime, duration: 30 },
-        ]);
+        const mockWhere = jest
+          .fn()
+          .mockResolvedValue([{ dateTime: bookedDateTime, duration: 30 }]);
         return { from: jest.fn(() => ({ where: mockWhere })) };
       }
     });
 
-    const req = makeRequest("test-token", { date: "2030-05-06", duration: "30" });
+    const req = makeRequest("test-token", {
+      date: "2030-05-06",
+      duration: "30",
+    });
     const res = await GET(req, { params: makeParams("test-token") });
     const json = await res.json();
 

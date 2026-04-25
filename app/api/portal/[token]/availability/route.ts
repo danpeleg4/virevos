@@ -45,10 +45,7 @@ export async function GET(
       .limit(1);
 
     if (!tokenRows.length || !tokenRows[0].enabled) {
-      return NextResponse.json(
-        { error: "Portal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     const portalRecord = tokenRows[0];
@@ -104,8 +101,7 @@ export async function GET(
 
       const hasConflict = existingBookings.some((b) => {
         const bStart = b.dateTime.getTime() - buffer * 60000;
-        const bEnd =
-          b.dateTime.getTime() + b.duration * 60000 + buffer * 60000;
+        const bEnd = b.dateTime.getTime() + b.duration * 60000 + buffer * 60000;
         return current.getTime() < bEnd && slotEnd.getTime() > bStart;
       });
 

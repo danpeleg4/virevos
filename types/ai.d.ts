@@ -25,9 +25,9 @@ export type AddClientToolResult = {
   message: string;
 };
 
-export type CreateProjectToolResult = {
-  kind: "project_created";
-  project: import("./projects").Project;
+export type CreateCaseToolResult = {
+  kind: "case_created";
+  case: import("./cases").Case;
   message: string;
 };
 
@@ -36,8 +36,8 @@ export type UpdateClientToolResult = {
   message: string;
 };
 
-export type UpdateProjectToolResult = {
-  kind: "project_updated";
+export type UpdateCaseToolResult = {
+  kind: "case_updated";
   message: string;
 };
 

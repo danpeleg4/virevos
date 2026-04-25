@@ -3,8 +3,8 @@ import { db } from "@db/db";
 import {
   clientPortalTokens,
   clients,
-  projects,
-  projectFiles,
+  cases,
+  caseFiles,
 } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { uploadFile } from "@/lib/storage";
@@ -62,7 +62,7 @@ export async function POST(
     // Parse form data
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const projectIdRaw = formData.get("projectId");
+    const caseIdRaw = formData.get("caseId");
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -75,59 +75,65 @@ export async function POST(
       );
     }
 
-    // Resolve projectId
-    let projectId: number;
+    // Resolve caseId
+    let caseId: number;
 
-    if (projectIdRaw) {
-      const parsedId = parseInt(String(projectIdRaw), 10);
+    if (caseIdRaw) {
+      const parsedId = parseInt(String(caseIdRaw), 10);
       if (isNaN(parsedId)) {
-        return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
-      }
-      // Verify the project belongs to this client
-      const projectRows = await db
-        .select({ id: projects.id })
-        .from(projects)
-        .where(
-          and(eq(projects.id, parsedId), eq(projects.clientId, portalToken.clientId))
-        )
-        .limit(1);
-
-      if (!projectRows.length) {
         return NextResponse.json(
-          { error: "Project not found or does not belong to this client" },
-          { status: 403 }
-        );
-      }
-      projectId = parsedId;
-    } else {
-      // Use first project for this client
-      const clientProjects = await db
-        .select({ id: projects.id })
-        .from(projects)
-        .where(eq(projects.clientId, portalToken.clientId))
-        .limit(1);
-
-      if (!clientProjects.length) {
-        return NextResponse.json(
-          { error: "No projects found for this client" },
+          { error: "Invalid caseId" },
           { status: 400 }
         );
       }
-      projectId = clientProjects[0].id;
+      // Verify the case belongs to this client
+      const caseRows = await db
+        .select({ id: cases.id })
+        .from(cases)
+        .where(
+          and(
+            eq(cases.id, parsedId),
+            eq(cases.clientId, portalToken.clientId)
+          )
+        )
+        .limit(1);
+
+      if (!caseRows.length) {
+        return NextResponse.json(
+          { error: "Case not found or does not belong to this client" },
+          { status: 403 }
+        );
+      }
+      caseId = parsedId;
+    } else {
+      // Use first case for this client
+      const clientCases = await db
+        .select({ id: cases.id })
+        .from(cases)
+        .where(eq(cases.clientId, portalToken.clientId))
+        .limit(1);
+
+      if (!clientCases.length) {
+        return NextResponse.json(
+          { error: "No cases found for this client" },
+          { status: 400 }
+        );
+      }
+      caseId = clientCases[0].id;
     }
 
     // Sanitize filename and build storage path
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const filePath = `projects/${userId}/portal/${Date.now()}-${safeName}`;
+    const filePath = `cases/${userId}/portal/${Date.now()}-${safeName}`;
     const fileBuffer = Buffer.from(await file.arrayBuffer());
 
     await uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
 
     // Insert metadata
     const [inserted] = await db
-      .insert(projectFiles)
+      .insert(caseFiles)
       .values({
-        projectId,
+        caseId,
         userId,
         name: file.name,
         path: filePath,
@@ -144,7 +150,7 @@ export async function POST(
         mimeType: inserted.mimeType,
         path: inserted.path,
         createdAt: inserted.createdAt,
-        projectId,
+        caseId,
       },
       { status: 201 }
     );

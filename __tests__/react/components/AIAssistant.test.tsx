@@ -82,24 +82,32 @@ describe("AIAssistant", () => {
   });
 
   it("renders panel when isOpen=true", () => {
-    render(<AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />);
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
+    );
     expect(screen.getByText(/virevos ai/i)).toBeInTheDocument();
   });
 
   it("does not render panel when isOpen=false", () => {
-    render(<AIAssistant isOpen={false} onClose={onClose} pendingBookings={[]} />);
+    render(
+      <AIAssistant isOpen={false} onClose={onClose} pendingBookings={[]} />
+    );
     expect(screen.queryByText(/virevos ai/i)).not.toBeInTheDocument();
   });
 
   it("renders input field when open", () => {
-    render(<AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />);
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
+    );
     expect(
       screen.getByPlaceholderText(/plan, search, build/i)
     ).toBeInTheDocument();
   });
 
   it("send button is disabled when input is empty", () => {
-    render(<AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />);
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
+    );
     // Find the button that is disabled when input is empty (the Send icon button)
     const buttons = screen.getAllByRole("button");
     const sendButton = buttons.find((b) => b.hasAttribute("disabled"));
@@ -107,7 +115,9 @@ describe("AIAssistant", () => {
   });
 
   it("close button calls onClose", () => {
-    render(<AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />);
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
+    );
     const buttons = screen.getAllByRole("button");
     // The X button is the close button in the header
     fireEvent.click(buttons[0]);
@@ -115,7 +125,9 @@ describe("AIAssistant", () => {
   });
 
   it("input accepts text", () => {
-    render(<AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />);
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
+    );
     const input = screen.getByPlaceholderText(/plan, search, build/i);
     fireEvent.change(input, { target: { value: "Hello AI" } });
     expect(input).toHaveValue("Hello AI");
@@ -146,7 +158,9 @@ describe("AIAssistant", () => {
     expect(screen.getByText(/1 meeting request/i)).toBeInTheDocument();
     expect(screen.getByText(/alice corp/i)).toBeInTheDocument();
     expect(screen.getByText(/accept/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /decline/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /decline/i })
+    ).toBeInTheDocument();
   });
 
   it("does not show meeting request section when there are no pending bookings", () => {
@@ -160,7 +174,9 @@ describe("AIAssistant", () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(
       new Error("Network error")
     );
-    render(<AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />);
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
+    );
     const input = screen.getByPlaceholderText(/plan, search, build/i);
     fireEvent.change(input, { target: { value: "Hello" } });
     // Click the send button (last button in the component)

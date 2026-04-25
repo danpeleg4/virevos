@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import { projects, clients } from "@db/schema";
+import { cases, clients } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -15,28 +15,28 @@ export async function GET(
     }
 
     const { id } = await ctx.params;
-    const projectId = Number(id);
-    if (Number.isNaN(projectId)) {
-      return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
+    const caseId = Number(id);
+    if (Number.isNaN(caseId)) {
+      return NextResponse.json({ error: "Invalid caseId" }, { status: 400 });
     }
 
     const result = await db
       .select({
-        id: projects.id,
-        name: projects.name,
-        clientId: projects.clientId,
+        id: cases.id,
+        name: cases.name,
+        clientId: cases.clientId,
         clientName: clients.name,
-        dueDate: projects.dueDate,
-        priority: projects.priority,
-        status: projects.status,
+        dueDate: cases.dueDate,
+        priority: cases.priority,
+        status: cases.status,
       })
-      .from(projects)
-      .leftJoin(clients, eq(projects.clientId, clients.id))
-      .where(and(eq(projects.id, projectId), eq(projects.userId, user.id)))
+      .from(cases)
+      .leftJoin(clients, eq(cases.clientId, clients.id))
+      .where(and(eq(cases.id, caseId), eq(cases.userId, user.id)))
       .limit(1);
 
     if (result.length === 0) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
     return NextResponse.json(result[0]);

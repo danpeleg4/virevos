@@ -39,9 +39,9 @@ jest.mock("@/lib/meetings", () => ({
   getPastMeetingTranscript: jest.fn(),
 }));
 
-jest.mock("@/lib/projects", () => ({
-  createProject: jest.fn(),
-  updateProject: jest.fn(),
+jest.mock("@/lib/cases", () => ({
+  createCase: jest.fn(),
+  updateCase: jest.fn(),
 }));
 
 jest.mock("@/lib/tasks", () => ({

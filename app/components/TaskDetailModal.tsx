@@ -46,7 +46,7 @@ const PRIORITY_CONFIG = {
 } as const;
 
 export function TaskDetailModal({
-  projectId,
+  caseId,
   task,
   open,
   onOpenChange,
@@ -55,7 +55,7 @@ export function TaskDetailModal({
   const [priority, setPriority] = useState(task?.priority);
   const [dueDate, setDueDate] = useState<string>("");
 
-  const queryKey = ["projectsTasks", projectId];
+  const queryKey = ["caseTasks", caseId];
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

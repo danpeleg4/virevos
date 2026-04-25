@@ -29,7 +29,7 @@ const mockTasks = [
   {
     id: 1,
     title: "Design UI mockups",
-    status: "todo",
+    status: "in-progress",
     priority: "high",
     dueDate: "2026-05-01",
     projectName: "Alpha",
@@ -81,13 +81,13 @@ describe("Tasks Page", () => {
   it("renders status filter tabs", () => {
     render(<Tasks />);
     expect(screen.getByRole("button", { name: /all/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /to do/i })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /in progress/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /completed/i })
     ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /to do/i })).not.toBeInTheDocument();
   });
 
   it("renders 'New Task' button", () => {
@@ -106,9 +106,9 @@ describe("Tasks Page", () => {
     expect(screen.queryByText("Write unit tests")).not.toBeInTheDocument();
   });
 
-  it("filters by status tab - 'To Do' shows only todo tasks", () => {
+  it("filters by status tab - 'In Progress' shows only in-progress tasks", () => {
     render(<Tasks />);
-    fireEvent.click(screen.getByRole("button", { name: /^to do/i }));
+    fireEvent.click(screen.getByRole("button", { name: /in progress/i }));
     expect(screen.getByText("Design UI mockups")).toBeInTheDocument();
     expect(screen.queryByText("Deploy to staging")).not.toBeInTheDocument();
   });

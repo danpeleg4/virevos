@@ -19,6 +19,12 @@ export interface OutlookAttachmentMeta {
   contentType: string;
 }
 
+interface GraphFileAttachment {
+  contentBytes: string;
+  contentType: string;
+  name: string;
+}
+
 async function resolveEmail(numericId: number, userId: string) {
   const [email] = await db
     .select({ outlookId: outlookEmails.outlookId })
@@ -31,7 +37,10 @@ async function resolveEmail(numericId: number, userId: string) {
 }
 
 /** GET /api/outlook/messages/[id]/attachments
- *  — lists attachment metadata
+ *  — without ?attachmentId: lists attachment metadata
+ *  — with    ?attachmentId: streams the raw bytes for that attachment
+ *    (attachment IDs contain base64 chars like +/= so they must be a query
+ *     param rather than a URL path segment)
  **/
 export async function GET(req: NextRequest, { params }: RouteParams) {
   const user = await currentUser();
@@ -56,6 +65,37 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       { error: "Outlook account not connected" },
       { status: 403 }
     );
+  }
+
+  const attachmentId = req.nextUrl.searchParams.get("attachmentId");
+
+  // ── Content mode ─────────────────────────────────────────────────────────────
+  if (attachmentId) {
+    try {
+      const { data } = await axios.get<GraphFileAttachment>(
+        `${GRAPH_BASE}/me/messages/${email.outlookId}/attachments/${encodeURIComponent(attachmentId)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const bytes = Buffer.from(data.contentBytes, "base64");
+
+      return new NextResponse(bytes, {
+        status: 200,
+        headers: {
+          "Content-Type": data.contentType,
+          "Content-Disposition": `inline; filename="${data.name}"`,
+          "Cache-Control": "private, max-age=3600",
+        },
+      });
+    } catch (err: unknown) {
+      const status =
+        (err as { response?: { status?: number } }).response?.status ?? 500;
+      console.error("[outlook/attachments content]", err);
+      return NextResponse.json(
+        { error: "Failed to fetch attachment content" },
+        { status }
+      );
+    }
   }
 
   // ── List mode ────────────────────────────────────────────────────────────────

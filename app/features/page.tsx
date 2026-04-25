@@ -350,8 +350,8 @@ export default function FeaturesPage() {
               Six tools. One workspace.
             </h2>
             <p className="text-xl text-gray-500">
-              Replace the stack of apps you&#39;re juggling with a single platform
-              that connects every part of your business.
+              Replace the stack of apps you&#39;re juggling with a single
+              platform that connects every part of your business.
             </p>
           </motion.div>
 
@@ -487,8 +487,6 @@ export default function FeaturesPage() {
           </div>
         </section>
       ))}
-
-
 
       {/* CTA */}
       <section className="py-24 sm:py-32 relative overflow-hidden bg-white">

@@ -24,11 +24,7 @@ jest.mock("motion/react", () => {
           whileTap,
           ...props
         }: Record<string, unknown>) {
-          return createElement(
-            _tag,
-            props,
-            children as React.ReactNode
-          );
+          return createElement(_tag, props, children as React.ReactNode);
         },
     }
   );
@@ -48,24 +44,22 @@ jest.mock("@/lib/date_utils", () => ({
   parseDateOnlyString: jest.fn((s: string) => new Date(s)),
 }));
 
-// Mock fetch for portal data loading
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () =>
-      Promise.resolve({
-        project: {
-          name: "Portal Project",
-          status: "active",
-          dueDate: "2026-06-01",
-          tasks: [{ id: 1, title: "Task A", status: "todo", priority: "high" }],
-          files: [],
-        },
-        client: { name: "Portal Client" },
+jest.mock("axios", () => ({
+  get: jest.fn(() =>
+    Promise.resolve({
+      data: {
+        cases: [],
+        client: { name: "Portal Client", email: "client@example.com" },
         messages: [],
-      }),
-  })
-) as jest.Mock;
+        files: [],
+        bookings: [],
+        settings: {},
+      },
+    })
+  ),
+  post: jest.fn(() => Promise.resolve({ data: {}, status: 200 })),
+  isAxiosError: jest.fn(() => false),
+}));
 
 import PortalPage from "@/app/portal/[token]/page";
 

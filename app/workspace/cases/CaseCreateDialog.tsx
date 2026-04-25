@@ -22,31 +22,31 @@ import { Plus } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createProject } from "@/lib/projects";
-import { Project } from "@/types/projects";
+import { createCase } from "@/lib/cases";
+import { Case } from "@/types/cases";
 
-export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
+export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [projectName, setProjectName] = useState("");
+  const [caseName, setCaseName] = useState("");
   const [client, setClient] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("");
 
   const queryClient = useQueryClient();
 
-  const createNewProject = useMutation({
-    mutationFn: async (project: Project) => {
-      await createProject(project);
+  const createNewCase = useMutation({
+    mutationFn: async (aCase: Case) => {
+      await createCase(aCase);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
     },
   });
 
   const submit = async () => {
-    createNewProject.mutate({
+    createNewCase.mutate({
       id: 1,
-      name: projectName,
+      name: caseName,
       clientId: client ? Number(client) : null,
       priority,
       dueDate: dueDate || null,
@@ -63,26 +63,26 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
         <DialogTrigger asChild>
           <Button className="cursor-pointer">
             <Plus className="h-4 w-4 mr-2" />
-            New Project
+            New Case
           </Button>
         </DialogTrigger>
 
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
+            <DialogTitle>Create New Case</DialogTitle>
             <DialogDescription>
-              Track tasks, files, and progress for a new project
+              Track tasks, files, and progress for a new case
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Project Name</Label>
+              <Label>Case Name</Label>
               <Input
                 placeholder="Website Redesign"
                 className="mt-2"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
+                value={caseName}
+                onChange={(e) => setCaseName(e.target.value)}
               />
             </div>
 
@@ -143,7 +143,7 @@ export function ProjectCreateDialog({ clients }: { clients: clients[] }) {
                 Cancel
               </Button>
               <Button className="cursor-pointer" onClick={submit}>
-                Create Project
+                Create Case
               </Button>
             </div>
           </div>

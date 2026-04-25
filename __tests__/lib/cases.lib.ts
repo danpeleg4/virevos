@@ -1,12 +1,12 @@
 import {
-  deleteProject,
+  deleteCase,
   addFileMetadata,
-  createProject,
-  addProjectNotes,
-  changeProjectStatus,
-  updateProject,
-  deleteProjectFile,
-} from "@/lib/projects";
+  createCase,
+  addCaseNotes,
+  changeCaseStatus,
+  updateCase,
+  deleteCaseFile,
+} from "@/lib/cases";
 import { currentUser } from "@clerk/nextjs/server";
 import { assertCanAddFile } from "@/lib/plan_limits";
 
@@ -49,7 +49,7 @@ jest.mock("@/lib/storage", () => {
 });
 
 jest.mock("@/lib/plan_limits", () => ({
-  assertCanAddProject: jest.fn().mockResolvedValue(undefined),
+  assertCanAddCase: jest.fn().mockResolvedValue(undefined),
   assertCanAddFile: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -74,18 +74,18 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-// ─── deleteProject ────────────────────────────────────────────────────────
+// ─── deleteCase ────────────────────────────────────────────────────────
 
-describe("deleteProject", () => {
+describe("deleteCase", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(deleteProject(1)).rejects.toThrow("No user");
+    await expect(deleteCase(1)).rejects.toThrow("No user");
   });
 
-  it("calls db.delete four times (projectFiles, tasks, notes, projects) when no files exist", async () => {
+  it("calls db.delete four times (caseFiles, tasks, notes, cases) when no files exist", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValue([]);
-    await deleteProject(5);
+    await deleteCase(5);
     expect(mockDeleteWhere).toHaveBeenCalledTimes(4);
   });
 
@@ -95,7 +95,7 @@ describe("deleteProject", () => {
       { path: "projects/user_1/file1.pdf", size: 1000 },
       { path: "projects/user_1/file2.pdf", size: 2000 },
     ]);
-    await deleteProject(5);
+    await deleteCase(5);
     expect(mockDeleteFile).toHaveBeenCalledTimes(2);
     expect(mockDeleteFile).toHaveBeenCalledWith(
       "projectFiles",
@@ -110,10 +110,10 @@ describe("deleteProject", () => {
     );
   });
 
-  it("does not update storage counter when project has no files", async () => {
+  it("does not update storage counter when case has no files", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValue([]);
-    await deleteProject(5);
+    await deleteCase(5);
     expect(mockDeleteFile).not.toHaveBeenCalled();
     expect(mockSet).not.toHaveBeenCalled();
   });
@@ -135,7 +135,7 @@ describe("addFileMetadata", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
     await expect(
-      addFileMetadata({ projectId: 1 }, makeFormData())
+      addFileMetadata({ caseId: 1 }, makeFormData())
     ).rejects.toThrow("No user");
   });
 
@@ -145,7 +145,7 @@ describe("addFileMetadata", () => {
       new Error("Storage limit reached")
     );
     await expect(
-      addFileMetadata({ projectId: 1 }, makeFormData())
+      addFileMetadata({ caseId: 1 }, makeFormData())
     ).rejects.toThrow("Storage limit reached");
     expect(mockUploadFile).not.toHaveBeenCalled();
   });
@@ -154,7 +154,7 @@ describe("addFileMetadata", () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockUploadFile.mockRejectedValueOnce(new Error("Upload failed"));
     await expect(
-      addFileMetadata({ projectId: 1 }, makeFormData())
+      addFileMetadata({ caseId: 1 }, makeFormData())
     ).rejects.toThrow("Failed to upload file");
   });
 
@@ -163,7 +163,7 @@ describe("addFileMetadata", () => {
     mockUploadFile.mockResolvedValueOnce(undefined);
 
     const result = await addFileMetadata(
-      { projectId: 1 },
+      { caseId: 1 },
       makeFormData("doc.pdf", 2048)
     );
 
@@ -172,35 +172,35 @@ describe("addFileMetadata", () => {
   });
 });
 
-// ─── createProject ────────────────────────────────────────────────────────
+// ─── createCase ────────────────────────────────────────────────────────
 
-describe("createProject", () => {
-  const baseProject = {
+describe("createCase", () => {
+  const baseCase = {
     id: 99,
-    name: "My Project",
-    description: "A project",
+    name: "My Case",
+    description: "A case",
     status: "active",
     userId: "",
   };
 
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(createProject(baseProject as never)).rejects.toThrow(
+    await expect(createCase(baseCase as never)).rejects.toThrow(
       "Unauthorized"
     );
   });
 
-  it("inserts project (without id field) and returns it with default stats", async () => {
+  it("inserts case (without id field) and returns it with default stats", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     const dbRecord = {
-      name: "My Project",
-      description: "A project",
+      name: "My Case",
+      description: "A case",
       status: "active",
       userId: "user_1",
     };
     mockReturning.mockResolvedValueOnce([dbRecord]);
 
-    const result = await createProject(baseProject as never);
+    const result = await createCase(baseCase as never);
 
     expect(mockValues).toHaveBeenCalledWith(
       expect.not.objectContaining({ id: expect.anything() })
@@ -213,34 +213,34 @@ describe("createProject", () => {
   });
 });
 
-// ─── addProjectNotes ──────────────────────────────────────────────────────
+// ─── addCaseNotes ──────────────────────────────────────────────────────
 
-describe("addProjectNotes", () => {
+describe("addCaseNotes", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(addProjectNotes("Note content", 1)).rejects.toThrow("No user");
+    await expect(addCaseNotes("Note content", 1)).rejects.toThrow("No user");
   });
 });
 
-// ─── updateProject ────────────────────────────────────────────────────────
+// ─── updateCase ────────────────────────────────────────────────────────
 
-describe("updateProject", () => {
+describe("updateCase", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(updateProject({ id: 1, name: "X" })).rejects.toThrow(
+    await expect(updateCase({ id: 1, name: "X" })).rejects.toThrow(
       "No user"
     );
   });
 
   it("does nothing when no fields provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    await updateProject({ id: 1 });
+    await updateCase({ id: 1 });
     expect(mockSet).not.toHaveBeenCalled();
   });
 
   it("updates provided fields with correct where clause", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    await updateProject({ id: 3, name: "New Name", priority: "high" });
+    await updateCase({ id: 3, name: "New Name", priority: "high" });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ name: "New Name", priority: "high" })
     );
@@ -249,7 +249,7 @@ describe("updateProject", () => {
 
   it("updates all optional fields when provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    await updateProject({
+    await updateCase({
       id: 2,
       name: "P",
       description: "D",
@@ -267,29 +267,29 @@ describe("updateProject", () => {
   });
 });
 
-// ─── deleteProjectFile ────────────────────────────────────────────────────
+// ─── deleteCaseFile ────────────────────────────────────────────────────
 
-describe("deleteProjectFile", () => {
+describe("deleteCaseFile", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(deleteProjectFile(1)).rejects.toThrow("No user");
+    await expect(deleteCaseFile(1)).rejects.toThrow("No user");
   });
 
   it("throws when file not found", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([]);
-    await expect(deleteProjectFile(99)).rejects.toThrow("File not found");
+    await expect(deleteCaseFile(99)).rejects.toThrow("File not found");
     expect(mockDeleteFile).not.toHaveBeenCalled();
   });
 
   it("deletes from storage and DB on success", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([
-      { path: "projects/user_1/file.pdf", size: 100 },
+      { path: "cases/user_1/file.pdf", size: 100 },
     ]);
     mockDeleteFile.mockResolvedValueOnce(undefined);
 
-    await deleteProjectFile(5);
+    await deleteCaseFile(5);
 
     expect(mockDeleteFile).toHaveBeenCalledTimes(1);
     expect(mockDeleteWhere).toHaveBeenCalledTimes(1);
@@ -298,28 +298,28 @@ describe("deleteProjectFile", () => {
   it("does not delete from DB if storage throws", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([
-      { path: "projects/user_1/file.pdf", size: 100 },
+      { path: "cases/user_1/file.pdf", size: 100 },
     ]);
     mockDeleteFile.mockRejectedValueOnce(new Error("Storage error"));
 
-    await expect(deleteProjectFile(5)).rejects.toThrow("Storage error");
+    await expect(deleteCaseFile(5)).rejects.toThrow("Storage error");
     expect(mockDeleteWhere).not.toHaveBeenCalled();
   });
 });
 
-// ─── changeProjectStatus ──────────────────────────────────────────────────
+// ─── changeCaseStatus ──────────────────────────────────────────────────
 
-describe("changeProjectStatus", () => {
+describe("changeCaseStatus", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
     await expect(
-      changeProjectStatus({ id: 1 } as never, "completed")
+      changeCaseStatus({ id: 1 } as never, "completed")
     ).rejects.toThrow("No user");
   });
 
   it("calls db.update().set({ status: newStatus }) with correct where clause", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    await changeProjectStatus({ id: 3 } as never, "completed");
+    await changeCaseStatus({ id: 3 } as never, "completed");
     expect(mockSet).toHaveBeenCalledWith({ status: "completed" });
     expect(mockUpdateWhere).toHaveBeenCalledTimes(1);
   });

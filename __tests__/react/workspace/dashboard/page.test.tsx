@@ -90,8 +90,8 @@ describe("Dashboard Page", () => {
     mockUseQuery.mockImplementation(({ queryKey }: { queryKey: string[] }) => {
       if (queryKey[0] === "clients")
         return { data: [{ id: 1 }, { id: 2 }], isLoading: false };
-      if (queryKey[0] === "projects")
-        return { data: { projects: mockProjects }, isLoading: false };
+      if (queryKey[0] === "cases")
+        return { data: { cases: mockProjects }, isLoading: false };
       if (queryKey[0] === "allTasks")
         return { data: mockTasks, isLoading: false };
       return { data: undefined, isLoading: false };
@@ -106,14 +106,14 @@ describe("Dashboard Page", () => {
   it("renders stat cards", () => {
     render(<Dashboard />);
     expect(screen.getByText("Active Clients")).toBeInTheDocument();
-    expect(screen.getByText("Active Projects")).toBeInTheDocument();
+    expect(screen.getByText("Active Cases")).toBeInTheDocument();
     expect(screen.getByText("Tasks Completed")).toBeInTheDocument();
     expect(screen.getByText("Automations Run")).toBeInTheDocument();
   });
 
-  it("renders Recent Projects section", () => {
+  it("renders Recent Cases section", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Recent Projects")).toBeInTheDocument();
+    expect(screen.getByText("Recent Cases")).toBeInTheDocument();
   });
 
   it("renders Upcoming Tasks section", () => {
@@ -121,7 +121,7 @@ describe("Dashboard Page", () => {
     expect(screen.getByText("Upcoming Tasks")).toBeInTheDocument();
   });
 
-  it("renders projects from query", () => {
+  it("renders cases from query", () => {
     render(<Dashboard />);
     expect(screen.getAllByText("Alpha Project").length).toBeGreaterThan(0);
   });

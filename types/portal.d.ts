@@ -78,7 +78,7 @@ export interface PortalData {
     meetingSchedulingEnabled?: boolean;
     availability?: PortalAvailability;
   };
-  projects: Array<{
+  cases: Array<{
     id: number;
     name: string;
     status: string;

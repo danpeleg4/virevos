@@ -43,8 +43,8 @@ export const clients = pgTable("clients", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// PROJECTS
-export const projects = pgTable("projects", {
+// CASES
+export const cases = pgTable("cases", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
 
   clientId: integer("client_id").references(() => clients.id, {
@@ -62,12 +62,12 @@ export const projects = pgTable("projects", {
     .references(() => users.user_id, { onDelete: "cascade" }),
 });
 
-// PROJECT FILES
-export const projectFiles = pgTable("project_files", {
+// CASE FILES
+export const caseFiles = pgTable("case_files", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-  projectId: integer("project_id")
+  caseId: integer("case_id")
     .notNull()
-    .references(() => projects.id),
+    .references(() => cases.id),
   userId: text("user_id").references(() => users.user_id),
   name: text("name").notNull(),
   path: text("path").notNull(),
@@ -76,15 +76,15 @@ export const projectFiles = pgTable("project_files", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// PROJECT NOTES
-export const projectNotes = pgTable("project_notes", {
+// CASE NOTES
+export const caseNotes = pgTable("case_notes", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 
   userId: varchar("user_id").references(() => users.user_id),
-  projectId: integer("project_id").references(() => projects.id),
+  caseId: integer("case_id").references(() => cases.id),
 });
 
 // TASKS
@@ -95,7 +95,7 @@ export const tasks = pgTable("tasks", {
     .references(() => users.user_id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description"),
-  projectId: integer("project_id").references(() => projects.id, {
+  caseId: integer("case_id").references(() => cases.id, {
     onDelete: "cascade",
   }),
   priority: text("priority").notNull().default("Low"),
@@ -408,7 +408,7 @@ export const subscriptions = pgTable("subscriptions", {
 // RELATIONS
 export const usersRelations = relations(users, ({ many, one }) => ({
   clients: many(clients),
-  projects: many(projects),
+  cases: many(cases),
   tasks: many(tasks),
   meetings: many(events),
   googleTokens: many(googleTokens),
@@ -426,7 +426,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     fields: [clients.userId],
     references: [users.user_id],
   }),
-  projects: many(projects),
+  cases: many(cases),
   emails: many(googleEmails),
   scheduledEmails: many(scheduledEmails),
   portalToken: one(clientPortalTokens, {
@@ -435,18 +435,18 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   }),
 }));
 
-export const projectsRelations = relations(projects, ({ one, many }) => ({
+export const casesRelations = relations(cases, ({ one, many }) => ({
   user: one(users, {
-    fields: [projects.userId],
+    fields: [cases.userId],
     references: [users.user_id],
   }),
   client: one(clients, {
-    fields: [projects.clientId],
+    fields: [cases.clientId],
     references: [clients.id],
   }),
   tasks: many(tasks),
-  projectNotes: many(projectNotes),
-  files: many(projectFiles),
+  caseNotes: many(caseNotes),
+  files: many(caseFiles),
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
@@ -454,20 +454,20 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     fields: [tasks.userId],
     references: [users.user_id],
   }),
-  project: one(projects, {
-    fields: [tasks.projectId],
-    references: [projects.id],
+  case: one(cases, {
+    fields: [tasks.caseId],
+    references: [cases.id],
   }),
 }));
 
-export const projectNotesRelations = relations(projectNotes, ({ one }) => ({
+export const caseNotesRelations = relations(caseNotes, ({ one }) => ({
   user: one(users, {
-    fields: [projectNotes.userId],
+    fields: [caseNotes.userId],
     references: [users.user_id],
   }),
-  project: one(projects, {
-    fields: [projectNotes.projectId],
-    references: [projects.id],
+  case: one(cases, {
+    fields: [caseNotes.caseId],
+    references: [cases.id],
   }),
 }));
 
@@ -478,7 +478,7 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
   }),
   attendees: many(meetingAttendees),
   transcripts: many(meetingTranscripts),
-  projectNotes: many(projectNotes),
+  caseNotes: many(caseNotes),
 }));
 
 export const meetingAttendeesRelations = relations(

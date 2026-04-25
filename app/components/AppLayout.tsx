@@ -34,7 +34,7 @@ import Image from "next/image";
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
   { icon: Users, label: "Clients", path: "/workspace/clients" },
-  { icon: FolderKanban, label: "Projects", path: "/workspace/projects" },
+  { icon: FolderKanban, label: "Cases", path: "/workspace/cases" },
   { icon: CheckSquare, label: "Tasks", path: "/workspace/tasks" },
   { icon: CalendarDays, label: "Calendar", path: "/workspace/calendar" },
   { icon: Inbox, label: "Communications", path: "/workspace/communications" },
@@ -68,7 +68,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     enabled: isLoaded && !!user,
   });
 
-  const pendingBookings = allBookings?.filter((b) => b.status === "pending") ?? [];
+  const pendingBookings =
+    allBookings?.filter((b) => b.status === "pending") ?? [];
   const pendingCount = pendingBookings.length;
   const router = useRouter();
   const currentPath = usePathname();
@@ -142,7 +143,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                 {pendingCount}
               </Badge>
             ) : (
-              <Badge className="ml-auto bg-purple-100 text-purple-700">New</Badge>
+              <Badge className="ml-auto bg-purple-100 text-purple-700">
+                New
+              </Badge>
             )}
           </Button>
         </div>
@@ -250,7 +253,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                       {pendingCount}
                     </Badge>
                   ) : (
-                    <Badge className="ml-auto bg-purple-100 text-purple-700">New</Badge>
+                    <Badge className="ml-auto bg-purple-100 text-purple-700">
+                      New
+                    </Badge>
                   )}
                 </Button>
               </div>

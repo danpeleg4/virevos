@@ -24,16 +24,19 @@ import type {
   AIMessage,
   AddClientToolResult,
   StreamEvent,
-  CreateProjectToolResult,
+  CreateCaseToolResult,
   UpdateClientToolResult,
-  UpdateProjectToolResult,
+  UpdateCaseToolResult,
   CreateTaskToolResult,
   UpdateTaskToolResult,
   CreateEventToolResult,
   UpdateEventToolResult,
 } from "@/types/ai";
 import type { PortalMeetingBooking } from "@/types/portal";
-import { acceptBookingWithCalendar, updateBookingStatus } from "@/lib/portal_bookings";
+import {
+  acceptBookingWithCalendar,
+  updateBookingStatus,
+} from "@/lib/portal_bookings";
 import { toast } from "sonner";
 
 type BookingWithClient = PortalMeetingBooking & {
@@ -46,8 +49,11 @@ interface AIAssistantProps {
   pendingBookings: BookingWithClient[];
 }
 
-
-export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantProps) {
+export function AIAssistant({
+  isOpen,
+  onClose,
+  pendingBookings,
+}: AIAssistantProps) {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming">("idle");
   const [input, setInput] = useState("");
@@ -66,7 +72,8 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
   });
 
   const denyMutation = useMutation({
-    mutationFn: (bookingId: number) => updateBookingStatus(bookingId, "cancelled"),
+    mutationFn: (bookingId: number) =>
+      updateBookingStatus(bookingId, "cancelled"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
       toast.success("Meeting request declined");
@@ -122,7 +129,8 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
           signal: abortRef.current.signal,
           responseType: "text",
           onDownloadProgress: (progressEvent) => {
-            const text = (progressEvent.event.target as XMLHttpRequest).responseText;
+            const text = (progressEvent.event.target as XMLHttpRequest)
+              .responseText;
             const newText = text.slice(lastProcessedLength);
             lastProcessedLength = text.length;
 
@@ -134,107 +142,110 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
               if (!line.trim()) continue;
               try {
                 const event: StreamEvent = JSON.parse(line);
-            if (event.type === "text_delta") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, content: m.content + event.delta }
-                    : m
-                )
-              );
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "addClient"
-            ) {
-              const data = event.result as AddClientToolResult;
-              if (data.kind === "clients_updated") {
-                const newClient = data.client;
-                queryClient.setQueryData<clients[]>(["clients"], (old = []) => [
-                  ...old,
-                  {
-                    ...newClient,
-                    status: "active",
-                    totalProjects: 0,
-                    activeProjects: 0,
-                    completedProjects: 0,
-                    avatar: newClient.name[0],
-                  },
-                ]);
-              }
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "createProject"
-            ) {
-              const data = event.result as CreateProjectToolResult;
-              if (data.kind === "project_created") {
-                queryClient.invalidateQueries({ queryKey: ["projects"] });
-              }
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "updateClient"
-            ) {
-              const data = event.result as UpdateClientToolResult;
-              if (data.kind === "client_updated") {
-                queryClient.invalidateQueries({ queryKey: ["clients"] });
-              }
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "updateProject"
-            ) {
-              const data = event.result as UpdateProjectToolResult;
-              if (data.kind === "project_updated") {
-                queryClient.invalidateQueries({ queryKey: ["projects"] });
-              }
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "createTask"
-            ) {
-              const data = event.result as CreateTaskToolResult;
-              if (data.kind === "task_created") {
-                queryClient.invalidateQueries({ queryKey: ["tasks"] });
-              }
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "updateTask"
-            ) {
-              const data = event.result as UpdateTaskToolResult;
-              if (data.kind === "task_updated") {
-                queryClient.invalidateQueries({ queryKey: ["tasks"] });
-              }
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "createEvent"
-            ) {
-              const data = event.result as CreateEventToolResult;
-              if (data.kind === "event_created") {
-                queryClient.invalidateQueries({ queryKey: ["events"] });
-              }
-            } else if (
-              event.type === "tool_result" &&
-              event.name === "updateEvent"
-            ) {
-              const data = event.result as UpdateEventToolResult;
-              if (data.kind === "event_updated") {
-                queryClient.invalidateQueries({ queryKey: ["events"] });
-              }
-            } else if (event.type === "done") {
-              if (event.response_id) {
-                previousResponseIdRef.current = event.response_id;
-              }
-            } else if (event.type === "error") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? {
-                        ...m,
-                        content:
-                          "Sorry, something went wrong. Please try again.",
-                      }
-                    : m
-                )
-              );
-            }
-          } catch {
+                if (event.type === "text_delta") {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, content: m.content + event.delta }
+                        : m
+                    )
+                  );
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "addClient"
+                ) {
+                  const data = event.result as AddClientToolResult;
+                  if (data.kind === "clients_updated") {
+                    const newClient = data.client;
+                    queryClient.setQueryData<clients[]>(
+                      ["clients"],
+                      (old = []) => [
+                        ...old,
+                        {
+                          ...newClient,
+                          status: "active",
+                          totalCases: 0,
+                          activeCases: 0,
+                          completedCases: 0,
+                          avatar: newClient.name[0],
+                        },
+                      ]
+                    );
+                  }
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "createCase"
+                ) {
+                  const data = event.result as CreateCaseToolResult;
+                  if (data.kind === "case_created") {
+                    queryClient.invalidateQueries({ queryKey: ["cases"] });
+                  }
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "updateClient"
+                ) {
+                  const data = event.result as UpdateClientToolResult;
+                  if (data.kind === "client_updated") {
+                    queryClient.invalidateQueries({ queryKey: ["clients"] });
+                  }
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "updateCase"
+                ) {
+                  const data = event.result as UpdateCaseToolResult;
+                  if (data.kind === "case_updated") {
+                    queryClient.invalidateQueries({ queryKey: ["cases"] });
+                  }
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "createTask"
+                ) {
+                  const data = event.result as CreateTaskToolResult;
+                  if (data.kind === "task_created") {
+                    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                  }
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "updateTask"
+                ) {
+                  const data = event.result as UpdateTaskToolResult;
+                  if (data.kind === "task_updated") {
+                    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                  }
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "createEvent"
+                ) {
+                  const data = event.result as CreateEventToolResult;
+                  if (data.kind === "event_created") {
+                    queryClient.invalidateQueries({ queryKey: ["events"] });
+                  }
+                } else if (
+                  event.type === "tool_result" &&
+                  event.name === "updateEvent"
+                ) {
+                  const data = event.result as UpdateEventToolResult;
+                  if (data.kind === "event_updated") {
+                    queryClient.invalidateQueries({ queryKey: ["events"] });
+                  }
+                } else if (event.type === "done") {
+                  if (event.response_id) {
+                    previousResponseIdRef.current = event.response_id;
+                  }
+                } else if (event.type === "error") {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? {
+                            ...m,
+                            content:
+                              "Sorry, something went wrong. Please try again.",
+                          }
+                        : m
+                    )
+                  );
+                }
+              } catch {
                 // ignore parse errors for malformed lines
               }
             }
@@ -374,14 +385,19 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
               <div className="px-4 py-2.5 flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
                 <Bell className="h-3.5 w-3.5 text-red-500" />
                 <span className="text-xs font-semibold text-red-700 dark:text-red-400">
-                  {pendingBookings.length} Meeting Request{pendingBookings.length > 1 ? "s" : ""}
+                  {pendingBookings.length} Meeting Request
+                  {pendingBookings.length > 1 ? "s" : ""}
                 </span>
               </div>
               <div className="divide-y divide-border max-h-72 overflow-y-auto">
                 {pendingBookings.map((booking) => {
                   const dt = new Date(booking.dateTime);
-                  const isAccepting = acceptMutation.isPending && acceptMutation.variables === booking.id;
-                  const isDenying = denyMutation.isPending && denyMutation.variables === booking.id;
+                  const isAccepting =
+                    acceptMutation.isPending &&
+                    acceptMutation.variables === booking.id;
+                  const isDenying =
+                    denyMutation.isPending &&
+                    denyMutation.variables === booking.id;
                   return (
                     <div key={booking.id} className="p-4 space-y-3">
                       {/* Booking summary */}
@@ -396,7 +412,9 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
                               {booking.clientDisplayName || booking.clientName}
                             </p>
                           </div>
-                          <p className="text-xs text-muted-foreground">{booking.clientEmail}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {booking.clientEmail}
+                          </p>
                           <div className="mt-2 flex items-center gap-3">
                             <div className="flex items-center gap-1 text-xs text-foreground">
                               <CalendarDays className="h-3 w-3 text-muted-foreground" />
@@ -412,7 +430,8 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
-                              {" · "}{booking.duration} min
+                              {" · "}
+                              {booking.duration} min
                             </div>
                           </div>
                           {booking.notes && (
@@ -427,11 +446,20 @@ export function AIAssistant({ isOpen, onClose, pendingBookings }: AIAssistantPro
                         <button
                           type="button"
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50"
-                          style={{ backgroundColor: '#059669' }}
+                          style={{ backgroundColor: "#059669" }}
                           onClick={() => acceptMutation.mutate(booking.id)}
                           disabled={isAccepting || isDenying}
-                          onMouseEnter={(e) => { if (!isAccepting && !isDenying) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#047857'; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#059669'; }}
+                          onMouseEnter={(e) => {
+                            if (!isAccepting && !isDenying)
+                              (
+                                e.currentTarget as HTMLButtonElement
+                              ).style.backgroundColor = "#047857";
+                          }}
+                          onMouseLeave={(e) => {
+                            (
+                              e.currentTarget as HTMLButtonElement
+                            ).style.backgroundColor = "#059669";
+                          }}
                         >
                           {isAccepting ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />

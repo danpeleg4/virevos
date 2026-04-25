@@ -1,62 +1,62 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ProjectList } from "./ProjectList";
+import { CaseList } from "./CaseList";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Project } from "@/types/projects";
+import { Case } from "@/types/cases";
 import { useRouter } from "next/navigation";
-import { changeProjectStatus } from "@/lib/projects";
+import { changeCaseStatus } from "@/lib/cases";
 
-export default function ProjectsPage() {
+export default function CasesPage() {
   const [search] = useState("");
   const [tab] = useState("all");
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
+  const casesQuery = useQuery({
+    queryKey: ["cases"],
     queryFn: async () => {
-      const res = await axios.get(`/api/projects/get-projects`);
+      const res = await axios.get(`/api/cases/get-cases`);
       return res.data;
     },
   });
 
   const completedMutation = useMutation({
     mutationFn: async ({
-      project,
+      aCase,
       newStatus,
     }: {
-      project: Project;
+      aCase: Case;
       newStatus: string;
     }) => {
-      await changeProjectStatus(project, newStatus);
+      await changeCaseStatus(aCase, newStatus);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
     },
   });
 
-  // Update completed projects once data loads
+  // Update completed cases once data loads
   useEffect(() => {
-    if (!projectsQuery.data?.projects) return;
+    if (!casesQuery.data?.cases) return;
 
-    projectsQuery.data.projects.forEach((p: Project) => {
+    casesQuery.data.cases.forEach((p: Case) => {
       const isCompleted =
         p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
       if (isCompleted && p.status !== "completed") {
-        completedMutation.mutate({ project: p, newStatus: "completed" });
+        completedMutation.mutate({ aCase: p, newStatus: "completed" });
         queryClient.invalidateQueries({ queryKey: ["clients"] });
       } else if (!isCompleted && p.status === "completed") {
-        completedMutation.mutate({ project: p, newStatus: "active" });
+        completedMutation.mutate({ aCase: p, newStatus: "active" });
         queryClient.invalidateQueries({ queryKey: ["clients"] });
       }
     });
-  }, [projectsQuery.data]);
+  }, [casesQuery.data]);
 
   // Map for display only
-  const projects: Project[] =
-    projectsQuery.data?.projects?.map((p: Project) => {
+  const allCases: Case[] =
+    casesQuery.data?.cases?.map((p: Case) => {
       const isCompleted =
         p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
       return {
@@ -65,7 +65,7 @@ export default function ProjectsPage() {
       };
     }) ?? [];
 
-  const filtered = projects.filter((p) => {
+  const filtered = allCases.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
     const matchesTab =
       tab === "all" ||
@@ -77,10 +77,10 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
-      <ProjectList
-        projects={filtered}
-        clients={projectsQuery.data?.allClients ?? []}
-        onSelect={(project) => router.push(`/workspace/projects/${project.id}`)}
+      <CaseList
+        cases={filtered}
+        clients={casesQuery.data?.allClients ?? []}
+        onSelect={(aCase) => router.push(`/workspace/cases/${aCase.id}`)}
       />
     </div>
   );

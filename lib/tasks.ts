@@ -92,12 +92,12 @@ export async function updateTask(input: {
 export async function addProjectTasksAction(task: Task): Promise<Task> {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
-  const { title, description, priority, dueDate, projectId } = task;
+  const { title, description, priority, dueDate, caseId } = task;
   const values = {
     title: title.trim(),
     description,
     priority,
-    ...(projectId != null ? { projectId } : {}),
+    ...(caseId != null ? { caseId } : {}),
     userId: user.id,
     status: "in-progress" as const,
     completed: false,

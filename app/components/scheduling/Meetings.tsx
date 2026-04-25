@@ -255,7 +255,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                     setSortDir(dir);
                     setPage(1);
                   }}
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between cursor-pointer"
                 >
                   {label}
                   {sortField === field && sortDir === dir && (
@@ -290,7 +290,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                     setStatusFilter(value);
                     setPage(1);
                   }}
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between cursor-pointer"
                 >
                   {label}
                   {statusFilter === value && (
@@ -498,10 +498,12 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
               </div>
               {detailsMeeting.link && (
                 <div className="p-3 rounded-lg border bg-muted/50">
-                  <p className="text-xs text-muted-foreground mb-2">Meeting Link</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Meeting Link
+                  </p>
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm text-foreground truncate flex-1">
-                      {detailsMeeting.link.slice(0,35) + "..."}
+                      {detailsMeeting.link.slice(0, 35) + "..."}
                     </p>
                     <Button
                       size="sm"

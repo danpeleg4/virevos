@@ -3,9 +3,9 @@ export type clients = {
   name: string;
   email: string;
   status: string;
-  activeProjects: number;
-  completedProjects: number;
-  totalProjects: number;
+  activeCases: number;
+  completedCases: number;
+  totalCases: number;
   avatar?: string | null;
   industry: string | undefined;
   phone: string;

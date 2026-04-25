@@ -1,4 +1,4 @@
-export interface ProjectFile {
+export interface CaseFile {
   id: number;
   name: string;
   size: string;
@@ -7,13 +7,13 @@ export interface ProjectFile {
   downloadUrl: string;
 }
 
-export interface ProjectStats {
+export interface CaseStats {
   totalTasks: number;
   completedTasks: number;
   percentage: number;
 }
 
-export interface Project {
+export interface Case {
   clientName?: string;
   id: number;
   name: string;
@@ -21,20 +21,20 @@ export interface Project {
   status: string;
   dueDate: string | null;
   priority: string;
-  stats: ProjectStats;
+  stats: CaseStats;
 }
 
-export interface ProjectNote {
+export interface CaseNote {
   id: number;
   content: string;
   createdAt: Date | string | null;
   userId: string | null;
   updatedAt: Date | string | null;
-  projectId: number | null;
+  caseId: number | null;
 }
 
 export type AddFileMetadataInput = {
-  projectId: number;
+  caseId: number;
   mimeType?: string;
 };
 

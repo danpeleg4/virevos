@@ -1,7 +1,4 @@
-import {
-  getPortalBookings,
-  updateBookingStatus,
-} from "@/lib/portal_bookings";
+import { getPortalBookings, updateBookingStatus } from "@/lib/portal_bookings";
 import { currentUser } from "@clerk/nextjs/server";
 
 jest.mock("@clerk/nextjs/server", () => ({

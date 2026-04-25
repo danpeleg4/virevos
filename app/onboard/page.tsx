@@ -313,7 +313,9 @@ export default function Onboarding() {
             Effortlessly manage your pathway to success.
           </h2>
           <p className="text-blue-100 text-lg mb-12 max-w-lg leading-relaxed">
-            Get organized with AI-driven consultation transcripts, automated filing workflows, and a secure portal designed for students and professionals.
+            Get organized with AI-driven consultation transcripts, automated
+            filing workflows, and a secure portal designed for students and
+            professionals.
           </p>
 
           <div className="relative group"></div>

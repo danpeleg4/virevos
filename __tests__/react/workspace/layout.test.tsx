@@ -41,11 +41,7 @@ jest.mock("motion/react", () => {
           whileTap,
           ...props
         }: Record<string, unknown>) {
-          return createElement(
-            _tag,
-            props,
-            children as React.ReactNode
-          );
+          return createElement(_tag, props, children as React.ReactNode);
         },
     }
   );

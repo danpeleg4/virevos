@@ -31,10 +31,10 @@ import {
 } from "lucide-react";
 import { task_percentage } from "@/lib/task_percentage";
 import { Progress } from "@/app/components/ui/progress";
-import { Project } from "@/types/projects";
+import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";
-import { ProjectEditDialog } from "./ProjectEditDialog";
-import { ProjectCreateDialog } from "@/app/workspace/projects/ProjectCreateDialog";
+import { CaseEditDialog } from "./CaseEditDialog";
+import { CaseCreateDialog } from "@/app/workspace/cases/CaseCreateDialog";
 
 const ROW_HEIGHT = 52;
 
@@ -42,7 +42,7 @@ const STATUS_TABS = ["all", "active", "completed"] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
 
 const TAB_LABELS: Record<StatusTab, string> = {
-  all: "All Projects",
+  all: "All Cases",
   active: "Active",
   completed: "Completed",
 };
@@ -77,7 +77,7 @@ function PriorityBadge({ priority }: { priority: string }) {
     priority === "high"
       ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
       : priority === "medium"
-        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
+        ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
         : "bg-muted text-muted-foreground border border-border";
   return (
     <span
@@ -98,13 +98,13 @@ function ClientPill({ name }: { name: string }) {
   );
 }
 
-interface ProjectListProps {
-  projects: Project[];
+interface CaseListProps {
+  cases: Case[];
   clients: clients[];
-  onSelect: (project: Project) => void;
+  onSelect: (aCase: Case) => void;
 }
 
-export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
+export function CaseList({ cases, clients, onSelect }: CaseListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
   const [sortField, setSortField] = useState<
@@ -116,7 +116,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editingCase, setEditingCase] = useState<Case | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -134,17 +134,17 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
 
   const PRIORITY_ORDER: Record<string, number> = { high: 3, medium: 2, low: 1 };
 
-  const filteredProjects = projects
-    .filter((project) => {
-      const matchesSearch = project.name
+  const filteredCases = cases
+    .filter((aCase) => {
+      const matchesSearch = aCase.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
       const matchesTab =
         activeTab === "all" ||
-        (activeTab === "active" && project.status !== "completed") ||
-        (activeTab === "completed" && project.status === "completed");
+        (activeTab === "active" && aCase.status !== "completed") ||
+        (activeTab === "completed" && aCase.status === "completed");
       const matchesHealth =
-        statusFilter === "all" || project.status === statusFilter;
+        statusFilter === "all" || aCase.status === statusFilter;
       return matchesSearch && matchesTab && matchesHealth;
     })
     .sort((a, b) => {
@@ -171,18 +171,18 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredProjects.length / itemsPerPage)
+    Math.ceil(filteredCases.length / itemsPerPage)
   );
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProjects = filteredProjects.slice(
+  const paginatedCases = filteredCases.slice(
     startIndex,
     startIndex + itemsPerPage
   );
 
   const tabCounts = {
-    all: projects.length,
-    active: projects.filter((p) => p.status !== "completed").length,
-    completed: projects.filter((p) => p.status === "completed").length,
+    all: cases.length,
+    active: cases.filter((p) => p.status !== "completed").length,
+    completed: cases.filter((p) => p.status === "completed").length,
   };
 
   useEffect(() => {
@@ -223,7 +223,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
           <div className="relative flex-1 max-w-xs ml-auto">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search projects..."
+              placeholder="Search cases..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 h-8 text-sm"
@@ -316,18 +316,18 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <ProjectCreateDialog clients={clients} />
+          <CaseCreateDialog clients={clients} />
         </div>
-        {projects.length === 0 ? (
+        {cases.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <div className="rounded-full bg-muted p-5 mb-4">
               <FolderOpen className="h-10 w-10 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-1">
-              No projects yet
+              No cases yet
             </h3>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Create your first project to start tracking tasks, files, and
+              Create your first case to start tracking tasks, files, and
               progress.
             </p>
           </div>
@@ -340,7 +340,7 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                     <th className="text-left px-4 py-2.5">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <FolderOpen className="h-3.5 w-3.5" />
-                        Project
+                        Case
                       </div>
                     </th>
                     <th className="text-left px-4 py-2.5">
@@ -383,31 +383,31 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {paginatedProjects.map((project) => {
+                  {paginatedCases.map((aCase) => {
                     const pct = task_percentage({
-                      completed: project.stats.completedTasks,
-                      total: project.stats.totalTasks,
+                      completed: aCase.stats.completedTasks,
+                      total: aCase.stats.totalTasks,
                     });
                     return (
                       <tr
-                        key={project.id}
-                        onClick={() => onSelect(project)}
+                        key={aCase.id}
+                        onClick={() => onSelect(aCase)}
                         className="cursor-pointer transition-colors hover:bg-muted/50 group"
                       >
                         <td className="px-4 py-3 align-middle">
                           <div className="flex items-center gap-2.5">
                             <span className="text-sm font-medium text-foreground">
-                              {project.name}
+                              {aCase.name}
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-3 align-middle">
-                          {project.clientName && (
-                            <ClientPill name={project.clientName} />
+                          {aCase.clientName && (
+                            <ClientPill name={aCase.clientName} />
                           )}
                         </td>
                         <td className="px-4 py-3 align-middle">
-                          <StatusBadge status={project.status} />
+                          <StatusBadge status={aCase.status} />
                         </td>
                         <td className="px-4 py-3 align-middle">
                           <div className="flex items-center gap-2 min-w-[120px]">
@@ -419,15 +419,15 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                         </td>
                         <td className="px-4 py-3 align-middle">
                           <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
-                            {project.stats.completedTasks}/
-                            {project.stats.totalTasks}
+                            {aCase.stats.completedTasks}/
+                            {aCase.stats.totalTasks}
                           </span>
                         </td>
                         <td className="px-4 py-3 align-middle">
-                          {project.dueDate ? (
+                          {aCase.dueDate ? (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3 shrink-0" />
-                              {project.dueDate}
+                              {aCase.dueDate}
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground">
@@ -436,16 +436,16 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                           )}
                         </td>
                         <td className="px-4 py-3 align-middle">
-                          <PriorityBadge priority={project.priority} />
+                          <PriorityBadge priority={aCase.priority} />
                         </td>
                         <td className="px-2 py-3 align-middle">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setEditingProject(project);
+                              setEditingCase(aCase);
                             }}
                             className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
-                            aria-label="Edit project"
+                            aria-label="Edit case"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
@@ -453,13 +453,13 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
                       </tr>
                     );
                   })}
-                  {filteredProjects.length === 0 && (
+                  {filteredCases.length === 0 && (
                     <tr>
                       <td
                         colSpan={8}
                         className="px-4 py-12 text-center text-sm text-muted-foreground"
                       >
-                        No projects found
+                        No cases found
                       </td>
                     </tr>
                   )}
@@ -470,9 +470,9 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
             {/* Pagination */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
               <div className="text-xs text-muted-foreground">
-                Showing {filteredProjects.length === 0 ? 0 : startIndex + 1}–
-                {Math.min(startIndex + itemsPerPage, filteredProjects.length)}{" "}
-                of {filteredProjects.length} projects
+                Showing {filteredCases.length === 0 ? 0 : startIndex + 1}–
+                {Math.min(startIndex + itemsPerPage, filteredCases.length)}{" "}
+                of {filteredCases.length} cases
               </div>
               <div className="flex items-center space-x-2">
                 <Button
@@ -506,13 +506,13 @@ export function ProjectList({ projects, clients, onSelect }: ProjectListProps) {
         )}
       </Card>
 
-      {editingProject && (
-        <ProjectEditDialog
-          project={editingProject}
+      {editingCase && (
+        <CaseEditDialog
+          aCase={editingCase}
           clients={clients}
           open={true}
           onOpenChange={(open) => {
-            if (!open) setEditingProject(null);
+            if (!open) setEditingCase(null);
           }}
         />
       )}
