@@ -3,9 +3,9 @@ import { db } from "@db/db";
 import {
   clientPortalTokens,
   clients,
-  projects,
+  cases,
   googleEmails,
-  projectFiles,
+  caseFiles,
   portalMeetingBookings,
 } from "@db/schema";
 import { and, eq, gte } from "drizzle-orm";
@@ -52,11 +52,11 @@ export async function GET(
 
     const client = clientRows[0];
 
-    // Fetch client's projects
+    // Fetch client's cases
     const clientProjects = await db
       .select()
-      .from(projects)
-      .where(eq(projects.clientId, client.id));
+      .from(cases)
+      .where(eq(cases.clientId, client.id));
 
     // Fetch emails involving this client
     const clientEmails = await db
@@ -81,16 +81,16 @@ export async function GET(
       )
       .limit(50);
 
-    // Fetch project files for client's projects
-    const projectIds = clientProjects.map((p) => p.id);
-    const files: Array<typeof projectFiles.$inferSelect> = [];
-    if (projectIds.length > 0) {
-      // Fetch files for all projects (drizzle doesn't support inArray easily without import, use loop)
-      for (const pid of projectIds) {
+    // Fetch case files for client's cases
+    const caseIds = clientProjects.map((p) => p.id);
+    const files: Array<typeof caseFiles.$inferSelect> = [];
+    if (caseIds.length > 0) {
+      // Fetch files for all cases (drizzle doesn't support inArray easily without import, use loop)
+      for (const cid of caseIds) {
         const pFiles = await db
           .select()
-          .from(projectFiles)
-          .where(eq(projectFiles.projectId, pid));
+          .from(caseFiles)
+          .where(eq(caseFiles.caseId, cid));
         files.push(...pFiles);
       }
     }
@@ -119,7 +119,7 @@ export async function GET(
         industry: client.industry,
       },
       settings: portalToken.settings || {},
-      projects: clientProjects.map((p) => ({
+      cases: clientProjects.map((p) => ({
         id: p.id,
         name: p.name,
         status: p.status,

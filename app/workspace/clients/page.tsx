@@ -28,8 +28,6 @@ import {
   CheckIcon,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Flag,
   FolderOpen,
   Mail,
   Pencil,
@@ -38,7 +36,6 @@ import {
   SlidersHorizontal,
   Target,
   Trash2,
-  TrendingUp,
 } from "lucide-react";
 import axios from "axios";
 import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
@@ -51,8 +48,6 @@ import {
 } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { Progress } from "@/app/components/ui/progress";
-import { Project } from "@/types/projects";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -82,7 +77,7 @@ function IndustryPill({ industry }: { industry: string }) {
   );
 }
 
-function ProjectsBadge({ active, total }: { active: number; total: number }) {
+function CasesBadge({ active, total }: { active: number; total: number }) {
   return (
     <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
       {active} active · {total} total
@@ -90,51 +85,11 @@ function ProjectsBadge({ active, total }: { active: number; total: number }) {
   );
 }
 
-function ProjectStatusBadge({ status }: { status: string }) {
-  if (status === "completed") {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-        <CheckIcon className="h-2.5 w-2.5" />
-        Completed
-      </span>
-    );
-  }
-  if (status === "inactive") {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border">
-        <Clock className="h-2.5 w-2.5" />
-        Inactive
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
-      <TrendingUp className="h-2.5 w-2.5" />
-      Active
-    </span>
-  );
-}
 
-function ProjectPriorityBadge({ priority }: { priority: string }) {
-  const styles =
-    priority === "high"
-      ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
-      : priority === "medium"
-        ? "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800"
-        : "bg-muted text-muted-foreground border border-border";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${styles}`}
-    >
-      <Flag className="h-2.5 w-2.5" />
-      {priority}
-    </span>
-  );
-}
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<"name" | "status" | "projects">(
+  const [sortField, setSortField] = useState<"name" | "status" | "cases">(
     "name"
   );
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -178,14 +133,6 @@ export default function Clients() {
     },
   });
 
-  const getProjects = useQuery({
-    queryKey: ["projects"],
-    queryFn: async () => {
-      const res = await axios.get("/api/projects/get-projects");
-      return res.data;
-    },
-  });
-
   const deleteMutation = useMutation({
     mutationFn: async ({ id }: { id: number }) => {
       await deleteClient({ id });
@@ -214,8 +161,8 @@ export default function Clients() {
     if (sortField === "name") cmp = (a.name ?? "").localeCompare(b.name ?? "");
     else if (sortField === "status")
       cmp = (a.status ?? "").localeCompare(b.status ?? "");
-    else if (sortField === "projects")
-      cmp = (Number(a.totalProjects) || 0) - (Number(b.totalProjects) || 0);
+    else if (sortField === "cases")
+      cmp = (Number(a.totalCases) || 0) - (Number(b.totalCases) || 0);
     return sortDir === "asc" ? cmp : -cmp;
   });
 
@@ -272,12 +219,12 @@ export default function Clients() {
         email: newClient.email,
         phone: newClient.phone,
         status: "active",
-        activeProjects: 0,
-        completedProjects: 0,
+        activeCases: 0,
+        completedCases: 0,
         avatar: newClient.name[0],
         industry: newClient.industry,
         notes: newClient.notes,
-        totalProjects: 0,
+        totalCases: 0,
       };
 
       queryClient.setQueryData<clients[]>(
@@ -435,13 +382,13 @@ export default function Clients() {
                         dir: "desc",
                       },
                       {
-                        label: "Projects (Most)",
-                        field: "projects",
+                        label: "Cases (Most)",
+                        field: "cases",
                         dir: "desc",
                       },
                       {
-                        label: "Projects (Fewest)",
-                        field: "projects",
+                        label: "Cases (Fewest)",
+                        field: "cases",
                         dir: "asc",
                       },
                     ] as const
@@ -614,7 +561,7 @@ export default function Clients() {
                 No clients yet
               </h3>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Add your first client to start managing relationships, projects,
+                Add your first client to start managing relationships, cases,
                 and communications.
               </p>
             </div>
@@ -660,7 +607,7 @@ export default function Clients() {
                     <th className="text-left px-3 py-2.5">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <FolderOpen className="h-3.5 w-3.5" />
-                        Projects
+                        Cases
                       </div>
                     </th>
                     <th className="text-left px-3 py-2.5">
@@ -755,9 +702,9 @@ export default function Clients() {
                         </DropdownMenu>
                       </td>
                       <td className="px-3 py-2.5">
-                        <ProjectsBadge
-                          active={Number(client.activeProjects || 0)}
-                          total={Number(client.totalProjects || 0)}
+                        <CasesBadge
+                          active={Number(client.activeCases || 0)}
+                          total={Number(client.totalCases || 0)}
                         />
                       </td>
                       <td className="px-3 py-2.5 text-xs text-muted-foreground">

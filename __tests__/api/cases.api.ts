@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/projects/[id]/route";
+import { GET } from "@/app/api/cases/[id]/route";
 import { NextRequest } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
@@ -44,7 +44,7 @@ const mockRequest = {} as NextRequest;
 // Tests
 // ─────────────────────────────
 
-describe("GET /api/projects/[id]", () => {
+describe("GET /api/cases/[id]", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -60,7 +60,7 @@ describe("GET /api/projects/[id]", () => {
     expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
-  it("returns 400 if projectId is invalid", async () => {
+  it("returns 400 if caseId is invalid", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET(mockRequest, {
@@ -68,10 +68,10 @@ describe("GET /api/projects/[id]", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Invalid projectId" });
+    expect(await res.json()).toEqual({ error: "Invalid caseId" });
   });
 
-  it("returns 404 if project is not found", async () => {
+  it("returns 404 if case is not found", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
     mockDrizzleResult([]);
 
@@ -80,16 +80,16 @@ describe("GET /api/projects/[id]", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: "Project not found" });
+    expect(await res.json()).toEqual({ error: "Case not found" });
   });
 
-  it("returns project data when found", async () => {
+  it("returns case data when found", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
     mockDrizzleResult([
       {
         id: 1,
-        name: "Project A",
+        name: "Case A",
         clientId: 10,
         clientName: "Client X",
       },
@@ -102,7 +102,7 @@ describe("GET /api/projects/[id]", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       id: 1,
-      name: "Project A",
+      name: "Case A",
       clientId: 10,
       clientName: "Client X",
     });

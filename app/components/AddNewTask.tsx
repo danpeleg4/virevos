@@ -25,26 +25,26 @@ import { useState } from "react";
 import { addProjectTasksAction } from "@/lib/tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Project } from "@/types/projects";
+import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
 
-export default function AddNewTask({ projectId }: { projectId?: number }) {
+export default function AddNewTask({ caseId }: { caseId?: number }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-    projectId ?? null
+  const [selectedCaseId, setSelectedCaseId] = useState<number | null>(
+    caseId ?? null
   );
   const [priority, setPriority] = useState("");
   const [dueDate, setDueDate] = useState("");
 
   const queryClient = useQueryClient();
 
-  const projects = useQuery<Project[]>({
-    queryKey: ["project"],
+  const casesQuery = useQuery<Case[]>({
+    queryKey: ["case"],
     queryFn: async () => {
-      const res = await axios.get("/api/projects/get-projects");
-      return res.data.projects;
+      const res = await axios.get("/api/cases/get-cases");
+      return res.data.cases;
     },
   });
 
@@ -54,20 +54,20 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
     },
     onMutate: async (newTask: Task) => {
       await queryClient.cancelQueries({
-        queryKey: ["projectsTasks", projectId],
+        queryKey: ["caseTasks", caseId],
       });
       await queryClient.cancelQueries({ queryKey: ["allTasks"] });
 
-      const prevProjectTasks = queryClient.getQueryData<Task[]>([
-        "projectsTasks",
-        projectId,
+      const prevCaseTasks = queryClient.getQueryData<Task[]>([
+        "caseTasks",
+        caseId,
       ]);
       const prevAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
 
       const optimisticTask = { ...newTask };
 
       queryClient.setQueryData(
-        ["projectsTasks", projectId],
+        ["caseTasks", caseId],
         (old: Task[] = []) => [...old, optimisticTask]
       );
 
@@ -76,17 +76,17 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
         optimisticTask,
       ]);
 
-      return { prevProjectTasks, prevAllTasks };
+      return { prevCaseTasks, prevAllTasks };
     },
     onError: (_err, _newTask, context) => {
       queryClient.setQueryData(
-        ["projectsTasks", projectId],
-        context?.prevProjectTasks
+        ["caseTasks", caseId],
+        context?.prevCaseTasks
       );
       queryClient.setQueryData(["allTasks"], context?.prevAllTasks);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["projectsTasks", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["caseTasks", caseId] });
       queryClient.invalidateQueries({ queryKey: ["allTasks"] });
     },
   });
@@ -96,7 +96,7 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
     setDescription("");
     setPriority("");
     setDueDate("");
-    if (!projectId) setSelectedProjectId(null);
+    if (!caseId) setSelectedCaseId(null);
   };
 
   const submitTask = async () => {
@@ -107,14 +107,14 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
       title,
       description,
       priority,
-      projectName:
-        projects?.data?.find((p) => p.id === selectedProjectId)?.name || "",
+      caseName:
+        casesQuery?.data?.find((p) => p.id === selectedCaseId)?.name || "",
       dueDate: dueDate || null,
       status: "todo",
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
-      projectId: selectedProjectId,
+      caseId: selectedCaseId,
     };
 
     addTask.mutate(payload);
@@ -139,7 +139,7 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl">Create New Task</DialogTitle>
-          <DialogDescription>Add a new task to this project.</DialogDescription>
+          <DialogDescription>Add a new task to this case.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 mt-2">
@@ -171,23 +171,23 @@ export default function AddNewTask({ projectId }: { projectId?: number }) {
             />
           </div>
 
-          {/* Project (only if no projectId provided) */}
-          {!projectId && (
+          {/* Project (only if no caseId provided) */}
+          {!caseId && (
             <div className="space-y-1.5">
               <Label className="text-sm font-medium flex items-center gap-1.5">
                 <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                Project
+                Case
               </Label>
               <Select
-                onValueChange={(val) => setSelectedProjectId(Number(val))}
+                onValueChange={(val) => setSelectedCaseId(Number(val))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a project" />
+                  <SelectValue placeholder="Select a case" />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects?.data?.map((project: Project) => (
-                    <SelectItem value={String(project.id)} key={project.id}>
-                      {project.name}
+                  {casesQuery?.data?.map((aCase: Case) => (
+                    <SelectItem value={String(aCase.id)} key={aCase.id}>
+                      {aCase.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

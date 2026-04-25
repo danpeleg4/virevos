@@ -36,8 +36,8 @@ const mockTask: Task = {
   priority: "high",
   dueDate: "2026-05-01",
   completed: false,
-  projectId: 10,
-  projectName: "Test Project",
+  caseId: 10,
+  caseName: "Test Case",
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-01-02"),
 };

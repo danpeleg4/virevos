@@ -19,47 +19,47 @@ import {
   SelectItem,
 } from "@/app/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateProject } from "@/lib/projects";
-import { Project } from "@/types/projects";
+import { updateCase } from "@/lib/cases";
+import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";
 
-interface ProjectEditDialogProps {
-  project: Project;
+interface CaseEditDialogProps {
+  aCase: Case;
   clients: clients[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function ProjectEditDialog({
-  project,
+export function CaseEditDialog({
+  aCase,
   clients,
   open,
   onOpenChange,
-}: ProjectEditDialogProps) {
-  const [name, setName] = useState(project.name);
+}: CaseEditDialogProps) {
+  const [name, setName] = useState(aCase.name);
   const [clientId, setClientId] = useState<string>(
-    project.clientId ? String(project.clientId) : "none"
+    aCase.clientId ? String(aCase.clientId) : "none"
   );
-  const [dueDate, setDueDate] = useState(project.dueDate ?? "");
-  const [priority, setPriority] = useState(project.priority);
-  const [status, setStatus] = useState(project.status);
+  const [dueDate, setDueDate] = useState(aCase.dueDate ?? "");
+  const [priority, setPriority] = useState(aCase.priority);
+  const [status, setStatus] = useState(aCase.status);
 
   useEffect(() => {
     if (open) {
-      setName(project.name);
-      setClientId(project.clientId ? String(project.clientId) : "none");
-      setDueDate(project.dueDate ?? "");
-      setPriority(project.priority);
-      setStatus(project.status);
+      setName(aCase.name);
+      setClientId(aCase.clientId ? String(aCase.clientId) : "none");
+      setDueDate(aCase.dueDate ?? "");
+      setPriority(aCase.priority);
+      setStatus(aCase.status);
     }
-  }, [open, project]);
+  }, [open, aCase]);
 
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      await updateProject({
-        id: project.id,
+      await updateCase({
+        id: aCase.id,
         name,
         dueDate: dueDate || undefined,
         priority,
@@ -68,7 +68,7 @@ export function ProjectEditDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
       onOpenChange(false);
     },
   });
@@ -77,15 +77,15 @@ export function ProjectEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Project</DialogTitle>
+          <DialogTitle>Edit Case</DialogTitle>
           <DialogDescription>
-            Update the project details below.
+            Update the case details below.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
           <div>
-            <Label>Project Name</Label>
+            <Label>Case Name</Label>
             <Input
               className="mt-2"
               value={name}

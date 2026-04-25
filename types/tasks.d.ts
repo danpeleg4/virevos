@@ -3,8 +3,8 @@ export interface Task {
   userId: string;
   title: string;
   description: string | null;
-  projectId?: number | null;
-  projectName?: string | null;
+  caseId?: number | null;
+  caseName?: string | null;
   priority: string;
   status: string;
   dueDate: string | null;
@@ -17,5 +17,5 @@ export interface TaskDetailModalProps {
   task: Task;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectId?: number;
+  caseId?: number;
 }

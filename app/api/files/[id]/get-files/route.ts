@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { projectFiles } from "@db/schema";
+import { caseFiles } from "@db/schema";
 import { db } from "@db/db";
 import { and, eq } from "drizzle-orm";
 
@@ -14,19 +14,19 @@ export async function GET(
   }
 
   const { id } = await ctx.params;
-  const projectId = Number(id);
+  const caseId = Number(id);
 
-  if (Number.isNaN(projectId)) {
-    return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
+  if (Number.isNaN(caseId)) {
+    return NextResponse.json({ error: "Invalid caseId" }, { status: 400 });
   }
 
   const files = await db
     .select()
-    .from(projectFiles)
+    .from(caseFiles)
     .where(
       and(
-        eq(projectFiles.projectId, projectId),
-        eq(projectFiles.userId, user.id)
+        eq(caseFiles.caseId, caseId),
+        eq(caseFiles.userId, user.id)
       )
     );
 

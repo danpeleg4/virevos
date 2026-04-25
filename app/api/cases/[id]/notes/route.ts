@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
-import { tasks } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { caseNotes } from "@db/schema";
+import { and, desc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -14,15 +14,21 @@ export async function GET(
   }
 
   const { id } = await ctx.params;
-  const projectId = Number(id);
-  if (Number.isNaN(projectId)) {
-    return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
+  const caseId = Number(id);
+  if (Number.isNaN(caseId)) {
+    return NextResponse.json({ error: "Invalid caseId" }, { status: 400 });
   }
 
   const data = await db
     .select()
-    .from(tasks)
-    .where(and(eq(tasks.userId, user.id), eq(tasks.projectId, projectId)));
+    .from(caseNotes)
+    .where(
+      and(
+        eq(caseNotes.userId, user.id),
+        eq(caseNotes.caseId, caseId)
+      )
+    )
+    .orderBy(desc(caseNotes.id));
 
   return NextResponse.json(data);
 }

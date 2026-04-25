@@ -49,12 +49,12 @@ import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addFileMetadata,
-  addProjectNotes,
-  deleteProject,
-  deleteProjectFile,
-} from "@/lib/projects";
+  addCaseNotes,
+  deleteCase,
+  deleteCaseFile,
+} from "@/lib/cases";
 import { deleteTask, updateTaskStatus } from "@/lib/tasks";
-import { Project, ProjectFile, ProjectNote } from "@/types/projects";
+import { Case, CaseFile, CaseNote } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { toast } from "sonner";
 
@@ -83,7 +83,7 @@ function formatNoteDate(raw: Date | string | null | undefined): string {
   });
 }
 
-export default function ProjectPage({
+export default function CasePage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -91,47 +91,47 @@ export default function ProjectPage({
   const { id } = use(params);
   const router = useRouter();
 
-  const projectQuery = useQuery({
-    queryKey: ["project", id],
+  const caseQuery = useQuery({
+    queryKey: ["case", id],
     queryFn: async () => {
-      const res = await axios.get(`/api/projects/${id}`);
-      return res.data as Project;
+      const res = await axios.get(`/api/cases/${id}`);
+      return res.data as Case;
     },
     enabled: !!id,
   });
 
-  if (projectQuery.isLoading)
+  if (caseQuery.isLoading)
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
-  if (projectQuery.isError)
+  if (caseQuery.isError)
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-muted-foreground">Failed to load project</p>
+          <p className="text-muted-foreground">Failed to load case</p>
         </div>
       </div>
     );
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <ProjectDetailView
-        project={projectQuery.data!}
-        onBackAction={() => router.push("/workspace/projects")}
+      <CaseDetailView
+        aCase={caseQuery.data!}
+        onBackAction={() => router.push("/workspace/cases")}
       />
     </div>
   );
 }
 
-export function ProjectDetailView({
+export function CaseDetailView({
   onBackAction,
-  project,
+  aCase,
 }: {
   onBackAction: () => void;
-  project: Project;
+  aCase: Case;
 }) {
   const [newNote, setNewNote] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task>();
@@ -146,8 +146,8 @@ export function ProjectDetailView({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      await addFileMetadata({ projectId: project.id }, formData);
-      await queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+      await addFileMetadata({ caseId: aCase.id }, formData);
+      await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
     } catch (err) {
       console.error("Upload failed:", err);
       toast.error(
@@ -156,29 +156,29 @@ export function ProjectDetailView({
     }
   };
 
-  const projectsTasksQuery = useQuery({
-    queryKey: ["projectsTasks", project.id],
-    enabled: !!project.id,
+  const caseTasksQuery = useQuery({
+    queryKey: ["caseTasks", aCase.id],
+    enabled: !!aCase.id,
     queryFn: async () => {
-      const res = await axios.get(`/api/projects/${project.id}/tasks`);
+      const res = await axios.get(`/api/cases/${aCase.id}/tasks`);
       return res.data;
     },
   });
 
-  const projectNotesQuery = useQuery({
-    queryKey: ["projectNotes", project.id],
+  const caseNotesQuery = useQuery({
+    queryKey: ["caseNotes", aCase.id],
     queryFn: async () => {
-      const res = await axios.get(`/api/projects/${project.id}/notes`);
+      const res = await axios.get(`/api/cases/${aCase.id}/notes`);
       return res.data;
     },
-    enabled: !!project.id,
+    enabled: !!aCase.id,
   });
 
   const fileQuery = useQuery({
-    queryKey: ["files", project.id],
-    enabled: !!project.id,
+    queryKey: ["files", aCase.id],
+    enabled: !!aCase.id,
     queryFn: async () => {
-      const res = await axios.get(`/api/files/${project.id}/get-files`);
+      const res = await axios.get(`/api/files/${aCase.id}/get-files`);
       return res.data;
     },
   });
@@ -186,23 +186,23 @@ export function ProjectDetailView({
   const addFile = useMutation({
     mutationFn: handleUpload,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+      queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
     },
   });
 
   const addSomeNote = useMutation({
     mutationFn: async ({
       newNote,
-      projectId,
+      caseId,
     }: {
       newNote: string;
-      projectId: number;
+      caseId: number;
     }) => {
-      await addProjectNotes(newNote, projectId);
+      await addCaseNotes(newNote, caseId);
     },
     onSuccess: () => {
       setNewNote("");
-      queryClient.invalidateQueries({ queryKey: ["projectNotes", project.id] });
+      queryClient.invalidateQueries({ queryKey: ["caseNotes", aCase.id] });
     },
   });
 
@@ -212,17 +212,17 @@ export function ProjectDetailView({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["projectsTasks", project.id],
+        queryKey: ["caseTasks", aCase.id],
       });
     },
   });
 
-  const deleteSomeProject = useMutation({
-    mutationFn: async (projectId: number) => {
-      deleteProject(projectId);
+  const deleteSomeCase = useMutation({
+    mutationFn: async (caseId: number) => {
+      deleteCase(caseId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
       onBackAction();
     },
   });
@@ -240,15 +240,15 @@ export function ProjectDetailView({
 
     onMutate: async ({ status, taskId }) => {
       await queryClient.cancelQueries({
-        queryKey: ["projectsTasks", project.id],
+        queryKey: ["caseTasks", aCase.id],
       });
 
       const previousTasks = queryClient.getQueryData<Task[]>([
-        "projectsTasks",
-        project.id,
+        "caseTasks",
+        aCase.id,
       ]);
 
-      queryClient.setQueryData<Task[]>(["projectsTasks", project.id], (old) =>
+      queryClient.setQueryData<Task[]>(["caseTasks", aCase.id], (old) =>
         old?.map((task) => (task.id === taskId ? { ...task, status } : task))
       );
       return { previousTasks };
@@ -256,43 +256,43 @@ export function ProjectDetailView({
 
     onError: (_err, _vars, context) => {
       queryClient.setQueryData(
-        ["projectsTasks", project.id],
+        ["caseTasks", aCase.id],
         context?.previousTasks
       );
     },
   });
 
-  const deleteProjectFileMutation = useMutation({
+  const deleteCaseFileMutation = useMutation({
     mutationFn: async (fileId: number) => {
-      await deleteProjectFile(fileId);
+      await deleteCaseFile(fileId);
     },
     onMutate: async (fileId) => {
-      await queryClient.cancelQueries({ queryKey: ["files", project.id] });
-      const previousFiles = queryClient.getQueryData<ProjectFile[]>([
+      await queryClient.cancelQueries({ queryKey: ["files", aCase.id] });
+      const previousFiles = queryClient.getQueryData<CaseFile[]>([
         "files",
-        project.id,
+        aCase.id,
       ]);
-      queryClient.setQueryData<ProjectFile[]>(["files", project.id], (old) =>
+      queryClient.setQueryData<CaseFile[]>(["files", aCase.id], (old) =>
         old?.filter((f) => f.id !== fileId)
       );
       return { previousFiles };
     },
     onError: (_err, _fileId, context) => {
-      queryClient.setQueryData(["files", project.id], context?.previousFiles);
+      queryClient.setQueryData(["files", aCase.id], context?.previousFiles);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["files", project.id] });
+      queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
     },
   });
 
   const onBackFunction = async () => {
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
+    queryClient.invalidateQueries({ queryKey: ["cases"] });
     onBackAction();
   };
 
   if (
-    projectNotesQuery.isLoading ||
-    projectsTasksQuery.isLoading ||
+    caseNotesQuery.isLoading ||
+    caseTasksQuery.isLoading ||
     fileQuery.isLoading
   ) {
     return (
@@ -302,19 +302,19 @@ export function ProjectDetailView({
     );
   }
 
-  if (projectNotesQuery.isError || projectsTasksQuery.isError) {
+  if (caseNotesQuery.isError || caseTasksQuery.isError) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-muted-foreground">Error loading project data</p>
+          <p className="text-muted-foreground">Error loading case data</p>
         </div>
       </div>
     );
   }
 
   const toggleTaskStatus = async (taskId: number) => {
-    const updated = projectsTasksQuery.data?.find((t: Task) => t.id === taskId);
+    const updated = caseTasksQuery.data?.find((t: Task) => t.id === taskId);
     const newStatus = updated?.status === "completed" ? "todo" : "completed";
     try {
       changeTaskStatus.mutate({ status: newStatus, taskId });
@@ -328,7 +328,7 @@ export function ProjectDetailView({
     setTaskDetailOpen(true);
   };
 
-  const allTasks: Task[] = projectsTasksQuery.data ?? [];
+  const allTasks: Task[] = caseTasksQuery.data ?? [];
   const filteredTasks =
     taskFilter === "all"
       ? allTasks
@@ -360,10 +360,10 @@ export function ProjectDetailView({
           </Button>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl text-foreground truncate">
-              {project.name}
+              {aCase.name}
             </h1>
             <p className="text-muted-foreground mt-1 truncate">
-              {project.clientName}
+              {aCase.clientName}
             </p>
           </div>
         </div>
@@ -371,20 +371,20 @@ export function ProjectDetailView({
           <Badge
             variant="outline"
             className={`shrink-0 ${
-              project.priority === "high"
+              aCase.priority === "high"
                 ? "border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
-                : project.priority === "medium"
+                : aCase.priority === "medium"
                   ? "border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300"
                   : "border-border text-muted-foreground"
             }`}
           >
-            {project.priority} priority
+            {aCase.priority} priority
           </Badge>
           <Button
             className="cursor-pointer shrink-0"
             variant="outline"
             size="sm"
-            onClick={() => deleteSomeProject.mutate(project.id)}
+            onClick={() => deleteSomeCase.mutate(aCase.id)}
           >
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
@@ -400,7 +400,7 @@ export function ProjectDetailView({
             </div>
           </div>
           <p className="text-2xl text-foreground mb-1">
-            {task_percentage(projectsTasksQuery.data ?? [])}%
+            {task_percentage(caseTasksQuery.data ?? [])}%
           </p>
           <p className="text-sm text-muted-foreground">Overall Progress</p>
         </Card>
@@ -412,7 +412,7 @@ export function ProjectDetailView({
             </div>
           </div>
           <p className="text-2xl text-foreground mb-1">
-            {project.dueDate || "—"}
+            {aCase.dueDate || "—"}
           </p>
           <p className="text-sm text-muted-foreground">Due Date</p>
         </Card>
@@ -424,10 +424,10 @@ export function ProjectDetailView({
             </div>
           </div>
           <p className="text-2xl text-foreground mb-1">
-            {projectsTasksQuery.data?.filter(
+            {caseTasksQuery.data?.filter(
               (t: Task) => t.status === "completed"
             ).length ?? 0}
-            /{projectsTasksQuery.data?.length ?? 0}
+            /{caseTasksQuery.data?.length ?? 0}
           </p>
           <p className="text-sm text-muted-foreground">Tasks Completed</p>
         </Card>
@@ -469,15 +469,15 @@ export function ProjectDetailView({
           <TabsTrigger value="notes" className="gap-2">
             <StickyNote className="h-4 w-4" />
             Notes
-            {(projectNotesQuery.data?.length ?? 0) > 0 && (
+            {(caseNotesQuery.data?.length ?? 0) > 0 && (
               <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                {projectNotesQuery.data.length}
+                {caseNotesQuery.data.length}
               </span>
             )}
           </TabsTrigger>
         </TabsList>
 
-        {/* ── Tasks Tab ── */}
+        {/* Tasks Tab */}
         <TabsContent value="tasks" className="mt-4">
           <Card>
             <CardHeader>
@@ -508,7 +508,7 @@ export function ProjectDetailView({
                       </button>
                     ))}
                   </div>
-                  <AddNewTask projectId={project.id} />
+                  <AddNewTask caseId={aCase.id} />
                 </div>
               </div>
             </CardHeader>
@@ -533,7 +533,7 @@ export function ProjectDetailView({
                     </p>
                   </div>
                   {taskFilter === "all" && (
-                    <AddNewTask projectId={project.id} />
+                    <AddNewTask caseId={aCase.id} />
                   )}
                 </div>
               ) : (
@@ -615,7 +615,7 @@ export function ProjectDetailView({
           </Card>
         </TabsContent>
 
-        {/* ── Files Tab ── */}
+        {/* Files Tab */}
         <TabsContent value="files" className="mt-4">
           <Card>
             <CardHeader>
@@ -690,7 +690,7 @@ export function ProjectDetailView({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {fileQuery?.data?.map((file: ProjectFile) => (
+                  {fileQuery?.data?.map((file: CaseFile) => (
                     <div
                       key={file.id}
                       className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
@@ -722,7 +722,7 @@ export function ProjectDetailView({
                           size="icon"
                           variant="ghost"
                           onClick={() =>
-                            deleteProjectFileMutation.mutate(file.id)
+                            deleteCaseFileMutation.mutate(file.id)
                           }
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
@@ -736,7 +736,7 @@ export function ProjectDetailView({
           </Card>
         </TabsContent>
 
-        {/* ── Notes Tab ── */}
+        {/* Notes Tab */}
         <TabsContent value="notes" className="mt-4">
           <Card>
             <CardHeader>
@@ -760,7 +760,7 @@ export function ProjectDetailView({
                   className="cursor-pointer"
                   disabled={addSomeNote.isPending || !newNote.trim()}
                   onClick={() =>
-                    addSomeNote.mutate({ newNote, projectId: project.id })
+                    addSomeNote.mutate({ newNote, caseId: aCase.id })
                   }
                 >
                   {addSomeNote.isPending ? (
@@ -775,7 +775,7 @@ export function ProjectDetailView({
               </div>
 
               {/* Notes List */}
-              {projectNotesQuery.data?.length === 0 ? (
+              {caseNotesQuery.data?.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-10 text-center">
                   <div className="p-4 rounded-full bg-muted">
                     <StickyNote className="h-8 w-8 text-muted-foreground" />
@@ -784,7 +784,7 @@ export function ProjectDetailView({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {projectNotesQuery.data?.map((note: ProjectNote) => (
+                  {caseNotesQuery.data?.map((note: CaseNote) => (
                     <div
                       key={note.id}
                       className="p-4 bg-muted/50 rounded-xl border border-border"
@@ -810,7 +810,7 @@ export function ProjectDetailView({
           task={selectedTask}
           open={taskDetailOpen}
           onOpenChange={setTaskDetailOpen}
-          projectId={project.id}
+          caseId={aCase.id}
         />
       )}
     </div>

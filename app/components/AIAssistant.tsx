@@ -24,9 +24,9 @@ import type {
   AIMessage,
   AddClientToolResult,
   StreamEvent,
-  CreateProjectToolResult,
+  CreateCaseToolResult,
   UpdateClientToolResult,
-  UpdateProjectToolResult,
+  UpdateCaseToolResult,
   CreateTaskToolResult,
   UpdateTaskToolResult,
   CreateEventToolResult,
@@ -164,9 +164,9 @@ export function AIAssistant({
                         {
                           ...newClient,
                           status: "active",
-                          totalProjects: 0,
-                          activeProjects: 0,
-                          completedProjects: 0,
+                          totalCases: 0,
+                          activeCases: 0,
+                          completedCases: 0,
                           avatar: newClient.name[0],
                         },
                       ]
@@ -174,11 +174,11 @@ export function AIAssistant({
                   }
                 } else if (
                   event.type === "tool_result" &&
-                  event.name === "createProject"
+                  event.name === "createCase"
                 ) {
-                  const data = event.result as CreateProjectToolResult;
-                  if (data.kind === "project_created") {
-                    queryClient.invalidateQueries({ queryKey: ["projects"] });
+                  const data = event.result as CreateCaseToolResult;
+                  if (data.kind === "case_created") {
+                    queryClient.invalidateQueries({ queryKey: ["cases"] });
                   }
                 } else if (
                   event.type === "tool_result" &&
@@ -190,11 +190,11 @@ export function AIAssistant({
                   }
                 } else if (
                   event.type === "tool_result" &&
-                  event.name === "updateProject"
+                  event.name === "updateCase"
                 ) {
-                  const data = event.result as UpdateProjectToolResult;
-                  if (data.kind === "project_updated") {
-                    queryClient.invalidateQueries({ queryKey: ["projects"] });
+                  const data = event.result as UpdateCaseToolResult;
+                  if (data.kind === "case_updated") {
+                    queryClient.invalidateQueries({ queryKey: ["cases"] });
                   }
                 } else if (
                   event.type === "tool_result" &&

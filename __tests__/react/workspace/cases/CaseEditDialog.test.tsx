@@ -8,13 +8,13 @@ jest.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: jest.fn() }),
 }));
 
-jest.mock("@/lib/projects", () => ({
-  updateProject: jest.fn(),
+jest.mock("@/lib/cases", () => ({
+  updateCase: jest.fn(),
 }));
 
-const mockProject = {
+const mockCase = {
   id: 1,
-  name: "Existing Project",
+  name: "Existing Case",
   status: "active",
   priority: "medium",
   clientId: 1,
@@ -30,16 +30,16 @@ const mockClients = [
     phone: "",
     industry: "",
     status: "active",
-    activeProjects: 1,
-    completedProjects: 0,
-    totalProjects: 1,
+    activeCases: 1,
+    completedCases: 0,
+    totalCases: 1,
     avatar: "A",
   },
 ];
 
-import { ProjectEditDialog } from "@/app/workspace/projects/ProjectEditDialog";
+import { CaseEditDialog } from "@/app/workspace/cases/CaseEditDialog";
 
-describe("ProjectEditDialog", () => {
+describe("CaseEditDialog", () => {
   const onOpenChange = jest.fn();
 
   beforeEach(() => {
@@ -49,44 +49,44 @@ describe("ProjectEditDialog", () => {
 
   it("renders dialog when open=true", () => {
     render(
-      <ProjectEditDialog
-        project={mockProject}
+      <CaseEditDialog
+        aCase={mockCase}
         clients={mockClients}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByText("Edit Project")).toBeInTheDocument();
+    expect(screen.getByText("Edit Case")).toBeInTheDocument();
   });
 
   it("does not render content when open=false", () => {
     render(
-      <ProjectEditDialog
-        project={mockProject}
+      <CaseEditDialog
+        aCase={mockCase}
         clients={mockClients}
         open={false}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.queryByText("Edit Project")).not.toBeInTheDocument();
+    expect(screen.queryByText("Edit Case")).not.toBeInTheDocument();
   });
 
-  it("pre-fills the project name", () => {
+  it("pre-fills the case name", () => {
     render(
-      <ProjectEditDialog
-        project={mockProject}
+      <CaseEditDialog
+        aCase={mockCase}
         clients={mockClients}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByDisplayValue("Existing Project")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Existing Case")).toBeInTheDocument();
   });
 
   it("renders Save Changes button", () => {
     render(
-      <ProjectEditDialog
-        project={mockProject}
+      <CaseEditDialog
+        aCase={mockCase}
         clients={mockClients}
         open={true}
         onOpenChange={onOpenChange}
@@ -99,8 +99,8 @@ describe("ProjectEditDialog", () => {
 
   it("calls mutation on save", () => {
     render(
-      <ProjectEditDialog
-        project={mockProject}
+      <CaseEditDialog
+        aCase={mockCase}
         clients={mockClients}
         open={true}
         onOpenChange={onOpenChange}

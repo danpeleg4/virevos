@@ -1,26 +1,26 @@
 "use server";
 
 import { db } from "@db/db";
-import { projectNotes, projectFiles, projects, tasks, users } from "@db/schema";
+import { caseNotes, caseFiles, cases, tasks, users } from "@db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
-import { AddFileMetadataInput, Project } from "@/types/projects";
+import { AddFileMetadataInput, Case } from "@/types/cases";
 import { uploadFile, deleteFile } from "./storage";
 import { FILES_BUCKET } from "./supabase";
-import { assertCanAddProject, assertCanAddFile } from "./plan_limits";
+import { assertCanAddCase, assertCanAddFile } from "./plan_limits";
 
-export async function deleteProject(projectId: number) {
+export async function deleteCase(caseId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  // Delete project files
+  // Delete case files
   const files = await db
-    .select({ path: projectFiles.path, size: projectFiles.size })
-    .from(projectFiles)
+    .select({ path: caseFiles.path, size: caseFiles.size })
+    .from(caseFiles)
     .where(
       and(
-        eq(projectFiles.projectId, projectId),
-        eq(projectFiles.userId, user.id)
+        eq(caseFiles.caseId, caseId),
+        eq(caseFiles.userId, user.id)
       )
     );
 
@@ -29,11 +29,11 @@ export async function deleteProject(projectId: number) {
   }
 
   await db
-    .delete(projectFiles)
+    .delete(caseFiles)
     .where(
       and(
-        eq(projectFiles.projectId, projectId),
-        eq(projectFiles.userId, user.id)
+        eq(caseFiles.caseId, caseId),
+        eq(caseFiles.userId, user.id)
       )
     );
 
@@ -45,24 +45,24 @@ export async function deleteProject(projectId: number) {
       .where(eq(users.user_id, user.id));
   }
 
-  // Delete project tasks
+  // Delete case tasks
   await db
     .delete(tasks)
-    .where(and(eq(tasks.projectId, projectId), eq(tasks.userId, user.id)));
-  // Delete project notes
+    .where(and(eq(tasks.caseId, caseId), eq(tasks.userId, user.id)));
+  // Delete case notes
   await db
-    .delete(projectNotes)
+    .delete(caseNotes)
     .where(
       and(
-        eq(projectNotes.projectId, projectId),
-        eq(projectNotes.userId, user.id)
+        eq(caseNotes.caseId, caseId),
+        eq(caseNotes.userId, user.id)
       )
     );
 
-  // Delete project
+  // Delete case
   await db
-    .delete(projects)
-    .where(and(eq(projects.id, projectId), eq(projects.userId, user.id)));
+    .delete(cases)
+    .where(and(eq(cases.id, caseId), eq(cases.userId, user.id)));
 }
 
 export async function addFileMetadata(
@@ -86,8 +86,8 @@ export async function addFileMetadata(
 
   // Save metadata in Drizzle and increment storage usage
   try {
-    await db.insert(projectFiles).values({
-      projectId: input.projectId,
+    await db.insert(caseFiles).values({
+      caseId: input.caseId,
       userId: user.id,
       name: file.name,
       path: filePath,
@@ -106,24 +106,24 @@ export async function addFileMetadata(
   return { path: filePath, name: file.name, size: file.size };
 }
 
-export async function createProject(project: Project) {
+export async function createCase(aCase: Case) {
   const user = await currentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
 
-  await assertCanAddProject(user.id);
+  await assertCanAddCase(user.id);
 
-  // Insert project into DB
+  // Insert case into DB
   const [inserted] = await db
-    .insert(projects)
+    .insert(cases)
     .values({
-      name: project.name,
+      name: aCase.name,
       userId: user.id,
-      clientId: project.clientId ?? undefined,
-      status: project.status ?? "active",
-      dueDate: project.dueDate ?? undefined,
-      priority: project.priority ?? "medium",
+      clientId: aCase.clientId ?? undefined,
+      status: aCase.status ?? "active",
+      dueDate: aCase.dueDate ?? undefined,
+      priority: aCase.priority ?? "medium",
     })
     .returning();
 
@@ -133,18 +133,18 @@ export async function createProject(project: Project) {
   };
 }
 
-export async function addProjectNotes(newNote: string, projectId: number) {
+export async function addCaseNotes(newNote: string, caseId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  await db.insert(projectNotes).values({
+  await db.insert(caseNotes).values({
     content: newNote,
     userId: user.id,
-    projectId,
+    caseId,
   });
 }
 
-export async function updateProject(input: {
+export async function updateCase(input: {
   id: number;
   name?: string;
   description?: string;
@@ -168,38 +168,38 @@ export async function updateProject(input: {
   if (Object.keys(updateData).length === 0) return;
 
   await db
-    .update(projects)
+    .update(cases)
     .set(updateData)
-    .where(and(eq(projects.id, input.id), eq(projects.userId, user.id)));
+    .where(and(eq(cases.id, input.id), eq(cases.userId, user.id)));
 }
 
-export async function changeProjectStatus(project: Project, newStatus: string) {
+export async function changeCaseStatus(aCase: Case, newStatus: string) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  const { id } = project;
+  const { id } = aCase;
   await db
-    .update(projects)
+    .update(cases)
     .set({ status: newStatus })
-    .where(and(eq(projects.id, id), eq(projects.userId, user.id)));
+    .where(and(eq(cases.id, id), eq(cases.userId, user.id)));
 }
 
-export async function deleteProjectFile(fileId: number) {
+export async function deleteCaseFile(fileId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
   const [file] = await db
-    .select({ path: projectFiles.path, size: projectFiles.size })
-    .from(projectFiles)
-    .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
+    .select({ path: caseFiles.path, size: caseFiles.size })
+    .from(caseFiles)
+    .where(and(eq(caseFiles.id, fileId), eq(caseFiles.userId, user.id)));
 
   if (!file) throw new Error("File not found");
 
   await deleteFile(FILES_BUCKET, file.path);
 
   await db
-    .delete(projectFiles)
-    .where(and(eq(projectFiles.id, fileId), eq(projectFiles.userId, user.id)));
+    .delete(caseFiles)
+    .where(and(eq(caseFiles.id, fileId), eq(caseFiles.userId, user.id)));
 
   await db
     .update(users)

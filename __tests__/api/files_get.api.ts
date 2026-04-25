@@ -39,7 +39,7 @@ describe("GET /api/project-files/project/[id]", () => {
     const res = await GET({} as NextRequest, mockCtx("abc"));
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Invalid projectId" });
+    expect(await res.json()).toEqual({ error: "Invalid caseId" });
   });
 
   it("returns files for a valid projectId", async () => {

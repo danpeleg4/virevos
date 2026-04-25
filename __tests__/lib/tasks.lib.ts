@@ -248,27 +248,27 @@ describe("addProjectTasksAction", () => {
     );
   });
 
-  it("omits projectId from insert when not provided", async () => {
+  it("omits caseId from insert when not provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockReturning.mockResolvedValue([{ ...baseTask, title: "New Task" }]);
 
-    await addProjectTasksAction({ ...baseTask, projectId: null });
+    await addProjectTasksAction({ ...baseTask, caseId: null });
 
     expect(mockValues).toHaveBeenCalledWith(
-      expect.not.objectContaining({ projectId: expect.anything() })
+      expect.not.objectContaining({ caseId: expect.anything() })
     );
   });
 
-  it("includes projectId in insert when provided", async () => {
+  it("includes caseId in insert when provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockReturning.mockResolvedValue([
-      { ...baseTask, title: "New Task", projectId: 5 },
+      { ...baseTask, title: "New Task", caseId: 5 },
     ]);
 
-    await addProjectTasksAction({ ...baseTask, projectId: 5 });
+    await addProjectTasksAction({ ...baseTask, caseId: 5 });
 
     expect(mockValues).toHaveBeenCalledWith(
-      expect.objectContaining({ projectId: 5 })
+      expect.objectContaining({ caseId: 5 })
     );
   });
 

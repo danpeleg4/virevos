@@ -22,11 +22,11 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("axios");
 
-jest.mock("@/lib/projects", () => ({
+jest.mock("@/lib/cases", () => ({
   addFileMetadata: jest.fn(),
-  addProjectNotes: jest.fn(),
-  deleteProject: jest.fn(),
-  deleteProjectFile: jest.fn(),
+  addCaseNotes: jest.fn(),
+  deleteCase: jest.fn(),
+  deleteCaseFile: jest.fn(),
 }));
 
 jest.mock("@/lib/tasks", () => ({
@@ -41,7 +41,7 @@ jest.mock("@/lib/task_percentage", () => ({
 
 const mockProject = {
   id: 1,
-  name: "Alpha Project",
+  name: "Alpha Case",
   status: "active",
   dueDate: "2026-06-01",
   priority: "high",
@@ -69,27 +69,27 @@ const mockTasks = [
   },
 ];
 
-import ProjectPage from "@/app/workspace/projects/[id]/page";
+import CasePage from "@/app/workspace/cases/[id]/page";
 
 const renderPage = async () => {
   await act(async () => {
     render(
       <Suspense fallback={<div>Loading...</div>}>
-        <ProjectPage params={Promise.resolve({ id: "1" })} />
+        <CasePage params={Promise.resolve({ id: "1" })} />
       </Suspense>
     );
   });
 };
 
-describe("Project Detail Page", () => {
+describe("Case Detail Page", () => {
   beforeEach(() => {
     mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
     mockUseQuery.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
-      if (queryKey[0] === "project")
+      if (queryKey[0] === "case")
         return { data: mockProject, isLoading: false, isError: false };
-      if (queryKey[0] === "projectsTasks")
+      if (queryKey[0] === "caseTasks")
         return { data: mockTasks, isLoading: false, isError: false };
-      if (queryKey[0] === "projectNotes")
+      if (queryKey[0] === "caseNotes")
         return { data: [], isLoading: false, isError: false };
       if (queryKey[0] === "files")
         return { data: [], isLoading: false, isError: false };
@@ -97,9 +97,9 @@ describe("Project Detail Page", () => {
     });
   });
 
-  it("renders project name", async () => {
+  it("renders case name", async () => {
     await renderPage();
-    expect(screen.getByText("Alpha Project")).toBeInTheDocument();
+    expect(screen.getByText("Alpha Case")).toBeInTheDocument();
   });
 
   it("renders task list", async () => {

@@ -1,6 +1,6 @@
 import {
   assertCanAddClient,
-  assertCanAddProject,
+  assertCanAddCase,
   assertCanUseAI,
   assertCanAddFile,
   getUserPlan,
@@ -103,17 +103,17 @@ describe("assertCanAddClient", () => {
   });
 });
 
-// ─── assertCanAddProject ──────────────────────────────────────────────────
+// ─── assertCanAddCase ──────────────────────────────────────────────────
 
-describe("assertCanAddProject", () => {
+describe("assertCanAddCase", () => {
   it("does not throw for professional plan", async () => {
     mockSubscription("professional");
-    await expect(assertCanAddProject("user_1")).resolves.toBeUndefined();
+    await expect(assertCanAddCase("user_1")).resolves.toBeUndefined();
   });
 
   it("does not throw for business plan", async () => {
     mockSubscription("business");
-    await expect(assertCanAddProject("user_1")).resolves.toBeUndefined();
+    await expect(assertCanAddCase("user_1")).resolves.toBeUndefined();
   });
 });
 

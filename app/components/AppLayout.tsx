@@ -34,7 +34,7 @@ import Image from "next/image";
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
   { icon: Users, label: "Clients", path: "/workspace/clients" },
-  { icon: FolderKanban, label: "Projects", path: "/workspace/projects" },
+  { icon: FolderKanban, label: "Cases", path: "/workspace/cases" },
   { icon: CheckSquare, label: "Tasks", path: "/workspace/tasks" },
   { icon: CalendarDays, label: "Calendar", path: "/workspace/calendar" },
   { icon: Inbox, label: "Communications", path: "/workspace/communications" },

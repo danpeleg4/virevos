@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/projects/[id]/notes/route";
+import { GET } from "@/app/api/cases/[id]/tasks/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
@@ -18,7 +18,7 @@ function makeCtx(id: string) {
   };
 }
 
-describe("GET /api/projects/[id]/notes", () => {
+describe("GET /api/cases/[id]/tasks", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -32,32 +32,30 @@ describe("GET /api/projects/[id]/notes", () => {
     expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
-  it("returns 400 for invalid projectId", async () => {
+  it("returns 400 for invalid caseId", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET({} as never, makeCtx("abc"));
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Invalid projectId" });
+    expect(await res.json()).toEqual({ error: "Invalid caseId" });
   });
 
-  it("returns notes", async () => {
+  it("returns tasks", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
 
     const rows = [
-      { id: 2, content: "b" },
-      { id: 1, content: "a" },
+      { id: 1, title: "Task A" },
+      { id: 2, title: "Task B" },
     ];
 
     (db.select as jest.Mock).mockReturnValue({
       from: () => ({
-        where: () => ({
-          orderBy: () => Promise.resolve(rows),
-        }),
+        where: () => Promise.resolve(rows),
       }),
     });
 
-    const res = await GET({} as never, makeCtx("42"));
+    const res = await GET({} as never, makeCtx("10"));
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(rows);

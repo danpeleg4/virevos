@@ -21,15 +21,15 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-jest.mock("@/lib/projects", () => ({
-  changeProjectStatus: jest.fn(),
-  createProject: jest.fn(),
-  updateProject: jest.fn(),
-  deleteProject: jest.fn(),
+jest.mock("@/lib/cases", () => ({
+  changeCaseStatus: jest.fn(),
+  createCase: jest.fn(),
+  updateCase: jest.fn(),
+  deleteCase: jest.fn(),
 }));
 
-const mockProjectsData = {
-  projects: [
+const mockCasesData = {
+  cases: [
     {
       id: 1,
       clientId: null,
@@ -57,26 +57,26 @@ const mockProjectsData = {
   ],
 };
 
-import ProjectsPage from "@/app/workspace/projects/page";
+import CasesPage from "@/app/workspace/cases/page";
 
-describe("Projects Page", () => {
+describe("Cases Page", () => {
   beforeEach(() => {
     mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
     mockUseQuery.mockReturnValue({
-      data: mockProjectsData,
+      data: mockCasesData,
       isLoading: false,
       error: null,
     });
   });
 
-  it("renders project names", () => {
-    render(<ProjectsPage />);
+  it("renders case names", () => {
+    render(<CasesPage />);
     expect(screen.getByText("Website Redesign")).toBeInTheDocument();
     expect(screen.getByText("Mobile App")).toBeInTheDocument();
   });
 
-  it("renders project status indicators", () => {
-    render(<ProjectsPage />);
+  it("renders case status indicators", () => {
+    render(<CasesPage />);
     expect(screen.getAllByText(/active|completed/i).length).toBeGreaterThan(0);
   });
 });

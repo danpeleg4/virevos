@@ -38,14 +38,14 @@ const makeParams = (token: string) => Promise.resolve({ token });
 function makeFormData(
   fileName = "test.pdf",
   fileSizeBytes = 1024,
-  projectId?: number
+  caseId?: number
 ) {
   const file = new File(["x".repeat(fileSizeBytes)], fileName, {
     type: "application/pdf",
   });
   const fd = new FormData();
   fd.append("file", file);
-  if (projectId !== undefined) fd.append("projectId", String(projectId));
+  if (caseId !== undefined) fd.append("caseId", String(caseId));
   return fd;
 }
 
@@ -152,24 +152,24 @@ describe("POST /api/portal/[token]/files/upload", () => {
     });
   });
 
-  describe("project resolution", () => {
-    it("returns 400 when client has no projects and no projectId supplied", async () => {
+  describe("case resolution", () => {
+    it("returns 400 when client has no cases and no caseId supplied", async () => {
       mockSelectChain([mockToken]); // token
       mockSelectChain([{ id: 10 }]); // client
-      mockSelectChain([]); // no projects found
+      mockSelectChain([]); // no cases found
 
       const req = makeRequest("valid-token", makeFormData());
       const res = await POST(req, { params: makeParams("valid-token") });
 
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json.error).toMatch(/no projects/i);
+      expect(json.error).toMatch(/no cases/i);
     });
 
-    it("returns 403 when supplied projectId does not belong to client", async () => {
+    it("returns 403 when supplied caseId does not belong to client", async () => {
       mockSelectChain([mockToken]); // token
       mockSelectChain([{ id: 10 }]); // client
-      mockSelectChain([]); // project ownership check → empty
+      mockSelectChain([]); // case ownership check → empty
 
       const fd = makeFormData("doc.pdf", 512, 999);
       const req = makeRequest("valid-token", fd);
@@ -198,7 +198,7 @@ describe("POST /api/portal/[token]/files/upload", () => {
       const json = await res.json();
       expect(json.id).toBe(mockInsertedFile.id);
       expect(json.name).toBe(mockInsertedFile.name);
-      expect(json.projectId).toBe(mockProject.id);
+      expect(json.caseId).toBe(mockProject.id);
       expect(mockUploadFile).toHaveBeenCalledTimes(1);
       expect(db.insert).toHaveBeenCalledTimes(1);
     });
@@ -212,13 +212,13 @@ describe("POST /api/portal/[token]/files/upload", () => {
       const mockValues = jest.fn(() => ({ returning: mockReturning }));
       (db.insert as jest.Mock).mockReturnValueOnce({ values: mockValues });
 
-      const fd = makeFormData("doc.pdf", 512, mockProject.id);
+      const fd = makeFormData("doc.pdf", 512, mockProject.id); // explicit caseId
       const req = makeRequest("valid-token", fd);
       const res = await POST(req, { params: makeParams("valid-token") });
 
       expect(res.status).toBe(201);
       const json = await res.json();
-      expect(json.projectId).toBe(mockProject.id);
+      expect(json.caseId).toBe(mockProject.id);
     });
   });
 });

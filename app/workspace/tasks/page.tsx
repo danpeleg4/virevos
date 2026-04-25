@@ -124,9 +124,9 @@ export default function Tasks() {
     queryFn: async () => {
       const res = await axios.get(`/api/tasks`);
       if (!Array.isArray(res.data)) return [];
-      return res.data.map((t: { tasks: Task; projectName: string }) => ({
+      return res.data.map((t: { tasks: Task; caseName: string }) => ({
         ...t.tasks,
-        projectName: t.projectName || "No Project",
+        caseName: t.caseName || "No Case",
       }));
     },
   });
@@ -426,8 +426,8 @@ export default function Tasks() {
                       </span>
                     </td>
                     <td className="px-3 py-2.5">
-                      {task.projectName && (
-                        <ProjectPill name={task.projectName} />
+                      {task.caseName && (
+                        <ProjectPill name={task.caseName} />
                       )}
                     </td>
                     <td className="px-3 py-2.5">

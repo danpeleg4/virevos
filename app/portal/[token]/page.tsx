@@ -268,7 +268,7 @@ export default function PortalPage() {
       const formData = new FormData();
       formData.append("file", file);
       if (selectedProjectId) {
-        formData.append("projectId", String(selectedProjectId));
+        formData.append("caseId", String(selectedProjectId));
       }
       const res = await axios.post(
         `/api/portal/${token}/files/upload`,

@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const projects = await db.query.projects.findMany({
+  const allCases = await db.query.cases.findMany({
     where: (fields, { eq }) => eq(fields.userId, user.id),
     with: {
       tasks: true,
@@ -23,7 +23,7 @@ export async function GET() {
     },
   });
 
-  const projectsWithStats = projects.map((p) => {
+  const casesWithStats = allCases.map((p) => {
     const totalTasks = p.tasks.length;
     const completedTasks = p.tasks.filter((t) => t.completed).length;
     const percentage =
@@ -42,5 +42,5 @@ export async function GET() {
     .orderBy(clients.id)
     .where(eq(clients.userId, user.id));
 
-  return NextResponse.json({ projects: projectsWithStats, allClients });
+  return NextResponse.json({ cases: casesWithStats, allClients });
 }

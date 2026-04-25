@@ -114,7 +114,7 @@ describe("AppLayout", () => {
     const navLabels = [
       "Dashboard",
       "Clients",
-      "Projects",
+      "Cases",
       "Tasks",
       "Calendar",
       "Communications",
