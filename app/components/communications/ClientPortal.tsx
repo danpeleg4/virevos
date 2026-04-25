@@ -435,29 +435,6 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                   </p>
                 </div>
               )}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-2xl text-foreground">
-                    {portals.filter((p) => p.enabled).length}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Active Portals
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-2xl text-foreground">{portals.length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Total Portals
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-2xl text-foreground">
-                    {portals.filter((p) => p.lastAccessedAt).length}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">Accessed</p>
-                </div>
-              </div>
             </CardContent>
           )}
         </div>
@@ -506,96 +483,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
               </CardContent>
             </div>
 
-            {/* Chat Features */}
-            <div>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1 py-6">
-                    <Label>Enable Portal Chat</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow clients to send messages directly through the portal
-                    </p>
-                  </div>
-                  <Switch
-                    checked={chatEnabled}
-                    onCheckedChange={setChatEnabled}
-                  />
-                </div>
-
-                {chatEnabled && (
-                  <>
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <Label className="flex items-center">
-                          AI Chat Assistant
-                          <Badge className="ml-2 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            Coming soon
-                          </Badge>
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          AI answers common questions automatically
-                        </p>
-                      </div>
-                      <Switch
-                        disabled={true}
-                        checked={aiChatBot}
-                        onCheckedChange={setAiChatBot}
-                      />
-                    </div>
-
-                    {aiChatBot && (
-                      <div className="bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                        <h4 className="text-sm text-purple-900 dark:text-purple-200 mb-2">
-                          AI Assistant Features:
-                        </h4>
-                        <ul className="space-y-1 text-sm text-purple-800 dark:text-purple-300">
-                          <li className="flex items-start">
-                            <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>
-                              Instant answers to FAQs about projects and
-                              timelines
-                            </span>
-                          </li>
-                          <li className="flex items-start">
-                            <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>
-                              Automatic routing of complex questions to your
-                              team
-                            </span>
-                          </li>
-                          <li className="flex items-start">
-                            <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>24/7 availability for client inquiries</span>
-                          </li>
-                          <li className="flex items-start">
-                            <Sparkles className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>Learns from your past conversations</span>
-                          </li>
-                        </ul>
-                      </div>
-                    )}
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <Label>File Sharing</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Let clients upload and download files
-                        </p>
-                      </div>
-                      <Switch
-                        checked={fileSharing}
-                        onCheckedChange={setFileSharing}
-                      />
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </div>
+            <Separator />
 
             {/* Notification Settings */}
             <div>
@@ -608,12 +496,15 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
                     </p>
                   </div>
                   <Switch
+                    disabled
                     checked={emailNotifications}
                     onCheckedChange={setEmailNotifications}
                   />
                 </div>
               </CardContent>
             </div>
+
+            <Separator />
 
             {/* Meeting Scheduling */}
             <div>
