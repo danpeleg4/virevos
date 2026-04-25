@@ -31,6 +31,7 @@ import {
 } from "@/types/onboard";
 import PaymentStep from "./PaymentStep";
 import { registerFreePlan } from "@/lib/billing";
+import Image from "next/image";
 
 const plans = [
   {
@@ -241,8 +242,8 @@ export default function Onboarding() {
       {/* Left Column: Form Content */}
       <div className="w-full lg:w-1/2 p-6 sm:p-12 lg:p-16 xl:p-24 flex flex-col h-screen overflow-y-auto">
         <div className="flex items-center space-x-3 mb-12 sm:mb-20">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+            <Image src="/virevos.svg" alt="321" width="30" height="30"></Image>
           </div>
           <span className="text-xl font-bold text-gray-900 tracking-tight">
             Virevos

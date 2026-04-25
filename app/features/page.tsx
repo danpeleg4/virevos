@@ -271,21 +271,7 @@ export default function FeaturesPage() {
       <section className="relative bg-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 opacity-70" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]" />
-
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center mb-8"
-          >
-            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm">
-              <Sparkles className="h-4 w-4 text-purple-600" />
-              <span className="text-sm text-gray-700">
-                Built for freelancers & service pros
-              </span>
-            </div>
-          </motion.div>
-
           <div className="text-center max-w-4xl mx-auto">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
