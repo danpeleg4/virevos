@@ -57,7 +57,7 @@ export function BookEventDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="w-[16rem] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-md">
         <DialogHeader>
           <DialogTitle>Schedule an Event</DialogTitle>
           <DialogDescription>

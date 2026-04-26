@@ -52,7 +52,7 @@ export default function Settings() {
 
       <Card className="overflow-hidden">
         {/* Tab nav */}
-        <div className="flex border-b border-border px-4 overflow-x-auto">
+        <div className="flex border-b border-border px-4">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
