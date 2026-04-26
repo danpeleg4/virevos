@@ -445,7 +445,7 @@ export function AIAssistant({
                       <div className="flex gap-2">
                         <button
                           type="button"
-                          className="inline-flex flex-1 items-center bg-green-600  cursor-pointer justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50 "
+                          className="inline-flex flex-1 items-center bg-green-600 hover:bg-green-700 cursor-pointer justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50 "
                           onClick={() => acceptMutation.mutate(booking.id)}
                           disabled={isAccepting || isDenying}
                         >

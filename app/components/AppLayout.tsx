@@ -294,7 +294,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 onClick={() => setAiOpen(!aiOpen)}
                 className="relative"
               >
-                <span className="relative sm:mr-2">
+                <span className="relative">
                   <Sparkles className="h-4 w-4" />
                   {pendingCount > 0 && (
                     <span className="absolute h-4 w-4 right-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
