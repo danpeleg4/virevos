@@ -170,6 +170,91 @@ describe("AIAssistant", () => {
     expect(screen.queryByText(/meeting request/i)).not.toBeInTheDocument();
   });
 
+  const makeBooking = (id: number, clientName: string) => ({
+    id,
+    portalId: 10,
+    clientId: id,
+    userId: "user_1",
+    clientName,
+    clientEmail: `${clientName.toLowerCase().replace(/\s+/g, "")}@example.com`,
+    dateTime: "2030-06-01T10:00:00.000Z",
+    duration: 30,
+    status: "pending" as const,
+    notes: null,
+    meetingLink: null,
+    eventId: null,
+    createdAt: null,
+    clientDisplayName: clientName,
+  });
+
+  it("shows all bookings inline and disables the toggle when count <= 2", () => {
+    const pending = [makeBooking(1, "Alice Corp"), makeBooking(2, "Bob Inc")];
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
+    );
+    expect(screen.getByText(/alice corp/i)).toBeInTheDocument();
+    expect(screen.getByText(/bob inc/i)).toBeInTheDocument();
+    const toggle = screen.getByRole("button", {
+      name: /2 meeting requests/i,
+    });
+    expect(toggle).toBeDisabled();
+  });
+
+  it("collapses booking list by default when count > 2", () => {
+    const pending = [
+      makeBooking(1, "Alice Corp"),
+      makeBooking(2, "Bob Inc"),
+      makeBooking(3, "Carol LLC"),
+    ];
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
+    );
+    const toggle = screen.getByRole("button", {
+      name: /3 meeting requests/i,
+    });
+    expect(toggle).toBeEnabled();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(/alice corp/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/carol llc/i)).not.toBeInTheDocument();
+  });
+
+  const getToggle = () =>
+    screen.getByRole("button", { name: /meeting request/i });
+
+  it("expands the booking list when the toggle is clicked", async () => {
+    const pending = [
+      makeBooking(1, "Alice Corp"),
+      makeBooking(2, "Bob Inc"),
+      makeBooking(3, "Carol LLC"),
+    ];
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
+    );
+    fireEvent.click(getToggle());
+    await screen.findByText(/alice corp/i);
+    expect(getToggle()).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(/bob inc/i)).toBeInTheDocument();
+    expect(screen.getByText(/carol llc/i)).toBeInTheDocument();
+  });
+
+  it("collapses the booking list again on a second click", async () => {
+    const pending = [
+      makeBooking(1, "Alice Corp"),
+      makeBooking(2, "Bob Inc"),
+      makeBooking(3, "Carol LLC"),
+    ];
+    render(
+      <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
+    );
+    fireEvent.click(getToggle());
+    await screen.findByText(/alice corp/i);
+    fireEvent.click(getToggle());
+    await waitFor(() =>
+      expect(screen.queryByText(/alice corp/i)).not.toBeInTheDocument()
+    );
+    expect(getToggle()).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("shows error message when fetch fails", async () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(
       new Error("Network error")
