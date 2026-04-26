@@ -40,7 +40,7 @@ const plans = [
     price: 0,
     period: "month",
     description: "Perfect for individuals getting started",
-    features: ["Up to 5 projects", "50 AI credits per month", "1GB storage"],
+    features: ["Up to 5 cases", "50 AI credits per month", "1GB storage"],
     highlighted: false,
   },
   /*{
