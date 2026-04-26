@@ -47,14 +47,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!subscriptionId) continue;
 
     // Look up user by subscription ID and validate clientState
-    const rows = await db
+    const calendarRows = await db
       .select()
       .from(outlookSyncState)
       .where(eq(outlookSyncState.calendarSubscriptionId, subscriptionId))
       .limit(1);
 
-    const emailRows = rows.length
-      ? rows
+    const emailRows = calendarRows.length
+      ? calendarRows
       : await db
           .select()
           .from(outlookSyncState)
