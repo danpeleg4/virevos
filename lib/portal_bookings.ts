@@ -100,7 +100,7 @@ export async function acceptBookingWithCalendar(
     if (calEvent?.id) {
       await db
         .update(portalMeetingBookings)
-        .set({ eventId: calEvent.id })
+        .set({ eventId: calEvent.id, meetingLink: calEvent.link ?? null })
         .where(eq(portalMeetingBookings.id, bookingId));
     }
   } catch (err) {

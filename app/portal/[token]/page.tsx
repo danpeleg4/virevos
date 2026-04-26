@@ -40,6 +40,7 @@ import {
   Calendar as CalendarIcon,
   FileUp,
   Upload,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { PortalData, TimeSlot } from "@/types/portal";
@@ -651,6 +652,17 @@ export default function PortalPage() {
                             · {b.duration} min ·{" "}
                             <span className="capitalize">{b.status}</span>
                           </p>
+                          {b.status === "confirmed" && b.meetingLink && (
+                            <a
+                              href={b.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              <Video className="h-3.5 w-3.5" />
+                              Join meeting
+                            </a>
+                          )}
                         </div>
                       ))}
                     </CardContent>

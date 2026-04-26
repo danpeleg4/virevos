@@ -102,6 +102,7 @@ export async function GET(
         dateTime: portalMeetingBookings.dateTime,
         duration: portalMeetingBookings.duration,
         status: portalMeetingBookings.status,
+        meetingLink: portalMeetingBookings.meetingLink,
       })
       .from(portalMeetingBookings)
       .where(
@@ -149,6 +150,7 @@ export async function GET(
         dateTime: b.dateTime.toISOString(),
         duration: b.duration,
         status: b.status,
+        meetingLink: b.meetingLink,
       })),
     });
   } catch (err) {
