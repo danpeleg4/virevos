@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 
 jest.mock("next/navigation", () => ({
   useParams: () => ({ token: "test-token-abc" }),
@@ -61,9 +61,41 @@ jest.mock("axios", () => ({
   isAxiosError: jest.fn(() => false),
 }));
 
+import axios from "axios";
 import PortalPage from "@/app/portal/[token]/page";
 
+const mockedAxiosGet = axios.get as jest.Mock;
+
+const buildPortalData = (
+  overrides: Partial<{
+    cases: unknown[];
+    messages: unknown[];
+    files: unknown[];
+    bookings: unknown[];
+    settings: Record<string, unknown>;
+  }> = {}
+) => ({
+  data: {
+    client: {
+      id: 1,
+      name: "Portal Client",
+      email: "client@example.com",
+      industry: null,
+    },
+    settings: { title: "Portal", ...(overrides.settings ?? {}) },
+    cases: overrides.cases ?? [],
+    messages: overrides.messages ?? [],
+    files: overrides.files ?? [],
+    bookings: overrides.bookings ?? [],
+  },
+});
+
 describe("Portal Page", () => {
+  beforeEach(() => {
+    mockedAxiosGet.mockReset();
+    mockedAxiosGet.mockResolvedValue(buildPortalData());
+  });
+
   it("renders without crashing", () => {
     const { container } = render(<PortalPage />);
     expect(container).toBeInTheDocument();
@@ -71,8 +103,165 @@ describe("Portal Page", () => {
 
   it("renders loading state initially", () => {
     render(<PortalPage />);
-    // Initially shows some loading indicator or structure
-    const container = document.querySelector("div");
-    expect(container).toBeInTheDocument();
+    expect(screen.getByText(/loading your portal/i)).toBeInTheDocument();
+  });
+
+  const findTabBar = async () =>
+    (await screen.findByTestId("portal-tab-bar")) as HTMLElement;
+
+  it("renders the workspace-style tab pill buttons after data loads", async () => {
+    render(<PortalPage />);
+    const tabBar = await findTabBar();
+    expect(
+      within(tabBar).getByRole("button", { name: /^overview$/i })
+    ).toBeInTheDocument();
+    expect(
+      within(tabBar).getByRole("button", { name: /^cases$/i })
+    ).toBeInTheDocument();
+    expect(
+      within(tabBar).getByRole("button", { name: /^messages$/i })
+    ).toBeInTheDocument();
+    expect(
+      within(tabBar).getByRole("button", { name: /^files$/i })
+    ).toBeInTheDocument();
+  });
+
+  it("hides the schedule tab when meeting scheduling is disabled", async () => {
+    render(<PortalPage />);
+    const tabBar = await findTabBar();
+    expect(
+      within(tabBar).queryByRole("button", { name: /schedule meeting/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the schedule tab when meeting scheduling is enabled", async () => {
+    mockedAxiosGet.mockResolvedValueOnce(
+      buildPortalData({
+        settings: {
+          meetingSchedulingEnabled: true,
+          availability: { meetingDurations: [30] },
+        },
+      })
+    );
+    render(<PortalPage />);
+    const tabBar = await findTabBar();
+    expect(
+      within(tabBar).getByRole("button", { name: /schedule meeting/i })
+    ).toBeInTheDocument();
+  });
+
+  it("shows count badges on cases, messages and files tabs", async () => {
+    mockedAxiosGet.mockResolvedValueOnce(
+      buildPortalData({
+        cases: [
+          {
+            id: 1,
+            name: "Case A",
+            status: "in-progress",
+            dueDate: "2030-01-01",
+            priority: "high",
+            description: null,
+          },
+          {
+            id: 2,
+            name: "Case B",
+            status: "in-progress",
+            dueDate: "2030-01-02",
+            priority: "low",
+            description: null,
+          },
+        ],
+        messages: [
+          {
+            id: 1,
+            subject: null,
+            preview: "Hi",
+            from: "Lawyer",
+            isSent: true,
+            sentAt: "2030-01-01T00:00:00Z",
+            isRead: false,
+          },
+          {
+            id: 2,
+            subject: null,
+            preview: "Hello",
+            from: "Lawyer",
+            isSent: true,
+            sentAt: "2030-01-02T00:00:00Z",
+            isRead: false,
+          },
+          {
+            id: 3,
+            subject: null,
+            preview: "Read",
+            from: "Lawyer",
+            isSent: true,
+            sentAt: "2030-01-03T00:00:00Z",
+            isRead: true,
+          },
+        ],
+        files: [
+          {
+            id: 1,
+            name: "doc.pdf",
+            size: 1024,
+            mimeType: "application/pdf",
+            path: "/p",
+            createdAt: null,
+          },
+        ],
+      })
+    );
+    render(<PortalPage />);
+    const tabBar = await findTabBar();
+    expect(
+      within(tabBar).getByRole("button", { name: /^cases\s*2$/i })
+    ).toBeInTheDocument();
+    expect(
+      within(tabBar).getByRole("button", { name: /^messages\s*2$/i })
+    ).toBeInTheDocument();
+    expect(
+      within(tabBar).getByRole("button", { name: /^files\s*1$/i })
+    ).toBeInTheDocument();
+  });
+
+  it("switches the active tab when a tab pill is clicked", async () => {
+    mockedAxiosGet.mockResolvedValueOnce(
+      buildPortalData({
+        cases: [
+          {
+            id: 1,
+            name: "Acme Lawsuit",
+            status: "in-progress",
+            dueDate: "2030-01-01",
+            priority: "high",
+            description: "Trademark dispute",
+          },
+        ],
+      })
+    );
+    render(<PortalPage />);
+    const tabBar = await findTabBar();
+
+    // Overview tab default: shows "Active Cases" toolbar header
+    expect(screen.getByText(/active cases/i)).toBeInTheDocument();
+    expect(screen.queryByText(/all cases/i)).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(tabBar).getByRole("button", { name: /^cases\s*1$/i })
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText(/all cases/i)).toBeInTheDocument()
+    );
+    expect(screen.queryByText(/active cases/i)).not.toBeInTheDocument();
+  });
+
+  it("renders the not-found state when portal data fails to load", async () => {
+    mockedAxiosGet.mockRejectedValueOnce(new Error("network"));
+    render(<PortalPage />);
+    expect(
+      await screen.findByText(/portal not found/i)
+    ).toBeInTheDocument();
   });
 });

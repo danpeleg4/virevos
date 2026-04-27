@@ -131,11 +131,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           >
             <span className="relative mr-2">
               <Sparkles className="h-4 w-4" />
-              {pendingCount > 0 && (
-                <span className="absolute -top-1.5 -left-1.5 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
-                  {pendingCount > 9 ? "9+" : pendingCount}
-                </span>
-              )}
             </span>
             AI Assistant
             {pendingCount > 0 ? (
@@ -241,11 +236,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                 >
                   <span className="relative mr-2">
                     <Sparkles className="h-4 w-4" />
-                    {pendingCount > 0 && (
-                      <span className="absolute -top-1.5 -left-1.5 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
-                        {pendingCount > 9 ? "9+" : pendingCount}
-                      </span>
-                    )}
                   </span>
                   AI Assistant
                   {pendingCount > 0 ? (
@@ -304,15 +294,16 @@ export function AppLayout({ children }: AppLayoutProps) {
                 onClick={() => setAiOpen(!aiOpen)}
                 className="relative"
               >
-                <span className="relative sm:mr-2">
+                <span className="relative">
                   <Sparkles className="h-4 w-4" />
                   {pendingCount > 0 && (
-                    <span className="absolute -top-2 -left-2 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                      {pendingCount > 9 ? "9+" : pendingCount}
+                    <span className="absolute h-4 w-4 right-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                      <Badge className="bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800">
+                        {pendingCount}
+                      </Badge>
                     </span>
                   )}
                 </span>
-                <span className="hidden sm:inline">AI Assistant</span>
               </Button>
             </div>
           </div>

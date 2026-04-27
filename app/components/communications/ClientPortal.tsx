@@ -46,7 +46,10 @@ import type {
   PortalMeetingBooking,
 } from "@/types/portal";
 import type { ClientSummary } from "@/types/clients";
-import { updateBookingStatus } from "@/lib/portal_bookings";
+import {
+  acceptBookingWithCalendar,
+  updateBookingStatus,
+} from "@/lib/portal_bookings";
 
 interface ClientPortalProps {
   navContainer: HTMLDivElement | null;
@@ -254,11 +257,10 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
     bookingsData?.filter((b) => b.portalId === currentPortalId) ?? [];
 
   const confirmBooking = useMutation({
-    mutationFn: (bookingId: number) =>
-      updateBookingStatus(bookingId, "confirmed"),
+    mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success("Booking confirmed");
+      toast.success("Booking confirmed and added to calendar");
     },
     onError: () => toast.error("Failed to confirm booking"),
   });

@@ -292,10 +292,61 @@ export async function updateEventDateTime(id: string, newDateTime: Date) {
   const user = await currentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
+  const [eventRow] = await db
+    .select()
+    .from(events)
+    .where(and(eq(events.id, id), eq(events.userId, user.id)))
+    .limit(1);
+
+  if (!eventRow) throw new Error("Event not found");
+
   await db
     .update(events)
     .set({ dateTime: newDateTime })
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
+
+  const newEnd = new Date(newDateTime.getTime() + eventRow.duration * 60000);
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const googleToken = await getFreshGoogleAccessToken(user.id);
+  if (googleToken && eventRow.googleEventId) {
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({ access_token: googleToken });
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    try {
+      await calendar.events.patch({
+        calendarId: "primary",
+        eventId: eventRow.googleEventId,
+        requestBody: {
+          start: { dateTime: newDateTime.toISOString(), timeZone: tz },
+          end: { dateTime: newEnd.toISOString(), timeZone: tz },
+        },
+      });
+    } catch (error) {
+      console.error("Google Calendar reschedule error:", error);
+    }
+  }
+
+  const outlookToken = await getFreshOutlookAccessToken(user.id);
+  if (outlookToken && eventRow.outlookEventId) {
+    try {
+      await axios.patch(
+        `${GRAPH_BASE}/me/events/${eventRow.outlookEventId}`,
+        {
+          start: { dateTime: newDateTime.toISOString(), timeZone: tz },
+          end: { dateTime: newEnd.toISOString(), timeZone: tz },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${outlookToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Outlook Calendar reschedule error:", error);
+    }
+  }
 
   return { success: true };
 }

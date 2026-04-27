@@ -2,6 +2,7 @@ import {
   addMeetingToCalendar,
   deleteEventFromCalendar,
   updateEvent,
+  updateEventDateTime,
 } from "@/lib/calendar";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
@@ -49,6 +50,32 @@ jest.mock("@/lib/google_access", () => ({
   getFreshGoogleAccessToken: (...args: never[]) =>
     // eslint-disable-next-line prefer-spread
     mockGetFreshGoogleAccessToken.apply(null, args),
+}));
+
+const mockGetFreshOutlookAccessToken = jest.fn();
+jest.mock("@/lib/outlook_access", () => ({
+  getFreshOutlookAccessToken: (...args: never[]) =>
+    // eslint-disable-next-line prefer-spread
+    mockGetFreshOutlookAccessToken.apply(null, args),
+  getOutlookAuthUrl: jest.fn(),
+}));
+
+const mockAxiosPatch = jest.fn();
+const mockAxiosPost = jest.fn();
+const mockAxiosDelete = jest.fn();
+jest.mock("axios", () => ({
+  __esModule: true,
+  default: {
+    patch: (...args: never[]) =>
+      // eslint-disable-next-line prefer-spread
+      mockAxiosPatch.apply(null, args),
+    post: (...args: never[]) =>
+      // eslint-disable-next-line prefer-spread
+      mockAxiosPost.apply(null, args),
+    delete: (...args: never[]) =>
+      // eslint-disable-next-line prefer-spread
+      mockAxiosDelete.apply(null, args),
+  },
 }));
 
 const mockSelectLimit = jest.fn();
@@ -101,10 +128,14 @@ beforeEach(() => {
   mockValues.mockReturnValue({ returning: mockReturning });
   mockReturning.mockResolvedValue([]);
   mockGetFreshGoogleAccessToken.mockResolvedValue(null);
+  mockGetFreshOutlookAccessToken.mockResolvedValue(null);
   mockEventsInsert.mockResolvedValue({ data: { id: "google-event-id" } });
   mockEventsDelete.mockResolvedValue({});
   mockUpdateWhere.mockResolvedValue(undefined);
   mockUpdateSet.mockReturnValue({ where: mockUpdateWhere });
+  mockAxiosPatch.mockResolvedValue({ data: {} });
+  mockAxiosPost.mockResolvedValue({ data: {} });
+  mockAxiosDelete.mockResolvedValue({ data: {} });
 });
 
 afterEach(() => {
@@ -299,5 +330,195 @@ describe("updateEvent", () => {
     await updateEvent({ id: "event-1", title: "New Title" });
 
     expect(mockEventsPatch).not.toHaveBeenCalled();
+  });
+});
+
+// ─── updateEventDateTime ──────────────────────────────────────────────────
+
+describe("updateEventDateTime", () => {
+  const newDateTime = new Date("2026-06-01T15:00:00Z");
+
+  it("throws when unauthenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+    await expect(updateEventDateTime("event-1", newDateTime)).rejects.toThrow(
+      "Unauthorized"
+    );
+  });
+
+  it("throws when the event does not exist", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([]);
+    await expect(updateEventDateTime("event-1", newDateTime)).rejects.toThrow(
+      "Event not found"
+    );
+  });
+
+  it("updates the local DB row with the new dateTime", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      { id: "event-1", duration: 60, googleEventId: null, outlookEventId: null },
+    ]);
+
+    await updateEventDateTime("event-1", newDateTime);
+
+    expect(mockUpdateSet).toHaveBeenCalledWith({ dateTime: newDateTime });
+    expect(mockUpdateWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it("patches Google with start AND end (preserving duration) when token + googleEventId exist", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      {
+        id: "event-1",
+        duration: 45,
+        googleEventId: "gcal-id",
+        outlookEventId: null,
+      },
+    ]);
+    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
+
+    await updateEventDateTime("event-1", newDateTime);
+
+    const expectedEnd = new Date(newDateTime.getTime() + 45 * 60_000);
+    expect(mockEventsPatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarId: "primary",
+        eventId: "gcal-id",
+        requestBody: expect.objectContaining({
+          start: expect.objectContaining({
+            dateTime: newDateTime.toISOString(),
+          }),
+          end: expect.objectContaining({
+            dateTime: expectedEnd.toISOString(),
+          }),
+        }),
+      })
+    );
+  });
+
+  it("skips Google patch when no Google token", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      {
+        id: "event-1",
+        duration: 60,
+        googleEventId: "gcal-id",
+        outlookEventId: null,
+      },
+    ]);
+
+    await updateEventDateTime("event-1", newDateTime);
+
+    expect(mockEventsPatch).not.toHaveBeenCalled();
+  });
+
+  it("skips Google patch when there is no googleEventId on the row", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      { id: "event-1", duration: 60, googleEventId: null, outlookEventId: null },
+    ]);
+    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
+
+    await updateEventDateTime("event-1", newDateTime);
+
+    expect(mockEventsPatch).not.toHaveBeenCalled();
+  });
+
+  it("patches Outlook with start AND end (preserving duration) when token + outlookEventId exist", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      {
+        id: "event-1",
+        duration: 30,
+        googleEventId: null,
+        outlookEventId: "outlook-id",
+      },
+    ]);
+    mockGetFreshOutlookAccessToken.mockResolvedValueOnce("outlook-token");
+
+    await updateEventDateTime("event-1", newDateTime);
+
+    const expectedEnd = new Date(newDateTime.getTime() + 30 * 60_000);
+    expect(mockAxiosPatch).toHaveBeenCalledWith(
+      expect.stringContaining("/me/events/outlook-id"),
+      expect.objectContaining({
+        start: expect.objectContaining({
+          dateTime: newDateTime.toISOString(),
+        }),
+        end: expect.objectContaining({
+          dateTime: expectedEnd.toISOString(),
+        }),
+      }),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer outlook-token",
+        }),
+      })
+    );
+  });
+
+  it("skips Outlook patch when no Outlook token", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      {
+        id: "event-1",
+        duration: 60,
+        googleEventId: null,
+        outlookEventId: "outlook-id",
+      },
+    ]);
+
+    await updateEventDateTime("event-1", newDateTime);
+
+    expect(mockAxiosPatch).not.toHaveBeenCalled();
+  });
+
+  it("skips Outlook patch when row has no outlookEventId", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      { id: "event-1", duration: 60, googleEventId: null, outlookEventId: null },
+    ]);
+    mockGetFreshOutlookAccessToken.mockResolvedValueOnce("outlook-token");
+
+    await updateEventDateTime("event-1", newDateTime);
+
+    expect(mockAxiosPatch).not.toHaveBeenCalled();
+  });
+
+  it("still returns success and persists the local DB change when Outlook patch fails", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      {
+        id: "event-1",
+        duration: 60,
+        googleEventId: null,
+        outlookEventId: "outlook-id",
+      },
+    ]);
+    mockGetFreshOutlookAccessToken.mockResolvedValueOnce("outlook-token");
+    mockAxiosPatch.mockRejectedValueOnce(new Error("Outlook 500"));
+
+    const result = await updateEventDateTime("event-1", newDateTime);
+
+    expect(mockUpdateSet).toHaveBeenCalledWith({ dateTime: newDateTime });
+    expect(result).toEqual({ success: true });
+  });
+
+  it("still returns success when Google patch fails", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectLimit.mockResolvedValueOnce([
+      {
+        id: "event-1",
+        duration: 60,
+        googleEventId: "gcal-id",
+        outlookEventId: null,
+      },
+    ]);
+    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
+    mockEventsPatch.mockRejectedValueOnce(new Error("Google 500"));
+
+    const result = await updateEventDateTime("event-1", newDateTime);
+
+    expect(result).toEqual({ success: true });
   });
 });

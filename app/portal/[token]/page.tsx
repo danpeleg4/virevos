@@ -2,25 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
+import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../components/ui/tabs";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { Textarea } from "../../components/ui/textarea";
 import { Calendar } from "../../components/ui/calendar";
-import { Badge } from "../../components/ui/badge";
 import {
   CalendarDays,
   FileText,
@@ -40,6 +28,7 @@ import {
   Calendar as CalendarIcon,
   FileUp,
   Upload,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { PortalData, TimeSlot } from "@/types/portal";
@@ -387,40 +376,66 @@ export default function PortalPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="overflow-x-auto pb-1">
-            <TabsList className="min-w-max">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="cases">Cases</TabsTrigger>
-              <TabsTrigger value="messages">
-                Messages
-                {unreadCount > 0 && (
-                  <Badge className="ml-2 h-4 px-1.5 text-[10px] bg-blue-500 text-white border-0">
-                    {unreadCount}
-                  </Badge>
+        <div>
+          <div
+            data-testid="portal-tab-bar"
+            className="flex items-center gap-1 p-2 rounded-lg border border-border bg-muted/50 overflow-x-auto"
+          >
+            {(
+              [
+                { value: "overview", label: "Overview" },
+                { value: "cases", label: "Cases", count: data.cases.length },
+                {
+                  value: "messages",
+                  label: "Messages",
+                  count: unreadCount,
+                },
+                { value: "files", label: "Files", count: localFiles.length },
+                ...(schedulingEnabled
+                  ? [{ value: "schedule", label: "Schedule Meeting" }]
+                  : []),
+              ] as { value: string; label: string; count?: number }[]
+            ).map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+                  activeTab === tab.value
+                    ? "bg-card border border-border text-foreground shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span
+                    className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                      activeTab === tab.value
+                        ? "bg-muted text-muted-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="files">Files</TabsTrigger>
-              {schedulingEnabled && (
-                <TabsTrigger value="schedule">Schedule Meeting</TabsTrigger>
-              )}
-            </TabsList>
+              </button>
+            ))}
           </div>
 
           {/* ── Overview ── */}
-          <TabsContent value="overview" className="space-y-6 mt-6">
+          {activeTab === "overview" && (
+          <div className="space-y-6 mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Cases table */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-base">
-                      <FolderKanban className="h-4 w-4 mr-2 text-blue-600" />
+                <Card className="overflow-hidden p-0">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                    <FolderKanban className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-foreground">
                       Active Cases
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
+                    </span>
+                  </div>
+                  <div>
                     {data.cases.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
                         <FolderKanban className="h-8 w-8 text-muted-foreground" />
@@ -431,27 +446,30 @@ export default function PortalPage() {
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
-                          <thead className="border-b border-border">
+                          <thead className="border-b border-border bg-muted/50">
                             <tr>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                  <FolderKanban className="h-3.5 w-3.5" />
                                   Case
-                                </span>
+                                </div>
                               </th>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                                   Status
-                                </span>
+                                </div>
                               </th>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                  <Flag className="h-3.5 w-3.5" />
                                   Priority
-                                </span>
+                                </div>
                               </th>
                               <th className="text-left px-4 py-2.5">
-                                <span className="text-xs text-muted-foreground font-medium">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                  <CalendarIcon className="h-3.5 w-3.5" />
                                   Due
-                                </span>
+                                </div>
                               </th>
                             </tr>
                           </thead>
@@ -502,18 +520,18 @@ export default function PortalPage() {
                         </Button>
                       </div>
                     )}
-                  </CardContent>
+                  </div>
                 </Card>
 
                 {/* Recent Messages */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-base">
-                      <MessageSquare className="h-4 w-4 mr-2 text-purple-600" />
+                <Card className="overflow-hidden p-0">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                    <MessageSquare className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm font-medium text-foreground">
                       Recent Messages
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
+                    </span>
+                  </div>
+                  <div className="space-y-2 p-4">
                     {localMessages.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-8 text-center">
                         <MessageSquare className="h-8 w-8 text-muted-foreground" />
@@ -558,18 +576,20 @@ export default function PortalPage() {
                     >
                       View all messages
                     </Button>
-                  </CardContent>
+                  </div>
                 </Card>
               </div>
 
               {/* Right sidebar */}
               <div className="space-y-6">
                 {/* Quick Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
+                <Card className="overflow-hidden p-0">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                    <span className="text-sm font-medium text-foreground">
+                      Quick Actions
+                    </span>
+                  </div>
+                  <div className="space-y-2 p-4">
                     {(data.settings?.chatEnabled ?? true) && (
                       <Button
                         variant="outline"
@@ -612,19 +632,19 @@ export default function PortalPage() {
                         Schedule Meeting
                       </Button>
                     )}
-                  </CardContent>
+                  </div>
                 </Card>
 
                 {/* Upcoming Meetings */}
                 {schedulingEnabled && upcomingBookings.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4 text-green-600" />
+                  <Card className="overflow-hidden p-0">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                      <CalendarDays className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-foreground">
                         Upcoming Meetings
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
+                      </span>
+                    </div>
+                    <div className="space-y-2 p-4">
                       {upcomingBookings.slice(0, 3).map((b) => (
                         <div
                           key={b.id}
@@ -651,25 +671,38 @@ export default function PortalPage() {
                             · {b.duration} min ·{" "}
                             <span className="capitalize">{b.status}</span>
                           </p>
+                          {b.status === "confirmed" && b.meetingLink && (
+                            <a
+                              href={b.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              <Video className="h-3.5 w-3.5" />
+                              Join meeting
+                            </a>
+                          )}
                         </div>
                       ))}
-                    </CardContent>
+                    </div>
                   </Card>
                 )}
               </div>
             </div>
-          </TabsContent>
+          </div>
+          )}
 
           {/* ── Cases ── */}
-          <TabsContent value="cases" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-base">
-                  <FolderKanban className="h-4 w-4 mr-2 text-blue-600" />
+          {activeTab === "cases" && (
+          <div className="mt-6">
+            <Card className="overflow-hidden p-0">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                <FolderKanban className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-foreground">
                   All Cases
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
+                </span>
+              </div>
+              <div>
                 {data.cases.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
                     <FolderKanban className="h-10 w-10 text-muted-foreground" />
@@ -747,20 +780,22 @@ export default function PortalPage() {
                     </table>
                   </div>
                 )}
-              </CardContent>
+              </div>
             </Card>
-          </TabsContent>
+          </div>
+          )}
 
           {/* ── Messages ── */}
-          <TabsContent value="messages" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-base">
-                  <MessageSquare className="h-4 w-4 mr-2 text-purple-600" />
+          {activeTab === "messages" && (
+          <div className="mt-6">
+            <Card className="overflow-hidden p-0">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                <MessageSquare className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium text-foreground">
                   Messages
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                </span>
+              </div>
+              <div className="space-y-4 p-4">
                 <div className="space-y-2 max-h-[480px] overflow-y-auto">
                   {localMessages.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 py-12 text-center">
@@ -836,20 +871,22 @@ export default function PortalPage() {
                     </div>
                   </div>
                 )}
-              </CardContent>
+              </div>
             </Card>
-          </TabsContent>
+          </div>
+          )}
 
           {/* ── Files ── */}
-          <TabsContent value="files" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-base">
-                  <Paperclip className="h-4 w-4 mr-2 text-orange-600" />
+          {activeTab === "files" && (
+          <div className="mt-6">
+            <Card className="overflow-hidden p-0">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                <Paperclip className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium text-foreground">
                   Files
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                </span>
+              </div>
+              <div className="space-y-4 p-4">
                 {/* Upload zone — only shown when fileSharing is not disabled */}
                 {(data.settings?.fileSharing ?? true) && (
                   <>
@@ -994,13 +1031,14 @@ export default function PortalPage() {
                     ))}
                   </div>
                 )}
-              </CardContent>
+              </div>
             </Card>
-          </TabsContent>
+          </div>
+          )}
 
           {/* ── Schedule Meeting ── */}
-          {schedulingEnabled && (
-            <TabsContent value="schedule" className="mt-6">
+          {schedulingEnabled && activeTab === "schedule" && (
+            <div className="mt-6">
               {bookingStep === "calendar" && (
                 <div className="space-y-6">
                   <div>
@@ -1015,11 +1053,14 @@ export default function PortalPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left: Calendar + Duration */}
                     <div className="lg:col-span-1 space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-sm">Select Date</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                      <Card className="overflow-hidden p-0">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                          <CalendarIcon className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-foreground">
+                            Select Date
+                          </span>
+                        </div>
+                        <div className="space-y-4 p-4">
                           <Calendar
                             mode="single"
                             selected={selectedDate}
@@ -1048,15 +1089,16 @@ export default function PortalPage() {
                               ))}
                             </div>
                           </div>
-                        </CardContent>
+                        </div>
                       </Card>
                     </div>
 
                     {/* Right: Time Slots */}
                     <div className="lg:col-span-2">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-sm">
+                      <Card className="overflow-hidden p-0">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                          <Clock className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium text-foreground">
                             {selectedDate
                               ? `Available Times — ${selectedDate.toLocaleDateString(
                                   undefined,
@@ -1067,9 +1109,9 @@ export default function PortalPage() {
                                   }
                                 )}`
                               : "Available Times"}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
+                          </span>
+                        </div>
+                        <div className="p-4">
                           {!selectedDate ? (
                             <div className="flex flex-col items-center justify-center py-16 text-center">
                               <CalendarDays className="h-10 w-10 text-muted-foreground mb-3" />
@@ -1123,7 +1165,7 @@ export default function PortalPage() {
                               ))}
                             </div>
                           )}
-                        </CardContent>
+                        </div>
                       </Card>
                     </div>
                   </div>
@@ -1143,12 +1185,15 @@ export default function PortalPage() {
                     Back to calendar
                   </button>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">
-                        Confirm Your Meeting
-                      </CardTitle>
-                      <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border">
+                  <Card className="overflow-hidden p-0">
+                    <div className="flex flex-col gap-3 px-4 py-3 border-b border-border bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-foreground">
+                          Confirm Your Meeting
+                        </span>
+                      </div>
+                      <div className="p-3 bg-card rounded-lg border border-border">
                         <p className="text-sm font-medium text-foreground">
                           {new Date(selectedSlot).toLocaleDateString(
                             undefined,
@@ -1171,8 +1216,8 @@ export default function PortalPage() {
                           · {selectedDuration} minutes
                         </p>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                    </div>
+                    <div className="space-y-4 p-4">
                       <div className="space-y-1.5">
                         <Label htmlFor="booking-name">Your Name</Label>
                         <Input
@@ -1239,15 +1284,15 @@ export default function PortalPage() {
                         )}
                         Book Meeting
                       </Button>
-                    </CardContent>
+                    </div>
                   </Card>
                 </div>
               )}
 
               {bookingStep === "confirmed" && (
                 <div className="max-w-md mx-auto text-center">
-                  <Card>
-                    <CardContent className="py-14 space-y-5">
+                  <Card className="p-0">
+                    <div className="py-14 space-y-5">
                       <div className="p-5 rounded-full bg-green-100 dark:bg-green-950/50 w-fit mx-auto">
                         <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
                       </div>
@@ -1291,13 +1336,13 @@ export default function PortalPage() {
                         <CalendarDays className="h-4 w-4" />
                         Book Another Meeting
                       </Button>
-                    </CardContent>
+                    </div>
                   </Card>
                 </div>
               )}
-            </TabsContent>
+            </div>
           )}
-        </Tabs>
+        </div>
       </div>
     </div>
   );

@@ -92,6 +92,16 @@ async function fetchAllPages<T>(
   return { items, deltaLink };
 }
 
+export function parseGraphDateTime(dt: {
+  dateTime: string;
+  timeZone: string;
+}): Date {
+  // Graph returns dateTime without a timezone designator and defaults to UTC
+  // (we don't send Prefer: outlook.timezone). Append "Z" so JS parses as UTC,
+  // not local time.
+  return new Date(`${dt.dateTime}Z`);
+}
+
 async function applyOutlookEventsToDb(
   graphEvents: GraphEvent[],
   userId: string,
@@ -129,8 +139,8 @@ async function applyOutlookEventsToDb(
 
     if (!e.start) continue;
 
-    const start = new Date(e.start.dateTime);
-    const end = e.end ? new Date(e.end.dateTime) : start;
+    const start = parseGraphDateTime(e.start);
+    const end = e.end ? parseGraphDateTime(e.end) : start;
     const durationMinutes = Math.max(
       1,
       Math.round((end.getTime() - start.getTime()) / 60000)

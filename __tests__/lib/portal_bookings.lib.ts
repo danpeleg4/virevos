@@ -1,4 +1,8 @@
-import { getPortalBookings, updateBookingStatus } from "@/lib/portal_bookings";
+import {
+  acceptBookingWithCalendar,
+  getPortalBookings,
+  updateBookingStatus,
+} from "@/lib/portal_bookings";
 import { currentUser } from "@clerk/nextjs/server";
 
 jest.mock("@clerk/nextjs/server", () => ({
@@ -13,6 +17,13 @@ jest.mock("@db/db", () => ({
     select: jest.fn(),
     update: jest.fn(() => ({ set: mockSet })),
   },
+}));
+
+const mockAddMeetingToCalendar = jest.fn();
+jest.mock("@/lib/calendar", () => ({
+  addMeetingToCalendar: (...args: never[]) =>
+    // eslint-disable-next-line prefer-spread
+    mockAddMeetingToCalendar.apply(null, args),
 }));
 
 import { db } from "@db/db";
@@ -110,5 +121,91 @@ describe("updateBookingStatus", () => {
 
     expect(db.update).toHaveBeenCalledTimes(1);
     expect(mockSet).toHaveBeenCalledWith({ status: "cancelled" });
+  });
+});
+
+// ─── acceptBookingWithCalendar ───────────────────────────────────────────────
+
+describe("acceptBookingWithCalendar", () => {
+  function mockSelectReturning(rows: unknown[]) {
+    const limit = jest.fn().mockResolvedValue(rows);
+    const where = jest.fn(() => ({ limit }));
+    const from = jest.fn(() => ({ where }));
+    (db.select as jest.Mock).mockReturnValue({ from });
+  }
+
+  it("throws Unauthorized when no user is authenticated", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(null);
+    await expect(acceptBookingWithCalendar(1)).rejects.toThrow("Unauthorized");
+  });
+
+  it("throws when the booking is not found", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectReturning([]);
+    await expect(acceptBookingWithCalendar(1)).rejects.toThrow(
+      "Booking not found"
+    );
+  });
+
+  it("marks booking confirmed and persists eventId + meetingLink from the created calendar event", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectReturning([mockBookingRow]);
+    mockAddMeetingToCalendar.mockResolvedValueOnce({
+      id: "evt-123",
+      link: "https://virevos.com/meet/evt-123",
+    });
+
+    await acceptBookingWithCalendar(1);
+
+    expect(mockSet).toHaveBeenNthCalledWith(1, { status: "confirmed" });
+    expect(mockSet).toHaveBeenNthCalledWith(2, {
+      eventId: "evt-123",
+      meetingLink: "https://virevos.com/meet/evt-123",
+    });
+    expect(mockAddMeetingToCalendar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: `Meeting with ${mockBookingRow.clientName}`,
+        duration: mockBookingRow.duration,
+        isMeeting: true,
+      })
+    );
+  });
+
+  it("stores meetingLink as null when the created event has no link", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectReturning([mockBookingRow]);
+    mockAddMeetingToCalendar.mockResolvedValueOnce({
+      id: "evt-123",
+      link: null,
+    });
+
+    await acceptBookingWithCalendar(1);
+
+    expect(mockSet).toHaveBeenNthCalledWith(2, {
+      eventId: "evt-123",
+      meetingLink: null,
+    });
+  });
+
+  it("still confirms the booking and swallows the error when calendar sync fails", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectReturning([mockBookingRow]);
+    mockAddMeetingToCalendar.mockRejectedValueOnce(new Error("calendar down"));
+
+    await expect(acceptBookingWithCalendar(1)).resolves.toBeUndefined();
+
+    expect(mockSet).toHaveBeenCalledTimes(1);
+    expect(mockSet).toHaveBeenCalledWith({ status: "confirmed" });
+  });
+
+  it("does not persist eventId when calendar event has no id", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockSelectReturning([mockBookingRow]);
+    mockAddMeetingToCalendar.mockResolvedValueOnce({ id: null, link: null });
+
+    await acceptBookingWithCalendar(1);
+
+    expect(mockSet).toHaveBeenCalledTimes(1);
+    expect(mockSet).toHaveBeenCalledWith({ status: "confirmed" });
   });
 });

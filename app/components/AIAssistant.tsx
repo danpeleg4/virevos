@@ -16,6 +16,8 @@ import {
   Clock,
   User,
   Bell,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -57,6 +59,7 @@ export function AIAssistant({
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming">("idle");
   const [input, setInput] = useState("");
+  const [meetingsExpanded, setMeetingsExpanded] = useState(false);
   const queryClient = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
   const previousResponseIdRef = useRef<string | undefined>(undefined);
@@ -382,13 +385,40 @@ export function AIAssistant({
           {/* Meeting Requests */}
           {pendingBookings.length > 0 && (
             <div className="border-b border-border bg-card">
-              <div className="px-4 py-2.5 flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
+              <button
+                type="button"
+                onClick={() => {
+                  if (pendingBookings.length > 2) {
+                    setMeetingsExpanded((v) => !v);
+                  }
+                }}
+                disabled={pendingBookings.length <= 2}
+                className={`w-full px-4 py-2.5 flex items-center gap-2 bg-red-50 dark:bg-red-950/30 ${
+                  pendingBookings.length <= 2 || meetingsExpanded
+                    ? "border-b border-red-100 dark:border-red-900"
+                    : ""
+                } ${
+                  pendingBookings.length > 2
+                    ? "cursor-pointer hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                    : "cursor-default"
+                }`}
+                aria-expanded={
+                  pendingBookings.length > 2 ? meetingsExpanded : undefined
+                }
+              >
                 <Bell className="h-3.5 w-3.5 text-red-500" />
-                <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                <span className="text-xs font-semibold text-red-700 dark:text-red-400 flex-1 text-left">
                   {pendingBookings.length} Meeting Request
                   {pendingBookings.length > 1 ? "s" : ""}
                 </span>
-              </div>
+                {pendingBookings.length > 2 &&
+                  (meetingsExpanded ? (
+                    <ChevronUp className="h-3.5 w-3.5 text-red-500" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 text-red-500" />
+                  ))}
+              </button>
+              {(pendingBookings.length <= 2 || meetingsExpanded) && (
               <div className="divide-y divide-border max-h-72 overflow-y-auto">
                 {pendingBookings.map((booking) => {
                   const dt = new Date(booking.dateTime);
@@ -445,21 +475,9 @@ export function AIAssistant({
                       <div className="flex gap-2">
                         <button
                           type="button"
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50"
-                          style={{ backgroundColor: "#059669" }}
+                          className="inline-flex flex-1 items-center bg-green-600 hover:bg-green-700 cursor-pointer justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50 "
                           onClick={() => acceptMutation.mutate(booking.id)}
                           disabled={isAccepting || isDenying}
-                          onMouseEnter={(e) => {
-                            if (!isAccepting && !isDenying)
-                              (
-                                e.currentTarget as HTMLButtonElement
-                              ).style.backgroundColor = "#047857";
-                          }}
-                          onMouseLeave={(e) => {
-                            (
-                              e.currentTarget as HTMLButtonElement
-                            ).style.backgroundColor = "#059669";
-                          }}
                         >
                           {isAccepting ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -487,6 +505,7 @@ export function AIAssistant({
                   );
                 })}
               </div>
+              )}
             </div>
           )}
 

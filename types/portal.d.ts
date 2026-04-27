@@ -108,5 +108,6 @@ export interface PortalData {
     dateTime: string;
     duration: number;
     status: string;
+    meetingLink: string | null;
   }>;
 }
