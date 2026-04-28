@@ -139,6 +139,12 @@ export default function PortalPage() {
     null
   );
 
+  // Document checklist state
+  const [documentRequests, setDocumentRequests] = useState<
+    PortalData["documentRequests"]
+  >([]);
+  const [uploadingItemId, setUploadingItemId] = useState<number | null>(null);
+
   useEffect(() => {
     if (token) fetchPortalData();
   }, [token]);
@@ -157,6 +163,7 @@ export default function PortalPage() {
       setData(portalData);
       setLocalMessages(portalData.messages || []);
       setLocalFiles(portalData.files || []);
+      setDocumentRequests(portalData.documentRequests || []);
       if (portalData.cases?.length > 0) {
         setSelectedCaseId(portalData.cases[0].id);
       }
@@ -277,6 +284,50 @@ export default function PortalPage() {
     }
   };
 
+  const handleDocumentItemUpload = async (itemId: number, file: File) => {
+    setUploadingItemId(itemId);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await axios.post(
+        `/api/portal/${token}/document-requests/${itemId}/upload`,
+        formData
+      );
+      const uploadedFile = res.data.file;
+      setDocumentRequests((prev) =>
+        prev.map((req) => ({
+          ...req,
+          items: req.items.map((it) =>
+            it.id === itemId
+              ? {
+                  ...it,
+                  status: "uploaded",
+                  uploadedFileId: uploadedFile.id,
+                  uploadedAt: new Date().toISOString(),
+                  uploadedFile,
+                }
+              : it
+          ),
+        }))
+      );
+      toast.success(`${file.name} uploaded`);
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : "Upload failed";
+      toast.error(message);
+    } finally {
+      setUploadingItemId(null);
+    }
+  };
+
+  const pendingDocumentItemsCount = documentRequests.reduce(
+    (acc, req) =>
+      acc + req.items.filter((it) => it.status === "pending").length,
+    0
+  );
+
   const resetBooking = () => {
     setSelectedDate(undefined);
     setSelectedSlot(null);
@@ -391,6 +442,15 @@ export default function PortalPage() {
                   count: unreadCount,
                 },
                 { value: "files", label: "Files", count: localFiles.length },
+                ...(documentRequests.length > 0
+                  ? [
+                      {
+                        value: "documents",
+                        label: "Documents Needed",
+                        count: pendingDocumentItemsCount,
+                      },
+                    ]
+                  : []),
                 ...(schedulingEnabled
                   ? [{ value: "schedule", label: "Schedule Meeting" }]
                   : []),
@@ -1034,6 +1094,133 @@ export default function PortalPage() {
               </div>
             </Card>
           </div>
+          )}
+
+          {/* ── Documents Needed ── */}
+          {activeTab === "documents" && (
+            <div className="mt-6">
+              <Card className="overflow-hidden p-0">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-foreground">
+                    Documents Needed
+                  </span>
+                </div>
+                <div className="p-4 space-y-6">
+                  {documentRequests.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
+                      <FileText className="h-10 w-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        No documents requested
+                      </p>
+                    </div>
+                  ) : (
+                    documentRequests.map((req) => (
+                      <div key={req.id} className="space-y-3">
+                        <div>
+                          <h3 className="text-sm font-medium text-foreground">
+                            {req.eventTitle}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            From your meeting on{" "}
+                            {new Date(req.eventDateTime).toLocaleDateString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </p>
+                        </div>
+                        <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+                          {req.items.map((item) => {
+                            const isUploading = uploadingItemId === item.id;
+                            const inputId = `doc-item-input-${item.id}`;
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
+                              >
+                                <div className="flex items-start gap-3 min-w-0 flex-1">
+                                  <div className="mt-0.5 shrink-0">
+                                    {item.status === "uploaded" ? (
+                                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                    ) : (
+                                      <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/40" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm text-foreground font-medium">
+                                      {item.name}
+                                    </p>
+                                    {item.description && (
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {item.description}
+                                      </p>
+                                    )}
+                                    {item.status === "uploaded" &&
+                                      item.uploadedFile && (
+                                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                                          Uploaded:{" "}
+                                          <a
+                                            href={`/api/portal/${token}/files/${item.uploadedFile.id}/download`}
+                                            className="underline"
+                                            download={item.uploadedFile.name}
+                                          >
+                                            {item.uploadedFile.name}
+                                          </a>
+                                        </p>
+                                      )}
+                                  </div>
+                                </div>
+                                {item.status !== "uploaded" && (
+                                  <>
+                                    <input
+                                      type="file"
+                                      id={inputId}
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleDocumentItemUpload(
+                                            item.id,
+                                            file
+                                          );
+                                        }
+                                        e.target.value = "";
+                                      }}
+                                    />
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="shrink-0 h-8 text-xs gap-1.5"
+                                      onClick={() =>
+                                        document
+                                          .getElementById(inputId)
+                                          ?.click()
+                                      }
+                                      disabled={isUploading}
+                                    >
+                                      {isUploading ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Upload className="h-3.5 w-3.5" />
+                                      )}
+                                      Upload
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* ── Schedule Meeting ── */}

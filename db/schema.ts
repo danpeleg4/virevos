@@ -138,6 +138,10 @@ export const events = pgTable("events", {
   googleEventId: text("google_event_id"),
   outlookEventId: text("outlook_event_id"),
 
+  clientId: integer("client_id").references(() => clients.id, {
+    onDelete: "set null",
+  }),
+
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
@@ -168,6 +172,39 @@ export const meetingTranscripts = pgTable("meeting_transcripts", {
   speakerIdentity: text("speaker_identity").notNull(),
   text: text("text").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// MEETING DOCUMENT REQUESTS
+export const meetingDocumentRequests = pgTable("meeting_document_requests", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  eventId: text("event_id")
+    .notNull()
+    .references(() => events.id, { onDelete: "cascade" }),
+  clientId: integer("client_id").references(() => clients.id, {
+    onDelete: "set null",
+  }),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("pending_approval"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+});
+
+// DOCUMENT REQUEST ITEMS
+export const documentRequestItems = pgTable("document_request_items", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  requestId: integer("request_id")
+    .notNull()
+    .references(() => meetingDocumentRequests.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  status: text("status").notNull().default("pending"),
+  uploadedFileId: integer("uploaded_file_id").references(() => caseFiles.id, {
+    onDelete: "set null",
+  }),
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true }),
 });
 
 // OUTLOOK TOKENS
@@ -476,10 +513,48 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     fields: [events.userId],
     references: [users.user_id],
   }),
+  client: one(clients, {
+    fields: [events.clientId],
+    references: [clients.id],
+  }),
   attendees: many(meetingAttendees),
   transcripts: many(meetingTranscripts),
   caseNotes: many(caseNotes),
+  documentRequests: many(meetingDocumentRequests),
 }));
+
+export const meetingDocumentRequestsRelations = relations(
+  meetingDocumentRequests,
+  ({ one, many }) => ({
+    event: one(events, {
+      fields: [meetingDocumentRequests.eventId],
+      references: [events.id],
+    }),
+    client: one(clients, {
+      fields: [meetingDocumentRequests.clientId],
+      references: [clients.id],
+    }),
+    user: one(users, {
+      fields: [meetingDocumentRequests.userId],
+      references: [users.user_id],
+    }),
+    items: many(documentRequestItems),
+  })
+);
+
+export const documentRequestItemsRelations = relations(
+  documentRequestItems,
+  ({ one }) => ({
+    request: one(meetingDocumentRequests, {
+      fields: [documentRequestItems.requestId],
+      references: [meetingDocumentRequests.id],
+    }),
+    uploadedFile: one(caseFiles, {
+      fields: [documentRequestItems.uploadedFileId],
+      references: [caseFiles.id],
+    }),
+  })
+);
 
 export const meetingAttendeesRelations = relations(
   meetingAttendees,
