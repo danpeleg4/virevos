@@ -1,24 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { use } from "react";
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
+import { use, useState } from "react";
+import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { Input } from "@/app/components/ui/input";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/app/components/ui/dialog";
 import {
   ArrowLeft,
   Calendar,
@@ -35,6 +33,13 @@ import {
   TrendingUp,
   StickyNote,
   FileUp,
+  Search,
+  ListTodo,
+  Target,
+  Clock,
+  Plus,
+  SlidersHorizontal,
+  CheckIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -58,12 +63,6 @@ import { Case, CaseFile, CaseNote } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { toast } from "sonner";
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 function formatNoteDate(raw: Date | string | null | undefined): string {
   if (!raw) return "";
   const utcStr =
@@ -81,6 +80,52 @@ function formatNoteDate(raw: Date | string | null | undefined): string {
     hour12: true,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
+}
+
+type Section = "tasks" | "files" | "notes";
+type TaskStatusFilter = "all" | "in-progress" | "completed";
+
+const TASK_STATUS_FILTERS: {
+  label: string;
+  value: TaskStatusFilter;
+}[] = [
+  { label: "All", value: "all" },
+  { label: "In Progress", value: "in-progress" },
+  { label: "Completed", value: "completed" },
+];
+
+function PriorityBadge({ priority }: { priority: string }) {
+  const styles =
+    priority === "high"
+      ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+      : priority === "medium"
+        ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
+        : "bg-muted text-muted-foreground border border-border";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${styles}`}
+    >
+      <Flag className="h-3 w-3" />
+      {priority}
+    </span>
+  );
+}
+
+function TaskStatusBadge({ status }: { status: string }) {
+  if (status === "completed") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+        Completed
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+      In Progress
+    </span>
+  );
 }
 
 export default function CasePage({
@@ -136,9 +181,11 @@ export function CaseDetailView({
   const [newNote, setNewNote] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
-  const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "completed">(
-    "all"
-  );
+  const [activeSection, setActiveSection] = useState<Section>("tasks");
+  const [search, setSearch] = useState("");
+  const [taskStatusFilter, setTaskStatusFilter] =
+    useState<TaskStatusFilter>("all");
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const queryClient = useQueryClient();
 
@@ -202,6 +249,7 @@ export function CaseDetailView({
     },
     onSuccess: () => {
       setNewNote("");
+      setNoteDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["caseNotes", aCase.id] });
     },
   });
@@ -313,14 +361,10 @@ export function CaseDetailView({
     );
   }
 
-  const toggleTaskStatus = async (taskId: number) => {
+  const toggleTaskStatus = (taskId: number) => {
     const updated = caseTasksQuery.data?.find((t: Task) => t.id === taskId);
     const newStatus = updated?.status === "completed" ? "todo" : "completed";
-    try {
-      changeTaskStatus.mutate({ status: newStatus, taskId });
-    } catch (err) {
-      console.error("Failed to update status:", err);
-    }
+    changeTaskStatus.mutate({ status: newStatus, taskId });
   };
 
   const handleTaskClick = (task: Task) => {
@@ -329,14 +373,30 @@ export function CaseDetailView({
   };
 
   const allTasks: Task[] = caseTasksQuery.data ?? [];
-  const filteredTasks =
-    taskFilter === "all"
-      ? allTasks
-      : allTasks.filter((t) =>
-          taskFilter === "completed"
-            ? t.status === "completed"
-            : t.status !== "completed"
-        );
+  const allFiles: CaseFile[] = fileQuery.data ?? [];
+  const allNotes: CaseNote[] = caseNotesQuery.data ?? [];
+
+  const completedTaskCount = allTasks.filter(
+    (t) => t.status === "completed"
+  ).length;
+
+  const filteredTasks = allTasks.filter((t) => {
+    const matchesStatus =
+      taskStatusFilter === "all" ||
+      (taskStatusFilter === "completed"
+        ? t.status === "completed"
+        : t.status !== "completed");
+    const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  const filteredFiles = allFiles.filter((f) =>
+    f.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredNotes = allNotes.filter((n) =>
+    (n.content ?? "").toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -344,6 +404,39 @@ export function CaseDetailView({
     const file = e.dataTransfer.files?.[0];
     if (file) addFile.mutate(file);
   };
+
+  const SECTIONS: {
+    value: Section;
+    label: string;
+    icon: React.ReactNode;
+    count: number;
+  }[] = [
+    {
+      value: "tasks",
+      label: "Tasks",
+      icon: <CheckCircle className="h-3.5 w-3.5" />,
+      count: allTasks.length,
+    },
+    {
+      value: "files",
+      label: "Files",
+      icon: <Paperclip className="h-3.5 w-3.5" />,
+      count: allFiles.length,
+    },
+    {
+      value: "notes",
+      label: "Notes",
+      icon: <StickyNote className="h-3.5 w-3.5" />,
+      count: allNotes.length,
+    },
+  ];
+
+  const searchPlaceholder =
+    activeSection === "tasks"
+      ? "Search tasks..."
+      : activeSection === "files"
+        ? "Search files..."
+        : "Search notes...";
 
   return (
     <div className="space-y-6">
@@ -400,7 +493,7 @@ export function CaseDetailView({
             </div>
           </div>
           <p className="text-2xl text-foreground mb-1">
-            {task_percentage(caseTasksQuery.data ?? [])}%
+            {task_percentage(allTasks)}%
           </p>
           <p className="text-sm text-muted-foreground">Overall Progress</p>
         </Card>
@@ -424,10 +517,7 @@ export function CaseDetailView({
             </div>
           </div>
           <p className="text-2xl text-foreground mb-1">
-            {caseTasksQuery.data?.filter(
-              (t: Task) => t.status === "completed"
-            ).length ?? 0}
-            /{caseTasksQuery.data?.length ?? 0}
+            {completedTaskCount}/{allTasks.length}
           </p>
           <p className="text-sm text-muted-foreground">Tasks Completed</p>
         </Card>
@@ -438,159 +528,256 @@ export function CaseDetailView({
               <FileText className="h-6 w-6 text-purple-600" />
             </div>
           </div>
-          <p className="text-2xl text-foreground mb-1">
-            {fileQuery?.data?.length || 0}
-          </p>
+          <p className="text-2xl text-foreground mb-1">{allFiles.length}</p>
           <p className="text-sm text-muted-foreground">Files</p>
         </Card>
       </div>
 
-      {/* Tabbed Main Content */}
-      <Tabs defaultValue="tasks">
-        <TabsList>
-          <TabsTrigger value="tasks" className="gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Tasks
-            {allTasks.length > 0 && (
-              <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                {allTasks.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="files" className="gap-2">
-            <Paperclip className="h-4 w-4" />
-            Files
-            {(fileQuery?.data?.length ?? 0) > 0 && (
-              <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                {fileQuery.data.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="gap-2">
-            <StickyNote className="h-4 w-4" />
-            Notes
-            {(caseNotesQuery.data?.length ?? 0) > 0 && (
-              <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                {caseNotesQuery.data.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      {/* Single tabbed Card with section navbar */}
+      <Card className="overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
+          {/* Section navbar */}
+          <div className="flex items-center gap-1">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => {
+                  setActiveSection(s.value);
+                  setSearch("");
+                }}
+                className={`cursor-pointer inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md transition-colors ${
+                  activeSection === s.value
+                    ? "bg-card border border-border text-foreground shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                {s.icon}
+                {s.label}
+                <span
+                  className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                    activeSection === s.value
+                      ? "bg-muted text-muted-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {s.count}
+                </span>
+              </button>
+            ))}
+          </div>
 
-        {/* Tasks Tab */}
-        <TabsContent value="tasks" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-                    Tasks & To-Dos
-                  </CardTitle>
-                  <span className="text-xs text-muted-foreground">
-                    {filteredTasks.length} of {allTasks.length}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Filter buttons */}
-                  <div className="flex rounded-lg border border-border overflow-hidden text-xs">
-                    {(["all", "todo", "completed"] as const).map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => setTaskFilter(f)}
-                        className={`px-3 py-1.5 capitalize transition-colors ${
-                          taskFilter === f
-                            ? "bg-foreground text-background"
-                            : "hover:bg-muted text-muted-foreground"
-                        }`}
+          {/* Section-specific controls (right side) */}
+          <div className="flex items-center gap-2 ml-auto">
+            <div className="relative w-48 sm:w-56 shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+
+            {activeSection === "tasks" && (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-card hover:bg-accent border border-border rounded-md px-3 py-1.5 transition-colors">
+                      <SlidersHorizontal className="h-3 w-3" />
+                      Filter
+                      {taskStatusFilter !== "all" && (
+                        <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    {TASK_STATUS_FILTERS.map(({ label, value }) => (
+                      <DropdownMenuItem
+                        key={value}
+                        onClick={() => setTaskStatusFilter(value)}
+                        className="flex items-center justify-between cursor-pointer"
                       >
-                        {f === "todo" ? "To-Do" : f === "all" ? "All" : "Done"}
-                      </button>
+                        {label}
+                        {taskStatusFilter === value && (
+                          <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+                        )}
+                      </DropdownMenuItem>
                     ))}
-                  </div>
-                  <AddNewTask caseId={aCase.id} />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {filteredTasks.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-14 text-center">
-                  <div className="p-4 rounded-full bg-muted">
-                    <CheckCircle className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {taskFilter === "all"
-                        ? "No tasks yet"
-                        : taskFilter === "completed"
-                          ? "No completed tasks"
-                          : "No pending tasks"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {taskFilter === "all"
-                        ? "Add a task to get started"
-                        : "Change the filter to see other tasks"}
-                    </p>
-                  </div>
-                  {taskFilter === "all" && (
-                    <AddNewTask caseId={aCase.id} />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <AddNewTask caseId={aCase.id} />
+              </>
+            )}
+
+            {activeSection === "files" && (
+              <>
+                <input
+                  type="file"
+                  id="fileInput"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) addFile.mutate(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className="cursor-pointer"
+                  disabled={addFile.isPending}
+                  onClick={() =>
+                    document.getElementById("fileInput")?.click()
+                  }
+                >
+                  {addFile.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                    </>
                   )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredTasks.map((task: Task) => (
-                    <div
-                      key={task.id}
-                      className={`flex items-center space-x-3 p-3 rounded-lg border ${
-                        task.status === "completed"
-                          ? "bg-muted/50 border-border"
-                          : "bg-card border-border hover:border-blue-300"
-                      }`}
+                </Button>
+              </>
+            )}
+
+            {activeSection === "notes" && (
+              <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="cursor-pointer">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Note
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>New Note</DialogTitle>
+                    <DialogDescription>
+                      Add a note to this case.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Textarea
+                    placeholder="Write a note..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    rows={6}
+                    className="resize-none"
+                  />
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setNoteDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      disabled={addSomeNote.isPending || !newNote.trim()}
+                      onClick={() =>
+                        addSomeNote.mutate({ newNote, caseId: aCase.id })
+                      }
+                    >
+                      {addSomeNote.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add Note"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        </div>
+
+        {/* Tasks body */}
+        {activeSection === "tasks" && (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-border">
+                <tr>
+                  <th className="w-10 px-3 py-2.5" />
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <ListTodo className="h-3.5 w-3.5" />
+                      Task
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <Flag className="h-3.5 w-3.5" />
+                      Priority
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <Target className="h-3.5 w-3.5" />
+                      Status
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Due date
+                    </div>
+                  </th>
+                  <th className="w-10 px-2 py-2.5" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredTasks.map((task) => (
+                  <tr
+                    key={task.id}
+                    onClick={() => handleTaskClick(task)}
+                    className="cursor-pointer transition-colors hover:bg-muted/50 group"
+                  >
+                    <td
+                      className="px-3 py-2.5"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <Checkbox
-                        className="cursor-pointer"
                         checked={task.status === "completed"}
                         onCheckedChange={() => toggleTaskStatus(task.id)}
+                        className="cursor-pointer h-3.5 w-3.5"
                       />
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-sm ${
-                            task.status === "completed"
-                              ? "line-through text-muted-foreground"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {task.title}
-                        </p>
-                        <div className="flex items-center space-x-3 mt-1">
-                          {task.dueDate && (
-                            <span className="text-xs text-muted-foreground">
-                              Due {task.dueDate}
-                            </span>
-                          )}
-                          <span
-                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium ${
-                              task.priority === "high"
-                                ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
-                                : task.priority === "medium"
-                                  ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
-                                  : "bg-muted text-muted-foreground border border-border"
-                            }`}
-                          >
-                            <Flag className="h-3 w-3" />
-                            {task.priority}
-                          </span>
-                        </div>
-                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span
+                        className={`text-sm font-medium ${
+                          task.status === "completed"
+                            ? "line-through text-muted-foreground"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {task.title}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <PriorityBadge priority={task.priority} />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <TaskStatusBadge status={task.status} />
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                      {task.dueDate || "—"}
+                    </td>
+                    <td
+                      className="px-2 py-2.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="cursor-pointer"
+                          <button
+                            className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+                            aria-label="Task actions"
                           >
                             <MoreVertical className="h-4 w-4" />
-                          </Button>
+                          </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
@@ -607,111 +794,94 @@ export function CaseDetailView({
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Files Tab */}
-        <TabsContent value="files" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-base">
-                <Paperclip className="h-4 w-4 mr-2 text-blue-600" />
-                Files
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Upload Zone */}
-              <input
-                type="file"
-                id="fileInput"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) addFile.mutate(file);
-                  e.target.value = "";
-                }}
-              />
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => document.getElementById("fileInput")?.click()}
-                className={`flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                  isDragging
-                    ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20"
-                    : "border-border hover:border-blue-300 hover:bg-muted/50"
-                }`}
-              >
-                {addFile.isPending ? (
-                  <>
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                    <p className="text-sm text-muted-foreground">
-                      Uploading...
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="h-8 w-8 text-muted-foreground" />
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-foreground">
-                        Click to upload or drag & drop
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Any file type supported
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-1 pointer-events-none"
+                    </td>
+                  </tr>
+                ))}
+                {filteredTasks.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-3 py-12 text-center text-sm text-muted-foreground"
                     >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Browse Files
-                    </Button>
-                  </>
+                      {allTasks.length === 0
+                        ? "No tasks yet — add one to get started"
+                        : "No tasks match your filters"}
+                    </td>
+                  </tr>
                 )}
-              </div>
+              </tbody>
+            </table>
+          </div>
+        )}
 
-              {/* File List */}
-              {fileQuery?.data?.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-8 text-center">
-                  <Paperclip className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    No files uploaded yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {fileQuery?.data?.map((file: CaseFile) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex-shrink-0">
-                          <FileText className="h-5 w-5 text-blue-500" />
+        {/* Files body */}
+        {activeSection === "files" && (
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={`overflow-x-auto transition-colors ${
+              isDragging ? "bg-blue-50 dark:bg-blue-950/20" : ""
+            }`}
+          >
+            <table className="w-full">
+              <thead className="border-b border-border">
+                <tr>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <FileText className="h-3.5 w-3.5" />
+                      Name
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <FileUp className="h-3.5 w-3.5" />
+                      Size
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Uploaded
+                    </div>
+                  </th>
+                  <th className="w-24 px-2 py-2.5" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredFiles.map((file) => (
+                  <tr
+                    key={file.id}
+                    className="transition-colors hover:bg-muted/50 group"
+                  >
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 flex-shrink-0">
+                          <FileText className="h-4 w-4 text-blue-500" />
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm text-foreground truncate font-medium">
-                            {file.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {file.size} · {file.uploadedAt}
-                          </p>
-                        </div>
+                        <span className="text-sm font-medium text-foreground truncate">
+                          {file.name}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                      {file.size}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        {file.uploadedAt}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2.5">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           size="icon"
                           variant="ghost"
+                          className="h-7 w-7 cursor-pointer"
                           onClick={() => {
                             window.location.href = `/api/files/${file.id}/download`;
                           }}
@@ -721,6 +891,7 @@ export function CaseDetailView({
                         <Button
                           size="icon"
                           variant="ghost"
+                          className="h-7 w-7 cursor-pointer"
                           onClick={() =>
                             deleteCaseFileMutation.mutate(file.id)
                           }
@@ -728,81 +899,79 @@ export function CaseDetailView({
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notes Tab */}
-        <TabsContent value="notes" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-base">
-                <StickyNote className="h-4 w-4 mr-2 text-green-600" />
-                Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Add Note Input */}
-              <div className="space-y-2">
-                <Textarea
-                  placeholder="Write a note..."
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  rows={4}
-                  className="resize-none"
-                />
-                <Button
-                  size="sm"
-                  className="cursor-pointer"
-                  disabled={addSomeNote.isPending || !newNote.trim()}
-                  onClick={() =>
-                    addSomeNote.mutate({ newNote, caseId: aCase.id })
-                  }
-                >
-                  {addSomeNote.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    "Add Note"
-                  )}
-                </Button>
-              </div>
-
-              {/* Notes List */}
-              {caseNotesQuery.data?.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10 text-center">
-                  <div className="p-4 rounded-full bg-muted">
-                    <StickyNote className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">No notes yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {caseNotesQuery.data?.map((note: CaseNote) => (
-                    <div
-                      key={note.id}
-                      className="p-4 bg-muted/50 rounded-xl border border-border"
+                    </td>
+                  </tr>
+                ))}
+                {filteredFiles.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-3 py-12 text-center text-sm text-muted-foreground"
                     >
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {allFiles.length === 0
+                        ? "Drop files here or click Upload to add files"
+                        : "No files match your search"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Notes body */}
+        {activeSection === "notes" && (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-border">
+                <tr>
+                  <th className="text-left px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <StickyNote className="h-3.5 w-3.5" />
+                      Note
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-2.5 w-48">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Created
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredNotes.map((note) => (
+                  <tr
+                    key={note.id}
+                    className="transition-colors hover:bg-muted/50 align-top"
+                  >
+                    <td className="px-3 py-2.5">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
                         {note.content}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                        {formatNoteDate(note.createdAt)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {formatNoteDate(note.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+                {filteredNotes.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={2}
+                      className="px-3 py-12 text-center text-sm text-muted-foreground"
+                    >
+                      {allNotes.length === 0
+                        ? "No notes yet — click Add Note to write one"
+                        : "No notes match your search"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {/* Task Detail Modal */}
       {selectedTask && (
