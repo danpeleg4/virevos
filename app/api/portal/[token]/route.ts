@@ -9,6 +9,7 @@ import {
   portalMeetingBookings,
 } from "@db/schema";
 import { and, eq, gte } from "drizzle-orm";
+import { listApprovedRequestsForClient } from "@/lib/document_requests";
 
 export async function GET(
   req: NextRequest,
@@ -112,6 +113,8 @@ export async function GET(
         )
       );
 
+    const documentRequests = await listApprovedRequestsForClient(client.id);
+
     return NextResponse.json({
       client: {
         id: client.id,
@@ -152,6 +155,7 @@ export async function GET(
         status: b.status,
         meetingLink: b.meetingLink,
       })),
+      documentRequests,
     });
   } catch (err) {
     console.error("[api/portal/[token] GET]", err);

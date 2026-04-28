@@ -102,7 +102,7 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
   const submitTask = async () => {
     setDialogOpen(false);
     const payload: Task = {
-      id: 1,
+      id: Date.now(),
       userId: "no",
       title,
       description,
@@ -131,7 +131,7 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
     >
       <DialogTrigger asChild>
         <Button className="cursor-pointer">
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus />
           New Task
         </Button>
       </DialogTrigger>

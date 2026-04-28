@@ -5,8 +5,11 @@ import {
   meetingTranscripts,
   events,
   users,
+  clients,
+  meetingDocumentRequests,
+  documentRequestItems,
 } from "@db/schema";
-import { asc, eq, sql} from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import {
   EgressClient,
   EncodedFileOutput,
@@ -129,13 +132,39 @@ export async function POST(req: NextRequest) {
         .map((c) => `${c.speakerIdentity}: ${c.text}`)
         .join("\n");
 
+      const [meetingOwner] = await db
+        .select({ userId: events.userId })
+        .from(events)
+        .where(eq(events.id, roomName));
+      if (!meetingOwner) return;
+
+      const userClients = await db
+        .select({
+          id: clients.id,
+          name: clients.name,
+          email: clients.email,
+        })
+        .from(clients)
+        .where(eq(clients.userId, meetingOwner.userId));
+
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-5",
         messages: [
           {
             role: "user",
-            content: `Analyze this meeting transcript and return JSON with fields: summary (2-3 sentences), key_points (string[]), action_items (array of {task, owner, dueDate: YYYY-MM-DD or null, completed: false}), tags (string[]).\n\n${transcriptText}`,
+            content: `Analyze this meeting transcript and return JSON with fields:
+                      summary (2-3 sentences),
+                      key_points (string[]),
+                      action_items (array of {task, owner, dueDate: YYYY-MM-DD or null, completed: false}),
+                      tags (string[]),
+                      client_id_guess (integer matching one of the provided client IDs that this meeting is most likely about, or null if uncertain),
+                      document_requirements (array of {name, description} listing documents the client needs to provide based on what was discussed, e.g. "Passport", "Form I-94", "OPT EAD card". Empty array if no documents were discussed).
+
+                      Available clients for this user (match by name/email mentioned in transcript): ${JSON.stringify(userClients)}
+
+                      Transcript:
+                      ${transcriptText}`,
           },
         ],
         response_format: { type: "json_object" },
@@ -153,7 +182,18 @@ export async function POST(req: NextRequest) {
           completed: boolean;
         }>;
         tags?: string[];
+        client_id_guess?: number | null;
+        document_requirements?: Array<{
+          name: string;
+          description?: string | null;
+        }>;
       };
+
+      const matchedClientId =
+        typeof analysis.client_id_guess === "number" &&
+        userClients.some((c) => c.id === analysis.client_id_guess)
+          ? analysis.client_id_guess
+          : null;
 
       await db
         .update(events)
@@ -164,8 +204,34 @@ export async function POST(req: NextRequest) {
           tags: analysis.tags,
           hasTranscript: true,
           hasNotes: true,
+          ...(matchedClientId !== null ? { clientId: matchedClientId } : {}),
         })
         .where(eq(events.id, roomName));
+
+      const requirements = (analysis.document_requirements ?? []).filter(
+        (d) => d && typeof d.name === "string" && d.name.trim().length > 0
+      );
+
+      if (requirements.length > 0) {
+        const [req] = await db
+          .insert(meetingDocumentRequests)
+          .values({
+            eventId: roomName,
+            clientId: matchedClientId,
+            userId: meetingOwner.userId,
+            status: "pending_approval",
+          })
+          .returning({ id: meetingDocumentRequests.id });
+
+        await db.insert(documentRequestItems).values(
+          requirements.map((d, i) => ({
+            requestId: req.id,
+            name: d.name.trim(),
+            description: d.description?.trim() || null,
+            sortOrder: i,
+          }))
+        );
+      }
     });
 
     const [eventUser] = await db.select({

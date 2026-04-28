@@ -4,6 +4,13 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -18,8 +25,11 @@ import {
   Bell,
   ChevronDown,
   ChevronUp,
+  FileText,
+  Plus,
+  Trash2,
 } from "lucide-react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { clients } from "@/types/clients";
 import type {
@@ -35,10 +45,19 @@ import type {
   UpdateEventToolResult,
 } from "@/types/ai";
 import type { PortalMeetingBooking } from "@/types/portal";
+import type {
+  PendingDocRequest,
+  DocumentRequestItemInput,
+} from "@/types/document_requests";
 import {
   acceptBookingWithCalendar,
   updateBookingStatus,
 } from "@/lib/portal_bookings";
+import {
+  approveDocumentRequest,
+  declineDocumentRequest,
+  updateDocumentRequest,
+} from "@/lib/document_requests";
 import { toast } from "sonner";
 
 type BookingWithClient = PortalMeetingBooking & {
@@ -60,6 +79,7 @@ export function AIAssistant({
   const [status, setStatus] = useState<"idle" | "streaming">("idle");
   const [input, setInput] = useState("");
   const [meetingsExpanded, setMeetingsExpanded] = useState(false);
+  const [docRequestsExpanded, setDocRequestsExpanded] = useState(false);
   const queryClient = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
   const previousResponseIdRef = useRef<string | undefined>(undefined);
@@ -83,6 +103,28 @@ export function AIAssistant({
     },
     onError: () => toast.error("Failed to decline meeting"),
   });
+
+  const pendingDocRequestsQuery = useQuery({
+    queryKey: ["documentRequests", "pending"],
+    queryFn: async () => {
+      const res = await axios.get<PendingDocRequest[]>(
+        "/api/document-requests/pending"
+      );
+      return res.data;
+    },
+    enabled: isOpen,
+  });
+  const pendingDocRequests = pendingDocRequestsQuery.data ?? [];
+
+  const clientsQuery = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const res = await axios.get<clients[]>("/api/clients");
+      return res.data;
+    },
+    enabled: isOpen && pendingDocRequests.length > 0,
+  });
+  const clientsList = clientsQuery.data ?? [];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -382,6 +424,56 @@ export function AIAssistant({
           </div>
           */}
 
+          {/* Document Requests */}
+          {pendingDocRequests.length > 0 && (
+            <div className="border-b border-border bg-card">
+              <button
+                type="button"
+                onClick={() => {
+                  if (pendingDocRequests.length > 2) {
+                    setDocRequestsExpanded((v) => !v);
+                  }
+                }}
+                disabled={pendingDocRequests.length <= 2}
+                className={`w-full px-4 py-2.5 flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 ${
+                  pendingDocRequests.length <= 2 || docRequestsExpanded
+                    ? "border-b border-blue-100 dark:border-blue-900"
+                    : ""
+                } ${
+                  pendingDocRequests.length > 2
+                    ? "cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
+                    : "cursor-default"
+                }`}
+                aria-expanded={
+                  pendingDocRequests.length > 2 ? docRequestsExpanded : undefined
+                }
+              >
+                <FileText className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 flex-1 text-left">
+                  {pendingDocRequests.length} Document Request
+                  {pendingDocRequests.length > 1 ? "s" : ""}
+                </span>
+                {pendingDocRequests.length > 2 &&
+                  (docRequestsExpanded ? (
+                    <ChevronUp className="h-3.5 w-3.5 text-blue-500" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 text-blue-500" />
+                  ))}
+              </button>
+              {(pendingDocRequests.length <= 2 || docRequestsExpanded) && (
+                <div className="divide-y divide-border max-h-[28rem] overflow-y-auto">
+                  {pendingDocRequests.map((req) => (
+                    <DocRequestCard
+                      key={req.id}
+                      request={req}
+                      clients={clientsList}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Meeting Requests */}
           {pendingBookings.length > 0 && (
             <div className="border-b border-border bg-card">
@@ -572,6 +664,283 @@ export function AIAssistant({
           </div>
         </motion.div>
       )}
+    </div>
+  );
+}
+
+interface DraftItem extends DocumentRequestItemInput {
+  localKey: string;
+}
+
+function DocRequestCard({
+  request,
+  clients: clientsList,
+}: {
+  request: PendingDocRequest;
+  clients: clients[];
+}) {
+  const queryClient = useQueryClient();
+  const [clientId, setClientId] = useState<number | null>(request.clientId);
+  const [draftItems, setDraftItems] = useState<DraftItem[]>(() =>
+    request.items.map((it) => ({
+      id: it.id,
+      name: it.name,
+      description: it.description,
+      sortOrder: it.sortOrder,
+      localKey: `existing-${it.id}`,
+    }))
+  );
+  const [dirty, setDirty] = useState(false);
+
+  const updateMutation = useMutation({
+    mutationFn: async (patch: {
+      clientId?: number | null;
+      items?: DocumentRequestItemInput[];
+    }) => {
+      await updateDocumentRequest(request.id, patch);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["documentRequests", "pending"],
+      });
+      setDirty(false);
+      toast.success("Saved");
+    },
+    onError: () => toast.error("Failed to save changes"),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      await approveDocumentRequest(request.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["documentRequests", "pending"],
+      });
+      toast.success("Document request sent to client");
+    },
+    onError: (err: Error) =>
+      toast.error(err.message || "Failed to approve request"),
+  });
+
+  const declineMutation = useMutation({
+    mutationFn: async () => {
+      await declineDocumentRequest(request.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["documentRequests", "pending"],
+      });
+      toast.success("Document request declined");
+    },
+    onError: () => toast.error("Failed to decline request"),
+  });
+
+  const handleClientChange = (value: string) => {
+    const next = value === "__none__" ? null : parseInt(value, 10);
+    setClientId(next);
+    updateMutation.mutate({ clientId: next });
+  };
+
+  const handleAddItem = () => {
+    setDraftItems((prev) => [
+      ...prev,
+      {
+        name: "",
+        description: null,
+        sortOrder: prev.length,
+        localKey: `new-${Date.now()}-${prev.length}`,
+      },
+    ]);
+    setDirty(true);
+  };
+
+  const handleItemChange = (
+    localKey: string,
+    field: "name" | "description",
+    value: string
+  ) => {
+    setDraftItems((prev) =>
+      prev.map((it) =>
+        it.localKey === localKey ? { ...it, [field]: value } : it
+      )
+    );
+    setDirty(true);
+  };
+
+  const handleRemoveItem = (localKey: string) => {
+    setDraftItems((prev) => prev.filter((it) => it.localKey !== localKey));
+    setDirty(true);
+  };
+
+  const handleSaveItems = () => {
+    const cleaned = draftItems
+      .filter((it) => it.name.trim().length > 0)
+      .map((it, idx) => ({
+        id: it.id,
+        name: it.name.trim(),
+        description: it.description?.toString().trim() || null,
+        sortOrder: idx,
+      }));
+    updateMutation.mutate({ items: cleaned });
+  };
+
+  const eventDate = new Date(request.eventDateTime);
+  const canApprove =
+    !!clientId &&
+    !dirty &&
+    !updateMutation.isPending &&
+    !approveMutation.isPending &&
+    draftItems.some((it) => it.name.trim().length > 0);
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/50 shrink-0">
+          <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">
+            {request.eventTitle}
+          </p>
+          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <CalendarDays className="h-3 w-3" />
+            {eventDate.toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Client
+        </label>
+        <Select
+          value={clientId == null ? "__none__" : String(clientId)}
+          onValueChange={handleClientChange}
+        >
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="Select client" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">— Select client —</SelectItem>
+            {clientsList.map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Documents to request ({draftItems.length})
+          </label>
+          <button
+            type="button"
+            onClick={handleAddItem}
+            className="text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+          >
+            <Plus className="h-3 w-3" />
+            Add
+          </button>
+        </div>
+        {draftItems.length === 0 && (
+          <p className="text-xs text-muted-foreground italic">
+            No documents listed.
+          </p>
+        )}
+        {draftItems.map((it) => (
+          <div key={it.localKey} className="flex items-start gap-2">
+            <div className="flex-1 space-y-1">
+              <Input
+                value={it.name}
+                onChange={(e) =>
+                  handleItemChange(it.localKey, "name", e.target.value)
+                }
+                placeholder="Document name (e.g. Passport)"
+                className="h-8 text-xs"
+              />
+              <Input
+                value={it.description ?? ""}
+                onChange={(e) =>
+                  handleItemChange(it.localKey, "description", e.target.value)
+                }
+                placeholder="Optional note"
+                className="h-7 text-[11px]"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => handleRemoveItem(it.localKey)}
+              className="p-1.5 mt-0.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"
+              aria-label="Remove item"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+        {dirty && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full h-7 text-xs"
+            onClick={handleSaveItems}
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+            ) : null}
+            Save edits
+          </Button>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="inline-flex flex-1 items-center bg-green-600 hover:bg-green-700 cursor-pointer justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50"
+          onClick={() => approveMutation.mutate()}
+          disabled={!canApprove || declineMutation.isPending}
+          title={
+            !clientId
+              ? "Select a client first"
+              : dirty
+                ? "Save your edits first"
+                : undefined
+          }
+        >
+          {approveMutation.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+          )}
+          Approve & send
+        </button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 h-8 text-xs border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 gap-1.5"
+          onClick={() => declineMutation.mutate()}
+          disabled={
+            approveMutation.isPending ||
+            declineMutation.isPending ||
+            updateMutation.isPending
+          }
+        >
+          {declineMutation.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <XCircle className="h-3.5 w-3.5" />
+          )}
+          Decline
+        </Button>
+      </div>
     </div>
   );
 }

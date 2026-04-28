@@ -62,6 +62,8 @@ export interface PortalRecord {
   lastAccessedAt: string | null;
 }
 
+import type { PortalDocumentRequest } from "./document_requests";
+
 export interface PortalData {
   client: {
     id: number;
@@ -110,4 +112,5 @@ export interface PortalData {
     status: string;
     meetingLink: string | null;
   }>;
+  documentRequests: PortalDocumentRequest[];
 }
