@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
@@ -37,7 +37,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
+import { Event } from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
@@ -138,10 +138,9 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
     if (!meeting.link) return;
     if (meeting.link.includes("/meet/")) {
       const url = new URL(meeting.link);
-      router.push(url.pathname);
+      window.open(url.pathname, "_blank", "noopener,noreferrer");
       return;
     }
-    window.open(meeting.link, "_blank", "noopener,noreferrer");
   };
 
   if (activeView === "summary") {

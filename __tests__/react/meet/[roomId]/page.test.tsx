@@ -34,9 +34,12 @@ jest.mock("@/lib/meetings", () => ({
 jest.mock("@tanstack/react-query", () => ({
   useQuery: jest.fn(() => ({
     data: {
-      status: "active",
-      dateTime: new Date().toISOString(),
-      title: "Test Meeting",
+      meeting: {
+        status: "active",
+        dateTime: new Date().toISOString(),
+        title: "Test Meeting",
+      },
+      isHost: true,
     },
     isLoading: false,
   })),
@@ -85,9 +88,12 @@ describe("InMeetingView Page", () => {
     const { useQuery } = require("@tanstack/react-query");
     (useQuery as jest.Mock).mockReturnValueOnce({
       data: {
-        status: "upcoming",
-        dateTime: new Date().toISOString(),
-        title: "Team Sync",
+        meeting: {
+          status: "upcoming",
+          dateTime: new Date().toISOString(),
+          title: "Team Sync",
+        },
+        isHost: true,
       },
       isLoading: false,
     });

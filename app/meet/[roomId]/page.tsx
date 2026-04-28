@@ -56,12 +56,7 @@ export default function InMeetingView() {
     queryKey: ["meeting", meetingId],
     queryFn: async () => {
       const res = await axios.get(`/api/events/${meetingId}`);
-      return res.data as {
-        status: string;
-        dateTime: string;
-        title: string;
-        link?: string;
-      };
+      return res.data
     },
   });
 
@@ -152,7 +147,9 @@ export default function InMeetingView() {
     setIsScreenSharing(next);
   };
 
-  const isUpcoming = !hasStarted && meetingInfo.data?.status === "upcoming";
+  const meeting = meetingInfo.data?.meeting;
+  const isHost = !!meetingInfo.data?.isHost;
+  const isUpcoming = !hasStarted && meeting?.status === "upcoming";
 
   if (meetingInfo.isLoading) {
     return (
@@ -163,7 +160,7 @@ export default function InMeetingView() {
   }
 
   if (isUpcoming) {
-    const scheduledDate = new Date(meetingInfo.data!.dateTime);
+    const scheduledDate = new Date(meeting!.dateTime);
     return (
       <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -172,8 +169,8 @@ export default function InMeetingView() {
               <Calendar className="w-6 h-6 text-[oklch(0.7_0_0)]" />
             </div>
             <h1 className="text-[oklch(0.985_0_0)] text-xl font-semibold mb-1">
-              {meetingInfo.data!.title
-                ? decodeURIComponent(meetingInfo.data!.title)
+              {meeting!.title
+                ? decodeURIComponent(meeting!.title)
                 : "Upcoming Meeting"}
             </h1>
             <div className="flex items-center justify-center gap-2 text-[oklch(0.556_0_0)] text-sm mb-6">
@@ -183,15 +180,21 @@ export default function InMeetingView() {
                 {formatTimeOnly(scheduledDate)}
               </span>
             </div>
-            <button
-              className="w-full h-9 px-4 rounded-md bg-gray-700 text-white text-sm font-medium transition-colors hover:bg-[oklch(0.44_0.243_264.376)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              onClick={() => startMeetingMutation.mutate()}
-              disabled={startMeetingMutation.isPending}
-            >
-              {startMeetingMutation.isPending
-                ? "Starting…"
-                : "Start Meeting Now"}
-            </button>
+            {isHost ? (
+              <button
+                className="w-full h-9 px-4 rounded-md bg-gray-700 text-white text-sm font-medium transition-colors hover:bg-[oklch(0.44_0.243_264.376)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={() => startMeetingMutation.mutate()}
+                disabled={startMeetingMutation.isPending}
+              >
+                {startMeetingMutation.isPending
+                  ? "Starting…"
+                  : "Start Meeting Now"}
+              </button>
+            ) : (
+              <p className="text-[oklch(0.556_0_0)] text-sm">
+                Waiting for the host to start the meeting.
+              </p>
+            )}
           </div>
         </div>
       </div>
