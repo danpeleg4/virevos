@@ -167,7 +167,7 @@ describe("updateDocumentRequest", () => {
     };
 
     (db.transaction as jest.Mock).mockImplementation(
-      async (fn: (tx: typeof tx) => Promise<void>) => fn(tx)
+      async (fn: (t: unknown) => Promise<void>) => fn(tx)
     );
 
     await updateDocumentRequest(1, {

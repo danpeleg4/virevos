@@ -13,6 +13,11 @@ jest.mock("@tanstack/react-query", () => ({
     isPending: false,
     variables: undefined,
   })),
+  useQuery: jest.fn(() => ({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+  })),
 }));
 
 jest.mock("react-markdown", () => ({
@@ -58,6 +63,12 @@ jest.mock("motion/react", () => {
 jest.mock("@/lib/portal_bookings", () => ({
   acceptBookingWithCalendar: jest.fn(),
   updateBookingStatus: jest.fn(),
+}));
+
+jest.mock("@/lib/document_requests", () => ({
+  approveDocumentRequest: jest.fn(),
+  declineDocumentRequest: jest.fn(),
+  updateDocumentRequest: jest.fn(),
 }));
 
 jest.mock("sonner", () => ({
