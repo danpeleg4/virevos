@@ -148,20 +148,15 @@ async function applyOutlookEventsToDb(
 
     const title = e.subject ?? "Untitled";
     const description = e.bodyPreview ?? null;
-    const link = e.onlineMeetingUrl ?? e.webLink ?? null;
-    const status = e.showAs ?? "busy";
-    const isMeeting = !!e.isOnlineMeeting;
 
     if (existingMap.has(e.id)) {
       const m = existingMap.get(e.id)!;
       const hasChanged =
         m.title !== title ||
         m.description !== description ||
-        m.link !== link ||
         m.dateTime.getTime() !== start.getTime() ||
         m.duration !== durationMinutes ||
-        m.status !== status ||
-        m.isMeeting !== isMeeting;
+        m.status !== status
 
       if (hasChanged) {
         await db
@@ -169,11 +164,9 @@ async function applyOutlookEventsToDb(
           .set({
             title,
             description,
-            link,
             dateTime: start,
             duration: durationMinutes,
             status,
-            isMeeting,
           })
           .where(eq(events.id, m.id));
       }
@@ -185,11 +178,9 @@ async function applyOutlookEventsToDb(
       outlookEventId: e.id,
       title,
       description,
-      link,
       dateTime: start,
       duration: durationMinutes,
       origin: "outlook_calendar",
-      isMeeting,
       status,
       userId,
     });
