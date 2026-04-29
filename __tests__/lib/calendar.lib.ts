@@ -356,7 +356,12 @@ describe("updateEventDateTime", () => {
   it("updates the local DB row with the new dateTime", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectLimit.mockResolvedValueOnce([
-      { id: "event-1", duration: 60, googleEventId: null, outlookEventId: null },
+      {
+        id: "event-1",
+        duration: 60,
+        googleEventId: null,
+        outlookEventId: null,
+      },
     ]);
 
     await updateEventDateTime("event-1", newDateTime);
@@ -415,7 +420,12 @@ describe("updateEventDateTime", () => {
   it("skips Google patch when there is no googleEventId on the row", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectLimit.mockResolvedValueOnce([
-      { id: "event-1", duration: 60, googleEventId: null, outlookEventId: null },
+      {
+        id: "event-1",
+        duration: 60,
+        googleEventId: null,
+        outlookEventId: null,
+      },
     ]);
     mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
 
@@ -476,7 +486,12 @@ describe("updateEventDateTime", () => {
   it("skips Outlook patch when row has no outlookEventId", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockSelectLimit.mockResolvedValueOnce([
-      { id: "event-1", duration: 60, googleEventId: null, outlookEventId: null },
+      {
+        id: "event-1",
+        duration: 60,
+        googleEventId: null,
+        outlookEventId: null,
+      },
     ]);
     mockGetFreshOutlookAccessToken.mockResolvedValueOnce("outlook-token");
 

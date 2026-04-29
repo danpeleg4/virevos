@@ -51,10 +51,7 @@ export async function POST(req: NextRequest) {
     ) {
       const maybeId = Number(caseName);
       if (!Number.isNaN(maybeId)) {
-        const byId = await db
-          .select()
-          .from(cases)
-          .where(eq(cases.id, maybeId));
+        const byId = await db.select().from(cases).where(eq(cases.id, maybeId));
 
         if (!byId.length) {
           return new NextResponse("Case not found", { status: 400 });

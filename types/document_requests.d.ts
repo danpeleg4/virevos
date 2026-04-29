@@ -1,4 +1,7 @@
-export type DocumentRequestStatus = "pending_approval" | "approved" | "declined";
+export type DocumentRequestStatus =
+  | "pending_approval"
+  | "approved"
+  | "declined";
 export type DocumentRequestItemStatus = "pending" | "uploaded" | "rejected";
 
 export interface DocumentRequestItem {

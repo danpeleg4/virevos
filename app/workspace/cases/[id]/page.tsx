@@ -303,10 +303,7 @@ export function CaseDetailView({
     },
 
     onError: (_err, _vars, context) => {
-      queryClient.setQueryData(
-        ["caseTasks", aCase.id],
-        context?.previousTasks
-      );
+      queryClient.setQueryData(["caseTasks", aCase.id], context?.previousTasks);
     },
   });
 
@@ -625,9 +622,7 @@ export function CaseDetailView({
                   size="sm"
                   className="cursor-pointer"
                   disabled={addFile.isPending}
-                  onClick={() =>
-                    document.getElementById("fileInput")?.click()
-                  }
+                  onClick={() => document.getElementById("fileInput")?.click()}
                 >
                   {addFile.isPending ? (
                     <>
@@ -892,9 +887,7 @@ export function CaseDetailView({
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7 cursor-pointer"
-                          onClick={() =>
-                            deleteCaseFileMutation.mutate(file.id)
-                          }
+                          onClick={() => deleteCaseFileMutation.mutate(file.id)}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>

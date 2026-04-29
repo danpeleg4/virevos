@@ -234,14 +234,17 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    const [eventUser] = await db.select({
-      userId: events.userId
-    }).from(events).where(eq(events.id, roomName));
+    const [eventUser] = await db
+      .select({
+        userId: events.userId,
+      })
+      .from(events)
+      .where(eq(events.id, roomName));
 
     await db
-        .update(users)
-        .set({ ai_credits: sql`${users.ai_credits} + 1` })
-        .where(eq(users.user_id, eventUser.userId));
+      .update(users)
+      .set({ ai_credits: sql`${users.ai_credits} + 1` })
+      .where(eq(users.user_id, eventUser.userId));
   }
 
   if (event.event === "participant_joined") {

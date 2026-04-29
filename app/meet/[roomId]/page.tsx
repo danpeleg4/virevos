@@ -56,7 +56,7 @@ export default function InMeetingView() {
     queryKey: ["meeting", meetingId],
     queryFn: async () => {
       const res = await axios.get(`/api/events/${meetingId}`);
-      return res.data
+      return res.data;
     },
   });
 

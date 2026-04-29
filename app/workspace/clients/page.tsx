@@ -85,8 +85,6 @@ function CasesBadge({ active, total }: { active: number; total: number }) {
   );
 }
 
-
-
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<"name" | "status" | "cases">(
@@ -632,8 +630,8 @@ export default function Clients() {
                           className="rounded border-border h-3.5 w-3.5 cursor-pointer transition-opacity"
                           checked={selectedIds.has(client.id)}
                           onCheckedChange={() => {
-                            handleClientClick(client)
-                            toggleSelect(client.id)
+                            handleClientClick(client);
+                            toggleSelect(client.id);
                           }}
                         />
                       </td>

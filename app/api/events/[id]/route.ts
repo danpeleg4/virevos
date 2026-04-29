@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@db/db";
 import { events } from "@db/schema";
 import { eq } from "drizzle-orm";
-import {currentUser} from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function GET(
   _req: Request,

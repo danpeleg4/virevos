@@ -471,8 +471,8 @@ export function CaseList({ cases, clients, onSelect }: CaseListProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-border bg-muted/50">
               <div className="text-xs text-muted-foreground">
                 Showing {filteredCases.length === 0 ? 0 : startIndex + 1}–
-                {Math.min(startIndex + itemsPerPage, filteredCases.length)}{" "}
-                of {filteredCases.length} cases
+                {Math.min(startIndex + itemsPerPage, filteredCases.length)} of{" "}
+                {filteredCases.length} cases
               </div>
               <div className="flex items-center space-x-2">
                 <Button

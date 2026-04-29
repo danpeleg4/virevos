@@ -49,14 +49,22 @@ describe("EventDetailsDialog", () => {
 
   it("renders the event title", () => {
     render(
-      <EventDetailsDialog event={baseEvent} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog
+        event={baseEvent}
+        open={true}
+        onOpenChange={jest.fn()}
+      />
     );
     expect(screen.getByText("Team Sync")).toBeInTheDocument();
   });
 
   it("renders date, time and duration", () => {
     render(
-      <EventDetailsDialog event={baseEvent} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog
+        event={baseEvent}
+        open={true}
+        onOpenChange={jest.fn()}
+      />
     );
     expect(screen.getByText("Jan 1, 2026")).toBeInTheDocument();
     expect(screen.getByText(/10:00 AM/)).toBeInTheDocument();
@@ -127,8 +135,20 @@ describe("EventDetailsDialog", () => {
       ...baseEvent,
       hasNotes: true,
       action_items: [
-        { task: "Write report", owner: "You", dueDate: "2026-02-01", completed: false, added: false },
-        { task: "Send email", owner: "You", dueDate: null, completed: false, added: false },
+        {
+          task: "Write report",
+          owner: "You",
+          dueDate: "2026-02-01",
+          completed: false,
+          added: false,
+        },
+        {
+          task: "Send email",
+          owner: "You",
+          dueDate: null,
+          completed: false,
+          added: false,
+        },
       ],
     };
     render(
@@ -147,7 +167,13 @@ describe("EventDetailsDialog", () => {
       ...baseEvent,
       hasNotes: true,
       action_items: [
-        { task: "Fix bug", owner: "You", dueDate: null, completed: false, added: false },
+        {
+          task: "Fix bug",
+          owner: "You",
+          dueDate: null,
+          completed: false,
+          added: false,
+        },
       ],
     };
     render(
@@ -169,15 +195,19 @@ describe("EventDetailsDialog", () => {
       ...baseEvent,
       hasNotes: true,
       action_items: [
-        { task: "Task 1", owner: "You", dueDate: null, completed: false, added: true },
+        {
+          task: "Task 1",
+          owner: "You",
+          dueDate: null,
+          completed: false,
+          added: true,
+        },
       ],
     };
     render(
       <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
     );
-    expect(
-      screen.getByRole("button", { name: /all added/i })
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /all added/i })).toBeDisabled();
   });
 
   it("fetches and displays transcript when hasTranscript is true", async () => {
@@ -228,7 +258,9 @@ describe("EventDetailsDialog", () => {
     });
     expect(screen.queryByText("Line 4")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /view full transcript/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /view full transcript/i })
+    );
     expect(screen.getByText("Line 4")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /show less/i })

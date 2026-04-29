@@ -156,7 +156,7 @@ async function applyOutlookEventsToDb(
         m.description !== description ||
         m.dateTime.getTime() !== start.getTime() ||
         m.duration !== durationMinutes ||
-        m.status !== status
+        m.status !== status;
 
       if (hasChanged) {
         await db

@@ -78,9 +78,7 @@ export function CaseEditDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Case</DialogTitle>
-          <DialogDescription>
-            Update the case details below.
-          </DialogDescription>
+          <DialogDescription>Update the case details below.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">

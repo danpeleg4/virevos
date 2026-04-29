@@ -87,7 +87,9 @@ describe("Tasks Page", () => {
     expect(
       screen.getByRole("button", { name: /completed/i })
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /to do/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /to do/i })
+    ).not.toBeInTheDocument();
   });
 
   it("renders 'New Task' button", () => {

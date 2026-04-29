@@ -23,12 +23,7 @@ export async function GET(
   const files = await db
     .select()
     .from(caseFiles)
-    .where(
-      and(
-        eq(caseFiles.caseId, caseId),
-        eq(caseFiles.userId, user.id)
-      )
-    );
+    .where(and(eq(caseFiles.caseId, caseId), eq(caseFiles.userId, user.id)));
 
   return NextResponse.json(files);
 }

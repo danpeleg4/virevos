@@ -65,11 +65,7 @@ describe("CaseList", () => {
 
   it("renders case names", () => {
     render(
-      <CaseList
-        cases={mockCases}
-        clients={mockClients}
-        onSelect={onSelect}
-      />
+      <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     expect(screen.getByText("Alpha Case")).toBeInTheDocument();
     expect(screen.getByText("Beta Case")).toBeInTheDocument();
@@ -77,11 +73,7 @@ describe("CaseList", () => {
 
   it("renders status badges", () => {
     render(
-      <CaseList
-        cases={mockCases}
-        clients={mockClients}
-        onSelect={onSelect}
-      />
+      <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     expect(screen.getAllByText(/active/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/completed/i).length).toBeGreaterThan(0);
@@ -89,11 +81,7 @@ describe("CaseList", () => {
 
   it("calls onSelect when a case row is clicked", () => {
     render(
-      <CaseList
-        cases={mockCases}
-        clients={mockClients}
-        onSelect={onSelect}
-      />
+      <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     fireEvent.click(screen.getByText("Alpha Case"));
     expect(onSelect).toHaveBeenCalledWith(mockCases[0]);
@@ -101,11 +89,7 @@ describe("CaseList", () => {
 
   it("renders 'New Case' button", () => {
     render(
-      <CaseList
-        cases={mockCases}
-        clients={mockClients}
-        onSelect={onSelect}
-      />
+      <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     expect(
       screen.getByRole("button", { name: /new case/i })
@@ -114,11 +98,7 @@ describe("CaseList", () => {
 
   it("renders search input", () => {
     render(
-      <CaseList
-        cases={mockCases}
-        clients={mockClients}
-        onSelect={onSelect}
-      />
+      <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
   });

@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import {
-  clientPortalTokens,
-  clients,
-  cases,
-  caseFiles,
-} from "@db/schema";
+import { clientPortalTokens, clients, cases, caseFiles } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { uploadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
@@ -81,20 +76,14 @@ export async function POST(
     if (caseIdRaw) {
       const parsedId = parseInt(String(caseIdRaw), 10);
       if (isNaN(parsedId)) {
-        return NextResponse.json(
-          { error: "Invalid caseId" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Invalid caseId" }, { status: 400 });
       }
       // Verify the case belongs to this client
       const caseRows = await db
         .select({ id: cases.id })
         .from(cases)
         .where(
-          and(
-            eq(cases.id, parsedId),
-            eq(cases.clientId, portalToken.clientId)
-          )
+          and(eq(cases.id, parsedId), eq(cases.clientId, portalToken.clientId))
         )
         .limit(1);
 

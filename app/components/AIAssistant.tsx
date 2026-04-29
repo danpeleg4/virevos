@@ -445,7 +445,9 @@ export function AIAssistant({
                     : "cursor-default"
                 }`}
                 aria-expanded={
-                  pendingDocRequests.length > 2 ? docRequestsExpanded : undefined
+                  pendingDocRequests.length > 2
+                    ? docRequestsExpanded
+                    : undefined
                 }
               >
                 <FileText className="h-3.5 w-3.5 text-blue-500" />
@@ -511,92 +513,93 @@ export function AIAssistant({
                   ))}
               </button>
               {(pendingBookings.length <= 2 || meetingsExpanded) && (
-              <div className="divide-y divide-border max-h-72 overflow-y-auto">
-                {pendingBookings.map((booking) => {
-                  const dt = new Date(booking.dateTime);
-                  const isAccepting =
-                    acceptMutation.isPending &&
-                    acceptMutation.variables === booking.id;
-                  const isDenying =
-                    denyMutation.isPending &&
-                    denyMutation.variables === booking.id;
-                  return (
-                    <div key={booking.id} className="p-4 space-y-3">
-                      {/* Booking summary */}
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 shrink-0">
-                          <CalendarDays className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="divide-y divide-border max-h-72 overflow-y-auto">
+                  {pendingBookings.map((booking) => {
+                    const dt = new Date(booking.dateTime);
+                    const isAccepting =
+                      acceptMutation.isPending &&
+                      acceptMutation.variables === booking.id;
+                    const isDenying =
+                      denyMutation.isPending &&
+                      denyMutation.variables === booking.id;
+                    return (
+                      <div key={booking.id} className="p-4 space-y-3">
+                        {/* Booking summary */}
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 shrink-0">
+                            <CalendarDays className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {booking.clientDisplayName ||
+                                  booking.clientName}
+                              </p>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {booking.clientEmail}
+                            </p>
+                            <div className="mt-2 flex items-center gap-3">
+                              <div className="flex items-center gap-1 text-xs text-foreground">
+                                <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                                {dt.toLocaleDateString(undefined, {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-foreground">
+                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                {dt.toLocaleTimeString(undefined, {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                                {" · "}
+                                {booking.duration} min
+                              </div>
+                            </div>
+                            {booking.notes && (
+                              <p className="mt-1.5 text-xs text-muted-foreground italic line-clamp-2">
+                                &ldquo;{booking.notes}&rdquo;
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <User className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {booking.clientDisplayName || booking.clientName}
-                            </p>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {booking.clientEmail}
-                          </p>
-                          <div className="mt-2 flex items-center gap-3">
-                            <div className="flex items-center gap-1 text-xs text-foreground">
-                              <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                              {dt.toLocaleDateString(undefined, {
-                                weekday: "short",
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-foreground">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                              {dt.toLocaleTimeString(undefined, {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                              {" · "}
-                              {booking.duration} min
-                            </div>
-                          </div>
-                          {booking.notes && (
-                            <p className="mt-1.5 text-xs text-muted-foreground italic line-clamp-2">
-                              &ldquo;{booking.notes}&rdquo;
-                            </p>
-                          )}
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="inline-flex flex-1 items-center bg-green-600 hover:bg-green-700 cursor-pointer justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50 "
+                            onClick={() => acceptMutation.mutate(booking.id)}
+                            disabled={isAccepting || isDenying}
+                          >
+                            {isAccepting ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            Accept
+                          </button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 h-8 text-xs border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 gap-1.5"
+                            onClick={() => denyMutation.mutate(booking.id)}
+                            disabled={isAccepting || isDenying}
+                          >
+                            {isDenying ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <XCircle className="h-3.5 w-3.5" />
+                            )}
+                            Decline
+                          </Button>
                         </div>
                       </div>
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          className="inline-flex flex-1 items-center bg-green-600 hover:bg-green-700 cursor-pointer justify-center gap-1.5 rounded-md h-8 px-2.5 text-xs font-medium text-white transition-colors disabled:pointer-events-none disabled:opacity-50 "
-                          onClick={() => acceptMutation.mutate(booking.id)}
-                          disabled={isAccepting || isDenying}
-                        >
-                          {isAccepting ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                          )}
-                          Accept
-                        </button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 h-8 text-xs border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 gap-1.5"
-                          onClick={() => denyMutation.mutate(booking.id)}
-                          disabled={isAccepting || isDenying}
-                        >
-                          {isDenying ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5" />
-                          )}
-                          Decline
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           )}

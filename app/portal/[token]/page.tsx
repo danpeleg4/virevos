@@ -135,9 +135,7 @@ export default function PortalPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [selectedCaseId, setSelectedCaseId] = useState<number | null>(
-    null
-  );
+  const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null);
 
   // Document checklist state
   const [documentRequests, setDocumentRequests] = useState<
@@ -483,617 +481,617 @@ export default function PortalPage() {
 
           {/* ── Overview ── */}
           {activeTab === "overview" && (
-          <div className="space-y-6 mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Cases table */}
-                <Card className="overflow-hidden p-0">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
-                    <FolderKanban className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium text-foreground">
-                      Active Cases
-                    </span>
-                  </div>
-                  <div>
-                    {data.cases.length === 0 ? (
-                      <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
-                        <FolderKanban className="h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          No cases yet
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="border-b border-border bg-muted/50">
-                            <tr>
-                              <th className="text-left px-4 py-2.5">
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                                  <FolderKanban className="h-3.5 w-3.5" />
-                                  Case
-                                </div>
-                              </th>
-                              <th className="text-left px-4 py-2.5">
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                                  Status
-                                </div>
-                              </th>
-                              <th className="text-left px-4 py-2.5">
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                                  <Flag className="h-3.5 w-3.5" />
-                                  Priority
-                                </div>
-                              </th>
-                              <th className="text-left px-4 py-2.5">
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                                  <CalendarIcon className="h-3.5 w-3.5" />
-                                  Due
-                                </div>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {data.cases.slice(0, 5).map((aCase) => (
-                              <tr
-                                key={aCase.id}
-                                className="hover:bg-muted/50 transition-colors"
-                              >
-                                <td className="px-4 py-2.5">
-                                  <p className="text-sm font-medium text-foreground">
-                                    {aCase.name}
-                                  </p>
-                                  {aCase.description && (
-                                    <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">
-                                      {aCase.description}
-                                    </p>
-                                  )}
-                                </td>
-                                <td className="px-4 py-2.5">
-                                  <StatusBadge status={aCase.status} />
-                                </td>
-                                <td className="px-4 py-2.5">
-                                  <PriorityBadge priority={aCase.priority} />
-                                </td>
-                                <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                                  {aCase.dueDate
-                                    ? parseDateOnlyString(
-                                        aCase.dueDate
-                                      ).toLocaleDateString()
-                                    : "—"}
-                                </td>
+            <div className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Cases table */}
+                  <Card className="overflow-hidden p-0">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                      <FolderKanban className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-foreground">
+                        Active Cases
+                      </span>
+                    </div>
+                    <div>
+                      {data.cases.length === 0 ? (
+                        <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
+                          <FolderKanban className="h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            No cases yet
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead className="border-b border-border bg-muted/50">
+                              <tr>
+                                <th className="text-left px-4 py-2.5">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                    <FolderKanban className="h-3.5 w-3.5" />
+                                    Case
+                                  </div>
+                                </th>
+                                <th className="text-left px-4 py-2.5">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                    Status
+                                  </div>
+                                </th>
+                                <th className="text-left px-4 py-2.5">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                    <Flag className="h-3.5 w-3.5" />
+                                    Priority
+                                  </div>
+                                </th>
+                                <th className="text-left px-4 py-2.5">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                    <CalendarIcon className="h-3.5 w-3.5" />
+                                    Due
+                                  </div>
+                                </th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {data.cases.length > 5 && (
-                      <div className="px-4 py-3 border-t border-border">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs"
-                          onClick={() => setActiveTab("cases")}
-                        >
-                          View all {data.cases.length} cases
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </Card>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                              {data.cases.slice(0, 5).map((aCase) => (
+                                <tr
+                                  key={aCase.id}
+                                  className="hover:bg-muted/50 transition-colors"
+                                >
+                                  <td className="px-4 py-2.5">
+                                    <p className="text-sm font-medium text-foreground">
+                                      {aCase.name}
+                                    </p>
+                                    {aCase.description && (
+                                      <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">
+                                        {aCase.description}
+                                      </p>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2.5">
+                                    <StatusBadge status={aCase.status} />
+                                  </td>
+                                  <td className="px-4 py-2.5">
+                                    <PriorityBadge priority={aCase.priority} />
+                                  </td>
+                                  <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                                    {aCase.dueDate
+                                      ? parseDateOnlyString(
+                                          aCase.dueDate
+                                        ).toLocaleDateString()
+                                      : "—"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      {data.cases.length > 5 && (
+                        <div className="px-4 py-3 border-t border-border">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => setActiveTab("cases")}
+                          >
+                            View all {data.cases.length} cases
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
 
-                {/* Recent Messages */}
-                <Card className="overflow-hidden p-0">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
-                    <MessageSquare className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm font-medium text-foreground">
-                      Recent Messages
-                    </span>
-                  </div>
-                  <div className="space-y-2 p-4">
+                  {/* Recent Messages */}
+                  <Card className="overflow-hidden p-0">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                      <MessageSquare className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm font-medium text-foreground">
+                        Recent Messages
+                      </span>
+                    </div>
+                    <div className="space-y-2 p-4">
+                      {localMessages.length === 0 ? (
+                        <div className="flex flex-col items-center gap-2 py-8 text-center">
+                          <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            No messages yet
+                          </p>
+                        </div>
+                      ) : (
+                        localMessages.slice(0, 3).map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`p-3 rounded-lg border ${
+                              !msg.isRead
+                                ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+                                : "bg-muted/50 border-border"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs font-medium text-foreground">
+                                {msg.from}
+                              </p>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(msg.sentAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {msg.subject && (
+                              <p className="text-xs font-medium text-foreground mb-0.5">
+                                {msg.subject}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {msg.preview}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-xs mt-1"
+                        onClick={() => setActiveTab("messages")}
+                      >
+                        View all messages
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Right sidebar */}
+                <div className="space-y-6">
+                  {/* Quick Actions */}
+                  <Card className="overflow-hidden p-0">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                      <span className="text-sm font-medium text-foreground">
+                        Quick Actions
+                      </span>
+                    </div>
+                    <div className="space-y-2 p-4">
+                      {(data.settings?.chatEnabled ?? true) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start gap-2"
+                          onClick={() => setActiveTab("messages")}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Send Message
+                        </Button>
+                      )}
+                      {(data.settings?.fileSharing ?? true) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start gap-2"
+                          onClick={() => setActiveTab("files")}
+                        >
+                          <Paperclip className="h-4 w-4" />
+                          Files
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start gap-2"
+                        onClick={() => setActiveTab("cases")}
+                      >
+                        <FolderKanban className="h-4 w-4" />
+                        View Cases
+                      </Button>
+                      {schedulingEnabled && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start gap-2"
+                          onClick={() => setActiveTab("schedule")}
+                        >
+                          <CalendarDays className="h-4 w-4" />
+                          Schedule Meeting
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+
+                  {/* Upcoming Meetings */}
+                  {schedulingEnabled && upcomingBookings.length > 0 && (
+                    <Card className="overflow-hidden p-0">
+                      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                        <CalendarDays className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-foreground">
+                          Upcoming Meetings
+                        </span>
+                      </div>
+                      <div className="space-y-2 p-4">
+                        {upcomingBookings.slice(0, 3).map((b) => (
+                          <div
+                            key={b.id}
+                            className="p-3 rounded-lg bg-muted/50 border border-border"
+                          >
+                            <p className="text-xs font-medium text-foreground">
+                              {new Date(b.dateTime).toLocaleDateString(
+                                undefined,
+                                {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {new Date(b.dateTime).toLocaleTimeString(
+                                undefined,
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}{" "}
+                              · {b.duration} min ·{" "}
+                              <span className="capitalize">{b.status}</span>
+                            </p>
+                            {b.status === "confirmed" && b.meetingLink && (
+                              <a
+                                href={b.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                <Video className="h-3.5 w-3.5" />
+                                Join meeting
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Cases ── */}
+          {activeTab === "cases" && (
+            <div className="mt-6">
+              <Card className="overflow-hidden p-0">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                  <FolderKanban className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-foreground">
+                    All Cases
+                  </span>
+                </div>
+                <div>
+                  {data.cases.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
+                      <FolderKanban className="h-10 w-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        No cases yet
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="border-b border-border bg-muted/50">
+                          <tr>
+                            <th className="text-left px-4 py-2.5">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                <FolderKanban className="h-3.5 w-3.5" />
+                                Case
+                              </div>
+                            </th>
+                            <th className="text-left px-4 py-2.5">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                Status
+                              </div>
+                            </th>
+                            <th className="text-left px-4 py-2.5">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                <Flag className="h-3.5 w-3.5" />
+                                Priority
+                              </div>
+                            </th>
+                            <th className="text-left px-4 py-2.5">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                <CalendarIcon className="h-3.5 w-3.5" />
+                                Due Date
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {data.cases.map((aCase) => (
+                            <tr
+                              key={aCase.id}
+                              className="hover:bg-muted/50 transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <p className="text-sm font-medium text-foreground">
+                                  {aCase.name}
+                                </p>
+                                {aCase.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 max-w-sm truncate">
+                                    {aCase.description}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <StatusBadge status={aCase.status} />
+                              </td>
+                              <td className="px-4 py-3">
+                                <PriorityBadge priority={aCase.priority} />
+                              </td>
+                              <td className="px-4 py-3 text-xs text-muted-foreground">
+                                {aCase.dueDate ? (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3 shrink-0" />
+                                    {parseDateOnlyString(
+                                      aCase.dueDate
+                                    ).toLocaleDateString()}
+                                  </div>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* ── Messages ── */}
+          {activeTab === "messages" && (
+            <div className="mt-6">
+              <Card className="overflow-hidden p-0">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                  <MessageSquare className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm font-medium text-foreground">
+                    Messages
+                  </span>
+                </div>
+                <div className="space-y-4 p-4">
+                  <div className="space-y-2 max-h-[480px] overflow-y-auto">
                     {localMessages.length === 0 ? (
-                      <div className="flex flex-col items-center gap-2 py-8 text-center">
+                      <div className="flex flex-col items-center gap-2 py-12 text-center">
                         <MessageSquare className="h-8 w-8 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
                           No messages yet
                         </p>
                       </div>
                     ) : (
-                      localMessages.slice(0, 3).map((msg) => (
+                      localMessages.map((msg) => (
                         <div
                           key={msg.id}
-                          className={`p-3 rounded-lg border ${
+                          className={`p-4 rounded-lg border ${
                             !msg.isRead
                               ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
                               : "bg-muted/50 border-border"
                           }`}
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs font-medium text-foreground">
-                              {msg.from}
-                            </p>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7">
+                                <AvatarFallback className="text-xs bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+                                  {msg.from.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="text-sm font-medium text-foreground">
+                                {msg.from}
+                              </p>
+                              {!msg.isRead && (
+                                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                              )}
+                            </div>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(msg.sentAt).toLocaleDateString()}
+                              {new Date(msg.sentAt).toLocaleString()}
                             </span>
                           </div>
                           {msg.subject && (
-                            <p className="text-xs font-medium text-foreground mb-0.5">
+                            <p className="text-xs font-medium text-foreground ml-9 mb-1">
                               {msg.subject}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-muted-foreground ml-9">
                             {msg.preview}
                           </p>
                         </div>
                       ))
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs mt-1"
-                      onClick={() => setActiveTab("messages")}
-                    >
-                      View all messages
-                    </Button>
                   </div>
-                </Card>
-              </div>
 
-              {/* Right sidebar */}
-              <div className="space-y-6">
-                {/* Quick Actions */}
-                <Card className="overflow-hidden p-0">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
-                    <span className="text-sm font-medium text-foreground">
-                      Quick Actions
-                    </span>
-                  </div>
-                  <div className="space-y-2 p-4">
-                    {(data.settings?.chatEnabled ?? true) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start gap-2"
-                        onClick={() => setActiveTab("messages")}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Send Message
-                      </Button>
-                    )}
-                    {(data.settings?.fileSharing ?? true) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start gap-2"
-                        onClick={() => setActiveTab("files")}
-                      >
-                        <Paperclip className="h-4 w-4" />
-                        Files
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start gap-2"
-                      onClick={() => setActiveTab("cases")}
-                    >
-                      <FolderKanban className="h-4 w-4" />
-                      View Cases
-                    </Button>
-                    {schedulingEnabled && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start gap-2"
-                        onClick={() => setActiveTab("schedule")}
-                      >
-                        <CalendarDays className="h-4 w-4" />
-                        Schedule Meeting
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-
-                {/* Upcoming Meetings */}
-                {schedulingEnabled && upcomingBookings.length > 0 && (
-                  <Card className="overflow-hidden p-0">
-                    <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
-                      <CalendarDays className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-foreground">
-                        Upcoming Meetings
-                      </span>
-                    </div>
-                    <div className="space-y-2 p-4">
-                      {upcomingBookings.slice(0, 3).map((b) => (
-                        <div
-                          key={b.id}
-                          className="p-3 rounded-lg bg-muted/50 border border-border"
+                  {(data.settings?.chatEnabled ?? true) && (
+                    <div className="border-t border-border pt-4">
+                      <Textarea
+                        placeholder="Write a message..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        rows={3}
+                        className="resize-none"
+                      />
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          size="sm"
+                          onClick={handleSendMessage}
+                          disabled={isSending || !newMessage.trim()}
+                          className="gap-2"
                         >
-                          <p className="text-xs font-medium text-foreground">
-                            {new Date(b.dateTime).toLocaleDateString(
-                              undefined,
-                              {
-                                weekday: "short",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(b.dateTime).toLocaleTimeString(
-                              undefined,
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}{" "}
-                            · {b.duration} min ·{" "}
-                            <span className="capitalize">{b.status}</span>
-                          </p>
-                          {b.status === "confirmed" && b.meetingLink && (
-                            <a
-                              href={b.meetingLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                            >
-                              <Video className="h-3.5 w-3.5" />
-                              Join meeting
-                            </a>
+                          {isSending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
                           )}
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </div>
-          )}
-
-          {/* ── Cases ── */}
-          {activeTab === "cases" && (
-          <div className="mt-6">
-            <Card className="overflow-hidden p-0">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
-                <FolderKanban className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-foreground">
-                  All Cases
-                </span>
-              </div>
-              <div>
-                {data.cases.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-16 text-center px-6">
-                    <FolderKanban className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      No cases yet
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="border-b border-border bg-muted/50">
-                        <tr>
-                          <th className="text-left px-4 py-2.5">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                              <FolderKanban className="h-3.5 w-3.5" />
-                              Case
-                            </div>
-                          </th>
-                          <th className="text-left px-4 py-2.5">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                              Status
-                            </div>
-                          </th>
-                          <th className="text-left px-4 py-2.5">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                              <Flag className="h-3.5 w-3.5" />
-                              Priority
-                            </div>
-                          </th>
-                          <th className="text-left px-4 py-2.5">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                              <CalendarIcon className="h-3.5 w-3.5" />
-                              Due Date
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {data.cases.map((aCase) => (
-                          <tr
-                            key={aCase.id}
-                            className="hover:bg-muted/50 transition-colors"
-                          >
-                            <td className="px-4 py-3">
-                              <p className="text-sm font-medium text-foreground">
-                                {aCase.name}
-                              </p>
-                              {aCase.description && (
-                                <p className="text-xs text-muted-foreground mt-0.5 max-w-sm truncate">
-                                  {aCase.description}
-                                </p>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <StatusBadge status={aCase.status} />
-                            </td>
-                            <td className="px-4 py-3">
-                              <PriorityBadge priority={aCase.priority} />
-                            </td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground">
-                              {aCase.dueDate ? (
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3 shrink-0" />
-                                  {parseDateOnlyString(
-                                    aCase.dueDate
-                                  ).toLocaleDateString()}
-                                </div>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-          )}
-
-          {/* ── Messages ── */}
-          {activeTab === "messages" && (
-          <div className="mt-6">
-            <Card className="overflow-hidden p-0">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
-                <MessageSquare className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium text-foreground">
-                  Messages
-                </span>
-              </div>
-              <div className="space-y-4 p-4">
-                <div className="space-y-2 max-h-[480px] overflow-y-auto">
-                  {localMessages.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 py-12 text-center">
-                      <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        No messages yet
-                      </p>
-                    </div>
-                  ) : (
-                    localMessages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`p-4 rounded-lg border ${
-                          !msg.isRead
-                            ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
-                            : "bg-muted/50 border-border"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-7 w-7">
-                              <AvatarFallback className="text-xs bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
-                                {msg.from.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <p className="text-sm font-medium text-foreground">
-                              {msg.from}
-                            </p>
-                            {!msg.isRead && (
-                              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                            )}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(msg.sentAt).toLocaleString()}
-                          </span>
-                        </div>
-                        {msg.subject && (
-                          <p className="text-xs font-medium text-foreground ml-9 mb-1">
-                            {msg.subject}
-                          </p>
-                        )}
-                        <p className="text-sm text-muted-foreground ml-9">
-                          {msg.preview}
-                        </p>
+                          Send
+                        </Button>
                       </div>
-                    ))
+                    </div>
                   )}
                 </div>
-
-                {(data.settings?.chatEnabled ?? true) && (
-                  <div className="border-t border-border pt-4">
-                    <Textarea
-                      placeholder="Write a message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      rows={3}
-                      className="resize-none"
-                    />
-                    <div className="flex justify-end mt-2">
-                      <Button
-                        size="sm"
-                        onClick={handleSendMessage}
-                        disabled={isSending || !newMessage.trim()}
-                        className="gap-2"
-                      >
-                        {isSending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                        Send
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
+              </Card>
+            </div>
           )}
 
           {/* ── Files ── */}
           {activeTab === "files" && (
-          <div className="mt-6">
-            <Card className="overflow-hidden p-0">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
-                <Paperclip className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium text-foreground">
-                  Files
-                </span>
-              </div>
-              <div className="space-y-4 p-4">
-                {/* Upload zone — only shown when fileSharing is not disabled */}
-                {(data.settings?.fileSharing ?? true) && (
-                  <>
-                    <input
-                      type="file"
-                      id="portalFileInput"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(file);
-                        e.target.value = "";
-                      }}
-                    />
+            <div className="mt-6">
+              <Card className="overflow-hidden p-0">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
+                  <Paperclip className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm font-medium text-foreground">
+                    Files
+                  </span>
+                </div>
+                <div className="space-y-4 p-4">
+                  {/* Upload zone — only shown when fileSharing is not disabled */}
+                  {(data.settings?.fileSharing ?? true) && (
+                    <>
+                      <input
+                        type="file"
+                        id="portalFileInput"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file);
+                          e.target.value = "";
+                        }}
+                      />
 
-                    {/* Case selector when multiple cases exist */}
-                    {data.cases.length > 1 && (
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs text-muted-foreground whitespace-nowrap">
-                          Upload to:
-                        </label>
-                        <select
-                          className="flex-1 text-sm border border-border rounded-md px-3 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                          value={selectedCaseId ?? ""}
-                          onChange={(e) =>
-                            setSelectedCaseId(Number(e.target.value))
-                          }
-                        >
-                          {data.cases.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
+                      {/* Case selector when multiple cases exist */}
+                      {data.cases.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-muted-foreground whitespace-nowrap">
+                            Upload to:
+                          </label>
+                          <select
+                            className="flex-1 text-sm border border-border rounded-md px-3 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            value={selectedCaseId ?? ""}
+                            onChange={(e) =>
+                              setSelectedCaseId(Number(e.target.value))
+                            }
+                          >
+                            {data.cases.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingFile(true);
+                        }}
+                        onDragLeave={() => setIsDraggingFile(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDraggingFile(false);
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) handleFileUpload(file);
+                        }}
+                        onClick={() =>
+                          document.getElementById("portalFileInput")?.click()
+                        }
+                        className={`flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                          isDraggingFile
+                            ? "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
+                            : "border-border hover:border-orange-300 hover:bg-muted/50"
+                        }`}
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                            <p className="text-sm text-muted-foreground">
+                              Uploading...
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <FileUp className="h-8 w-8 text-muted-foreground" />
+                            <div className="text-center">
+                              <p className="text-sm font-medium text-foreground">
+                                Click to upload or drag & drop
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Max 10 MB per file
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="mt-1 pointer-events-none"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Browse Files
+                            </Button>
+                          </>
+                        )}
                       </div>
-                    )}
 
-                    <div
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setIsDraggingFile(true);
-                      }}
-                      onDragLeave={() => setIsDraggingFile(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDraggingFile(false);
-                        const file = e.dataTransfer.files?.[0];
-                        if (file) handleFileUpload(file);
-                      }}
-                      onClick={() =>
-                        document.getElementById("portalFileInput")?.click()
-                      }
-                      className={`flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                        isDraggingFile
-                          ? "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
-                          : "border-border hover:border-orange-300 hover:bg-muted/50"
-                      }`}
-                    >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-                          <p className="text-sm text-muted-foreground">
-                            Uploading...
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <FileUp className="h-8 w-8 text-muted-foreground" />
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-foreground">
-                              Click to upload or drag & drop
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              Max 10 MB per file
-                            </p>
+                      {uploadError && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3.5 w-3.5" />
+                          {uploadError}
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {/* File list */}
+                  {localFiles.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
+                      <Paperclip className="h-10 w-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        No files yet
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+                      {localFiles.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex-shrink-0">
+                              <FileText className="h-5 w-5 text-blue-500" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm text-foreground font-medium truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatFileSize(file.size)}
+                                {file.createdAt
+                                  ? ` · ${new Date(file.createdAt).toLocaleDateString()}`
+                                  : ""}
+                              </p>
+                            </div>
                           </div>
                           <Button
-                            size="sm"
-                            variant="outline"
-                            className="mt-1 pointer-events-none"
+                            variant="ghost"
+                            size="icon"
+                            asChild
+                            className="shrink-0"
                           >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Browse Files
+                            <a
+                              href={`/api/portal/${token}/files/${file.id}/download`}
+                              download={file.name}
+                            >
+                              <Download className="h-4 w-4" />
+                            </a>
                           </Button>
-                        </>
-                      )}
-                    </div>
-
-                    {uploadError && (
-                      <p className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3.5 w-3.5" />
-                        {uploadError}
-                      </p>
-                    )}
-                  </>
-                )}
-
-                {/* File list */}
-                {localFiles.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-10 text-center px-6">
-                    <Paperclip className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      No files yet
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
-                    {localFiles.map((file) => (
-                      <div
-                        key={file.id}
-                        className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex-shrink-0">
-                            <FileText className="h-5 w-5 text-blue-500" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm text-foreground font-medium truncate">
-                              {file.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {formatFileSize(file.size)}
-                              {file.createdAt
-                                ? ` · ${new Date(file.createdAt).toLocaleDateString()}`
-                                : ""}
-                            </p>
-                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          asChild
-                          className="shrink-0"
-                        >
-                          <a
-                            href={`/api/portal/${token}/files/${file.id}/download`}
-                            download={file.name}
-                          >
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* ── Documents Needed ── */}

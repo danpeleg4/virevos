@@ -413,9 +413,7 @@ export default function Tasks() {
                       </span>
                     </td>
                     <td className="px-3 py-2.5">
-                      {task.caseName && (
-                        <ProjectPill name={task.caseName} />
-                      )}
+                      {task.caseName && <ProjectPill name={task.caseName} />}
                     </td>
                     <td className="px-3 py-2.5">
                       <PriorityBadge priority={task.priority} />

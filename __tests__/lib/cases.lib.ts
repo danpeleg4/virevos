@@ -185,9 +185,7 @@ describe("createCase", () => {
 
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(createCase(baseCase as never)).rejects.toThrow(
-      "Unauthorized"
-    );
+    await expect(createCase(baseCase as never)).rejects.toThrow("Unauthorized");
   });
 
   it("inserts case (without id field) and returns it with default stats", async () => {
@@ -227,9 +225,7 @@ describe("addCaseNotes", () => {
 describe("updateCase", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(updateCase({ id: 1, name: "X" })).rejects.toThrow(
-      "No user"
-    );
+    await expect(updateCase({ id: 1, name: "X" })).rejects.toThrow("No user");
   });
 
   it("does nothing when no fields provided", async () => {
