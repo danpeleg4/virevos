@@ -30,7 +30,7 @@ import {
   ChevronRight,
   FolderOpen,
   Mail,
-  Pencil,
+  MoreVertical,
   Plus,
   Search,
   SlidersHorizontal,
@@ -38,16 +38,10 @@ import {
   Trash2,
 } from "lucide-react";
 import axios from "axios";
-import { clients, CreateClientInput, UpdateClientInput } from "@/types/clients";
+import { clients, CreateClientInput } from "@/types/clients";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  addAClient,
-  deleteClient,
-  toggleClientStatus,
-  updateExistingClient,
-} from "@/lib/clients";
+import { addAClient, deleteClient, toggleClientStatus } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
-import { Checkbox } from "@/app/components/ui/checkbox";
 import { ClientPill } from "@/app/components/ui/client-pill";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
@@ -87,15 +81,12 @@ export default function Clients() {
     "all" | "active" | "inactive"
   >("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedClient, setSelectedClient] = useState<clients | null>(null);
   const [industry, setIndustry] = useState("");
   const [notes, setNotes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const tableRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -163,33 +154,12 @@ export default function Clients() {
     startIndex + itemsPerPage
   );
 
-  const handleClientClick = (client: clients) => {
-    setSelectedClient((prev) => (prev?.id === client.id ? null : client));
-  };
-
   const handlePreviousPage = () => {
     setCurrentPage((prev) => Math.max(1, prev - 1));
   };
 
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === paginatedClients.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(paginatedClients.map((c) => c.id)));
-    }
-  };
-
-  const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   };
 
   const addClient = useMutation({
@@ -244,51 +214,6 @@ export default function Clients() {
     },
   });
 
-  const updateClient = useMutation({
-    mutationFn: async (newClient: UpdateClientInput) => {
-      return updateExistingClient(newClient);
-    },
-    onMutate: async (newClient: UpdateClientInput) => {
-      await queryClient.cancelQueries({ queryKey: ["clients"] });
-
-      const previousClients =
-        queryClient.getQueryData<clients[]>(["clients"]) ?? [];
-
-      queryClient.setQueryData<clients[]>(
-        ["clients"],
-        previousClients.map((c) =>
-          c.id === newClient.id ? { ...c, ...newClient } : c
-        )
-      );
-
-      setSelectedClient((prev) =>
-        prev && prev.id === newClient.id ? { ...prev, ...newClient } : prev
-      );
-
-      setName("");
-      setEmail("");
-      setPhone("");
-      setNotes("");
-      setIndustry("");
-
-      return { previousClients };
-    },
-
-    onError: (_err, _newClient, context) => {
-      if (context?.previousClients) {
-        queryClient.setQueryData(
-          ["clients", _newClient.id],
-          context.previousClients
-        );
-      }
-      alert("Failed to update client");
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-  });
-
   const statusMutation = useMutation({
     mutationFn: async ({
       id,
@@ -308,10 +233,6 @@ export default function Clients() {
       queryClient.setQueryData<clients[]>(
         ["clients"],
         previousClients.map((c) => (c.id === id ? { ...c, status } : c))
-      );
-
-      setSelectedClient((prev) =>
-        prev && prev.id === id ? { ...prev, status } : prev
       );
 
       return { previousClients };
@@ -435,22 +356,6 @@ export default function Clients() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <Button
-                  variant="outline"
-                  disabled={!selectedClient || selectedIds.size > 1}
-                  onClick={() => {
-                    if (!selectedClient) return;
-                    setName(selectedClient.name ?? "");
-                    setEmail(selectedClient.email ?? "");
-                    setIndustry(selectedClient.industry ?? "");
-                    setNotes(selectedClient.notes ?? "");
-                    setPhone(selectedClient.phone ?? "");
-                    setEditOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
@@ -560,16 +465,6 @@ export default function Clients() {
               <table className="w-full">
                 <thead className="border-b border-border">
                   <tr>
-                    <th className="w-10 px-3 py-2.5">
-                      <Checkbox
-                        className="rounded border-border h-3.5 w-3.5 cursor-pointer"
-                        checked={
-                          paginatedClients.length > 0 &&
-                          selectedIds.size === paginatedClients.length
-                        }
-                        onCheckedChange={toggleSelectAll}
-                      />
-                    </th>
                     <th className="text-left px-3 py-2.5">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <Building2 className="h-3.5 w-3.5" />
@@ -606,6 +501,7 @@ export default function Clients() {
                         Joined
                       </div>
                     </th>
+                    <th className="w-10 px-2 py-2.5" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -614,19 +510,6 @@ export default function Clients() {
                       key={client?.id ?? `temp-${index}-${client.name}`}
                       className="transition-colors group hover:bg-muted/50"
                     >
-                      <td
-                        className="px-3 py-2.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Checkbox
-                          className="rounded border-border h-3.5 w-3.5 cursor-pointer transition-opacity"
-                          checked={selectedIds.has(client.id)}
-                          onCheckedChange={() => {
-                            handleClientClick(client);
-                            toggleSelect(client.id);
-                          }}
-                        />
-                      </td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <Avatar className="h-7 w-7 flex-shrink-0">
@@ -699,6 +582,32 @@ export default function Clients() {
                           ? new Date(client.createdAt).toLocaleDateString()
                           : "—"}
                       </td>
+                      <td
+                        className="px-2 py-2.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+                              aria-label="Client actions"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                deleteMutation.mutate({ id: client.id })
+                              }
+                              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -741,86 +650,6 @@ export default function Clients() {
           </div>
         </Card>
       </div>
-
-      {/* Edit Client Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <DialogTitle>Edit Client</DialogTitle>
-                <DialogDescription className="mt-1">
-                  Update name, email, and industry
-                </DialogDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 -mt-1 -mr-1 flex-shrink-0"
-                onClick={() => {
-                  if (!selectedClient) return;
-                  setEditOpen(false);
-                  setSelectedClient(null);
-                  deleteMutation.mutate({ id: selectedClient.id });
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div>
-              <Label>Name</Label>
-              <Input
-                className="mt-2"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Client name"
-              />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input
-                className="mt-2"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="contact@example.com"
-              />
-            </div>
-            <div>
-              <Label>Industry</Label>
-              <Input
-                className="mt-2"
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                placeholder="Technology"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setEditOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!selectedClient) return;
-                  updateClient.mutate({
-                    id: selectedClient.id,
-                    name: name || selectedClient.name,
-                    email: email || selectedClient.email,
-                    phone: phone || selectedClient.phone,
-                    industry: industry || selectedClient.industry,
-                    notes: notes || selectedClient.notes,
-                  });
-                  setEditOpen(false);
-                }}
-              >
-                Save
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

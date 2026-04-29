@@ -20,7 +20,7 @@ jest.mock("axios");
 jest.mock("@/lib/clients", () => ({
   addAClient: jest.fn(),
   deleteClient: jest.fn(),
-  updateExistingClient: jest.fn(),
+  toggleClientStatus: jest.fn(),
 }));
 
 const mockClients = [
