@@ -15,7 +15,7 @@ export async function addAClient(body: CreateClientInput) {
 
     await assertCanAddClient(user.id);
 
-    const { name, email, phone, industry, notes } = body;
+    const { name, email, phone, notes } = body;
 
     if (!name || !email) {
       return NextResponse.json(
@@ -38,7 +38,6 @@ export async function addAClient(body: CreateClientInput) {
         name,
         email,
         phone: phone ? phone : null,
-        industry: industry ? industry : null,
         status: "active",
         notes: notes,
         userId: user.id,
@@ -56,7 +55,7 @@ export async function updateExistingClient(newClient: UpdateClientInput) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  const { id, name, email, phone, industry, notes } = newClient;
+  const { id, name, email, phone, notes } = newClient;
 
   // Build update object dynamically
   const updateData: Partial<UpdateClientInput> = {};
@@ -66,8 +65,6 @@ export async function updateExistingClient(newClient: UpdateClientInput) {
     updateData.email = email;
   if (phone !== undefined && phone !== null && phone !== "")
     updateData.phone = phone;
-  if (industry !== undefined && industry !== null && industry !== "")
-    updateData.industry = industry;
   if (notes !== undefined && notes !== null && notes !== "")
     updateData.notes = notes;
 

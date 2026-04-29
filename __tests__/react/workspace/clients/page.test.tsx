@@ -34,7 +34,6 @@ const mockClients = [
     completedCases: 1,
     totalCases: 3,
     avatar: "A",
-    industry: "Technology",
   },
   {
     id: 2,
@@ -46,7 +45,6 @@ const mockClients = [
     completedCases: 2,
     totalCases: 2,
     avatar: "B",
-    industry: "Finance",
   },
 ];
 

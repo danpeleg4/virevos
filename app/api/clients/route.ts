@@ -17,7 +17,6 @@ export async function GET() {
         name: clients.name,
         email: clients.email,
         phone: clients.phone,
-        industry: clients.industry,
         status: clients.status,
         notes: clients.notes,
         createdAt: clients.createdAt,

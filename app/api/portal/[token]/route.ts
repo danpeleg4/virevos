@@ -120,7 +120,6 @@ export async function GET(
         id: client.id,
         name: client.name,
         email: client.email,
-        industry: client.industry,
       },
       settings: portalToken.settings || {},
       cases: clientProjects.map((p) => ({

@@ -6,7 +6,6 @@ import { motion } from "motion/react";
 import { Navigation } from "@/app/components/Navigation";
 import { Footer } from "@/app/components/Footer";
 import { Clock, User, ArrowRight } from "lucide-react";
-import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { posts, categoryColors, type Category } from "./data";
 
 const categories: Category[] = [
@@ -104,15 +103,6 @@ export default function Blog() {
               className="group cursor-pointer rounded-2xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all bg-white"
             >
               <div className="grid lg:grid-cols-2">
-                {featuredPost.image && (
-                  <div className="relative h-64 lg:h-full min-h-[280px] overflow-hidden">
-                    <ImageWithFallback
-                      src={featuredPost.image}
-                      alt={featuredPost.title}
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                    />
-                  </div>
-                )}
                 <div className="p-8 sm:p-10 flex flex-col justify-center">
                   <span
                     className={`inline-flex self-start text-xs font-medium px-2.5 py-1 rounded-full mb-4 ${categoryColors[featuredPost.category]}`}
@@ -175,16 +165,6 @@ export default function Blog() {
                 onClick={() => router.push(`/blog/${post.slug}`)}
                 className="group cursor-pointer rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all bg-white flex flex-col"
               >
-                {post.image ? (
-                  <div className="relative h-44 overflow-hidden">
-                    <ImageWithFallback
-                      src={post.image}
-                      alt={post.title}
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                    />
-                  </div>
-                ) : null}
-
                 <div className="p-6 flex flex-col flex-1">
                   <span
                     className={`inline-flex self-start text-xs font-medium px-2.5 py-1 rounded-full mb-3 ${categoryColors[post.category]}`}

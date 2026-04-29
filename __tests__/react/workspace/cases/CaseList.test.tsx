@@ -45,7 +45,6 @@ const mockClients = [
     name: "Acme Corp",
     email: "a@a.com",
     phone: "",
-    industry: undefined,
     status: "active",
     activeCases: 1,
     completedCases: 0,

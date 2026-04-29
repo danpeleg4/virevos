@@ -86,7 +86,6 @@ const buildPortalData = (
       id: 1,
       name: "Portal Client",
       email: "client@example.com",
-      industry: null,
     },
     settings: { title: "Portal", ...(overrides.settings ?? {}) },
     cases: overrides.cases ?? [],

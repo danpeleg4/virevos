@@ -5,7 +5,6 @@ import { notFound, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Navigation } from "@/app/components/Navigation";
 import { Footer } from "@/app/components/Footer";
-import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { ArrowLeft, Clock, User } from "lucide-react";
 import { posts, categoryColors, type ContentBlock } from "../data";
 
@@ -96,17 +95,6 @@ export default function BlogPostPage({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {post.image && (
-          <div className="relative w-full h-64 sm:h-96 overflow-hidden">
-            <ImageWithFallback
-              src={post.image}
-              alt={post.title}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-          </div>
-        )}
-
         <div
           className={`bg-gradient-to-b ${post.image ? "from-gray-50 to-white" : "from-gray-50 to-white"} py-12 sm:py-16`}
         >
@@ -186,17 +174,7 @@ export default function BlogPostPage({
                   onClick={() => router.push(`/blog/${rel.slug}`)}
                   className="cursor-pointer group text-left rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all bg-white flex flex-col"
                 >
-                  {rel.image ? (
-                    <div className="relative h-40 overflow-hidden">
-                      <ImageWithFallback
-                        src={rel.image}
-                        alt={rel.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100" />
-                  )}
+                  <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100" />
                   <div className="p-5 flex flex-col flex-1">
                     <span
                       className={`inline-flex self-start text-xs font-medium px-2.5 py-1 rounded-full mb-3 ${categoryColors[rel.category]}`}

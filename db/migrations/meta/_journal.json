@@ -71,6 +71,13 @@
       "when": 1777500000000,
       "tag": "0009_document_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778000000000,
+      "tag": "0010_drop_clients_industry",
+      "breakpoints": true
     }
   ]
 }

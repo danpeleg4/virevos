@@ -54,7 +54,6 @@ describe("addAClient", () => {
     name: "John",
     email: "john@example.com",
     phone: "",
-    industry: "",
     notes: "",
   };
 
@@ -160,7 +159,6 @@ describe("updateExistingClient", () => {
       name: "Name",
       email: "email@example.com",
       phone: "555-1234",
-      industry: "Tech",
       notes: "Some notes",
     });
     expect(mockSet).toHaveBeenCalledWith(
@@ -168,7 +166,6 @@ describe("updateExistingClient", () => {
         name: "Name",
         email: "email@example.com",
         phone: "555-1234",
-        industry: "Tech",
         notes: "Some notes",
       })
     );
