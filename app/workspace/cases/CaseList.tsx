@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { ClientPill } from "@/app/components/ui/client-pill";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,15 +85,6 @@ function PriorityBadge({ priority }: { priority: string }) {
     >
       <Flag className="h-3 w-3" />
       {priority}
-    </span>
-  );
-}
-
-function ClientPill({ name }: { name: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs bg-muted text-muted-foreground rounded-full px-2.5 py-0.5">
-      <span className="w-2 h-2 rounded-full bg-muted-foreground inline-block flex-shrink-0" />
-      {name}
     </span>
   );
 }

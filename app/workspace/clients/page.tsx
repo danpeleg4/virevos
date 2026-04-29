@@ -48,6 +48,7 @@ import {
 } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { ClientPill } from "@/app/components/ui/client-pill";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -68,19 +69,10 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function IndustryPill({ industry }: { industry: string }) {
-  return (
-    <span className="inline-flex items-center text-xs bg-muted text-muted-foreground rounded-full py-0.5">
-      <span className="w-2 h-2 rounded-full bg-muted-foreground inline-block flex-shrink-0" />
-      {industry}
-    </span>
-  );
-}
-
-function CasesBadge({ active, total }: { active: number; total: number }) {
+function CasesBadge({ active }: { active: number }) {
   return (
     <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
-      {active} active · {total} total
+      {active} active
     </span>
   );
 }
@@ -652,7 +644,7 @@ export default function Clients() {
                       </td>
                       <td className="px-3 py-2.5">
                         {client.industry && (
-                          <IndustryPill industry={client.industry} />
+                          <ClientPill name={client.industry} />
                         )}
                       </td>
                       <td
@@ -700,10 +692,7 @@ export default function Clients() {
                         </DropdownMenu>
                       </td>
                       <td className="px-3 py-2.5">
-                        <CasesBadge
-                          active={Number(client.activeCases || 0)}
-                          total={Number(client.totalCases || 0)}
-                        />
+                        <CasesBadge active={Number(client.activeCases || 0)} />
                       </td>
                       <td className="px-3 py-2.5 text-xs text-muted-foreground">
                         {client?.createdAt
