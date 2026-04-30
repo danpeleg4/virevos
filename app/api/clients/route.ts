@@ -17,7 +17,6 @@ export async function GET() {
         name: clients.name,
         email: clients.email,
         phone: clients.phone,
-        industry: clients.industry,
         status: clients.status,
         notes: clients.notes,
         createdAt: clients.createdAt,
@@ -32,7 +31,7 @@ export async function GET() {
     `,
 
         activeCases: sql<number>`
-      COUNT(CASE WHEN ${cases.status} = 'in-progress' THEN 1 END)
+      COUNT(CASE WHEN ${cases.status} = 'active' THEN 1 END)
     `,
       })
       .from(clients)

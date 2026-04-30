@@ -145,7 +145,12 @@ export default function Login() {
         <div className="flex items-center space-x-3 mb-12 sm:mb-20">
           <button className="flex items-center space-x-3 group">
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <Image src="/virevos.svg" alt="321" width="30" height="30"></Image>
+              <Image
+                src="/virevos.svg"
+                alt="321"
+                width="30"
+                height="30"
+              ></Image>
             </div>
             <span className="text-xl font-bold text-gray-900 tracking-tight">
               Virevos

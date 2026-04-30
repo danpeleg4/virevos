@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 jest.mock("next/navigation", () => ({
   useParams: () => ({ token: "test-token-abc" }),
@@ -80,7 +86,6 @@ const buildPortalData = (
       id: 1,
       name: "Portal Client",
       email: "client@example.com",
-      industry: null,
     },
     settings: { title: "Portal", ...(overrides.settings ?? {}) },
     cases: overrides.cases ?? [],
@@ -260,8 +265,6 @@ describe("Portal Page", () => {
   it("renders the not-found state when portal data fails to load", async () => {
     mockedAxiosGet.mockRejectedValueOnce(new Error("network"));
     render(<PortalPage />);
-    expect(
-      await screen.findByText(/portal not found/i)
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/portal not found/i)).toBeInTheDocument();
   });
 });

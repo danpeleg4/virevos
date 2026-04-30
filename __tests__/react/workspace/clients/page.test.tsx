@@ -20,7 +20,7 @@ jest.mock("axios");
 jest.mock("@/lib/clients", () => ({
   addAClient: jest.fn(),
   deleteClient: jest.fn(),
-  updateExistingClient: jest.fn(),
+  toggleClientStatus: jest.fn(),
 }));
 
 const mockClients = [
@@ -34,7 +34,6 @@ const mockClients = [
     completedCases: 1,
     totalCases: 3,
     avatar: "A",
-    industry: "Technology",
   },
   {
     id: 2,
@@ -46,7 +45,6 @@ const mockClients = [
     completedCases: 2,
     totalCases: 2,
     avatar: "B",
-    industry: "Finance",
   },
 ];
 

@@ -17,12 +17,7 @@ export async function deleteCase(caseId: number) {
   const files = await db
     .select({ path: caseFiles.path, size: caseFiles.size })
     .from(caseFiles)
-    .where(
-      and(
-        eq(caseFiles.caseId, caseId),
-        eq(caseFiles.userId, user.id)
-      )
-    );
+    .where(and(eq(caseFiles.caseId, caseId), eq(caseFiles.userId, user.id)));
 
   for (const file of files) {
     await deleteFile(FILES_BUCKET, file.path);
@@ -30,12 +25,7 @@ export async function deleteCase(caseId: number) {
 
   await db
     .delete(caseFiles)
-    .where(
-      and(
-        eq(caseFiles.caseId, caseId),
-        eq(caseFiles.userId, user.id)
-      )
-    );
+    .where(and(eq(caseFiles.caseId, caseId), eq(caseFiles.userId, user.id)));
 
   const totalSize = files.reduce((sum, f) => sum + f.size, 0);
   if (totalSize > 0) {
@@ -52,12 +42,7 @@ export async function deleteCase(caseId: number) {
   // Delete case notes
   await db
     .delete(caseNotes)
-    .where(
-      and(
-        eq(caseNotes.caseId, caseId),
-        eq(caseNotes.userId, user.id)
-      )
-    );
+    .where(and(eq(caseNotes.caseId, caseId), eq(caseNotes.userId, user.id)));
 
   // Delete case
   await db

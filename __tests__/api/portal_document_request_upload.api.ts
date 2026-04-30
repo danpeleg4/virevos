@@ -102,9 +102,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
 
   it("returns 403 when fileSharing is disabled", async () => {
     (db.select as jest.Mock).mockReturnValueOnce(
-      setupPortalLookup([
-        { ...portalToken, settings: { fileSharing: false } },
-      ])
+      setupPortalLookup([{ ...portalToken, settings: { fileSharing: false } }])
     );
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
     expect(res.status).toBe(403);

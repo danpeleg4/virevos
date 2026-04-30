@@ -829,9 +829,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     ) && (
                       <div className="flex flex-wrap gap-3">
                         {attachmentsData!
-                          .filter((att) =>
-                            att.contentType.startsWith("image/")
-                          )
+                          .filter((att) => att.contentType.startsWith("image/"))
                           .map((att) => (
                             <a
                               key={att.id}

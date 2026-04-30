@@ -69,7 +69,6 @@ export interface PortalData {
     id: number;
     name: string;
     email: string | null;
-    industry: string | null;
   };
   settings: {
     title?: string;

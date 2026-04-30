@@ -7,7 +7,6 @@ export type clients = {
   completedCases: number;
   totalCases: number;
   avatar?: string | null;
-  industry: string | undefined;
   phone: string;
   notes?: string | undefined;
   createdAt?: Date | null;
@@ -18,7 +17,6 @@ type CreateClientInput = {
   name: string;
   email: string;
   phone: string;
-  industry: string;
   notes: string;
 };
 
@@ -27,7 +25,6 @@ type UpdateClientInput = {
   name?: string;
   email?: string;
   phone?: string;
-  industry?: string;
   notes?: string;
 };
 

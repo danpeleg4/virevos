@@ -19,7 +19,6 @@ export type AddClientToolResult = {
     name: string;
     email: string;
     phone: string;
-    industry: string;
     notes?: string;
   };
   message: string;

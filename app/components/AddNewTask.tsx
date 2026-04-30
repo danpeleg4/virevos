@@ -66,10 +66,10 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
 
       const optimisticTask = { ...newTask };
 
-      queryClient.setQueryData(
-        ["caseTasks", caseId],
-        (old: Task[] = []) => [...old, optimisticTask]
-      );
+      queryClient.setQueryData(["caseTasks", caseId], (old: Task[] = []) => [
+        ...old,
+        optimisticTask,
+      ]);
 
       queryClient.setQueryData(["allTasks"], (old: Task[] = []) => [
         ...old,
@@ -79,10 +79,7 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
       return { prevCaseTasks, prevAllTasks };
     },
     onError: (_err, _newTask, context) => {
-      queryClient.setQueryData(
-        ["caseTasks", caseId],
-        context?.prevCaseTasks
-      );
+      queryClient.setQueryData(["caseTasks", caseId], context?.prevCaseTasks);
       queryClient.setQueryData(["allTasks"], context?.prevAllTasks);
     },
     onSettled: () => {
@@ -178,9 +175,7 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
                 <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
                 Case
               </Label>
-              <Select
-                onValueChange={(val) => setSelectedCaseId(Number(val))}
-              >
+              <Select onValueChange={(val) => setSelectedCaseId(Number(val))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a case" />
                 </SelectTrigger>

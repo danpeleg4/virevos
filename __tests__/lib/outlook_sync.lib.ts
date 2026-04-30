@@ -20,9 +20,7 @@ describe("parseGraphDateTime", () => {
       dateTime: "2026-04-25T19:00:00.0000000",
       timeZone: "UTC",
     });
-    expect(result.getTime()).toBe(
-      new Date("2026-04-25T19:00:00Z").getTime()
-    );
+    expect(result.getTime()).toBe(new Date("2026-04-25T19:00:00Z").getTime());
   });
 
   it("preserves the UTC instant regardless of fractional seconds format", () => {

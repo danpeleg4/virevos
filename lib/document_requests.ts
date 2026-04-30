@@ -152,9 +152,7 @@ export async function updateDocumentRequest(
   });
 }
 
-export async function approveDocumentRequest(
-  requestId: number
-): Promise<void> {
+export async function approveDocumentRequest(requestId: number): Promise<void> {
   const user = await currentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
@@ -182,9 +180,7 @@ export async function approveDocumentRequest(
     .where(eq(meetingDocumentRequests.id, requestId));
 }
 
-export async function declineDocumentRequest(
-  requestId: number
-): Promise<void> {
+export async function declineDocumentRequest(requestId: number): Promise<void> {
   const user = await currentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
@@ -196,9 +192,7 @@ export async function declineDocumentRequest(
     .where(eq(meetingDocumentRequests.id, requestId));
 }
 
-export async function listApprovedRequestsForClient(
-  clientId: number
-): Promise<
+export async function listApprovedRequestsForClient(clientId: number): Promise<
   Array<{
     id: number;
     eventTitle: string;
@@ -257,7 +251,9 @@ export async function listApprovedRequestsForClient(
       uploadedFileId: row.uploadedFileId,
       uploadedAt: row.uploadedAt?.toISOString() ?? null,
       uploadedFile:
-        row.uploadedFileId != null && row.uploadedFileName && row.uploadedFilePath
+        row.uploadedFileId != null &&
+        row.uploadedFileName &&
+        row.uploadedFilePath
           ? {
               id: row.uploadedFileId,
               name: row.uploadedFileName,

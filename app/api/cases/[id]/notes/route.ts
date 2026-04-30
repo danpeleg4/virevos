@@ -22,12 +22,7 @@ export async function GET(
   const data = await db
     .select()
     .from(caseNotes)
-    .where(
-      and(
-        eq(caseNotes.userId, user.id),
-        eq(caseNotes.caseId, caseId)
-      )
-    )
+    .where(and(eq(caseNotes.userId, user.id), eq(caseNotes.caseId, caseId)))
     .orderBy(desc(caseNotes.id));
 
   return NextResponse.json(data);
