@@ -13,7 +13,6 @@ import {
   listAttachments,
 } from "./gmail_client";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { currentUser } from "@clerk/nextjs/server";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
 
@@ -35,23 +34,6 @@ interface EmailPineconeRecord {
   clientId?: number;
   gmailId: string;
   threadId: string;
-}
-
-async function upsertEmailToPinecone(
-  record: EmailPineconeRecord,
-  userId: string
-): Promise<void> {
-  try {
-    const index = pc.index(EMAILS_INDEX).namespace(userId);
-    await index.upsertRecords([
-      record as unknown as Parameters<typeof index.upsertRecords>[0][0],
-    ]);
-  } catch (err) {
-    console.error(
-      `[gmail_sync] Failed to upsert email ${record.gmailId} to Pinecone:`,
-      err
-    );
-  }
 }
 
 async function sleep(ms: number) {
@@ -203,7 +185,6 @@ async function processMessage(
       })
       .where(eq(googleEmails.id, existing[0].id));
     emailId = existing[0].id;
-    await upsertEmailToPinecone(pineconeRecord, userId);
   } else {
     const [inserted] = await db
       .insert(googleEmails)
@@ -227,7 +208,6 @@ async function processMessage(
         }))
       );
     }
-    await upsertEmailToPinecone(pineconeRecord, userId);
   }
 }
 
@@ -317,21 +297,4 @@ export async function syncSingleMessage(
   }
 
   await processMessage(gmail, gmailId, userId, clientsMap);
-}
-
-export async function searchEmails(
-  text: string
-): Promise<EmailPineconeRecord[]> {
-  const user = await currentUser();
-  if (!user?.id) return [];
-
-  const index = pc.index(EMAILS_INDEX).namespace(user.id);
-  const results = await index.searchRecords({
-    query: {
-      topK: 10,
-      inputs: { text },
-    },
-  });
-
-  return results.result.hits.map((hit) => hit.fields as EmailPineconeRecord);
 }

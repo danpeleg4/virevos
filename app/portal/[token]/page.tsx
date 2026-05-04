@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -31,7 +32,11 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { PortalData, TimeSlot } from "@/types/portal";
+import type {
+  PortalData,
+  PortalChatMessage,
+  TimeSlot,
+} from "@/types/portal";
 import { parseDateOnlyString } from "@/lib/date_utils";
 import axios from "axios";
 
@@ -106,15 +111,59 @@ export default function PortalPage() {
   const params = useParams();
   const token = params.token as string;
 
+  const queryClient = useQueryClient();
   const [data, setData] = useState<PortalData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [newMessage, setNewMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [localMessages, setLocalMessages] = useState<PortalData["messages"]>(
-    []
-  );
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const chatQueryKey = ["portal-chat", token] as const;
+  const { data: chatData } = useQuery<{ messages: PortalChatMessage[] }>({
+    queryKey: chatQueryKey,
+    queryFn: async () => {
+      const res = await axios.get(`/api/portal/${token}/chat`);
+      return res.data;
+    },
+    enabled: !!token,
+    refetchInterval: 5000,
+  });
+  const localMessages: PortalChatMessage[] = chatData?.messages ?? [];
+
+  const sendMessage = useMutation({
+    mutationFn: async (body: string) => {
+      const res = await axios.post(`/api/portal/${token}/chat`, {
+        message: body,
+      });
+      return res.data.message as PortalChatMessage;
+    },
+    onMutate: async (body) => {
+      await queryClient.cancelQueries({ queryKey: chatQueryKey });
+      const previous = queryClient.getQueryData<{
+        messages: PortalChatMessage[];
+      }>(chatQueryKey);
+      const optimistic: PortalChatMessage = {
+        id: -Date.now(),
+        senderType: "client",
+        body,
+        readAt: null,
+        createdAt: new Date().toISOString(),
+      };
+      queryClient.setQueryData<{ messages: PortalChatMessage[] }>(
+        chatQueryKey,
+        (old) => ({ messages: [...(old?.messages ?? []), optimistic] })
+      );
+      return { previous };
+    },
+    onError: (_err, _body, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(chatQueryKey, ctx.previous);
+      toast.error("Failed to send message");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: chatQueryKey });
+    },
+  });
 
   // Scheduling state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -159,7 +208,6 @@ export default function PortalPage() {
       const res = await axios.get(`/api/portal/${token}`);
       const portalData = res.data;
       setData(portalData);
-      setLocalMessages(portalData.messages || []);
       setLocalFiles(portalData.files || []);
       setDocumentRequests(portalData.documentRequests || []);
       if (portalData.cases?.length > 0) {
@@ -201,31 +249,19 @@ export default function PortalPage() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
-    setIsSending(true);
-    try {
-      await axios.post(`/api/portal/${token}/message`, { message: newMessage });
-      setLocalMessages((prev) => [
-        {
-          id: Date.now(),
-          subject: null,
-          preview: newMessage,
-          from: data?.client.name || "You",
-          isSent: false,
-          sentAt: new Date().toISOString(),
-          isRead: true,
-        },
-        ...prev,
-      ]);
-      setNewMessage("");
-      toast.success("Message sent successfully");
-    } catch {
-      toast.error("Failed to send message");
-    } finally {
-      setIsSending(false);
-    }
+  const handleSendMessage = () => {
+    const trimmed = newMessage.trim();
+    if (!trimmed) return;
+    setNewMessage("");
+    sendMessage.mutate(trimmed);
   };
+
+  // Auto-scroll the message thread when new messages arrive
+  useEffect(() => {
+    if (activeTab === "messages") {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [localMessages.length, activeTab]);
 
   const handleBookMeeting = async () => {
     if (
@@ -366,7 +402,10 @@ export default function PortalPage() {
   }
 
   const portalTitle = data.settings?.title || "Client Portal";
-  const unreadCount = localMessages.filter((m) => !m.isRead).length;
+  const unreadCount = localMessages.filter(
+    (m) => m.senderType === "agency" && !m.readAt
+  ).length;
+  const isSending = sendMessage.isPending;
   const schedulingEnabled = !!data.settings?.meetingSchedulingEnabled;
   const allowedDurations = data.settings?.availability?.meetingDurations ?? [
     30,
@@ -598,33 +637,41 @@ export default function PortalPage() {
                           </p>
                         </div>
                       ) : (
-                        localMessages.slice(0, 3).map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`p-3 rounded-lg border ${
-                              !msg.isRead
-                                ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
-                                : "bg-muted/50 border-border"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-xs font-medium text-foreground">
-                                {msg.from}
-                              </p>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(msg.sentAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            {msg.subject && (
-                              <p className="text-xs font-medium text-foreground mb-0.5">
-                                {msg.subject}
-                              </p>
-                            )}
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {msg.preview}
-                            </p>
-                          </div>
-                        ))
+                        localMessages
+                          .slice(-3)
+                          .reverse()
+                          .map((msg) => {
+                            const isUnread =
+                              msg.senderType === "agency" && !msg.readAt;
+                            const senderLabel =
+                              msg.senderType === "agency"
+                                ? data.settings?.title || "Agency"
+                                : data.client.name;
+                            return (
+                              <div
+                                key={msg.id}
+                                className={`p-3 rounded-lg border ${
+                                  isUnread
+                                    ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+                                    : "bg-muted/50 border-border"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-xs font-medium text-foreground">
+                                    {senderLabel}
+                                  </p>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(
+                                      msg.createdAt
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {msg.body}
+                                </p>
+                              </div>
+                            );
+                          })
                       )}
                       <Button
                         variant="ghost"
@@ -853,63 +900,92 @@ export default function PortalPage() {
                     Messages
                   </span>
                 </div>
-                <div className="space-y-4 p-4">
-                  <div className="space-y-2 max-h-[480px] overflow-y-auto">
+                <div
+                  className="flex flex-col"
+                  style={{ height: "min(70vh, 600px)" }}
+                  data-testid="portal-chat-thread"
+                >
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {localMessages.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-12 text-center">
                         <MessageSquare className="h-8 w-8 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
                           No messages yet
                         </p>
+                        <p className="text-xs text-muted-foreground">
+                          Start the conversation below
+                        </p>
                       </div>
                     ) : (
-                      localMessages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`p-4 rounded-lg border ${
-                            !msg.isRead
-                              ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
-                              : "bg-muted/50 border-border"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-7 w-7">
+                      localMessages.map((msg) => {
+                        const fromClient = msg.senderType === "client";
+                        const senderLabel = fromClient
+                          ? data.client.name
+                          : data.settings?.title || "Agency";
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`flex gap-2 ${
+                              fromClient ? "justify-end" : "justify-start"
+                            }`}
+                          >
+                            {!fromClient && (
+                              <Avatar className="h-7 w-7 mt-0.5">
                                 <AvatarFallback className="text-xs bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
-                                  {msg.from.charAt(0).toUpperCase()}
+                                  {senderLabel.charAt(0).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
-                              <p className="text-sm font-medium text-foreground">
-                                {msg.from}
+                            )}
+                            <div
+                              className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
+                                fromClient
+                                  ? "bg-blue-600 text-white rounded-br-sm"
+                                  : "bg-muted text-foreground rounded-bl-sm"
+                              }`}
+                            >
+                              <p className="whitespace-pre-wrap break-words">
+                                {msg.body}
                               </p>
-                              {!msg.isRead && (
-                                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                              )}
+                              <p
+                                className={`text-[10px] mt-1 ${
+                                  fromClient
+                                    ? "text-blue-100"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {new Date(msg.createdAt).toLocaleTimeString(
+                                  undefined,
+                                  { hour: "2-digit", minute: "2-digit" }
+                                )}
+                              </p>
                             </div>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(msg.sentAt).toLocaleString()}
-                            </span>
+                            {fromClient && (
+                              <Avatar className="h-7 w-7 mt-0.5">
+                                <AvatarFallback className="text-xs bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
+                                  {getInitials(data.client.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
                           </div>
-                          {msg.subject && (
-                            <p className="text-xs font-medium text-foreground ml-9 mb-1">
-                              {msg.subject}
-                            </p>
-                          )}
-                          <p className="text-sm text-muted-foreground ml-9">
-                            {msg.preview}
-                          </p>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
+                    <div ref={messagesEndRef} />
                   </div>
 
                   {(data.settings?.chatEnabled ?? true) && (
-                    <div className="border-t border-border pt-4">
+                    <div className="border-t border-border p-4">
                       <Textarea
                         placeholder="Write a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        rows={3}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                        rows={2}
                         className="resize-none"
                       />
                       <div className="flex justify-end mt-2">

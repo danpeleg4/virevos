@@ -392,6 +392,8 @@ export const clientPortalTokens = pgTable("client_portal_tokens", {
     }>()
     .default({}),
   lastAccessedAt: timestamp("last_accessed_at"),
+  chatStarred: boolean("chat_starred").notNull().default(false),
+  chatArchived: boolean("chat_archived").notNull().default(false),
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
@@ -421,6 +423,24 @@ export const portalMeetingBookings = pgTable("portal_meeting_bookings", {
     onDelete: "set null",
   }),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// PORTAL CHAT MESSAGES
+export const portalMessages = pgTable("portal_messages", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  portalId: integer("portal_id")
+    .notNull()
+    .references(() => clientPortalTokens.id, { onDelete: "cascade" }),
+  clientId: integer("client_id")
+    .notNull()
+    .references(() => clients.id, { onDelete: "cascade" }),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.user_id, { onDelete: "cascade" }),
+  senderType: text("sender_type").notNull(), // "client" | "agency"
+  body: text("body").notNull(),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // SUBSCRIPTIONS
@@ -672,8 +692,24 @@ export const clientPortalTokensRelations = relations(
       references: [clients.id],
     }),
     bookings: many(portalMeetingBookings),
+    messages: many(portalMessages),
   })
 );
+
+export const portalMessagesRelations = relations(portalMessages, ({ one }) => ({
+  portal: one(clientPortalTokens, {
+    fields: [portalMessages.portalId],
+    references: [clientPortalTokens.id],
+  }),
+  client: one(clients, {
+    fields: [portalMessages.clientId],
+    references: [clients.id],
+  }),
+  user: one(users, {
+    fields: [portalMessages.userId],
+    references: [users.user_id],
+  }),
+}));
 
 export const portalMeetingBookingsRelations = relations(
   portalMeetingBookings,

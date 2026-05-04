@@ -148,6 +148,7 @@ async function applyOutlookEventsToDb(
 
     const title = e.subject ?? "Untitled";
     const description = e.bodyPreview ?? null;
+    const status = e.showAs === "tentative" ? "tentative" : "confirmed";
 
     if (existingMap.has(e.id)) {
       const m = existingMap.get(e.id)!;

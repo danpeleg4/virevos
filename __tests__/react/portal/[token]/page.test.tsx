@@ -6,6 +6,19 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import {
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+
+function renderWithClient(ui: React.ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>
+  );
+}
 
 jest.mock("next/navigation", () => ({
   useParams: () => ({ token: "test-token-abc" }),
@@ -51,18 +64,7 @@ jest.mock("@/lib/date_utils", () => ({
 }));
 
 jest.mock("axios", () => ({
-  get: jest.fn(() =>
-    Promise.resolve({
-      data: {
-        cases: [],
-        client: { name: "Portal Client", email: "client@example.com" },
-        messages: [],
-        files: [],
-        bookings: [],
-        settings: {},
-      },
-    })
-  ),
+  get: jest.fn(),
   post: jest.fn(() => Promise.resolve({ data: {}, status: 200 })),
   isAxiosError: jest.fn(() => false),
 }));
@@ -72,16 +74,23 @@ import PortalPage from "@/app/portal/[token]/page";
 
 const mockedAxiosGet = axios.get as jest.Mock;
 
-const buildPortalData = (
-  overrides: Partial<{
-    cases: unknown[];
-    messages: unknown[];
-    files: unknown[];
-    bookings: unknown[];
-    settings: Record<string, unknown>;
-  }> = {}
-) => ({
-  data: {
+interface PortalOverrides {
+  cases?: unknown[];
+  files?: unknown[];
+  bookings?: unknown[];
+  settings?: Record<string, unknown>;
+  chatMessages?: Array<{
+    id: number;
+    senderType: "client" | "agency";
+    body: string;
+    readAt: string | null;
+    createdAt: string;
+  }>;
+  failPortal?: boolean;
+}
+
+function setupAxiosRoutes(overrides: PortalOverrides = {}) {
+  const portalPayload = {
     client: {
       id: 1,
       name: "Portal Client",
@@ -89,25 +98,36 @@ const buildPortalData = (
     },
     settings: { title: "Portal", ...(overrides.settings ?? {}) },
     cases: overrides.cases ?? [],
-    messages: overrides.messages ?? [],
     files: overrides.files ?? [],
     bookings: overrides.bookings ?? [],
-  },
-});
+    documentRequests: [],
+  };
+  mockedAxiosGet.mockImplementation((url: string) => {
+    if (url.endsWith("/chat")) {
+      return Promise.resolve({
+        data: { messages: overrides.chatMessages ?? [] },
+      });
+    }
+    if (overrides.failPortal) {
+      return Promise.reject(new Error("network"));
+    }
+    return Promise.resolve({ data: portalPayload });
+  });
+}
 
 describe("Portal Page", () => {
   beforeEach(() => {
     mockedAxiosGet.mockReset();
-    mockedAxiosGet.mockResolvedValue(buildPortalData());
+    setupAxiosRoutes();
   });
 
   it("renders without crashing", () => {
-    const { container } = render(<PortalPage />);
+    const { container } = renderWithClient(<PortalPage />);
     expect(container).toBeInTheDocument();
   });
 
   it("renders loading state initially", () => {
-    render(<PortalPage />);
+    renderWithClient(<PortalPage />);
     expect(screen.getByText(/loading your portal/i)).toBeInTheDocument();
   });
 
@@ -115,7 +135,7 @@ describe("Portal Page", () => {
     (await screen.findByTestId("portal-tab-bar")) as HTMLElement;
 
   it("renders the workspace-style tab pill buttons after data loads", async () => {
-    render(<PortalPage />);
+    renderWithClient(<PortalPage />);
     const tabBar = await findTabBar();
     expect(
       within(tabBar).getByRole("button", { name: /^overview$/i })
@@ -132,7 +152,7 @@ describe("Portal Page", () => {
   });
 
   it("hides the schedule tab when meeting scheduling is disabled", async () => {
-    render(<PortalPage />);
+    renderWithClient(<PortalPage />);
     const tabBar = await findTabBar();
     expect(
       within(tabBar).queryByRole("button", { name: /schedule meeting/i })
@@ -140,15 +160,13 @@ describe("Portal Page", () => {
   });
 
   it("shows the schedule tab when meeting scheduling is enabled", async () => {
-    mockedAxiosGet.mockResolvedValueOnce(
-      buildPortalData({
-        settings: {
-          meetingSchedulingEnabled: true,
-          availability: { meetingDurations: [30] },
-        },
-      })
-    );
-    render(<PortalPage />);
+    setupAxiosRoutes({
+      settings: {
+        meetingSchedulingEnabled: true,
+        availability: { meetingDurations: [30] },
+      },
+    });
+    renderWithClient(<PortalPage />);
     const tabBar = await findTabBar();
     expect(
       within(tabBar).getByRole("button", { name: /schedule meeting/i })
@@ -156,68 +174,60 @@ describe("Portal Page", () => {
   });
 
   it("shows count badges on cases, messages and files tabs", async () => {
-    mockedAxiosGet.mockResolvedValueOnce(
-      buildPortalData({
-        cases: [
-          {
-            id: 1,
-            name: "Case A",
-            status: "in-progress",
-            dueDate: "2030-01-01",
-            priority: "high",
-            description: null,
-          },
-          {
-            id: 2,
-            name: "Case B",
-            status: "in-progress",
-            dueDate: "2030-01-02",
-            priority: "low",
-            description: null,
-          },
-        ],
-        messages: [
-          {
-            id: 1,
-            subject: null,
-            preview: "Hi",
-            from: "Lawyer",
-            isSent: true,
-            sentAt: "2030-01-01T00:00:00Z",
-            isRead: false,
-          },
-          {
-            id: 2,
-            subject: null,
-            preview: "Hello",
-            from: "Lawyer",
-            isSent: true,
-            sentAt: "2030-01-02T00:00:00Z",
-            isRead: false,
-          },
-          {
-            id: 3,
-            subject: null,
-            preview: "Read",
-            from: "Lawyer",
-            isSent: true,
-            sentAt: "2030-01-03T00:00:00Z",
-            isRead: true,
-          },
-        ],
-        files: [
-          {
-            id: 1,
-            name: "doc.pdf",
-            size: 1024,
-            mimeType: "application/pdf",
-            path: "/p",
-            createdAt: null,
-          },
-        ],
-      })
-    );
-    render(<PortalPage />);
+    setupAxiosRoutes({
+      cases: [
+        {
+          id: 1,
+          name: "Case A",
+          status: "in-progress",
+          dueDate: "2030-01-01",
+          priority: "high",
+          description: null,
+        },
+        {
+          id: 2,
+          name: "Case B",
+          status: "in-progress",
+          dueDate: "2030-01-02",
+          priority: "low",
+          description: null,
+        },
+      ],
+      chatMessages: [
+        {
+          id: 1,
+          senderType: "agency",
+          body: "Hi",
+          readAt: null,
+          createdAt: "2030-01-01T00:00:00Z",
+        },
+        {
+          id: 2,
+          senderType: "agency",
+          body: "Hello",
+          readAt: null,
+          createdAt: "2030-01-02T00:00:00Z",
+        },
+        {
+          id: 3,
+          senderType: "agency",
+          body: "Read",
+          readAt: "2030-01-03T00:00:00Z",
+          createdAt: "2030-01-03T00:00:00Z",
+        },
+      ],
+      files: [
+        {
+          id: 1,
+          name: "doc.pdf",
+          size: 1024,
+          mimeType: "application/pdf",
+          path: "/p",
+          createdAt: null,
+        },
+      ],
+    });
+    renderWithClient(<PortalPage />);
     const tabBar = await findTabBar();
     expect(
       within(tabBar).getByRole("button", { name: /^cases\s*2$/i })
@@ -231,21 +241,19 @@ describe("Portal Page", () => {
   });
 
   it("switches the active tab when a tab pill is clicked", async () => {
-    mockedAxiosGet.mockResolvedValueOnce(
-      buildPortalData({
-        cases: [
-          {
-            id: 1,
-            name: "Acme Lawsuit",
-            status: "in-progress",
-            dueDate: "2030-01-01",
-            priority: "high",
-            description: "Trademark dispute",
-          },
-        ],
-      })
-    );
-    render(<PortalPage />);
+    setupAxiosRoutes({
+      cases: [
+        {
+          id: 1,
+          name: "Acme Lawsuit",
+          status: "in-progress",
+          dueDate: "2030-01-01",
+          priority: "high",
+          description: "Trademark dispute",
+        },
+      ],
+    });
+    renderWithClient(<PortalPage />);
     const tabBar = await findTabBar();
 
     // Overview tab default: shows "Active Cases" toolbar header
@@ -263,8 +271,8 @@ describe("Portal Page", () => {
   });
 
   it("renders the not-found state when portal data fails to load", async () => {
-    mockedAxiosGet.mockRejectedValueOnce(new Error("network"));
-    render(<PortalPage />);
+    setupAxiosRoutes({ failPortal: true });
+    renderWithClient(<PortalPage />);
     expect(await screen.findByText(/portal not found/i)).toBeInTheDocument();
   });
 });

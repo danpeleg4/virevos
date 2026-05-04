@@ -4,7 +4,6 @@ import {
   clientPortalTokens,
   clients,
   cases,
-  googleEmails,
   caseFiles,
   portalMeetingBookings,
 } from "@db/schema";
@@ -59,29 +58,6 @@ export async function GET(
       .from(cases)
       .where(eq(cases.clientId, client.id));
 
-    // Fetch emails involving this client
-    const clientEmails = await db
-      .select({
-        id: googleEmails.id,
-        subject: googleEmails.subject,
-        snippet: googleEmails.snippet,
-        fromEmail: googleEmails.fromEmail,
-        fromName: googleEmails.fromName,
-        bodyText: googleEmails.bodyText,
-        bodyHtml: googleEmails.bodyHtml,
-        isSent: googleEmails.isSent,
-        sentAt: googleEmails.sentAt,
-        isRead: googleEmails.isRead,
-      })
-      .from(googleEmails)
-      .where(
-        and(
-          eq(googleEmails.userId, portalToken.userId),
-          eq(googleEmails.clientId, client.id)
-        )
-      )
-      .limit(50);
-
     // Fetch case files for client's cases
     const caseIds = clientProjects.map((p) => p.id);
     const files: Array<typeof caseFiles.$inferSelect> = [];
@@ -129,15 +105,6 @@ export async function GET(
         dueDate: p.dueDate,
         priority: p.priority,
         description: p.description,
-      })),
-      messages: clientEmails.map((e) => ({
-        id: e.id,
-        subject: e.subject,
-        preview: e.snippet || e.bodyText?.slice(0, 200) || "",
-        from: e.fromName || e.fromEmail || "Agency",
-        isSent: e.isSent,
-        sentAt: e.sentAt,
-        isRead: e.isRead,
       })),
       files: files.map((f) => ({
         id: f.id,

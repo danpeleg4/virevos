@@ -52,6 +52,7 @@ import { AIReplyComposer } from "./AIReplyComposer";
 import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
+import { PortalChatPane } from "./PortalChatPane";
 import { toast } from "sonner";
 import axios from "axios";
 import type {
@@ -59,6 +60,7 @@ import type {
   AttachedFile,
   ScheduleDetails,
 } from "@/types/communications";
+import type { PortalChatConversation } from "@/types/portal";
 
 function formatTimestamp(ts: Date | string): string {
   const date = typeof ts === "string" ? new Date(ts) : ts;
@@ -169,7 +171,64 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     initialPageParam: 1,
   });
 
-  const allMessages = data?.pages.flatMap((p) => p.messages) ?? [];
+  const { data: portalChatsData } = useQuery<{
+    conversations: PortalChatConversation[];
+  }>({
+    queryKey: ["portal-chat-conversations"],
+    queryFn: async () => {
+      const res = await axios.get("/api/portal-chat");
+      return res.data;
+    },
+    refetchInterval: 5000,
+  });
+
+  const portalChatRows: InboxMessage[] = useMemo(() => {
+    const convos = portalChatsData?.conversations ?? [];
+    const rows = convos
+      .filter((c) => c.lastMessage !== null)
+      .map((c) => {
+        const initials = c.clientName
+          .split(" ")
+          .slice(0, 2)
+          .map((w) => w[0] || "")
+          .join("")
+          .toUpperCase();
+        return {
+          id: `portal-chat-${c.clientId}`,
+          type: "chat" as const,
+          from: c.clientName,
+          fromEmail: c.clientEmail ?? undefined,
+          initials,
+          preview: c.lastMessage ?? "",
+          timestamp: c.lastMessageAt ?? new Date().toISOString(),
+          unread: c.unreadCount > 0,
+          starred: c.starred,
+          archived: c.archived,
+          sent: false,
+          hasAttachments: false,
+          client: c.clientName,
+          clientId: c.clientId,
+          tags: [],
+        } satisfies InboxMessage;
+      });
+
+    // Mirror the email-side filterStatus semantics for chat rows.
+    if (filterStatus === "archived") return rows.filter((r) => r.archived);
+    const visible = rows.filter((r) => !r.archived);
+    if (filterStatus === "unread") return visible.filter((r) => r.unread);
+    if (filterStatus === "starred") return visible.filter((r) => r.starred);
+    if (filterStatus === "sent") return [];
+    return visible;
+  }, [portalChatsData, filterStatus]);
+
+  const allMessages = useMemo(() => {
+    const emails = data?.pages.flatMap((p) => p.messages) ?? [];
+    const merged = [...portalChatRows, ...emails];
+    return merged.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }, [data, portalChatRows]);
 
   // Intersection observer to load next page when sentinel is visible
   const handleObserver = useCallback(
@@ -265,7 +324,81 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return filterType === "all" || msg.type === filterType;
   });
 
+  const updateChatConvoInCache = useCallback(
+    (
+      clientId: number,
+      updater: (
+        c: PortalChatConversation
+      ) => PortalChatConversation
+    ) => {
+      queryClient.setQueryData<{ conversations: PortalChatConversation[] }>(
+        ["portal-chat-conversations"],
+        (old) => {
+          if (!old) return old;
+          return {
+            conversations: old.conversations.map((c) =>
+              c.clientId === clientId ? updater(c) : c
+            ),
+          };
+        }
+      );
+    },
+    [queryClient]
+  );
+
   const applyAction = async (id: string, action: string) => {
+    if (id.startsWith("portal-chat-")) {
+      const clientId = Number(id.replace("portal-chat-", ""));
+      if (!Number.isFinite(clientId)) return;
+
+      const prev = queryClient.getQueryData<{
+        conversations: PortalChatConversation[];
+      }>(["portal-chat-conversations"]);
+      const previousSelected = selectedMessage;
+
+      // Optimistic update of the conversation row + selected pane
+      const convoUpdater = (c: PortalChatConversation) => {
+        if (action === "star") return { ...c, starred: true };
+        if (action === "unstar") return { ...c, starred: false };
+        if (action === "archive") return { ...c, archived: true };
+        if (action === "unarchive") return { ...c, archived: false };
+        if (action === "markUnread")
+          return {
+            ...c,
+            unreadCount: c.unreadCount > 0 ? c.unreadCount : 1,
+          };
+        return c;
+      };
+      updateChatConvoInCache(clientId, convoUpdater);
+      if (selectedMessage?.id === id) {
+        setSelectedMessage((prevSel) => {
+          if (!prevSel) return prevSel;
+          const next = { ...prevSel };
+          if (action === "star") next.starred = true;
+          if (action === "unstar") next.starred = false;
+          if (action === "archive") next.archived = true;
+          if (action === "unarchive") next.archived = false;
+          if (action === "markUnread") next.unread = true;
+          return next;
+        });
+      }
+
+      try {
+        await axios.patch(`/api/portal-chat/${clientId}`, { action });
+        // Mark Unread: drop selection so the chat pane GET doesn't immediately
+        // re-mark as read on its next poll.
+        if (action === "markUnread" && selectedMessage?.id === id) {
+          setSelectedMessage(null);
+        }
+      } catch {
+        if (prev) {
+          queryClient.setQueryData(["portal-chat-conversations"], prev);
+        }
+        setSelectedMessage(previousSelected);
+        toast.error("Action failed");
+      }
+      return;
+    }
     const updater = (msg: InboxMessage): InboxMessage => {
       const updated = { ...msg };
       if (action === "star") updated.starred = true;
@@ -317,6 +450,28 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   };
 
   const handleDeleteMessage = async (id: string) => {
+    if (id.startsWith("portal-chat-")) {
+      const clientId = Number(id.replace("portal-chat-", ""));
+      if (!Number.isFinite(clientId)) return;
+      const confirmed = window.confirm(
+        "Delete this entire chat? Messages will be removed for both you and the client."
+      );
+      if (!confirmed) return;
+      try {
+        await axios.delete(`/api/portal-chat/${clientId}`);
+        if (selectedMessage?.id === id) setSelectedMessage(null);
+        await queryClient.invalidateQueries({
+          queryKey: ["portal-chat-conversations"],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["portal-chat-thread", clientId],
+        });
+        toast.success("Chat deleted");
+      } catch {
+        toast.error("Delete failed");
+      }
+      return;
+    }
     try {
       await axios.delete(`/api/outlook/messages/${id}`);
       removeMessageFromCache(id);
@@ -653,7 +808,122 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         className="flex flex-col overflow-y-auto space-y-2"
         style={{ flex: "1 1 0%", minHeight: 0 }}
       >
-        {selectedMessage ? (
+        {selectedMessage && selectedMessage.type === "chat" ? (
+          <div
+            className="flex flex-col"
+            style={{ flex: "1 1 0%", minHeight: 0 }}
+          >
+            <div className="px-6 pt-6 pb-3 border-b border-border flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback>{selectedMessage.initials}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {selectedMessage.from}
+                  </h3>
+                  {selectedMessage.fromEmail && (
+                    <p className="text-xs text-muted-foreground">
+                      {selectedMessage.fromEmail}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge>
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  Portal chat
+                </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Chat Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={async () => {
+                        const wasArchived = !!selectedMessage.archived;
+                        await applyAction(
+                          selectedMessage.id,
+                          wasArchived ? "unarchive" : "archive"
+                        );
+                        if (!wasArchived) setSelectedMessage(null);
+                        toast.success(
+                          wasArchived ? "Chat unarchived" : "Chat archived"
+                        );
+                      }}
+                    >
+                      <Archive
+                        className={`h-4 w-4 mr-2 ${
+                          selectedMessage.archived
+                            ? "fill-blue-500 text-blue-500"
+                            : ""
+                        }`}
+                      />
+                      {selectedMessage.archived ? "Unarchive" : "Archive"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={async () => {
+                        await applyAction(
+                          selectedMessage.id,
+                          selectedMessage.starred ? "unstar" : "star"
+                        );
+                        toast.success(
+                          selectedMessage.starred
+                            ? "Removed from starred"
+                            : "Added to starred"
+                        );
+                      }}
+                    >
+                      <Star
+                        className={`h-4 w-4 mr-2 ${
+                          selectedMessage.starred
+                            ? "fill-yellow-400 text-yellow-400"
+                            : ""
+                        }`}
+                      />
+                      {selectedMessage.starred ? "Unstar" : "Star"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={async () => {
+                        await applyAction(selectedMessage.id, "markUnread");
+                        toast.success("Marked as unread");
+                      }}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Mark as Unread
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="cursor-pointer text-red-600"
+                      onClick={() => handleDeleteMessage(selectedMessage.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+            {selectedMessage.clientId != null ? (
+              <PortalChatPane
+                clientId={selectedMessage.clientId}
+                clientName={selectedMessage.from}
+                clientInitials={selectedMessage.initials}
+              />
+            ) : (
+              <div className="p-6 text-sm text-muted-foreground">
+                This conversation is missing a client link.
+              </div>
+            )}
+          </div>
+        ) : selectedMessage ? (
           <div
             className="flex flex-col"
             style={{ flex: "1 1 0%", minHeight: 0 }}
