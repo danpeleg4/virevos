@@ -6,10 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function renderWithClient(ui: React.ReactElement) {
   const client = new QueryClient({

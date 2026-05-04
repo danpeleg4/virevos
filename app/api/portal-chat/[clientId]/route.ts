@@ -36,10 +36,7 @@ export async function GET(
 
     const portal = await loadPortalForUser(clientId, user.id);
     if (!portal) {
-      return NextResponse.json(
-        { error: "Portal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     const rows = await db
@@ -117,10 +114,7 @@ export async function PATCH(
 
     const portal = await loadPortalForUser(clientId, user.id);
     if (!portal) {
-      return NextResponse.json(
-        { error: "Portal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     if (action === "star" || action === "unstar") {
@@ -184,10 +178,7 @@ export async function DELETE(
 
     const portal = await loadPortalForUser(clientId, user.id);
     if (!portal) {
-      return NextResponse.json(
-        { error: "Portal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     await db
@@ -227,7 +218,8 @@ export async function POST(
     }
 
     const body = await req.json();
-    const message = typeof body?.message === "string" ? body.message.trim() : "";
+    const message =
+      typeof body?.message === "string" ? body.message.trim() : "";
     if (!message) {
       return NextResponse.json(
         { error: "Message is required" },
@@ -243,10 +235,7 @@ export async function POST(
 
     const portal = await loadPortalForUser(clientId, user.id);
     if (!portal) {
-      return NextResponse.json(
-        { error: "Portal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     const [inserted] = await db

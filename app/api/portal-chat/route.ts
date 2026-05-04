@@ -51,10 +51,7 @@ export async function GET() {
       )
       .orderBy(desc(portalMessages.createdAt));
 
-    const lastByPortal = new Map<
-      number,
-      { body: string; createdAt: Date }
-    >();
+    const lastByPortal = new Map<number, { body: string; createdAt: Date }>();
     for (const m of lastMessages) {
       if (!lastByPortal.has(m.portalId)) {
         lastByPortal.set(m.portalId, { body: m.body, createdAt: m.createdAt });

@@ -76,7 +76,8 @@ export async function POST(
   try {
     const { token } = await params;
     const body = await req.json();
-    const message = typeof body?.message === "string" ? body.message.trim() : "";
+    const message =
+      typeof body?.message === "string" ? body.message.trim() : "";
 
     if (!message) {
       return NextResponse.json(

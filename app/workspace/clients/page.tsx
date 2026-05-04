@@ -130,9 +130,7 @@ export default function Clients() {
               client?.email
                 ?.toLowerCase()
                 .includes(searchQuery.toLowerCase()) ||
-              client?.phone
-                ?.toLowerCase()
-                .includes(searchQuery.toLowerCase()))
+              client?.phone?.toLowerCase().includes(searchQuery.toLowerCase()))
         )
       : []
   ).sort((a, b) => {

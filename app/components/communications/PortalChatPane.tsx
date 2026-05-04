@@ -78,7 +78,9 @@ export function PortalChatPane({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       // Refresh the conversation list so unread/last-message updates
-      queryClient.invalidateQueries({ queryKey: ["portal-chat-conversations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["portal-chat-conversations"],
+      });
     },
   });
 
@@ -90,7 +92,9 @@ export function PortalChatPane({
   // conversation list so the agency-side unread badge clears immediately.
   useEffect(() => {
     if (data) {
-      queryClient.invalidateQueries({ queryKey: ["portal-chat-conversations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["portal-chat-conversations"],
+      });
     }
   }, [data, queryClient]);
 

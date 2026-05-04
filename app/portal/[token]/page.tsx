@@ -32,11 +32,7 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
-import type {
-  PortalData,
-  PortalChatMessage,
-  TimeSlot,
-} from "@/types/portal";
+import type { PortalData, PortalChatMessage, TimeSlot } from "@/types/portal";
 import { parseDateOnlyString } from "@/lib/date_utils";
 import axios from "axios";
 

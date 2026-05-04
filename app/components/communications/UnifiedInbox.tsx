@@ -327,9 +327,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const updateChatConvoInCache = useCallback(
     (
       clientId: number,
-      updater: (
-        c: PortalChatConversation
-      ) => PortalChatConversation
+      updater: (c: PortalChatConversation) => PortalChatConversation
     ) => {
       queryClient.setQueryData<{ conversations: PortalChatConversation[] }>(
         ["portal-chat-conversations"],
