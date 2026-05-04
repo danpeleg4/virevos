@@ -2,13 +2,13 @@ import { Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 
 const footerLinks: Record<string, { label: string; href: string }[]> = {
   Product: [
-    { label: "Features", href: "/features" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Changelog", href: "/changelog" },
+    { label: "Features", href: "#" },
+    { label: "Pricing", href: "#" },
+    { label: "Changelog", href: "#" },
   ],
   Company: [
     { label: "About", href: "/about" },
-    { label: "Blog", href: "/blog" },
+    { label: "Blog", href: "#" },
     { label: "Contact", href: "/contact" },
   ],
   Legal: [

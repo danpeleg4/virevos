@@ -185,7 +185,7 @@ export default function Features() {
           <div className="inline-flex flex-col sm:flex-row items-center gap-4">
             <Button
               size="lg"
-              onClick={() => router.push("/features")}
+              onClick={() => router.push("#")}
               className="bg-gray-900 hover:bg-gray-800 py-6 text-lg text-white px-8 rounded-xl"
             >
               Explore all features
