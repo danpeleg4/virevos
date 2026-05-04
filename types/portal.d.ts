@@ -11,6 +11,26 @@ export interface PortalAvailability {
   timezone: string;
 }
 
+export interface PortalChatMessage {
+  id: number;
+  senderType: "client" | "agency";
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface PortalChatConversation {
+  portalId: number;
+  clientId: number;
+  clientName: string;
+  clientEmail: string | null;
+  lastMessage: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+  starred: boolean;
+  archived: boolean;
+}
+
 export interface PortalMeetingBooking {
   id: number;
   portalId: number;
@@ -86,15 +106,6 @@ export interface PortalData {
     dueDate: string;
     priority: string;
     description: string | null;
-  }>;
-  messages: Array<{
-    id: number;
-    subject: string | null;
-    preview: string;
-    from: string;
-    isSent: boolean;
-    sentAt: string;
-    isRead: boolean;
   }>;
   files: Array<{
     id: number;

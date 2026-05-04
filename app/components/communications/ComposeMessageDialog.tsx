@@ -164,8 +164,7 @@ export function ComposeMessageDialog({
     if (!chatClientId || !chatMessage.trim()) return;
     setIsSending(true);
     try {
-      await axios.post("/api/chat/send", {
-        clientId: Number(chatClientId),
+      await axios.post(`/api/portal-chat/${Number(chatClientId)}`, {
         message: chatMessage.trim(),
       });
       toast.success("Message sent successfully");

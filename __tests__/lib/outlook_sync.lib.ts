@@ -41,7 +41,7 @@ describe("parseGraphDateTime", () => {
     const dateTime = "2026-07-04T12:00:00.0000000";
     const parsed = parseGraphDateTime({ dateTime, timeZone: "UTC" });
     const local = new Date(dateTime);
-    const expectedDeltaMs = -local.getTimezoneOffset() * 60_000;
+    const expectedDeltaMs = -local.getTimezoneOffset() * 60_000 || 0;
     expect(parsed.getTime() - local.getTime()).toBe(expectedDeltaMs);
   });
 });
