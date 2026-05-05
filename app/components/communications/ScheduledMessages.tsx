@@ -36,6 +36,11 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
+import {
+  createScheduledEmail,
+  deleteScheduledEmail,
+} from "@/lib/scheduled_emails";
+import { sendOutlookEmail } from "@/lib/outlook_actions";
 
 interface ScheduledMessagesProps {
   navContainer: HTMLDivElement | null;
@@ -126,7 +131,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const deleteMessage = async (id: number) => {
     try {
-      await axios.delete(`/api/scheduled-emails?id=${id}`);
+      await deleteScheduledEmail(id);
       setMessages((prev) => prev.filter((m) => m.id !== id));
       toast.success("Scheduled message cancelled");
     } catch {
@@ -136,14 +141,14 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const sendNow = async (msg: ScheduledEmail) => {
     try {
-      await axios.post("/api/outlook/send", {
+      await sendOutlookEmail({
         to: msg.toEmail,
-        toName: msg.toName,
+        toName: msg.toName ?? undefined,
         subject: msg.subject,
         bodyHtml: msg.bodyHtml,
-        bodyText: msg.bodyText,
+        bodyText: msg.bodyText ?? undefined,
       });
-      await axios.delete(`/api/scheduled-emails?id=${msg.id}`);
+      await deleteScheduledEmail(msg.id);
       setMessages((prev) => prev.filter((m) => m.id !== msg.id));
       toast.success("Message sent successfully");
     } catch {
@@ -160,7 +165,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     setIsSaving(true);
     try {
       const scheduledAt = new Date(`${formDate}T${formTime}`).toISOString();
-      const { data } = await axios.post("/api/scheduled-emails", {
+      const data = await createScheduledEmail({
         toEmail: formToEmail,
         toName: formToName || undefined,
         subject: formSubject,

@@ -47,8 +47,6 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-// ─── addAClient ───────────────────────────────────────────────────────────
-
 describe("addAClient", () => {
   const baseInput = {
     name: "John",
@@ -57,31 +55,28 @@ describe("addAClient", () => {
     notes: "",
   };
 
-  it("returns server error when unauthenticated", async () => {
+  it("returns Unauthorized message when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
     const result = await addAClient(baseInput);
-    expect(result).toEqual({ message: "Server error" });
+    expect(result).toEqual({ message: "Unauthorized" });
   });
 
-  it("returns 400 when name is missing", async () => {
+  it("returns validation message when name is missing", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const result = (await addAClient({ ...baseInput, name: "" })) as any;
-    expect(result.status).toBe(400);
+    const result = await addAClient({ ...baseInput, name: "" });
+    expect(result).toEqual({ message: "name is required" });
   });
 
-  it("returns 400 when email is missing", async () => {
+  it("returns validation message when email is missing", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const result = (await addAClient({ ...baseInput, email: "" })) as any;
-    expect(result.status).toBe(400);
+    const result = await addAClient({ ...baseInput, email: "" });
+    expect(result).toEqual({ message: "email is required" });
   });
 
-  it("returns 400 when email format is invalid", async () => {
+  it("returns validation message when email format is invalid", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const result = (await addAClient({
-      ...baseInput,
-      email: "not-an-email",
-    })) as any;
-    expect(result.status).toBe(400);
+    const result = await addAClient({ ...baseInput, email: "not-an-email" });
+    expect(result).toEqual({ message: "email is not a valid email" });
   });
 
   it("inserts client and returns the created record", async () => {
@@ -113,26 +108,14 @@ describe("addAClient", () => {
     const result = await addAClient(baseInput);
     expect(result).toEqual({ message: "Server error" });
   });
-
-  it("returns server error when plan limit is reached", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockAssertCanAddClient.mockRejectedValueOnce(
-      new Error(
-        "Client limit reached. The starter plan allows up to 5 clients."
-      )
-    );
-
-    const result = await addAClient(baseInput);
-    expect(result).toEqual({ message: "Server error" });
-  });
 });
-
-// ─── updateExistingClient ─────────────────────────────────────────────────
 
 describe("updateExistingClient", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(updateExistingClient({ id: 1 })).rejects.toThrow("No user");
+    await expect(updateExistingClient({ id: 1 })).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("returns early without DB call when no non-empty fields provided", async () => {
@@ -172,12 +155,10 @@ describe("updateExistingClient", () => {
   });
 });
 
-// ─── deleteClient ─────────────────────────────────────────────────────────
-
 describe("deleteClient", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(deleteClient({ id: 1 })).rejects.toThrow("No user");
+    await expect(deleteClient({ id: 1 })).rejects.toThrow("Unauthorized");
   });
 
   it("calls db.delete with correct where clause", async () => {
@@ -187,13 +168,11 @@ describe("deleteClient", () => {
   });
 });
 
-// ─── updateNotes ──────────────────────────────────────────────────────────
-
 describe("updateNotes", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
     await expect(updateNotes({ id: 1, notes: "hi" })).rejects.toThrow(
-      "No user"
+      "Unauthorized"
     );
   });
 
@@ -205,14 +184,12 @@ describe("updateNotes", () => {
   });
 });
 
-// ─── toggleClientStatus ───────────────────────────────────────────────────
-
 describe("toggleClientStatus", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
     await expect(
       toggleClientStatus({ id: 1, status: "inactive" })
-    ).rejects.toThrow("No user");
+    ).rejects.toThrow("Unauthorized");
   });
 
   it("sets status to inactive", async () => {

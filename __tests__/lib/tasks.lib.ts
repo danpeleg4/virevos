@@ -59,32 +59,22 @@ describe("deleteTask", () => {
 describe("updateTaskStatus", () => {
   it("throws when unauthenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(updateTaskStatus("todo", 1)).rejects.toThrow("No user");
+    await expect(updateTaskStatus("in-progress", 1)).rejects.toThrow("No user");
   });
 
   it("throws on invalid status", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     await expect(updateTaskStatus("invalid", 1)).rejects.toThrow(
-      "Invalid status"
+      "status must be one of"
     );
   });
 
   it("throws when task not found", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
     mockFindFirst.mockResolvedValue(undefined);
-    await expect(updateTaskStatus("todo", 99)).rejects.toThrow(
+    await expect(updateTaskStatus("in-progress", 99)).rejects.toThrow(
       "Task not found"
     );
-  });
-
-  it("updates status and returns success for todo", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockFindFirst.mockResolvedValue({ id: 1, userId: "user_1" });
-
-    const result = await updateTaskStatus("todo", 1);
-
-    expect(mockSet).toHaveBeenCalledWith({ status: "todo", completed: false });
-    expect(result).toEqual({ success: true, id: 1, status: "todo" });
   });
 
   it("sets completed=true when status is 'completed'", async () => {
@@ -272,16 +262,17 @@ describe("addProjectTasksAction", () => {
     );
   });
 
-  it("sets dueDate to null when not provided", async () => {
+  it("falls back to current ISO timestamp when dueDate not provided", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockReturning.mockResolvedValue([
-      { ...baseTask, title: "New Task", dueDate: null },
-    ]);
+    mockReturning.mockResolvedValue([{ ...baseTask, title: "New Task" }]);
 
     await addProjectTasksAction({ ...baseTask, dueDate: null });
 
-    expect(mockValues).toHaveBeenCalledWith(
-      expect.objectContaining({ dueDate: null })
+    const firstCall = mockValues.mock.calls[0] as unknown as [
+      { dueDate: string },
+    ];
+    expect(firstCall[0].dueDate).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
     );
   });
 });

@@ -50,6 +50,7 @@ import {
   acceptBookingWithCalendar,
   updateBookingStatus,
 } from "@/lib/portal_bookings";
+import { savePortalSettings } from "@/lib/portal_settings";
 
 interface ClientPortalProps {
   navContainer: HTMLDivElement | null;
@@ -196,7 +197,7 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
 
     setIsSaving(true);
     try {
-      const res = await axios.post("/api/portal/settings", {
+      const data = await savePortalSettings({
         clientId: parseInt(selectedClientId, 10),
         enabled: portalEnabled,
         settings: {
@@ -211,17 +212,17 @@ export function ClientPortal({ navContainer }: ClientPortalProps) {
         },
       });
 
-      const data = res.data;
+      const record = data as unknown as PortalRecord;
       setPortals((prev) => {
         const existing = prev.find(
           (p) => String(p.clientId) === selectedClientId
         );
         if (existing) {
           return prev.map((p) =>
-            String(p.clientId) === selectedClientId ? { ...p, ...data } : p
+            String(p.clientId) === selectedClientId ? { ...p, ...record } : p
           );
         }
-        return [...prev, data];
+        return [...prev, record];
       });
       queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
       toast.success("Portal settings saved");

@@ -1,32 +1,44 @@
 "use server";
 
-import { Pinecone } from "@pinecone-database/pinecone";
 import { db } from "@db/db";
 import { events } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
+import {
+  MAX_HTML_BODY,
+  MAX_SHORT,
+  MAX_TITLE,
+  ValidationError,
+  requireInt,
+  requireString,
+} from "./validation";
+import {
+  TRANSCRIPT_BUCKET,
+  TRANSCRIPT_INDEX,
+  createEmbedding,
+  supabaseVector,
+} from "./embeddings";
 
 export async function startMeeting(meetingId: string) {
   const user = await currentUser();
-  if (!user?.id) throw new Error("Unauthorized");
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+  const id = requireString(meetingId, "meetingId", MAX_SHORT);
   await db
     .update(events)
     .set({ status: "active" })
-    .where(and(eq(events.id, meetingId), eq(events.userId, user.id)));
+    .where(and(eq(events.id, id), eq(events.userId, user.id)));
 }
 
 export async function createInstantMeeting(title: string) {
   const user = await currentUser();
-  if (!user?.id) {
-    throw new Error("Unauthorized");
-  }
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+  const validTitle = requireString(title, "title", MAX_TITLE);
 
   const now = new Date();
   const meetingId = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   await db.insert(events).values({
     id: meetingId,
-    title,
+    title: validTitle,
     link: `https://virevos.com/meet/${meetingId}`,
     dateTime: now,
     origin: "app",
@@ -40,23 +52,25 @@ export async function createInstantMeeting(title: string) {
 
 export async function markActionItemAdded(eventId: string, itemIndex: number) {
   const user = await currentUser();
-  if (!user?.id) throw new Error("Unauthorized");
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+  const id = requireString(eventId, "eventId", MAX_SHORT);
+  const idx = requireInt(itemIndex, "itemIndex");
 
   const [event] = await db
     .select({ action_items: events.action_items })
     .from(events)
-    .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
+    .where(and(eq(events.id, id), eq(events.userId, user.id)));
 
   if (!event?.action_items) return;
 
   const updated = event.action_items.map((item, i) =>
-    i === itemIndex ? { ...item, added: true } : item
+    i === idx ? { ...item, added: true } : item
   );
 
   await db
     .update(events)
     .set({ action_items: updated })
-    .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
+    .where(and(eq(events.id, id), eq(events.userId, user.id)));
 }
 
 export async function getPastMeetingTranscript(text: string) {
@@ -64,24 +78,28 @@ export async function getPastMeetingTranscript(text: string) {
   if (!user?.id) {
     return ["Unauthorized"];
   }
-  const indexName = "vire-recording";
-  const index = pc.index(indexName).namespace(user.id);
-  const results = await index.searchRecords({
-    query: {
-      topK: 10,
-      inputs: { text },
-    },
+  const validText = requireString(text, "text", MAX_HTML_BODY);
+
+  const queryEmbedding = await createEmbedding(validText);
+
+  const index = supabaseVector.storage.vectors
+    .from(TRANSCRIPT_BUCKET)
+    .index(TRANSCRIPT_INDEX);
+
+  const { data } = await index.queryVectors({
+    queryVector: { float32: queryEmbedding },
+    topK: 10,
+    filter: { user_id: user.id },
+    returnMetadata: true,
   });
 
   const arr: string[] = [];
-
-  results.result.hits.forEach((hit) => {
-    const fields = hit.fields as { chunk_text?: string };
-
-    if (fields.chunk_text) {
-      arr.push(fields.chunk_text);
+  for (const hit of data?.vectors ?? []) {
+    const meta = hit.metadata as { chunk_text?: string } | undefined;
+    if (meta?.chunk_text) {
+      arr.push(meta.chunk_text);
     }
-  });
+  }
 
   return arr;
 }

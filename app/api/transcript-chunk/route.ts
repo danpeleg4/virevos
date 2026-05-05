@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pinecone } from "@pinecone-database/pinecone";
 import { db } from "@db/db";
 import { events, meetingTranscripts } from "@db/schema";
 import { eq } from "drizzle-orm";
-
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
+import {
+  TRANSCRIPT_BUCKET,
+  TRANSCRIPT_INDEX,
+  createEmbedding,
+  supabaseVector,
+} from "@/lib/embeddings";
 
 interface TranscriptChunkBody {
   roomId: string;
@@ -45,18 +48,26 @@ export async function POST(req: NextRequest) {
     text,
   });
 
-  await pc
-    .index("vire-recording")
-    .namespace(userId)
-    .upsertRecords([
-      {
-        id: `${roomId}-${crypto.randomUUID()}`,
-        chunk_text: text,
-        speaker: speakerIdentity,
-        room: roomId,
-        startedAtEpoch: Date.now(),
-      },
-    ]);
+  const embedding = await createEmbedding(text);
+
+  await supabaseVector.storage.vectors
+    .from(TRANSCRIPT_BUCKET)
+    .index(TRANSCRIPT_INDEX)
+    .putVectors({
+      vectors: [
+        {
+          key: `${roomId}-${crypto.randomUUID()}`,
+          data: { float32: embedding },
+          metadata: {
+            chunk_text: text,
+            speaker: speakerIdentity,
+            room: roomId,
+            user_id: userId,
+            started_epoch: Date.now(),
+          },
+        },
+      ],
+    });
 
   return NextResponse.json({ status: "ok" });
 }

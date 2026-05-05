@@ -3,22 +3,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { outlookEmails, clients } from "@db/schema";
 import { eq, desc, or, ilike, and, SQL } from "drizzle-orm";
-import { performIncrementalSync } from "@/lib/outlook_sync";
-
-export async function POST() {
-  try {
-    const user = await currentUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    await performIncrementalSync(user.id);
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("[api/outlook/sync POST]", err);
-    return NextResponse.json({ error: "Sync failed" }, { status: 500 });
-  }
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,7 +15,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const search = searchParams.get("search") || "";
-    const filter = searchParams.get("filter") || "all"; // all | unread | starred | sent | archived
+    const filter = searchParams.get("filter") || "all";
     const offset = (page - 1) * limit;
 
     const conditions: SQL[] = [eq(outlookEmails.userId, user.id)];
