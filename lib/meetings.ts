@@ -89,7 +89,7 @@ export async function getPastMeetingTranscript(text: string) {
   const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
     topK: 10,
-    //filter: { user_id: { $eq: user.id } },
+    filter: { user_id: user.id },
     returnMetadata: true,
   });
 
@@ -105,6 +105,5 @@ export async function getPastMeetingTranscript(text: string) {
       arr.push(meta.chunk_text);
     }
   }
-  console.log(arr.join("\n"));
   return arr;
 }

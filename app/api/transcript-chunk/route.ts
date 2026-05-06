@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
               speaker: speakerIdentity,
               room: roomId,
               user_id: userId,
-              started_epoch: new Date().toISOString(),
+              started_epoch: new Date(),
             },
           },
         ],

@@ -17,23 +17,15 @@ async function main() {
     process.env.SUPABASE_API_SECRET!
   );
 
-  //await supabase.storage.vectors.createBucket("test");
-  const bucket = supabase.storage.vectors.from("test");
-  await bucket.createIndex({
+  await supabase.storage.vectors.createBucket("recording");
+  const bucket = supabase.storage.vectors.from("recording");
+  const indexRes = await bucket.createIndex({
     indexName: "transcription",
     dataType: "float32",
     dimension: 3072,
     distanceMetric: "cosine",
-    metadataConfiguration: {
-      nonFilterableMetadataKeys: [
-        "chunk_text",
-        "speaker",
-        "room",
-        "user_id",
-        "started_epoch",
-      ],
-    },
   });
+  console.log("createIndex:", JSON.stringify(indexRes, null, 2));
 }
 
 main().catch((err) => {

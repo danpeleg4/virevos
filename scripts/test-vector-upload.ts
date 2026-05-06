@@ -45,7 +45,7 @@ async function main() {
           speaker: "diag1",
           room: "diag-room1",
           user_id: "diag-user1",
-          started_epoch: new Date().toISOString(),
+          started_epoch: new Date(),
         },
       },
     ],
