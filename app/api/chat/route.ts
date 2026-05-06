@@ -12,6 +12,7 @@ import {
   MAX_HTML_BODY,
   MAX_SHORT,
 } from "@/lib/validation";
+import { rateLimit } from "@/lib/rate_limit";
 
 const SYSTEM_INSTRUCTIONS =
   "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows.";
@@ -78,6 +79,13 @@ function validateChatPayload(raw: unknown): {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, {
+    keyPrefix: "chat",
+    windowMs: 60_000,
+    max: 20,
+  });
+  if (limited) return limited;
+
   let messages: ChatMessage[];
   let previousResponseId: string | undefined;
   try {

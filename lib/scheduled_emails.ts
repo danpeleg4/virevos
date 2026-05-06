@@ -17,6 +17,7 @@ import {
   requireOneOf,
   requireString,
 } from "./validation";
+import { sanitizeEmailHtml } from "./html_sanitizer";
 
 const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
 
@@ -39,7 +40,9 @@ export async function createScheduledEmail(input: ScheduleEmailInput) {
   const toEmail = requireEmail(input.toEmail, "toEmail");
   const toName = optionalString(input.toName, "toName", MAX_NAME) ?? null;
   const subject = requireString(input.subject, "subject", MAX_TITLE);
-  const bodyHtml = requireString(input.bodyHtml, "bodyHtml", MAX_HTML_BODY);
+  const bodyHtml = sanitizeEmailHtml(
+    requireString(input.bodyHtml, "bodyHtml", MAX_HTML_BODY)
+  );
   const bodyText =
     optionalString(input.bodyText, "bodyText", MAX_HTML_BODY) ?? null;
   const scheduledAt = requireDateString(input.scheduledAt, "scheduledAt");

@@ -4,14 +4,33 @@ import { events } from "@db/schema";
 import { db } from "@db/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import {
+  MAX_NAME,
+  MAX_SHORT,
+  ValidationError,
+  requireString,
+} from "@/lib/validation";
+import { rateLimit } from "@/lib/rate_limit";
 
 export async function POST(req: NextRequest) {
-  const { meetingId, name } = await req.json();
-  if (!meetingId) {
-    return NextResponse.json(
-      { error: "meetingId is required" },
-      { status: 400 }
-    );
+  const limited = rateLimit(req, {
+    keyPrefix: "token",
+    windowMs: 60_000,
+    max: 10,
+  });
+  if (limited) return limited;
+
+  let meetingId: string;
+  let participantName: string;
+  try {
+    const body = await req.json();
+    meetingId = requireString(body.meetingId, "meetingId", MAX_SHORT);
+    participantName = requireString(body.name, "name", MAX_NAME);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
   const [meeting] = await db
@@ -22,14 +41,6 @@ export async function POST(req: NextRequest) {
   const isAppMeeting = !meeting?.origin || meeting.origin === "app";
   if (!meeting || !meeting.isMeeting || !isAppMeeting) {
     return notFound();
-  }
-
-  const participantName = name;
-  if (!participantName) {
-    return NextResponse.json(
-      { error: "identity (name) is required" },
-      { status: 400 }
-    );
   }
 
   const startTime = new Date(meeting.dateTime);

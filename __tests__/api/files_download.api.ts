@@ -111,7 +111,7 @@ describe("GET /api/project-files/[id]", () => {
 
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
     expect(res.headers.get("Content-Disposition")).toBe(
-      'attachment; filename="file.pdf"'
+      "attachment; filename=\"file.pdf\"; filename*=UTF-8''file.pdf"
     );
     expect(res.headers.get("Content-Length")).toBe("3");
   });

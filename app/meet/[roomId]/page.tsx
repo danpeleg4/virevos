@@ -225,6 +225,7 @@ export default function InMeetingView() {
                   className="flex h-9 w-full rounded-md border border-[oklch(1_0_0/18%)] bg-[oklch(1_0_0/10%)] px-3 py-1 text-base text-[oklch(0.985_0_0)] placeholder:text-[oklch(0.556_0_0)] transition-colors outline-none focus:border-[oklch(0.488_0.243_264.376)] focus:ring-2 focus:ring-[oklch(0.488_0.243_264.376/30%)]"
                   placeholder="e.g. Jane Smith"
                   value={name}
+                  maxLength={200}
                   onChange={(e) => setName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && name && joinRoom()}
                   autoFocus

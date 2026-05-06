@@ -9,6 +9,7 @@ import { performIncrementalSync } from "@/lib/outlook_sync";
 import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
 import { downloadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
+import { sanitizeEmailHtml } from "@/lib/html_sanitizer";
 import {
   MAX_ATTACHMENTS,
   MAX_HTML_BODY,
@@ -103,7 +104,9 @@ function validateSendInput(raw: SendOutlookEmailInput): SendOutlookEmailInput {
   const to = requireEmail(raw.to, "to");
   const toName = optionalString(raw.toName, "toName", MAX_NAME);
   const subject = requireString(raw.subject, "subject", MAX_TITLE);
-  const bodyHtml = requireString(raw.bodyHtml, "bodyHtml", MAX_HTML_BODY);
+  const bodyHtml = sanitizeEmailHtml(
+    requireString(raw.bodyHtml, "bodyHtml", MAX_HTML_BODY)
+  );
   const bodyText = optionalString(raw.bodyText, "bodyText", MAX_HTML_BODY);
   const threadId = optionalString(raw.threadId, "threadId", MAX_SHORT);
   const replyToOutlookId = optionalString(

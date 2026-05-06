@@ -79,11 +79,15 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
       const bytes = Buffer.from(data.contentBytes, "base64");
 
+      const asciiFallback = data.name
+        .replace(/[^\x20-\x7E]/g, "_")
+        .replace(/["\\]/g, "_");
+
       return new NextResponse(bytes, {
         status: 200,
         headers: {
           "Content-Type": data.contentType,
-          "Content-Disposition": `inline; filename="${data.name}"`,
+          "Content-Disposition": `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(data.name)}`,
           "Cache-Control": "private, max-age=3600",
         },
       });

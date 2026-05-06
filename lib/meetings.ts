@@ -5,7 +5,7 @@ import { events } from "@db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import {
-  MAX_HTML_BODY,
+  MAX_MESSAGE,
   MAX_SHORT,
   MAX_TITLE,
   ValidationError,
@@ -78,7 +78,7 @@ export async function getPastMeetingTranscript(text: string) {
   if (!user?.id) {
     return ["Unauthorized"];
   }
-  const validText = requireString(text, "text", MAX_HTML_BODY);
+  const validText = requireString(text, "text", MAX_MESSAGE);
 
   const queryEmbedding = await createEmbedding(validText);
 
@@ -86,12 +86,17 @@ export async function getPastMeetingTranscript(text: string) {
     .from(TRANSCRIPT_BUCKET)
     .index(TRANSCRIPT_INDEX);
 
-  const { data } = await index.queryVectors({
+  const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
     topK: 10,
-    filter: { user_id: user.id },
+    //filter: { user_id: { $eq: user.id } },
     returnMetadata: true,
   });
+
+  if (error) {
+    console.error("[getPastMeetingTranscript] queryVectors error:", error);
+    return [];
+  }
 
   const arr: string[] = [];
   for (const hit of data?.vectors ?? []) {
@@ -100,6 +105,6 @@ export async function getPastMeetingTranscript(text: string) {
       arr.push(meta.chunk_text);
     }
   }
-
+  console.log(arr.join("\n"));
   return arr;
 }
