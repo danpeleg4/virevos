@@ -12,30 +12,6 @@ import {
   parseHeaderValue,
   listAttachments,
 } from "./gmail_client";
-import { Pinecone } from "@pinecone-database/pinecone";
-
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
-
-const EMAILS_INDEX = "emails";
-
-interface EmailPineconeRecord {
-  id: string;
-  text: string;
-  subject: string;
-  fromEmail: string;
-  fromName: string;
-  toEmails: string;
-  ccEmails: string;
-  sentAt: number;
-  isSent: boolean;
-  isRead: boolean;
-  isStarred: boolean;
-  isArchived: boolean;
-  clientId?: number;
-  gmailId: string;
-  threadId: string;
-}
-
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -153,24 +129,6 @@ async function processMessage(
     .limit(1);
 
   let emailId: number;
-
-  const pineconeRecord: EmailPineconeRecord = {
-    id: `${userId}_${msg.id!}`,
-    text: `${subjectRaw || "(no subject)"}\n\n${bodyText ?? ""}`.trim(),
-    subject: subjectRaw || "(no subject)",
-    fromEmail: fromEmail || "",
-    fromName: fromName || "",
-    toEmails: JSON.stringify(toEmails),
-    ccEmails: JSON.stringify(ccEmails),
-    sentAt: sentAt.getTime(),
-    isSent,
-    isRead,
-    isStarred,
-    isArchived,
-    ...(clientId !== null && { clientId }),
-    gmailId: msg.id!,
-    threadId: msg.threadId!,
-  };
 
   if (existing.length > 0) {
     await db

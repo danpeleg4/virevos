@@ -56,10 +56,14 @@ export async function GET(
     return new NextResponse("Download failed", { status: 500 });
   }
 
+  const asciiFallback = file.name
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/["\\]/g, "_");
+
   return new NextResponse(Buffer.from(body), {
     headers: {
       "Content-Type": file.mimeType ?? "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${file.name}"`,
+      "Content-Disposition": `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
       "Content-Length": body.byteLength.toString(),
     },
   });

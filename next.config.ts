@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "5mb",
     },
   },
-  serverExternalPackages: ["pg", "drizzle-orm", "ffmpeg-static"],
+  serverExternalPackages: ["pg", "drizzle-orm"],
 };
 
 export default nextConfig;

@@ -106,7 +106,9 @@ describe("POST /api/chat", () => {
   it("returns 401 if user is not authenticated", async () => {
     (currentUser as jest.Mock).mockResolvedValue(null);
 
-    const res = await POST(mockRequest({ messages: [] }));
+    const res = await POST(
+      mockRequest({ messages: [{ role: "user", content: "Hi" }] })
+    );
 
     expect(res.status).toBe(401);
     expect(await res.text()).toBe("Unauthorized");
@@ -119,7 +121,9 @@ describe("POST /api/chat", () => {
       new Error("AI credit limit reached")
     );
 
-    const res = await POST(mockRequest({ messages: [] }));
+    const res = await POST(
+      mockRequest({ messages: [{ role: "user", content: "Hi" }] })
+    );
 
     expect(res.status).toBe(401);
     expect(await res.json()).toBe("No AI Credits");
@@ -136,7 +140,9 @@ describe("POST /api/chat", () => {
       createTextStreamMock("Hello!")
     );
 
-    const res = await POST(mockRequest({ messages: [] }));
+    const res = await POST(
+      mockRequest({ messages: [{ role: "user", content: "Hi" }] })
+    );
 
     expect(db.update).toHaveBeenCalled();
     expect(openai.responses.stream).toHaveBeenCalledWith(
@@ -251,7 +257,9 @@ describe("POST /api/chat", () => {
         .mockReturnValueOnce(createToolCallStreamMock(toolName, args))
         .mockReturnValueOnce(createTextStreamMock("Done."));
 
-      const res = await POST(mockRequest({ messages: [] }));
+      const res = await POST(
+        mockRequest({ messages: [{ role: "user", content: "Hi" }] })
+      );
       expect(res.status).toBe(200);
 
       const text = await res.text();

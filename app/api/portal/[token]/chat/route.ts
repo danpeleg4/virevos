@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { clientPortalTokens, portalMessages } from "@db/schema";
 import { and, asc, eq, isNull } from "drizzle-orm";
+import { MAX_MESSAGE, MAX_SHORT } from "@/lib/validation";
+import { rateLimit } from "@/lib/rate_limit";
 
 async function loadPortal(token: string) {
   const rows = await db
@@ -73,8 +75,18 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const limited = rateLimit(req, {
+    keyPrefix: "portal-chat",
+    windowMs: 60_000,
+    max: 30,
+  });
+  if (limited) return limited;
+
   try {
     const { token } = await params;
+    if (typeof token !== "string" || token.length > MAX_SHORT) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 400 });
+    }
     const body = await req.json();
     const message =
       typeof body?.message === "string" ? body.message.trim() : "";
@@ -85,9 +97,9 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (message.length > 5000) {
+    if (message.length > MAX_MESSAGE) {
       return NextResponse.json(
-        { error: "Message is too long" },
+        { error: `Message exceeds max length of ${MAX_MESSAGE}` },
         { status: 400 }
       );
     }

@@ -18,6 +18,8 @@ import { Separator } from "../ui/separator";
 import { Mail, MessageSquare, Send, Loader2, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { sendOutlookEmail } from "@/lib/outlook_actions";
+import { sendAgencyChatMessage } from "@/lib/portal_chat";
 
 interface AttachmentFile {
   name: string;
@@ -134,7 +136,7 @@ export function ComposeMessageDialog({
     if (!emailTo.trim() || !emailBody.trim()) return;
     setIsSending(true);
     try {
-      await axios.post("/api/outlook/send", {
+      await sendOutlookEmail({
         to: emailTo.trim(),
         subject: emailSubject.trim(),
         bodyHtml: `<p>${emailBody.replace(/\n/g, "<br>")}</p>`,
@@ -153,8 +155,8 @@ export function ComposeMessageDialog({
       onOpenChange(false);
       onSent();
     } catch (err) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "Failed to send email");
+      const error = err as Error;
+      toast.error(error.message || "Failed to send email");
     } finally {
       setIsSending(false);
     }
@@ -164,16 +166,14 @@ export function ComposeMessageDialog({
     if (!chatClientId || !chatMessage.trim()) return;
     setIsSending(true);
     try {
-      await axios.post(`/api/portal-chat/${Number(chatClientId)}`, {
-        message: chatMessage.trim(),
-      });
+      await sendAgencyChatMessage(Number(chatClientId), chatMessage.trim());
       toast.success("Message sent successfully");
       resetForm();
       onOpenChange(false);
       onSent();
     } catch (err) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "Failed to send message");
+      const error = err as Error;
+      toast.error(error.message || "Failed to send message");
     } finally {
       setIsSending(false);
     }

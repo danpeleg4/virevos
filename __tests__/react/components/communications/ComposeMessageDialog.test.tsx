@@ -39,6 +39,18 @@ jest.mock("sonner", () => ({
   },
 }));
 
+const mockSendOutlookEmail = jest.fn();
+const mockSendAgencyChatMessage = jest.fn();
+
+jest.mock("@/lib/outlook_actions", () => ({
+  sendOutlookEmail: (...args: unknown[]) => mockSendOutlookEmail(...args),
+}));
+
+jest.mock("@/lib/portal_chat", () => ({
+  sendAgencyChatMessage: (...args: unknown[]) =>
+    mockSendAgencyChatMessage(...args),
+}));
+
 import { ComposeMessageDialog } from "@/app/components/communications/ComposeMessageDialog";
 
 const makeQueryClient = () =>
@@ -72,6 +84,8 @@ describe("ComposeMessageDialog", () => {
     onSent.mockClear();
     mockAxiosPost.mockClear();
     mockAxiosGet.mockClear();
+    mockSendOutlookEmail.mockReset();
+    mockSendAgencyChatMessage.mockReset();
   });
 
   it("renders dialog when open=true", () => {
@@ -113,8 +127,8 @@ describe("ComposeMessageDialog", () => {
     expect(screen.getByRole("button", { name: /send/i })).toBeDisabled();
   });
 
-  it("calls axios.post to /api/outlook/send on email send", async () => {
-    mockAxiosPost.mockResolvedValueOnce({ data: {} });
+  it("calls sendOutlookEmail server action on email send", async () => {
+    mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
     renderDialog(true, onOpenChange, onSent);
     fireEvent.change(screen.getByPlaceholderText("recipient@example.com"), {
       target: { value: "test@example.com" },
@@ -124,15 +138,14 @@ describe("ComposeMessageDialog", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /send/i }));
     await waitFor(() => {
-      expect(mockAxiosPost).toHaveBeenCalledWith(
-        "/api/outlook/send",
+      expect(mockSendOutlookEmail).toHaveBeenCalledWith(
         expect.objectContaining({ to: "test@example.com" })
       );
     });
   });
 
   it("calls onSent after successful email", async () => {
-    mockAxiosPost.mockResolvedValueOnce({ data: {} });
+    mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
     renderDialog(true, onOpenChange, onSent);
     fireEvent.change(screen.getByPlaceholderText("recipient@example.com"), {
       target: { value: "test@example.com" },
@@ -145,7 +158,7 @@ describe("ComposeMessageDialog", () => {
   });
 
   it("calls onOpenChange(false) after successful send", async () => {
-    mockAxiosPost.mockResolvedValueOnce({ data: {} });
+    mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
     renderDialog(true, onOpenChange, onSent);
     fireEvent.change(screen.getByPlaceholderText("recipient@example.com"), {
       target: { value: "test@example.com" },
@@ -248,8 +261,8 @@ describe("ComposeMessageDialog", () => {
       expect(screen.queryByText("huge.zip")).not.toBeInTheDocument();
     });
 
-    it("includes attachments in the axios.post payload", async () => {
-      mockAxiosPost.mockResolvedValueOnce({ data: {} });
+    it("includes attachments in the sendOutlookEmail payload", async () => {
+      mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
       renderDialog(true, onOpenChange, onSent);
 
       const file = new File(["hello"], "invoice.pdf", {
@@ -272,8 +285,7 @@ describe("ComposeMessageDialog", () => {
       fireEvent.click(screen.getByRole("button", { name: /send/i }));
 
       await waitFor(() => {
-        expect(mockAxiosPost).toHaveBeenCalledWith(
-          "/api/outlook/send",
+        expect(mockSendOutlookEmail).toHaveBeenCalledWith(
           expect.objectContaining({
             attachments: expect.arrayContaining([
               expect.objectContaining({
@@ -288,7 +300,7 @@ describe("ComposeMessageDialog", () => {
     });
 
     it("sends without attachments key when no files selected", async () => {
-      mockAxiosPost.mockResolvedValueOnce({ data: {} });
+      mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
       renderDialog(true, onOpenChange, onSent);
       fireEvent.change(screen.getByPlaceholderText("recipient@example.com"), {
         target: { value: "client@example.com" },
@@ -299,7 +311,7 @@ describe("ComposeMessageDialog", () => {
       fireEvent.click(screen.getByRole("button", { name: /send/i }));
 
       await waitFor(() => {
-        const payload = mockAxiosPost.mock.calls[0][1] as Record<
+        const payload = mockSendOutlookEmail.mock.calls[0][0] as Record<
           string,
           unknown
         >;

@@ -742,6 +742,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
             id={`code-${i}`}
             type="text"
             inputMode="numeric"
+            maxLength={1}
             value={digit}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}

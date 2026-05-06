@@ -61,6 +61,14 @@ import type {
   ScheduleDetails,
 } from "@/types/communications";
 import type { PortalChatConversation } from "@/types/portal";
+import {
+  deleteOutlookMessage,
+  sendOutlookEmail,
+  syncOutlookInbox,
+  updateOutlookMessage,
+} from "@/lib/outlook_actions";
+import { deletePortalChat, updatePortalChat } from "@/lib/portal_chat";
+import { createScheduledEmail } from "@/lib/scheduled_emails";
 
 function formatTimestamp(ts: Date | string): string {
   const date = typeof ts === "string" ? new Date(ts) : ts;
@@ -310,7 +318,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      await axios.post("/api/outlook/sync");
+      await syncOutlookInbox();
       toast.success("Emails synced successfully");
       await refetch();
     } catch {
@@ -382,7 +390,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       }
 
       try {
-        await axios.patch(`/api/portal-chat/${clientId}`, { action });
+        await updatePortalChat(clientId, action);
         // Mark Unread: drop selection so the chat pane GET doesn't immediately
         // re-mark as read on its next poll.
         if (action === "markUnread" && selectedMessage?.id === id) {
@@ -419,7 +427,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
 
     try {
-      await axios.patch(`/api/outlook/messages/${id}`, { action });
+      await updateOutlookMessage(Number(id), action);
     } catch {
       // Revert optimistic update on failure
       queryClient.setQueryData(emailsQueryKey, previousData);
@@ -456,7 +464,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       );
       if (!confirmed) return;
       try {
-        await axios.delete(`/api/portal-chat/${clientId}`);
+        await deletePortalChat(clientId);
         if (selectedMessage?.id === id) setSelectedMessage(null);
         await queryClient.invalidateQueries({
           queryKey: ["portal-chat-conversations"],
@@ -471,7 +479,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       return;
     }
     try {
-      await axios.delete(`/api/outlook/messages/${id}`);
+      await deleteOutlookMessage(Number(id));
       removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
       toast.success("Message deleted");
@@ -488,7 +496,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         const scheduledAt = new Date(
           `${pendingSchedule.date.toISOString().split("T")[0]}T${pendingSchedule.time}`
         );
-        await axios.post("/api/scheduled-emails", {
+        await createScheduledEmail({
           toEmail: selectedMessage.fromEmail || selectedMessage.from,
           toName: selectedMessage.from,
           subject: `Re: ${selectedMessage.subject || ""}`,
@@ -505,7 +513,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         setPendingAttachments([]);
         setPendingSchedule(null);
       } else {
-        await axios.post("/api/outlook/send", {
+        await sendOutlookEmail({
           to: selectedMessage.fromEmail || selectedMessage.from,
           subject: `Re: ${selectedMessage.subject || ""}`,
           bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
@@ -528,8 +536,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         await refetch();
       }
     } catch (err) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "Failed to send reply");
+      const error = err as Error;
+      toast.error(error.message || "Failed to send reply");
     } finally {
       setIsSending(false);
     }
@@ -1353,7 +1361,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   onSend={async (replyHtml: string) => {
                     setIsSending(true);
                     try {
-                      await axios.post("/api/outlook/send", {
+                      await sendOutlookEmail({
                         to: selectedMessage.fromEmail || selectedMessage.from,
                         subject: `Re: ${selectedMessage.subject || ""}`,
                         bodyHtml: replyHtml,
@@ -1364,12 +1372,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       setShowAIComposer(false);
                       await refetch();
                     } catch (err) {
-                      const error = err as {
-                        response?: { data?: { error?: string } };
-                      };
-                      toast.error(
-                        error.response?.data?.error || "Failed to send"
-                      );
+                      const error = err as Error;
+                      toast.error(error.message || "Failed to send");
                     } finally {
                       setIsSending(false);
                     }

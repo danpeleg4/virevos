@@ -57,7 +57,7 @@ describe("POST /api/portal/[token]/book", () => {
     const res = await POST(req, { params: makeParams("test-token") });
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toBe("Missing required fields");
+    expect(json.error).toMatch(/clientName/);
   });
 
   it("returns 400 when clientEmail is missing", async () => {
@@ -69,7 +69,7 @@ describe("POST /api/portal/[token]/book", () => {
     const res = await POST(req, { params: makeParams("test-token") });
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toBe("Missing required fields");
+    expect(json.error).toMatch(/clientEmail/);
   });
 
   it("returns 400 for invalid email format", async () => {
@@ -82,7 +82,7 @@ describe("POST /api/portal/[token]/book", () => {
     const res = await POST(req, { params: makeParams("test-token") });
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toBe("Invalid email");
+    expect(json.error).toMatch(/clientEmail.*valid email/);
   });
 
   it("returns 404 when token is unknown", async () => {

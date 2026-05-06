@@ -1,4 +1,4 @@
-import { GET, POST } from "@/app/api/outlook/sync/route";
+import { GET } from "@/app/api/outlook/sync/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
@@ -12,12 +12,6 @@ jest.mock("@db/db", () => ({
   },
 }));
 
-jest.mock("@/lib/outlook_sync", () => ({
-  performIncrementalSync: jest.fn().mockResolvedValue(undefined),
-}));
-
-import { performIncrementalSync } from "@/lib/outlook_sync";
-
 function makeGetRequest(params?: Record<string, string>): Request {
   const url = new URL("http://localhost/api/outlook/sync");
   if (params) {
@@ -26,10 +20,6 @@ function makeGetRequest(params?: Record<string, string>): Request {
     }
   }
   return new Request(url.toString());
-}
-
-function makePostRequest(): Request {
-  return new Request("http://localhost/api/outlook/sync", { method: "POST" });
 }
 
 const mockEmail = {
@@ -68,34 +58,6 @@ function mockDbSelect(rows: (typeof mockEmail)[]) {
   });
 }
 
-describe("POST /api/outlook/sync", () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it("returns 401 if not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
-    const res = await POST();
-    expect(res.status).toBe(401);
-  });
-
-  it("triggers incremental sync and returns success", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    const res = await POST();
-    expect(performIncrementalSync).toHaveBeenCalledWith("user_1");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ success: true });
-  });
-
-  it("returns 500 if sync throws", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (performIncrementalSync as jest.Mock).mockRejectedValueOnce(
-      new Error("sync error")
-    );
-    jest.spyOn(console, "error").mockImplementationOnce(() => {});
-    const res = await POST();
-    expect(res.status).toBe(500);
-  });
-});
-
 describe("GET /api/outlook/sync", () => {
   beforeEach(() => jest.clearAllMocks());
 
@@ -125,7 +87,6 @@ describe("GET /api/outlook/sync", () => {
 
   it("sets hasMore=true when there are more results", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    // Return limit+1 rows to trigger hasMore
     mockDbSelect(Array(51).fill(mockEmail));
 
     const res = await GET(

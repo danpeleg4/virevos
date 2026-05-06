@@ -11,17 +11,24 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 // var so it can be assigned inside the jest.mock factory (hoisted before const declarations)
 /* eslint-disable no-var */
-var mockSearchRecords: jest.Mock;
+var mockQueryVectors: jest.Mock;
+var mockCreateEmbedding: jest.Mock;
 /* eslint-enable no-var */
 
-jest.mock("@pinecone-database/pinecone", () => {
-  mockSearchRecords = jest.fn();
+jest.mock("@/lib/embeddings", () => {
+  mockQueryVectors = jest.fn();
+  mockCreateEmbedding = jest.fn().mockResolvedValue([0.1, 0.2, 0.3]);
   return {
-    Pinecone: jest.fn().mockImplementation(() => ({
-      index: () => ({
-        namespace: () => ({ searchRecords: mockSearchRecords }),
-      }),
-    })),
+    TRANSCRIPT_BUCKET: "recording",
+    TRANSCRIPT_INDEX: "transcription",
+    createEmbedding: mockCreateEmbedding,
+    supabaseVector: {
+      storage: {
+        vectors: {
+          from: () => ({ index: () => ({ queryVectors: mockQueryVectors }) }),
+        },
+      },
+    },
   };
 });
 
@@ -122,24 +129,25 @@ describe("getPastMeetingTranscript", () => {
     expect(result).toEqual(["Unauthorized"]);
   });
 
-  it("returns array of chunk_text strings from Pinecone hits", async () => {
+  it("returns array of chunk_text strings from Supabase vector hits", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSearchRecords.mockResolvedValueOnce({
-      result: {
-        hits: [
-          { fields: { chunk_text: "Hello world" } },
-          { fields: { chunk_text: "Second chunk" } },
+    mockQueryVectors.mockResolvedValueOnce({
+      data: {
+        vectors: [
+          { metadata: { chunk_text: "Hello world" } },
+          { metadata: { chunk_text: "Second chunk" } },
         ],
       },
     });
     const result = await getPastMeetingTranscript("test query");
+    expect(mockCreateEmbedding).toHaveBeenCalledWith("test query");
     expect(result).toEqual(["Hello world", "Second chunk"]);
   });
 
   it("returns empty array when no hits have chunk_text", async () => {
     (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    mockSearchRecords.mockResolvedValueOnce({
-      result: { hits: [{ fields: {} }, { fields: { other: "data" } }] },
+    mockQueryVectors.mockResolvedValueOnce({
+      data: { vectors: [{ metadata: {} }, { metadata: { other: "data" } }] },
     });
     const result = await getPastMeetingTranscript("test query");
     expect(result).toEqual([]);

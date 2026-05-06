@@ -9,6 +9,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { changeRecordingStatus } from "@/lib/user";
+import { disconnectGoogle, disconnectOutlook } from "@/lib/integrations";
 import type { ComponentType, SVGProps } from "react";
 import type { Integration } from "@/types/integrations";
 import { Separator } from "@/app/components/ui/separator";
@@ -111,8 +112,8 @@ export function IntegrationSettings() {
     queryKey: ["integrations"],
     queryFn: async () => {
       const [googleCheck, outlookCheck] = await Promise.all([
-        axios.post("/api/integrations/google", { action: "status" }),
-        axios.post("/api/integrations/outlook", { action: "status" }),
+        axios.get("/api/integrations/google"),
+        axios.get("/api/integrations/outlook"),
       ]);
 
       const googleCalendarConnected = googleCheck.data.connected;
@@ -137,14 +138,10 @@ export function IntegrationSettings() {
       action: "disconnect" | "connect";
     }) => {
       if (id === "google" && action === "disconnect") {
-        await axios.post("/api/integrations/google", {
-          action: "disconnect",
-        });
+        await disconnectGoogle();
       }
       if (id === "outlook" && action === "disconnect") {
-        await axios.post("/api/integrations/outlook", {
-          action: "disconnect",
-        });
+        await disconnectOutlook();
       }
     },
     onSuccess: () => {

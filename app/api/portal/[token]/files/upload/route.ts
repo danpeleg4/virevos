@@ -4,13 +4,23 @@ import { clientPortalTokens, clients, cases, caseFiles } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { uploadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
+import { rateLimit } from "@/lib/rate_limit";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILENAME_LENGTH = 255;
+const MAX_MIMETYPE_LENGTH = 100;
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const limited = rateLimit(req, {
+    keyPrefix: "portal-upload",
+    windowMs: 60_000,
+    max: 10,
+  });
+  if (limited) return limited;
+
   try {
     const { token } = await params;
 
@@ -68,6 +78,14 @@ export async function POST(
         { error: "File exceeds 10 MB limit" },
         { status: 400 }
       );
+    }
+
+    if (!file.name || file.name.length > MAX_FILENAME_LENGTH) {
+      return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
+    }
+
+    if (file.type && file.type.length > MAX_MIMETYPE_LENGTH) {
+      return NextResponse.json({ error: "Invalid mime type" }, { status: 400 });
     }
 
     // Resolve caseId
