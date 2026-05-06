@@ -3,7 +3,6 @@ import {
   updateExistingClient,
   deleteClient,
   updateNotes,
-  toggleClientStatus,
 } from "@/lib/clients";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -143,6 +142,7 @@ describe("updateExistingClient", () => {
       email: "email@example.com",
       phone: "555-1234",
       notes: "Some notes",
+      status: "inactive",
     });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -150,8 +150,26 @@ describe("updateExistingClient", () => {
         email: "email@example.com",
         phone: "555-1234",
         notes: "Some notes",
+        status: "inactive",
       })
     );
+  });
+
+  it("updates status when provided alone", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await updateExistingClient({ id: 1, status: "active" });
+    expect(mockSet).toHaveBeenCalledWith({ status: "active" });
+  });
+
+  it("rejects an invalid status value", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    await expect(
+      updateExistingClient({
+        id: 1,
+        status: "bogus" as unknown as "active",
+      })
+    ).rejects.toThrow();
+    expect(mockSet).not.toHaveBeenCalled();
   });
 });
 
@@ -184,25 +202,3 @@ describe("updateNotes", () => {
   });
 });
 
-describe("toggleClientStatus", () => {
-  it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
-    await expect(
-      toggleClientStatus({ id: 1, status: "inactive" })
-    ).rejects.toThrow("Unauthorized");
-  });
-
-  it("sets status to inactive", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    await toggleClientStatus({ id: 5, status: "inactive" });
-    expect(mockSet).toHaveBeenCalledWith({ status: "inactive" });
-    expect(mockWhere).toHaveBeenCalledTimes(1);
-  });
-
-  it("sets status to active", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    await toggleClientStatus({ id: 5, status: "active" });
-    expect(mockSet).toHaveBeenCalledWith({ status: "active" });
-    expect(mockWhere).toHaveBeenCalledTimes(1);
-  });
-});

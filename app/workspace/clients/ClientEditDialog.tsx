@@ -12,9 +12,22 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/app/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateExistingClient } from "@/lib/clients";
 import type { clients, UpdateClientInput } from "@/types/clients";
+
+type ClientStatus = "active" | "inactive";
+
+function normalizeStatus(value: string | undefined | null): ClientStatus {
+  return value === "inactive" ? "inactive" : "active";
+}
 
 interface ClientEditDialogProps {
   aClient: clients;
@@ -30,6 +43,9 @@ export function ClientEditDialog({
   const [name, setName] = useState(aClient.name);
   const [email, setEmail] = useState(aClient.email);
   const [phone, setPhone] = useState(aClient.phone ?? "");
+  const [status, setStatus] = useState<ClientStatus>(
+    normalizeStatus(aClient.status)
+  );
   const [notes, setNotes] = useState(aClient.notes ?? "");
 
   useEffect(() => {
@@ -37,6 +53,7 @@ export function ClientEditDialog({
       setName(aClient.name);
       setEmail(aClient.email);
       setPhone(aClient.phone ?? "");
+      setStatus(normalizeStatus(aClient.status));
       setNotes(aClient.notes ?? "");
     }
   }, [open, aClient]);
@@ -62,6 +79,7 @@ export function ClientEditDialog({
                 name: input.name ?? c.name,
                 email: input.email ?? c.email,
                 phone: input.phone ?? c.phone,
+                status: input.status ?? c.status,
                 notes: input.notes ?? c.notes,
               }
             : c
@@ -123,6 +141,22 @@ export function ClientEditDialog({
           </div>
 
           <div>
+            <Label>Status</Label>
+            <Select
+              value={status}
+              onValueChange={(v) => setStatus(v as ClientStatus)}
+            >
+              <SelectTrigger className="mt-2 cursor-pointer">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label>
               Notes{" "}
               <span className="text-muted-foreground font-normal text-xs">
@@ -152,6 +186,7 @@ export function ClientEditDialog({
                   name,
                   email,
                   phone,
+                  status,
                   notes,
                 })
               }

@@ -57,7 +57,7 @@ export async function updateExistingClient(newClient: UpdateClientInput) {
   const user = await currentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
-  const { id, name, email, phone, notes } = newClient;
+  const { id, name, email, phone, notes, status } = newClient;
 
   const updateData: Partial<UpdateClientInput> = {};
   if (name !== undefined && name !== null && name !== "") {
@@ -71,6 +71,9 @@ export async function updateExistingClient(newClient: UpdateClientInput) {
   }
   if (notes !== undefined && notes !== null && notes !== "") {
     updateData.notes = requireString(notes, "notes", MAX_NOTES);
+  }
+  if (status !== undefined && status !== null) {
+    updateData.status = requireOneOf(status, "status", CLIENT_STATUSES);
   }
 
   if (Object.keys(updateData).length === 0) return;
@@ -107,18 +110,3 @@ export async function updateNotes({
     .where(and(eq(clients.id, id), eq(clients.userId, user.id)));
 }
 
-export async function toggleClientStatus({
-  id,
-  status,
-}: {
-  id: number;
-  status: "active" | "inactive";
-}) {
-  const user = await currentUser();
-  if (!user?.id) throw new ValidationError("Unauthorized", 401);
-  const validStatus = requireOneOf(status, "status", CLIENT_STATUSES);
-  await db
-    .update(clients)
-    .set({ status: validStatus })
-    .where(and(eq(clients.id, id), eq(clients.userId, user.id)));
-}

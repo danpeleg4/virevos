@@ -104,8 +104,23 @@ describe("ClientEditDialog", () => {
       name: "Acme Corp",
       email: "contact@acme.com",
       phone: "555-1234",
+      status: "active",
       notes: "Long-time client",
     });
+  });
+
+  it("normalizes a non-active stored status to inactive", () => {
+    render(
+      <ClientEditDialog
+        aClient={{ ...mockClient, status: "inactive" }}
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "inactive" })
+    );
   });
 
   it("disables Save when name is empty", () => {
