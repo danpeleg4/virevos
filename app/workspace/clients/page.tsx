@@ -30,6 +30,7 @@ import {
   FolderOpen,
   Mail,
   MoreVertical,
+  Pencil,
   Phone,
   Plus,
   Search,
@@ -42,6 +43,7 @@ import { clients, CreateClientInput } from "@/types/clients";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addAClient, deleteClient, toggleClientStatus } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
+import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -86,6 +88,7 @@ export default function Clients() {
   const [notes, setNotes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [editingClient, setEditingClient] = useState<clients | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -579,6 +582,13 @@ export default function Clients() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-32">
                             <DropdownMenuItem
+                              onClick={() => setEditingClient(client)}
+                              className="cursor-pointer"
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() =>
                                 deleteMutation.mutate({ id: client.id })
                               }
@@ -632,6 +642,15 @@ export default function Clients() {
           </div>
         </Card>
       </div>
+      {editingClient && (
+        <ClientEditDialog
+          aClient={editingClient}
+          open={true}
+          onOpenChange={(open: boolean) => {
+            if (!open) setEditingClient(null);
+          }}
+        />
+      )}
     </div>
   );
 }
