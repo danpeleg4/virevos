@@ -7,11 +7,7 @@ import OpenAI from "openai";
 import { openai, tools, executeTool, MODEL, MAX_STEPS } from "@/lib/ai_tools";
 import type { ChatMessage, StreamEvent } from "@/types/ai";
 import { assertCanUseAI } from "@/lib/plan_limits";
-import {
-  MAX_CHAT_HISTORY,
-  MAX_HTML_BODY,
-  MAX_SHORT,
-} from "@/lib/validation";
+import { MAX_CHAT_HISTORY, MAX_HTML_BODY, MAX_SHORT } from "@/lib/validation";
 import { rateLimit } from "@/lib/rate_limit";
 
 const SYSTEM_INSTRUCTIONS =
@@ -65,7 +61,10 @@ function validateChatPayload(raw: unknown): {
   });
 
   let previousResponseId: string | undefined;
-  if (body.previousResponseId !== undefined && body.previousResponseId !== null) {
+  if (
+    body.previousResponseId !== undefined &&
+    body.previousResponseId !== null
+  ) {
     if (typeof body.previousResponseId !== "string") {
       throw new Error("previousResponseId must be a string");
     }

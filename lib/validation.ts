@@ -26,7 +26,10 @@ export function requireString(
   value: unknown,
   field: string,
   max: number,
-  { trim = true, allowEmpty = false }: { trim?: boolean; allowEmpty?: boolean } = {}
+  {
+    trim = true,
+    allowEmpty = false,
+  }: { trim?: boolean; allowEmpty?: boolean } = {}
 ): string {
   if (typeof value !== "string") {
     throw new ValidationError(`${field} must be a string`);
@@ -59,7 +62,10 @@ export function requireEmail(value: unknown, field = "email"): string {
   return v;
 }
 
-export function optionalEmail(value: unknown, field = "email"): string | undefined {
+export function optionalEmail(
+  value: unknown,
+  field = "email"
+): string | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   return requireEmail(value, field);
 }
@@ -86,9 +92,7 @@ export function requireOneOf<T extends string>(
   allowed: readonly T[]
 ): T {
   if (typeof value !== "string" || !allowed.includes(value as T)) {
-    throw new ValidationError(
-      `${field} must be one of: ${allowed.join(", ")}`
-    );
+    throw new ValidationError(`${field} must be one of: ${allowed.join(", ")}`);
   }
   return value as T;
 }
@@ -100,7 +104,10 @@ export function requireBool(value: unknown, field: string): boolean {
   return value;
 }
 
-export function optionalBool(value: unknown, field: string): boolean | undefined {
+export function optionalBool(
+  value: unknown,
+  field: string
+): boolean | undefined {
   if (value === undefined || value === null) return undefined;
   return requireBool(value, field);
 }

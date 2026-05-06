@@ -258,8 +258,8 @@ describe("POST /api/chat", () => {
         .mockReturnValueOnce(createTextStreamMock("Done."));
 
       const res = await POST(
-      mockRequest({ messages: [{ role: "user", content: "Hi" }] })
-    );
+        mockRequest({ messages: [{ role: "user", content: "Hi" }] })
+      );
       expect(res.status).toBe(200);
 
       const text = await res.text();

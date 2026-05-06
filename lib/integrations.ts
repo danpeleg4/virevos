@@ -29,7 +29,9 @@ export async function disconnectGoogle() {
   return { success: true };
 }
 
-export async function getGoogleConnectionStatus(): Promise<{ connected: boolean }> {
+export async function getGoogleConnectionStatus(): Promise<{
+  connected: boolean;
+}> {
   const user = await currentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 

@@ -123,9 +123,7 @@ export async function deletePortalChat(clientId: number) {
   const portal = await loadPortalForUser(numericClientId, user.id);
   if (!portal) throw new ValidationError("Portal not found", 404);
 
-  await db
-    .delete(portalMessages)
-    .where(eq(portalMessages.portalId, portal.id));
+  await db.delete(portalMessages).where(eq(portalMessages.portalId, portal.id));
 
   await db
     .update(clientPortalTokens)

@@ -113,17 +113,11 @@ export async function POST(
     }
 
     if (!file.name || file.name.length > MAX_FILENAME_LENGTH) {
-      return NextResponse.json(
-        { error: "Invalid filename" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
     }
 
     if (file.type && file.type.length > MAX_MIMETYPE_LENGTH) {
-      return NextResponse.json(
-        { error: "Invalid mime type" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid mime type" }, { status: 400 });
     }
 
     // Resolve a target case (first one for this client)

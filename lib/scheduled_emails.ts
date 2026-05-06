@@ -46,7 +46,8 @@ export async function createScheduledEmail(input: ScheduleEmailInput) {
   const bodyText =
     optionalString(input.bodyText, "bodyText", MAX_HTML_BODY) ?? null;
   const scheduledAt = requireDateString(input.scheduledAt, "scheduledAt");
-  const timezone = optionalString(input.timezone, "timezone", MAX_SHORT) ?? "UTC";
+  const timezone =
+    optionalString(input.timezone, "timezone", MAX_SHORT) ?? "UTC";
   const recurring = input.recurring
     ? requireOneOf(input.recurring, "recurring", RECURRING_OPTIONS)
     : "none";

@@ -34,7 +34,9 @@ export async function GET(
     return new NextResponse("Download failed", { status: 500 });
   }
 
-  const asciiFallback = file.name.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "_");
+  const asciiFallback = file.name
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/["\\]/g, "_");
   const utf8Encoded = encodeURIComponent(file.name);
 
   return new NextResponse(Buffer.from(body), {

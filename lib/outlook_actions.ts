@@ -118,7 +118,9 @@ function validateSendInput(raw: SendOutlookEmailInput): SendOutlookEmailInput {
   let cc: string[] | undefined;
   if (Array.isArray(raw.cc)) {
     if (raw.cc.length > MAX_RECIPIENTS) {
-      throw new ValidationError(`cc exceeds max recipients of ${MAX_RECIPIENTS}`);
+      throw new ValidationError(
+        `cc exceeds max recipients of ${MAX_RECIPIENTS}`
+      );
     }
     cc = raw.cc.map((c, i) => requireEmail(c, `cc[${i}]`));
   }
@@ -290,7 +292,11 @@ export async function sendOutlookEmail(raw: SendOutlookEmailInput) {
     }
   }
 
-  await axios.post(`${GRAPH_BASE}/me/messages/${draftId}/send`, {}, { headers });
+  await axios.post(
+    `${GRAPH_BASE}/me/messages/${draftId}/send`,
+    {},
+    { headers }
+  );
   return { success: true };
 }
 
