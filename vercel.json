@@ -1,7 +1,6 @@
 {
   "crons": [
     { "path": "/api/cron/process-scheduled-emails", "schedule": "0 0 * * *" },
-    { "path": "/api/cron/activate-meetings", "schedule": "0 0 * * *" },
     {
       "path": "/api/cron/renew-outlook-subscriptions",
       "schedule": "0 0 * * *"

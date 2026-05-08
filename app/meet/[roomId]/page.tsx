@@ -153,8 +153,8 @@ export default function InMeetingView() {
 
   if (meetingInfo.isLoading) {
     return (
-      <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center">
-        <div className="w-2.5 h-2.5 rounded-full bg-white/40 animate-pulse" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-2.5 h-2.5 rounded-full bg-gray-400 animate-pulse" />
       </div>
     );
   }
@@ -162,18 +162,18 @@ export default function InMeetingView() {
   if (isUpcoming) {
     const scheduledDate = new Date(meeting!.dateTime);
     return (
-      <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-[oklch(0.35_0_0)] border border-[oklch(1_0_0/12%)] rounded-xl p-8 text-center">
-            <div className="w-14 h-14 rounded-full bg-[oklch(1_0_0/8%)] flex items-center justify-center mx-auto mb-5">
-              <Calendar className="w-6 h-6 text-[oklch(0.7_0_0)]" />
+          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center shadow-sm">
+            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-5">
+              <Calendar className="w-6 h-6 text-gray-500" />
             </div>
-            <h1 className="text-[oklch(0.985_0_0)] text-xl font-semibold mb-1">
+            <h1 className="text-gray-900 text-xl font-semibold mb-1">
               {meeting!.title
                 ? decodeURIComponent(meeting!.title)
                 : "Upcoming Meeting"}
             </h1>
-            <div className="flex items-center justify-center gap-2 text-[oklch(0.556_0_0)] text-sm mb-6">
+            <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mb-6">
               <Clock className="w-3.5 h-3.5" />
               <span>
                 Scheduled for {formatDateOnly(scheduledDate)} at{" "}
@@ -182,7 +182,7 @@ export default function InMeetingView() {
             </div>
             {isHost ? (
               <button
-                className="w-full h-9 px-4 rounded-md bg-gray-700 text-white text-sm font-medium transition-colors hover:bg-[oklch(0.44_0.243_264.376)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-9 px-4 rounded-md bg-indigo-600 text-white text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 onClick={() => startMeetingMutation.mutate()}
                 disabled={startMeetingMutation.isPending}
               >
@@ -191,7 +191,7 @@ export default function InMeetingView() {
                   : "Start Meeting Now"}
               </button>
             ) : (
-              <p className="text-[oklch(0.556_0_0)] text-sm">
+              <p className="text-gray-500 text-sm">
                 Waiting for the host to start the meeting.
               </p>
             )}
@@ -203,26 +203,26 @@ export default function InMeetingView() {
 
   if (!joined) {
     return (
-      <div className="min-h-screen bg-[oklch(0.3_0_0)] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           {/* Card */}
-          <div className="bg-[oklch(0.35_0_0)] border border-[oklch(1_0_0/12%)] rounded-xl p-8">
+          <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
             <div className="mb-6">
-              <h1 className="text-[oklch(0.985_0_0)] text-xl font-semibold leading-tight">
+              <h1 className="text-gray-900 text-xl font-semibold leading-tight">
                 Ready to join?
               </h1>
-              <p className="text-[oklch(0.556_0_0)] text-sm mt-1">
+              <p className="text-gray-500 text-sm mt-1">
                 Enter your name to join the meeting
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-[oklch(0.922_0_0)]">
+                <label className="text-sm font-medium text-gray-700">
                   Your name
                 </label>
                 <input
-                  className="flex h-9 w-full rounded-md border border-[oklch(1_0_0/18%)] bg-[oklch(1_0_0/10%)] px-3 py-1 text-base text-[oklch(0.985_0_0)] placeholder:text-[oklch(0.556_0_0)] transition-colors outline-none focus:border-[oklch(0.488_0.243_264.376)] focus:ring-2 focus:ring-[oklch(0.488_0.243_264.376/30%)]"
+                  className="flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-base text-gray-900 placeholder:text-gray-400 transition-colors outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   placeholder="e.g. Jane Smith"
                   value={name}
                   maxLength={200}
@@ -233,7 +233,7 @@ export default function InMeetingView() {
               </div>
 
               <button
-                className="w-full h-9 px-4 rounded-md bg-gray-700 text-white text-sm font-medium transition-colors hover:bg-[oklch(0.44_0.243_264.376)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-9 px-4 rounded-md bg-indigo-600 text-white text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 onClick={joinRoom}
                 disabled={!name.trim()}
               >

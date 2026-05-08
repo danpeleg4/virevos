@@ -93,7 +93,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
     },
   });
 
-  const mutation = useMutation({
+  const addMeetingMutation = useMutation({
     mutationFn: async (meeting: Event) => addMeetingToCalendar(meeting),
     onMutate: async (newMeeting) => {
       await queryClient.cancelQueries({ queryKey: ["meetings"] });
@@ -258,7 +258,7 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
           <BookEventDialog
             dialogOpen={dialogOpen}
             setDialogOpen={setDialogOpen}
-            addMeeting={(meeting) => mutation.mutate(meeting)}
+            addMeeting={(meeting) => addMeetingMutation.mutate(meeting)}
           />
         </div>
       </div>
