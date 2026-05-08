@@ -131,7 +131,9 @@ describe("ClientEditDialog", () => {
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByRole("button", { name: /save changes/i })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /save changes/i })
+    ).toBeDisabled();
   });
 
   it("calls onOpenChange(false) when Cancel is clicked", () => {

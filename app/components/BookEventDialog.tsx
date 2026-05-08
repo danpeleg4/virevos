@@ -60,7 +60,7 @@ export function BookEventDialog({
       hours,
       minutes,
       0,
-      0,
+      0
     );
   }
 
@@ -115,7 +115,7 @@ export function BookEventDialog({
                     variant="outline"
                     className={cn(
                       "mt-2 w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground",
+                      !date && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="h-4 w-4 mr-2" />
@@ -128,8 +128,7 @@ export function BookEventDialog({
                     selected={date}
                     onSelect={setDate}
                     disabled={(d) =>
-                      d <
-                      new Date(new Date().setHours(0, 0, 0, 0))
+                      d < new Date(new Date().setHours(0, 0, 0, 0))
                     }
                   />
                 </PopoverContent>
@@ -144,7 +143,7 @@ export function BookEventDialog({
                     variant="outline"
                     className={cn(
                       "mt-2 w-full justify-start text-left font-normal",
-                      !time && "text-muted-foreground",
+                      !time && "text-muted-foreground"
                     )}
                   >
                     <Clock className="h-4 w-4 mr-2" />

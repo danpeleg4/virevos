@@ -109,4 +109,3 @@ export async function updateNotes({
     .set({ notes: validNotes })
     .where(and(eq(clients.id, id), eq(clients.userId, user.id)));
 }
-

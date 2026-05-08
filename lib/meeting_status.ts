@@ -6,7 +6,7 @@ type MeetingLike = {
 
 export function deriveMeetingStatus<T extends MeetingLike>(
   meeting: T,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): T {
   if (!meeting.isMeeting) return meeting;
   if (meeting.status === "active" || meeting.status === "ended") return meeting;

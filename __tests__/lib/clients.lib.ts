@@ -201,4 +201,3 @@ describe("updateNotes", () => {
     expect(mockWhere).toHaveBeenCalledTimes(1);
   });
 });
-
