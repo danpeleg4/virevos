@@ -30,6 +30,7 @@ import {
   FolderOpen,
   Mail,
   MoreVertical,
+  Pencil,
   Phone,
   Plus,
   Search,
@@ -40,8 +41,9 @@ import {
 import axios from "axios";
 import { clients, CreateClientInput } from "@/types/clients";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addAClient, deleteClient, toggleClientStatus } from "@/lib/clients";
+import { addAClient, deleteClient } from "@/lib/clients";
 import { Textarea } from "@/app/components/ui/textarea";
+import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -86,6 +88,7 @@ export default function Clients() {
   const [notes, setNotes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [editingClient, setEditingClient] = useState<clients | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -201,42 +204,6 @@ export default function Clients() {
         queryClient.setQueryData(["clients"], context.previousClients);
       }
       alert("Failed to add client");
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: async ({
-      id,
-      status,
-    }: {
-      id: number;
-      status: "active" | "inactive";
-    }) => {
-      await toggleClientStatus({ id, status });
-    },
-    onMutate: async ({ id, status }) => {
-      await queryClient.cancelQueries({ queryKey: ["clients"] });
-
-      const previousClients =
-        queryClient.getQueryData<clients[]>(["clients"]) ?? [];
-
-      queryClient.setQueryData<clients[]>(
-        ["clients"],
-        previousClients.map((c) => (c.id === id ? { ...c, status } : c))
-      );
-
-      return { previousClients };
-    },
-
-    onError: (_err, _vars, context) => {
-      if (context?.previousClients) {
-        queryClient.setQueryData(["clients"], context.previousClients);
-      }
-      alert("Failed to update client status");
     },
 
     onSettled: () => {
@@ -512,49 +479,8 @@ export default function Clients() {
                       <td className="px-3 py-2.5 text-sm text-muted-foreground">
                         {client.phone || "—"}
                       </td>
-                      <td
-                        className="px-3 py-2.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="cursor-pointer">
-                              <StatusBadge status={client.status} />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-32">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: client.id,
-                                  status: "active",
-                                })
-                              }
-                              className="cursor-pointer flex items-center gap-2"
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                              Active
-                              {client.status === "active" && (
-                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: client.id,
-                                  status: "inactive",
-                                })
-                              }
-                              className="cursor-pointer flex items-center gap-2"
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-                              Inactive
-                              {client.status === "inactive" && (
-                                <CheckIcon className="h-3.5 w-3.5 text-blue-600 ml-auto" />
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <td className="px-3 py-2.5">
+                        <StatusBadge status={client.status} />
                       </td>
                       <td className="px-3 py-2.5">
                         <CasesBadge active={Number(client.activeCases || 0)} />
@@ -578,6 +504,13 @@ export default function Clients() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-32">
+                            <DropdownMenuItem
+                              onClick={() => setEditingClient(client)}
+                              className="cursor-pointer"
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
                                 deleteMutation.mutate({ id: client.id })
@@ -632,6 +565,15 @@ export default function Clients() {
           </div>
         </Card>
       </div>
+      {editingClient && (
+        <ClientEditDialog
+          aClient={editingClient}
+          open={true}
+          onOpenChange={(open: boolean) => {
+            if (!open) setEditingClient(null);
+          }}
+        />
+      )}
     </div>
   );
 }

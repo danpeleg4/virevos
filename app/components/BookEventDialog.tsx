@@ -17,10 +17,13 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Button } from "./ui/button";
-import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
+import { CalendarIcon, Clock } from "lucide-react";
 import { useState } from "react";
 import type { Event } from "@/types/meeting";
 import { Switch } from "./ui/switch";
+import { cn } from "./ui/utils";
 
 interface BookMeetingDialogProps {
   dialogOpen: boolean;
@@ -36,16 +39,29 @@ export function BookEventDialog({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isMeeting, setIsMeeting] = useState(false);
-  const [date, setDate] = useState(""); // "YYYY-MM-DD"
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState(""); // "HH:MM"
   const [duration, setDuration] = useState("");
 
-  function toUTC(dateStr: string, timeStr: string) {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    const [hours, minutes] = timeStr.split(":").map(Number);
+  const [timeOpen, setTimeOpen] = useState(false);
 
-    // Local datetime → internally stored as UTC
-    return new Date(year, month - 1, day, hours, minutes, 0, 0);
+  const timeOptions = Array.from({ length: 48 }, (_, i) => {
+    const h = Math.floor(i / 2);
+    const m = i % 2 === 0 ? "00" : "30";
+    return `${String(h).padStart(2, "0")}:${m}`;
+  });
+
+  function toUTC(d: Date, timeStr: string) {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    return new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      hours,
+      minutes,
+      0,
+      0
+    );
   }
 
   return (
@@ -93,24 +109,71 @@ export function BookEventDialog({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Date</Label>
-              <Input
-                placeholder="Select date"
-                type="date"
-                className="mt-2"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "mt-2 w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {date ? date.toLocaleDateString() : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    disabled={(d) =>
+                      d < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
               <Label>Time</Label>
-              <Input
-                placeholder="Select time"
-                type="time"
-                className="mt-2"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-              />
+              <Popover open={timeOpen} onOpenChange={setTimeOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "mt-2 w-full justify-start text-left font-normal",
+                      !time && "text-muted-foreground"
+                    )}
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    {time || "Select time"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-32 p-0 h-60 overflow-y-auto overscroll-contain"
+                  align="start"
+                  onWheel={(e) => e.stopPropagation()}
+                >
+                  <div className="flex flex-col p-1">
+                    {timeOptions.map((t) => (
+                      <Button
+                        key={t}
+                        type="button"
+                        variant={time === t ? "default" : "ghost"}
+                        size="sm"
+                        className="w-full shrink-0 justify-start font-normal"
+                        onClick={() => {
+                          setTime(t);
+                          setTimeOpen(false);
+                        }}
+                      >
+                        {t}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
@@ -141,7 +204,9 @@ export function BookEventDialog({
             </Button>
 
             <Button
+              disabled={!title || !date || !time || !duration}
               onClick={() => {
+                if (!date || !time) return;
                 const payload: Event = {
                   id: crypto.randomUUID(),
                   title,
@@ -157,7 +222,7 @@ export function BookEventDialog({
                 setDialogOpen(false);
                 setTitle("");
                 setDescription("");
-                setDate("");
+                setDate(undefined);
                 setTime("");
                 setDuration("");
                 setIsMeeting(false);

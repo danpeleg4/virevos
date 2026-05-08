@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { events } from "@db/schema";
 import { eq } from "drizzle-orm";
+import { deriveMeetingStatus } from "@/lib/meeting_status";
 
 export async function GET() {
   const user = await currentUser();
@@ -18,5 +19,6 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json(rows);
+  const now = new Date();
+  return NextResponse.json(rows.map((row) => deriveMeetingStatus(row, now)));
 }

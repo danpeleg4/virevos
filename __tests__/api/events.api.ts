@@ -63,4 +63,48 @@ describe("GET /api/events", () => {
       },
     });
   });
+
+  it("derives 'active' status for past meetings whose stored status is 'upcoming'", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_123" });
+    (db.query.events.findMany as jest.Mock).mockResolvedValue([
+      {
+        id: "evt_past",
+        title: "Started already",
+        isMeeting: true,
+        status: "upcoming",
+        dateTime: new Date(Date.now() - 60_000).toISOString(),
+      },
+      {
+        id: "evt_future",
+        title: "Later today",
+        isMeeting: true,
+        status: "upcoming",
+        dateTime: new Date(Date.now() + 60 * 60_000).toISOString(),
+      },
+    ]);
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(json[0].status).toBe("active");
+    expect(json[1].status).toBe("upcoming");
+  });
+
+  it("does not modify status for non-meeting events", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_123" });
+    (db.query.events.findMany as jest.Mock).mockResolvedValue([
+      {
+        id: "evt_1",
+        title: "Block",
+        isMeeting: false,
+        status: "upcoming",
+        dateTime: new Date(Date.now() - 60_000).toISOString(),
+      },
+    ]);
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(json[0].status).toBe("upcoming");
+  });
 });
