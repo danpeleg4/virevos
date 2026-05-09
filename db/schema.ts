@@ -23,7 +23,7 @@ export const users = pgTable("users", {
   recordingStatus: boolean("recordingStatus").notNull().default(true),
   creditsResetAt: timestamp("credits_reset_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // CLIENTS
 export const clients = pgTable("clients", {
@@ -40,7 +40,7 @@ export const clients = pgTable("clients", {
 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}).enableRLS();
 
 // CASES
 export const cases = pgTable("cases", {
@@ -59,7 +59,7 @@ export const cases = pgTable("cases", {
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
+}).enableRLS();
 
 // CASE FILES
 export const caseFiles = pgTable("case_files", {
@@ -73,7 +73,7 @@ export const caseFiles = pgTable("case_files", {
   size: integer("size").notNull(),
   mimeType: text("mime_type"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // CASE NOTES
 export const caseNotes = pgTable("case_notes", {
@@ -84,7 +84,7 @@ export const caseNotes = pgTable("case_notes", {
 
   userId: varchar("user_id").references(() => users.user_id),
   caseId: integer("case_id").references(() => cases.id),
-});
+}).enableRLS();
 
 // TASKS
 export const tasks = pgTable("tasks", {
@@ -104,7 +104,7 @@ export const tasks = pgTable("tasks", {
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+}).enableRLS();
 
 // EVENTS
 export const events = pgTable("events", {
@@ -144,7 +144,7 @@ export const events = pgTable("events", {
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
+}).enableRLS();
 
 // MEETING ATTENDEES
 export const meetingAttendees = pgTable(
@@ -160,7 +160,7 @@ export const meetingAttendees = pgTable(
   (t) => [
     unique("meeting_attendees_meeting_id_name_unique").on(t.meetingId, t.name),
   ]
-);
+).enableRLS();
 
 // MEETING TRANSCRIPTS
 export const meetingTranscripts = pgTable("meeting_transcripts", {
@@ -171,7 +171,7 @@ export const meetingTranscripts = pgTable("meeting_transcripts", {
   speakerIdentity: text("speaker_identity").notNull(),
   text: text("text").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // MEETING DOCUMENT REQUESTS
 export const meetingDocumentRequests = pgTable("meeting_document_requests", {
@@ -188,7 +188,7 @@ export const meetingDocumentRequests = pgTable("meeting_document_requests", {
   status: text("status").notNull().default("pending_approval"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 // DOCUMENT REQUEST ITEMS
 export const documentRequestItems = pgTable("document_request_items", {
@@ -204,7 +204,7 @@ export const documentRequestItems = pgTable("document_request_items", {
     onDelete: "set null",
   }),
   uploadedAt: timestamp("uploaded_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 // OUTLOOK TOKENS
 export const outlookTokens = pgTable("outlook_tokens", {
@@ -217,7 +217,7 @@ export const outlookTokens = pgTable("outlook_tokens", {
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
+}).enableRLS();
 
 // OUTLOOK SYNC STATE
 export const outlookSyncState = pgTable("outlook_sync_state", {
@@ -234,7 +234,7 @@ export const outlookSyncState = pgTable("outlook_sync_state", {
     .notNull()
     .unique()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
+}).enableRLS();
 
 // OUTLOOK EMAILS
 export const outlookEmails = pgTable("outlook_emails", {
@@ -262,7 +262,7 @@ export const outlookEmails = pgTable("outlook_emails", {
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // GOOGLE TOKENS
 export const googleTokens = pgTable("google_tokens", {
@@ -275,7 +275,7 @@ export const googleTokens = pgTable("google_tokens", {
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
+}).enableRLS();
 
 // GOOGLE SYNC STATE
 export const googleSyncState = pgTable("google_sync_state", {
@@ -289,7 +289,7 @@ export const googleSyncState = pgTable("google_sync_state", {
     .notNull()
     .unique()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
+}).enableRLS();
 
 // GOOGLE EMAILS
 export const googleEmails = pgTable("emails", {
@@ -317,7 +317,7 @@ export const googleEmails = pgTable("emails", {
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // EMAIL ATTACHMENTS
 export const emailAttachments = pgTable("email_attachments", {
@@ -333,7 +333,7 @@ export const emailAttachments = pgTable("email_attachments", {
   userId: varchar("user_id")
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
-});
+}).enableRLS();
 
 // SCHEDULED EMAILS
 export const scheduledEmails = pgTable("scheduled_emails", {
@@ -357,7 +357,7 @@ export const scheduledEmails = pgTable("scheduled_emails", {
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // CLIENT PORTAL TOKENS
 export const clientPortalTokens = pgTable("client_portal_tokens", {
@@ -399,7 +399,7 @@ export const clientPortalTokens = pgTable("client_portal_tokens", {
     .notNull()
     .references(() => users.user_id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // PORTAL MEETING BOOKINGS
 export const portalMeetingBookings = pgTable("portal_meeting_bookings", {
@@ -424,7 +424,7 @@ export const portalMeetingBookings = pgTable("portal_meeting_bookings", {
     onDelete: "set null",
   }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 // PORTAL CHAT MESSAGES
 export const portalMessages = pgTable("portal_messages", {
@@ -442,7 +442,7 @@ export const portalMessages = pgTable("portal_messages", {
   body: text("body").notNull(),
   readAt: timestamp("read_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}).enableRLS();
 
 // SUBSCRIPTIONS
 export const subscriptions = pgTable("subscriptions", {
@@ -460,7 +460,7 @@ export const subscriptions = pgTable("subscriptions", {
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}).enableRLS();
 
 // RELATIONS
 export const usersRelations = relations(users, ({ many, one }) => ({
