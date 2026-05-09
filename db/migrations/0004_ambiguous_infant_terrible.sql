@@ -1,1 +1,0 @@
-ALTER TABLE "outlook_emails" ADD COLUMN "has_attachments" boolean DEFAULT false;

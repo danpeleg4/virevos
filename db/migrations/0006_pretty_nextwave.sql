@@ -1,1 +1,0 @@
-ALTER TABLE "events" ADD COLUMN "meeting_start_time" integer;

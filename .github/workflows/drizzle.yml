@@ -26,4 +26,4 @@ jobs:
       - name: Run Drizzle migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx drizzle-kit push
+        run: npx drizzle-kit migrate
