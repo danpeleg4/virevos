@@ -2,7 +2,7 @@ import { google } from "googleapis";
 import type { calendar_v3 } from "googleapis";
 import { db } from "@db/db";
 import { events, googleSyncState } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { getFreshGoogleAccessToken } from "@/lib/google_access";
 
 export async function getCalendarClient(userId: string) {
@@ -28,8 +28,39 @@ async function applyGoogleEventsToDb(
     existingEvents.map((m) => [m.googleEventId || m.id, m])
   );
 
+  type EventUpdate = {
+    id: string;
+    set: {
+      title: string;
+      description: string | null;
+      link: string | null;
+      dateTime: Date;
+      duration: number;
+      status: string;
+      isMeeting: boolean;
+    };
+  };
+  type EventInsert = {
+    id: string;
+    googleEventId: string;
+    title: string;
+    description: string | null;
+    link: string | null;
+    dateTime: Date;
+    duration: number;
+    origin: string;
+    isMeeting: boolean;
+    status: string;
+    userId: string;
+  };
+
+  const idsToDelete = new Set<string>();
+  const cancelledGoogleIdsToDelete = new Set<string>();
+  const linkUpdates: { appMeetingId: string; googleEventId: string }[] = [];
+  const eventUpdates: EventUpdate[] = [];
+  const meetingsToInsert: EventInsert[] = [];
+
   if (timeMin && timeMax) {
-    // Full sync: range-based deletion for events removed from Google
     const googleEventIds = new Set(
       googleItems.map((e) => e.id).filter(Boolean) as string[]
     );
@@ -41,45 +72,33 @@ async function applyGoogleEventsToDb(
       ) {
         const mDate = new Date(m.dateTime);
         if (mDate >= timeMin && mDate <= timeMax) {
-          await db.delete(events).where(eq(events.id, m.id));
+          idsToDelete.add(m.id);
           existingMap.delete(googleId);
         }
       }
     }
   }
 
-  const meetingsToInsert = [];
-
   for (const e of googleItems) {
     if (!e.id) continue;
 
-    // Incremental sync: cancelled events = deletions
     if (e.status === "cancelled") {
       const existing = existingMap.get(e.id);
       if (existing) {
-        await db.delete(events).where(eq(events.id, existing.id));
+        idsToDelete.add(existing.id);
       } else {
-        // Try to find by googleEventId directly
-        await db
-          .delete(events)
-          .where(
-            and(eq(events.googleEventId, e.id), eq(events.userId, userId))
-          );
+        cancelledGoogleIdsToDelete.add(e.id);
       }
       continue;
     }
 
     if (!e.start) continue;
 
-    // Events created by the app — link googleEventId if missing
     if (e.extendedProperties?.private?.appMeetingId) {
       const appMeetingId = e.extendedProperties.private.appMeetingId;
       const dbMeeting = existingEvents.find((m) => m.id === appMeetingId);
       if (dbMeeting && !dbMeeting.googleEventId) {
-        await db
-          .update(events)
-          .set({ googleEventId: e.id })
-          .where(eq(events.id, appMeetingId));
+        linkUpdates.push({ appMeetingId, googleEventId: e.id });
       }
       continue;
     }
@@ -118,21 +137,21 @@ async function applyGoogleEventsToDb(
         (ep) => ep.entryPointType === "video"
       );
 
-    if (existingMap.has(e.id)) {
-      const m = existingMap.get(e.id)!;
+    const existing = existingMap.get(e.id);
+    if (existing) {
       const hasChanged =
-        m.title !== title ||
-        m.description !== description ||
-        m.link !== link ||
-        m.dateTime.getTime() !== dateTime.getTime() ||
-        m.duration !== durationMinutes ||
-        m.status !== status ||
-        m.isMeeting !== isMeeting;
+        existing.title !== title ||
+        existing.description !== description ||
+        existing.link !== link ||
+        existing.dateTime.getTime() !== dateTime.getTime() ||
+        existing.duration !== durationMinutes ||
+        existing.status !== status ||
+        existing.isMeeting !== isMeeting;
 
       if (hasChanged) {
-        await db
-          .update(events)
-          .set({
+        eventUpdates.push({
+          id: existing.id,
+          set: {
             title,
             description,
             link,
@@ -140,8 +159,8 @@ async function applyGoogleEventsToDb(
             duration: durationMinutes,
             status,
             isMeeting,
-          })
-          .where(eq(events.id, m.id));
+          },
+        });
       }
       continue;
     }
@@ -161,9 +180,57 @@ async function applyGoogleEventsToDb(
     });
   }
 
-  if (meetingsToInsert.length > 0) {
-    await db.insert(events).values(meetingsToInsert);
+  if (
+    idsToDelete.size === 0 &&
+    cancelledGoogleIdsToDelete.size === 0 &&
+    linkUpdates.length === 0 &&
+    eventUpdates.length === 0 &&
+    meetingsToInsert.length === 0
+  ) {
+    return;
   }
+
+  await db.transaction(async (tx) => {
+    if (idsToDelete.size > 0) {
+      await tx
+        .delete(events)
+        .where(
+          and(
+            eq(events.userId, userId),
+            inArray(events.id, Array.from(idsToDelete))
+          )
+        );
+    }
+
+    if (cancelledGoogleIdsToDelete.size > 0) {
+      await tx
+        .delete(events)
+        .where(
+          and(
+            eq(events.userId, userId),
+            inArray(
+              events.googleEventId,
+              Array.from(cancelledGoogleIdsToDelete)
+            )
+          )
+        );
+    }
+
+    for (const u of linkUpdates) {
+      await tx
+        .update(events)
+        .set({ googleEventId: u.googleEventId })
+        .where(eq(events.id, u.appMeetingId));
+    }
+
+    for (const u of eventUpdates) {
+      await tx.update(events).set(u.set).where(eq(events.id, u.id));
+    }
+
+    if (meetingsToInsert.length > 0) {
+      await tx.insert(events).values(meetingsToInsert);
+    }
+  });
 }
 
 export async function performFullSync(userId: string): Promise<void> {

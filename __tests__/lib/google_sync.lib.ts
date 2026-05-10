@@ -33,14 +33,21 @@ jest.mock("@/lib/google_access", () => ({
   getFreshGoogleAccessToken: jest.fn().mockResolvedValue("mock-access-token"),
 }));
 
-jest.mock("@db/db", () => ({
-  db: {
+jest.mock("@db/db", () => {
+  const dbMock = {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
-  },
-}));
+    transaction: jest.fn(),
+  };
+  // Run the transaction callback against the same mock so tx.* assertions
+  // line up with the existing db.* spies.
+  dbMock.transaction.mockImplementation((cb: (tx: typeof dbMock) => unknown) =>
+    cb(dbMock)
+  );
+  return { db: dbMock };
+});
 
 // Import AFTER mocks are registered
 import {
@@ -158,6 +165,94 @@ describe("performFullSync", () => {
       2,
       expect.objectContaining({ pageToken: "page-2" })
     );
+  });
+
+  it("batches deletes/updates/inserts inside a single transaction", async () => {
+    const now = new Date();
+    const inWindow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    mockSelectSequence(
+      [
+        // Existing rows: one will be removed (no longer in Google) and one will
+        // be updated (title changed).
+        {
+          id: "removed-1",
+          googleEventId: "removed-1",
+          origin: "google_calendar",
+          title: "old",
+          description: null,
+          link: null,
+          dateTime: inWindow,
+          duration: 30,
+          status: "confirmed",
+          isMeeting: false,
+        },
+        {
+          id: "updated-1",
+          googleEventId: "updated-1",
+          origin: "google_calendar",
+          title: "old title",
+          description: null,
+          link: null,
+          dateTime: inWindow,
+          duration: 30,
+          status: "confirmed",
+          isMeeting: false,
+        },
+      ],
+      []
+    );
+
+    mockEventsList.mockResolvedValueOnce({
+      data: {
+        items: [
+          {
+            id: "updated-1",
+            summary: "new title",
+            start: { dateTime: inWindow.toISOString() },
+            end: { dateTime: inWindow.toISOString() },
+            status: "confirmed",
+          },
+          {
+            id: "new-1",
+            summary: "brand new",
+            start: { dateTime: inWindow.toISOString() },
+            end: { dateTime: inWindow.toISOString() },
+            status: "confirmed",
+          },
+        ],
+        nextSyncToken: "tok",
+      },
+    });
+
+    const deleteWhere = jest.fn().mockResolvedValue(undefined);
+    const updateWhere = jest.fn().mockResolvedValue(undefined);
+    const insertValues = jest.fn().mockResolvedValue(undefined);
+    (db.delete as jest.Mock).mockReturnValue({ where: deleteWhere });
+    (db.update as jest.Mock).mockReturnValue({
+      set: jest.fn().mockReturnValue({ where: updateWhere }),
+    });
+    (db.insert as jest.Mock)
+      .mockReturnValueOnce({ values: insertValues })
+      .mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+        }),
+      });
+
+    await performFullSync("user_1");
+
+    // The transaction was used (not direct db calls for the events writes).
+    expect((db.transaction as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    // One batched delete (for removed-1) — not one per row.
+    expect(deleteWhere).toHaveBeenCalledTimes(1);
+    // One update for the changed row.
+    expect(updateWhere).toHaveBeenCalledTimes(1);
+    // One bulk insert containing the new row.
+    expect(insertValues).toHaveBeenCalledTimes(1);
+    expect(insertValues).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "new-1", googleEventId: "new-1" }),
+    ]);
   });
 });
 
