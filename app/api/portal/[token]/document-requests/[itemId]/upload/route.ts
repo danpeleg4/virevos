@@ -7,10 +7,11 @@ import {
   meetingDocumentRequests,
   documentRequestItems,
 } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { uploadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate_limit";
+import { analyzeDocumentRequirement } from "@/lib/document_analysis";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_FILENAME_LENGTH = 255;
@@ -64,6 +65,8 @@ export async function POST(
     const itemRows = await db
       .select({
         itemId: documentRequestItems.id,
+        itemName: documentRequestItems.name,
+        itemDescription: documentRequestItems.description,
         itemStatus: documentRequestItems.status,
         requestId: meetingDocumentRequests.id,
         requestStatus: meetingDocumentRequests.status,
@@ -90,6 +93,8 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Allow re-upload when AI previously rejected the file; block only on a
+    // human-confirmed "uploaded" state.
     if (item.itemStatus === "uploaded") {
       return NextResponse.json(
         { error: "Item already uploaded" },
@@ -154,23 +159,34 @@ export async function POST(
       })
       .returning();
 
+    const analysis = await analyzeDocumentRequirement({
+      itemName: item.itemName,
+      itemDescription: item.itemDescription,
+      fileBuffer,
+      mimeType: file.type,
+      fileName: file.name,
+    });
+
+    const finalStatus =
+      analysis.verdict === "does_not_meet" ? "rejected" : "uploaded";
+
     await db
       .update(documentRequestItems)
       .set({
-        status: "uploaded",
+        status: finalStatus,
         uploadedFileId: inserted.id,
         uploadedAt: new Date(),
+        aiVerdict: analysis.verdict,
+        aiReasoning: analysis.reasoning,
+        aiAnalyzedAt: new Date(),
       })
-      .where(
-        and(
-          eq(documentRequestItems.id, itemId),
-          eq(documentRequestItems.status, "pending")
-        )
-      );
+      .where(eq(documentRequestItems.id, itemId));
 
     return NextResponse.json(
       {
         itemId,
+        status: finalStatus,
+        analysis,
         file: {
           id: inserted.id,
           name: inserted.name,

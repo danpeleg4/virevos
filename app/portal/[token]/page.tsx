@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { PortalData, PortalChatMessage, TimeSlot } from "@/types/portal";
+import type { DocumentRequestItem } from "@/types/document_requests";
 import { parseDateOnlyString } from "@/lib/date_utils";
 import axios from "axios";
 
@@ -324,6 +325,12 @@ export default function PortalPage() {
         formData
       );
       const uploadedFile = res.data.file;
+      const status = res.data.status as DocumentRequestItem["status"];
+      const analysis = res.data.analysis as {
+        verdict: DocumentRequestItem["aiVerdict"];
+        reasoning: string;
+      } | null;
+      const now = new Date().toISOString();
       setDocumentRequests((prev) =>
         prev.map((req) => ({
           ...req,
@@ -331,16 +338,25 @@ export default function PortalPage() {
             it.id === itemId
               ? {
                   ...it,
-                  status: "uploaded",
+                  status,
                   uploadedFileId: uploadedFile.id,
-                  uploadedAt: new Date().toISOString(),
+                  uploadedAt: now,
                   uploadedFile,
+                  aiVerdict: analysis?.verdict ?? null,
+                  aiReasoning: analysis?.reasoning ?? null,
+                  aiAnalyzedAt: analysis ? now : null,
                 }
               : it
           ),
         }))
       );
-      toast.success(`${file.name} uploaded`);
+      if (analysis?.verdict === "does_not_meet") {
+        toast.error(analysis.reasoning || `${file.name} does not meet the requirement`);
+      } else if (analysis?.verdict === "meets") {
+        toast.success(`${file.name} looks good`);
+      } else {
+        toast.success(`${file.name} uploaded`);
+      }
     } catch (err: unknown) {
       const message =
         axios.isAxiosError(err) && err.response?.data?.error
@@ -354,7 +370,7 @@ export default function PortalPage() {
 
   const pendingDocumentItemsCount = documentRequests.reduce(
     (acc, req) =>
-      acc + req.items.filter((it) => it.status === "pending").length,
+      acc + req.items.filter((it) => it.status !== "uploaded").length,
     0
   );
 
@@ -1242,6 +1258,43 @@ export default function PortalPage() {
                                           </a>
                                         </p>
                                       )}
+                                    {item.status === "rejected" &&
+                                      item.uploadedFile && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Last upload:{" "}
+                                          <a
+                                            href={`/api/portal/${token}/files/${item.uploadedFile.id}/download`}
+                                            className="underline"
+                                            download={item.uploadedFile.name}
+                                          >
+                                            {item.uploadedFile.name}
+                                          </a>
+                                        </p>
+                                      )}
+                                    {item.aiVerdict === "meets" && (
+                                      <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                                        ✓ Looks good
+                                        {item.aiReasoning
+                                          ? ` — ${item.aiReasoning}`
+                                          : ""}
+                                      </p>
+                                    )}
+                                    {item.aiVerdict === "does_not_meet" && (
+                                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                        ✗ Does not meet requirements
+                                        {item.aiReasoning
+                                          ? ` — ${item.aiReasoning}`
+                                          : ""}
+                                        . Please re-upload.
+                                      </p>
+                                    )}
+                                    {(item.aiVerdict === "needs_review" ||
+                                      item.aiVerdict === "error" ||
+                                      item.aiVerdict === "skipped") && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Awaiting agency review.
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                                 {item.status !== "uploaded" && (

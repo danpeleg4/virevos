@@ -21,11 +21,19 @@ jest.mock("@/lib/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
+// eslint-disable-next-line no-var
+var mockAnalyze: jest.Mock;
+jest.mock("@/lib/document_analysis", () => {
+  mockAnalyze = jest.fn();
+  return { analyzeDocumentRequirement: mockAnalyze };
+});
+
 let consoleErrorSpy: jest.SpyInstance;
 
 beforeEach(() => {
   jest.clearAllMocks();
   consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  mockAnalyze.mockResolvedValue({ verdict: "meets", reasoning: "Looks good" });
 });
 
 afterEach(() => {
@@ -57,8 +65,17 @@ const portalToken = {
   userId: "user_1",
 };
 
+const baseItemRow = {
+  itemId: 1,
+  itemName: "Tax return",
+  itemDescription: "Most recent year",
+  itemStatus: "pending",
+  requestId: 1,
+  requestStatus: "approved",
+  requestClientId: 7,
+};
+
 function setupPortalLookup(rows: unknown[]) {
-  // First select call: portal token lookup
   const tokenLimit = jest.fn().mockResolvedValue(rows);
   const tokenWhere = jest.fn(() => ({ limit: tokenLimit }));
   const tokenFrom = jest.fn(() => ({ where: tokenWhere }));
@@ -78,6 +95,36 @@ function setupCaseLookup(rows: unknown[]) {
   const caseWhere = jest.fn(() => ({ limit: caseLimit }));
   const caseFrom = jest.fn(() => ({ where: caseWhere }));
   return { from: caseFrom };
+}
+
+function primeHappyPath() {
+  const insertedRow = {
+    id: 555,
+    caseId: 22,
+    userId: "user_1",
+    name: "doc.pdf",
+    path: "documents/user_1/req-1/now-doc.pdf",
+    size: 100,
+    mimeType: "application/pdf",
+    createdAt: new Date(),
+  };
+
+  (db.select as jest.Mock)
+    .mockReturnValueOnce(setupPortalLookup([portalToken]))
+    .mockReturnValueOnce(setupItemLookup([baseItemRow]))
+    .mockReturnValueOnce(setupCaseLookup([{ id: 22 }]));
+
+  const returning = jest.fn().mockResolvedValue([insertedRow]);
+  const insertValues = jest.fn(() => ({ returning }));
+  (db.insert as jest.Mock).mockReturnValue({ values: insertValues });
+
+  const updateWhere = jest.fn().mockResolvedValue(undefined);
+  const updateSet = jest.fn(() => ({ where: updateWhere }));
+  (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+
+  mockUpload.mockResolvedValueOnce(undefined);
+
+  return { insertValues, updateSet };
 }
 
 describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
@@ -120,15 +167,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     (db.select as jest.Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
-        setupItemLookup([
-          {
-            itemId: 1,
-            itemStatus: "pending",
-            requestId: 1,
-            requestStatus: "approved",
-            requestClientId: 999,
-          },
-        ])
+        setupItemLookup([{ ...baseItemRow, requestClientId: 999 }])
       );
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
     expect(res.status).toBe(403);
@@ -139,13 +178,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([
-          {
-            itemId: 1,
-            itemStatus: "pending",
-            requestId: 1,
-            requestStatus: "pending_approval",
-            requestClientId: 7,
-          },
+          { ...baseItemRow, requestStatus: "pending_approval" },
         ])
       );
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
@@ -156,15 +189,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     (db.select as jest.Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
-        setupItemLookup([
-          {
-            itemId: 1,
-            itemStatus: "uploaded",
-            requestId: 1,
-            requestStatus: "approved",
-            requestClientId: 7,
-          },
-        ])
+        setupItemLookup([{ ...baseItemRow, itemStatus: "uploaded" }])
       );
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
     expect(res.status).toBe(409);
@@ -173,17 +198,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   it("returns 400 when no file provided", async () => {
     (db.select as jest.Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
-      .mockReturnValueOnce(
-        setupItemLookup([
-          {
-            itemId: 1,
-            itemStatus: "pending",
-            requestId: 1,
-            requestStatus: "approved",
-            requestClientId: 7,
-          },
-        ])
-      );
+      .mockReturnValueOnce(setupItemLookup([baseItemRow]));
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
     expect(res.status).toBe(400);
   });
@@ -191,58 +206,14 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   it("returns 400 when file exceeds 10 MB", async () => {
     (db.select as jest.Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
-      .mockReturnValueOnce(
-        setupItemLookup([
-          {
-            itemId: 1,
-            itemStatus: "pending",
-            requestId: 1,
-            requestStatus: "approved",
-            requestClientId: 7,
-          },
-        ])
-      );
+      .mockReturnValueOnce(setupItemLookup([baseItemRow]));
     const big = makeFile(11 * 1024 * 1024);
     const res = await POST(mockRequest(big), mockCtx("tok", "1"));
     expect(res.status).toBe(400);
   });
 
-  it("uploads file, inserts caseFiles row, and marks item uploaded", async () => {
-    const insertedRow = {
-      id: 555,
-      caseId: 22,
-      userId: "user_1",
-      name: "doc.pdf",
-      path: "documents/user_1/req-1/now-doc.pdf",
-      size: 100,
-      mimeType: "application/pdf",
-      createdAt: new Date(),
-    };
-
-    (db.select as jest.Mock)
-      .mockReturnValueOnce(setupPortalLookup([portalToken]))
-      .mockReturnValueOnce(
-        setupItemLookup([
-          {
-            itemId: 1,
-            itemStatus: "pending",
-            requestId: 1,
-            requestStatus: "approved",
-            requestClientId: 7,
-          },
-        ])
-      )
-      .mockReturnValueOnce(setupCaseLookup([{ id: 22 }]));
-
-    const returning = jest.fn().mockResolvedValue([insertedRow]);
-    const insertValues = jest.fn(() => ({ returning }));
-    (db.insert as jest.Mock).mockReturnValue({ values: insertValues });
-
-    const updateWhere = jest.fn().mockResolvedValue(undefined);
-    const updateSet = jest.fn(() => ({ where: updateWhere }));
-    (db.update as jest.Mock).mockReturnValue({ set: updateSet });
-
-    mockUpload.mockResolvedValueOnce(undefined);
+  it("uploads, runs analyzer, and marks item uploaded when verdict meets", async () => {
+    const { insertValues, updateSet } = primeHappyPath();
 
     const file = makeFile(100);
     const res = await POST(mockRequest(file), mockCtx("tok", "1"));
@@ -251,20 +222,109 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     const json = await res.json();
     expect(json.itemId).toBe(1);
     expect(json.file.id).toBe(555);
+    expect(json.status).toBe("uploaded");
+    expect(json.analysis).toEqual({ verdict: "meets", reasoning: "Looks good" });
 
     expect(mockUpload).toHaveBeenCalledTimes(1);
-    expect(insertValues).toHaveBeenCalledWith(
+    expect(mockAnalyze).toHaveBeenCalledWith(
       expect.objectContaining({
-        caseId: 22,
-        userId: "user_1",
+        itemName: "Tax return",
+        itemDescription: "Most recent year",
+        mimeType: "application/pdf",
+        fileName: "doc.pdf",
       })
+    );
+    expect(insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ caseId: 22, userId: "user_1" })
     );
     expect(updateSet).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "uploaded",
         uploadedFileId: 555,
         uploadedAt: expect.any(Date),
+        aiVerdict: "meets",
+        aiReasoning: "Looks good",
+        aiAnalyzedAt: expect.any(Date),
       })
     );
+  });
+
+  it("flips status to rejected when verdict is does_not_meet", async () => {
+    mockAnalyze.mockResolvedValueOnce({
+      verdict: "does_not_meet",
+      reasoning: "Wrong document",
+    });
+    const { updateSet } = primeHappyPath();
+
+    const res = await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+
+    expect(res.status).toBe(201);
+    const json = await res.json();
+    expect(json.status).toBe("rejected");
+    expect(json.analysis.verdict).toBe("does_not_meet");
+    expect(updateSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "rejected",
+        aiVerdict: "does_not_meet",
+        aiReasoning: "Wrong document",
+      })
+    );
+  });
+
+  it("keeps status uploaded when verdict is skipped (unsupported mime)", async () => {
+    mockAnalyze.mockResolvedValueOnce({
+      verdict: "skipped",
+      reasoning: "File type not supported for automatic analysis.",
+    });
+    const { updateSet } = primeHappyPath();
+
+    const file = makeFile(100, "text/plain", "notes.txt");
+    const res = await POST(mockRequest(file), mockCtx("tok", "1"));
+
+    expect(res.status).toBe(201);
+    const json = await res.json();
+    expect(json.status).toBe("uploaded");
+    expect(json.analysis.verdict).toBe("skipped");
+    expect(updateSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "uploaded",
+        aiVerdict: "skipped",
+      })
+    );
+  });
+
+  it("allows upload when current status is rejected (re-upload after AI failure)", async () => {
+    (db.select as jest.Mock)
+      .mockReturnValueOnce(setupPortalLookup([portalToken]))
+      .mockReturnValueOnce(
+        setupItemLookup([{ ...baseItemRow, itemStatus: "rejected" }])
+      )
+      .mockReturnValueOnce(setupCaseLookup([{ id: 22 }]));
+
+    const returning = jest
+      .fn()
+      .mockResolvedValue([
+        {
+          id: 556,
+          caseId: 22,
+          userId: "user_1",
+          name: "doc.pdf",
+          path: "p",
+          size: 100,
+          mimeType: "application/pdf",
+          createdAt: new Date(),
+        },
+      ]);
+    (db.insert as jest.Mock).mockReturnValue({
+      values: jest.fn(() => ({ returning })),
+    });
+    (db.update as jest.Mock).mockReturnValue({
+      set: jest.fn(() => ({ where: jest.fn().mockResolvedValue(undefined) })),
+    });
+    mockUpload.mockResolvedValueOnce(undefined);
+
+    const res = await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+
+    expect(res.status).toBe(201);
   });
 });

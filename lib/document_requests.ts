@@ -61,6 +61,10 @@ export async function listPendingDocumentRequests(): Promise<
       status: item.status as DocumentRequestItem["status"],
       uploadedFileId: item.uploadedFileId,
       uploadedAt: item.uploadedAt?.toISOString() ?? null,
+      aiVerdict:
+        (item.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
+      aiReasoning: item.aiReasoning ?? null,
+      aiAnalyzedAt: item.aiAnalyzedAt?.toISOString() ?? null,
     });
     itemsByRequest.set(item.requestId, list);
   }
@@ -192,6 +196,104 @@ export async function declineDocumentRequest(requestId: number): Promise<void> {
     .where(eq(meetingDocumentRequests.id, requestId));
 }
 
+export async function listFulfilledRequestsForAgency(): Promise<
+  Array<{
+    id: number;
+    eventTitle: string;
+    eventDateTime: string;
+    clientId: number | null;
+    approvedAt: string | null;
+    items: DocumentRequestItem[];
+  }>
+> {
+  const user = await currentUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const requestRows = await db
+    .select({
+      id: meetingDocumentRequests.id,
+      clientId: meetingDocumentRequests.clientId,
+      approvedAt: meetingDocumentRequests.approvedAt,
+      eventTitle: events.title,
+      eventDateTime: events.dateTime,
+    })
+    .from(meetingDocumentRequests)
+    .innerJoin(events, eq(meetingDocumentRequests.eventId, events.id))
+    .where(
+      and(
+        eq(meetingDocumentRequests.userId, user.id),
+        eq(meetingDocumentRequests.status, "approved")
+      )
+    )
+    .orderBy(desc(meetingDocumentRequests.approvedAt));
+
+  if (requestRows.length === 0) return [];
+
+  const requestIds = requestRows.map((r) => r.id);
+  const itemRows = await db
+    .select({
+      id: documentRequestItems.id,
+      requestId: documentRequestItems.requestId,
+      name: documentRequestItems.name,
+      description: documentRequestItems.description,
+      sortOrder: documentRequestItems.sortOrder,
+      status: documentRequestItems.status,
+      uploadedFileId: documentRequestItems.uploadedFileId,
+      uploadedAt: documentRequestItems.uploadedAt,
+      aiVerdict: documentRequestItems.aiVerdict,
+      aiReasoning: documentRequestItems.aiReasoning,
+      aiAnalyzedAt: documentRequestItems.aiAnalyzedAt,
+      uploadedFileName: caseFiles.name,
+      uploadedFilePath: caseFiles.path,
+    })
+    .from(documentRequestItems)
+    .leftJoin(caseFiles, eq(documentRequestItems.uploadedFileId, caseFiles.id))
+    .where(inArray(documentRequestItems.requestId, requestIds))
+    .orderBy(asc(documentRequestItems.sortOrder));
+
+  const itemsByRequest = new Map<number, DocumentRequestItem[]>();
+  for (const row of itemRows) {
+    const list = itemsByRequest.get(row.requestId) ?? [];
+    list.push({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      sortOrder: row.sortOrder,
+      status: row.status as DocumentRequestItem["status"],
+      uploadedFileId: row.uploadedFileId,
+      uploadedAt: row.uploadedAt?.toISOString() ?? null,
+      aiVerdict:
+        (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
+      aiReasoning: row.aiReasoning ?? null,
+      aiAnalyzedAt: row.aiAnalyzedAt?.toISOString() ?? null,
+      uploadedFile:
+        row.uploadedFileId != null &&
+        row.uploadedFileName &&
+        row.uploadedFilePath
+          ? {
+              id: row.uploadedFileId,
+              name: row.uploadedFileName,
+              path: row.uploadedFilePath,
+            }
+          : null,
+    });
+    itemsByRequest.set(row.requestId, list);
+  }
+
+  return requestRows
+    .map((r) => ({
+      id: r.id,
+      eventTitle: r.eventTitle,
+      eventDateTime: r.eventDateTime.toISOString(),
+      clientId: r.clientId,
+      approvedAt: r.approvedAt?.toISOString() ?? null,
+      items: itemsByRequest.get(r.id) ?? [],
+    }))
+    .filter((r) =>
+      r.items.some((it) => it.status === "uploaded" || it.status === "rejected")
+    );
+}
+
 export async function listApprovedRequestsForClient(clientId: number): Promise<
   Array<{
     id: number;
@@ -231,6 +333,9 @@ export async function listApprovedRequestsForClient(clientId: number): Promise<
       status: documentRequestItems.status,
       uploadedFileId: documentRequestItems.uploadedFileId,
       uploadedAt: documentRequestItems.uploadedAt,
+      aiVerdict: documentRequestItems.aiVerdict,
+      aiReasoning: documentRequestItems.aiReasoning,
+      aiAnalyzedAt: documentRequestItems.aiAnalyzedAt,
       uploadedFileName: caseFiles.name,
       uploadedFilePath: caseFiles.path,
     })
@@ -250,6 +355,10 @@ export async function listApprovedRequestsForClient(clientId: number): Promise<
       status: row.status as DocumentRequestItem["status"],
       uploadedFileId: row.uploadedFileId,
       uploadedAt: row.uploadedAt?.toISOString() ?? null,
+      aiVerdict:
+        (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
+      aiReasoning: row.aiReasoning ?? null,
+      aiAnalyzedAt: row.aiAnalyzedAt?.toISOString() ?? null,
       uploadedFile:
         row.uploadedFileId != null &&
         row.uploadedFileName &&

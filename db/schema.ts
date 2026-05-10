@@ -262,6 +262,9 @@ export const documentRequestItems = pgTable(
       onDelete: "set null",
     }),
     uploadedAt: timestamp("uploaded_at", { withTimezone: true }),
+    aiVerdict: text("ai_verdict"),
+    aiReasoning: text("ai_reasoning"),
+    aiAnalyzedAt: timestamp("ai_analyzed_at", { withTimezone: true }),
   },
   (t) => [index("document_request_items_request_id_idx").on(t.requestId)]
 ).enableRLS();

@@ -48,6 +48,7 @@ import type { PortalMeetingBooking } from "@/types/portal";
 import type {
   PendingDocRequest,
   DocumentRequestItemInput,
+  FulfilledDocRequest,
 } from "@/types/document_requests";
 import {
   acceptBookingWithCalendar,
@@ -115,6 +116,18 @@ export function AIAssistant({
     enabled: isOpen,
   });
   const pendingDocRequests = pendingDocRequestsQuery.data ?? [];
+
+  const fulfilledDocRequestsQuery = useQuery({
+    queryKey: ["documentRequests", "fulfilled"],
+    queryFn: async () => {
+      const res = await axios.get<FulfilledDocRequest[]>(
+        "/api/document-requests/fulfilled"
+      );
+      return res.data;
+    },
+    enabled: isOpen,
+  });
+  const fulfilledDocRequests = fulfilledDocRequestsQuery.data ?? [];
 
   const clientsQuery = useQuery({
     queryKey: ["clients"],
@@ -473,6 +486,23 @@ export function AIAssistant({
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Fulfilled Document Requests (client uploads + AI verdicts) */}
+          {fulfilledDocRequests.length > 0 && (
+            <div className="border-b border-border bg-card">
+              <div className="px-4 py-2.5 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900">
+                <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  Client Uploads — AI Review
+                </span>
+              </div>
+              <div className="divide-y divide-border max-h-[28rem] overflow-y-auto">
+                {fulfilledDocRequests.map((req) => (
+                  <FulfilledDocRequestCard key={req.id} request={req} />
+                ))}
+              </div>
             </div>
           )}
 
@@ -943,6 +973,65 @@ function DocRequestCard({
           )}
           Decline
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function FulfilledDocRequestCard({ request }: { request: FulfilledDocRequest }) {
+  return (
+    <div className="px-4 py-3 space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-xs font-semibold text-foreground">
+          {request.eventTitle}
+        </p>
+        {request.approvedAt && (
+          <p className="text-[10px] text-muted-foreground">
+            sent {new Date(request.approvedAt).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        {request.items.map((item) => {
+          if (item.status === "pending") return null;
+          const isMeets = item.aiVerdict === "meets";
+          const isFail = item.aiVerdict === "does_not_meet";
+          return (
+            <div
+              key={item.id}
+              className="rounded-md border border-border px-2.5 py-2 text-xs"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-foreground truncate">
+                  {item.name}
+                </span>
+                <span
+                  className={
+                    isMeets
+                      ? "text-[10px] uppercase tracking-wide text-green-700 dark:text-green-400"
+                      : isFail
+                        ? "text-[10px] uppercase tracking-wide text-red-600 dark:text-red-400"
+                        : "text-[10px] uppercase tracking-wide text-muted-foreground"
+                  }
+                >
+                  {item.aiVerdict ?? item.status}
+                </span>
+              </div>
+              {item.aiReasoning && (
+                <p className="mt-1 text-muted-foreground">{item.aiReasoning}</p>
+              )}
+              {item.uploadedFile && (
+                <a
+                  href={`/api/files/${item.uploadedFile.id}/download`}
+                  className="mt-1 inline-block text-blue-600 dark:text-blue-400 underline"
+                  download={item.uploadedFile.name}
+                >
+                  {item.uploadedFile.name}
+                </a>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
