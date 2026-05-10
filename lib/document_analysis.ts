@@ -91,10 +91,7 @@ export async function analyzeDocumentRequirement(
   const inputItems: OpenAI.Responses.ResponseInputItem[] = [
     {
       role: "user",
-      content: [
-        { type: "input_text", text: requirementText },
-        fileContent,
-      ],
+      content: [{ type: "input_text", text: requirementText }, fileContent],
     },
   ];
 

@@ -978,7 +978,11 @@ function DocRequestCard({
   );
 }
 
-function FulfilledDocRequestCard({ request }: { request: FulfilledDocRequest }) {
+function FulfilledDocRequestCard({
+  request,
+}: {
+  request: FulfilledDocRequest;
+}) {
   return (
     <div className="px-4 py-3 space-y-2">
       <div className="flex items-baseline justify-between gap-2">

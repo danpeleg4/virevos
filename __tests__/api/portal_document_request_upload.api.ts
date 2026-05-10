@@ -177,9 +177,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     (db.select as jest.Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
-        setupItemLookup([
-          { ...baseItemRow, requestStatus: "pending_approval" },
-        ])
+        setupItemLookup([{ ...baseItemRow, requestStatus: "pending_approval" }])
       );
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
     expect(res.status).toBe(403);
@@ -223,7 +221,10 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     expect(json.itemId).toBe(1);
     expect(json.file.id).toBe(555);
     expect(json.status).toBe("uploaded");
-    expect(json.analysis).toEqual({ verdict: "meets", reasoning: "Looks good" });
+    expect(json.analysis).toEqual({
+      verdict: "meets",
+      reasoning: "Looks good",
+    });
 
     expect(mockUpload).toHaveBeenCalledTimes(1);
     expect(mockAnalyze).toHaveBeenCalledWith(
@@ -301,20 +302,18 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
       )
       .mockReturnValueOnce(setupCaseLookup([{ id: 22 }]));
 
-    const returning = jest
-      .fn()
-      .mockResolvedValue([
-        {
-          id: 556,
-          caseId: 22,
-          userId: "user_1",
-          name: "doc.pdf",
-          path: "p",
-          size: 100,
-          mimeType: "application/pdf",
-          createdAt: new Date(),
-        },
-      ]);
+    const returning = jest.fn().mockResolvedValue([
+      {
+        id: 556,
+        caseId: 22,
+        userId: "user_1",
+        name: "doc.pdf",
+        path: "p",
+        size: 100,
+        mimeType: "application/pdf",
+        createdAt: new Date(),
+      },
+    ]);
     (db.insert as jest.Mock).mockReturnValue({
       values: jest.fn(() => ({ returning })),
     });

@@ -351,7 +351,9 @@ export default function PortalPage() {
         }))
       );
       if (analysis?.verdict === "does_not_meet") {
-        toast.error(analysis.reasoning || `${file.name} does not meet the requirement`);
+        toast.error(
+          analysis.reasoning || `${file.name} does not meet the requirement`
+        );
       } else if (analysis?.verdict === "meets") {
         toast.success(`${file.name} looks good`);
       } else {

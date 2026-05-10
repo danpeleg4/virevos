@@ -61,8 +61,7 @@ export async function listPendingDocumentRequests(): Promise<
       status: item.status as DocumentRequestItem["status"],
       uploadedFileId: item.uploadedFileId,
       uploadedAt: item.uploadedAt?.toISOString() ?? null,
-      aiVerdict:
-        (item.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
+      aiVerdict: (item.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
       aiReasoning: item.aiReasoning ?? null,
       aiAnalyzedAt: item.aiAnalyzedAt?.toISOString() ?? null,
     });
@@ -262,8 +261,7 @@ export async function listFulfilledRequestsForAgency(): Promise<
       status: row.status as DocumentRequestItem["status"],
       uploadedFileId: row.uploadedFileId,
       uploadedAt: row.uploadedAt?.toISOString() ?? null,
-      aiVerdict:
-        (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
+      aiVerdict: (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
       aiReasoning: row.aiReasoning ?? null,
       aiAnalyzedAt: row.aiAnalyzedAt?.toISOString() ?? null,
       uploadedFile:
@@ -355,8 +353,7 @@ export async function listApprovedRequestsForClient(clientId: number): Promise<
       status: row.status as DocumentRequestItem["status"],
       uploadedFileId: row.uploadedFileId,
       uploadedAt: row.uploadedAt?.toISOString() ?? null,
-      aiVerdict:
-        (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
+      aiVerdict: (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
       aiReasoning: row.aiReasoning ?? null,
       aiAnalyzedAt: row.aiAnalyzedAt?.toISOString() ?? null,
       uploadedFile:

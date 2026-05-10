@@ -58,7 +58,10 @@ describe("analyzeDocumentRequirement", () => {
       fileName: "scan.png",
     });
 
-    expect(res).toEqual({ verdict: "meets", reasoning: "matches the requirement" });
+    expect(res).toEqual({
+      verdict: "meets",
+      reasoning: "matches the requirement",
+    });
     const call = mockCreate.mock.calls[0][0];
     const content = call.input[0].content;
     expect(content[0].type).toBe("input_text");
