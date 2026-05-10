@@ -13,41 +13,39 @@ export async function deleteCase(caseId: number) {
   const user = await currentUser();
   if (!user?.id) throw new Error("No user");
 
-  // Delete case files
   const files = await db
     .select({ path: caseFiles.path, size: caseFiles.size })
     .from(caseFiles)
     .where(and(eq(caseFiles.caseId, caseId), eq(caseFiles.userId, user.id)));
 
-  for (const file of files) {
-    await deleteFile(FILES_BUCKET, file.path);
-  }
-
-  await db
-    .delete(caseFiles)
-    .where(and(eq(caseFiles.caseId, caseId), eq(caseFiles.userId, user.id)));
+  // Storage deletes run outside the DB tx — they're external I/O and
+  // we'd rather a partial storage failure not block DB cleanup.
+  await Promise.all(files.map((f) => deleteFile(FILES_BUCKET, f.path)));
 
   const totalSize = files.reduce((sum, f) => sum + f.size, 0);
-  if (totalSize > 0) {
-    await db
-      .update(users)
-      .set({ storage: sql`${users.storage} - ${totalSize}` })
-      .where(eq(users.user_id, user.id));
-  }
 
-  // Delete case tasks
-  await db
-    .delete(tasks)
-    .where(and(eq(tasks.caseId, caseId), eq(tasks.userId, user.id)));
-  // Delete case notes
-  await db
-    .delete(caseNotes)
-    .where(and(eq(caseNotes.caseId, caseId), eq(caseNotes.userId, user.id)));
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(caseFiles)
+      .where(and(eq(caseFiles.caseId, caseId), eq(caseFiles.userId, user.id)));
 
-  // Delete case
-  await db
-    .delete(cases)
-    .where(and(eq(cases.id, caseId), eq(cases.userId, user.id)));
+    if (totalSize > 0) {
+      await tx
+        .update(users)
+        .set({ storage: sql`${users.storage} - ${totalSize}` })
+        .where(eq(users.user_id, user.id));
+    }
+
+    await tx
+      .delete(tasks)
+      .where(and(eq(tasks.caseId, caseId), eq(tasks.userId, user.id)));
+    await tx
+      .delete(caseNotes)
+      .where(and(eq(caseNotes.caseId, caseId), eq(caseNotes.userId, user.id)));
+    await tx
+      .delete(cases)
+      .where(and(eq(cases.id, caseId), eq(cases.userId, user.id)));
+  });
 }
 
 export async function addFileMetadata(
@@ -69,22 +67,30 @@ export async function addFileMetadata(
     throw new Error("Failed to upload file");
   }
 
-  // Save metadata in Drizzle and increment storage usage
   try {
-    await db.insert(caseFiles).values({
-      caseId: input.caseId,
-      userId: user.id,
-      name: file.name,
-      path: filePath,
-      size: file.size,
-      mimeType: input.mimeType ?? file.type,
+    await db.transaction(async (tx) => {
+      await tx.insert(caseFiles).values({
+        caseId: input.caseId,
+        userId: user.id,
+        name: file.name,
+        path: filePath,
+        size: file.size,
+        mimeType: input.mimeType ?? file.type,
+      });
+      await tx
+        .update(users)
+        .set({ storage: sql`${users.storage} + ${file.size}` })
+        .where(eq(users.user_id, user.id));
     });
-    await db
-      .update(users)
-      .set({ storage: sql`${users.storage} + ${file.size}` })
-      .where(eq(users.user_id, user.id));
   } catch (err) {
     console.error("Drizzle insert failed:", err);
+    // The DB metadata write failed but the storage upload succeeded —
+    // best-effort cleanup so we don't leak orphaned files.
+    try {
+      await deleteFile(FILES_BUCKET, filePath);
+    } catch (cleanupErr) {
+      console.error("Orphan file cleanup failed:", cleanupErr);
+    }
     throw new Error("Failed to save file metadata");
   }
 
@@ -182,12 +188,13 @@ export async function deleteCaseFile(fileId: number) {
 
   await deleteFile(FILES_BUCKET, file.path);
 
-  await db
-    .delete(caseFiles)
-    .where(and(eq(caseFiles.id, fileId), eq(caseFiles.userId, user.id)));
-
-  await db
-    .update(users)
-    .set({ storage: sql`${users.storage} - ${file.size}` })
-    .where(eq(users.user_id, user.id));
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(caseFiles)
+      .where(and(eq(caseFiles.id, fileId), eq(caseFiles.userId, user.id)));
+    await tx
+      .update(users)
+      .set({ storage: sql`${users.storage} - ${file.size}` })
+      .where(eq(users.user_id, user.id));
+  });
 }

@@ -8,16 +8,38 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 jest.mock("@db/db", () => ({
   db: {
-    query: {
-      cases: {
-        findMany: jest.fn(),
-      },
-    },
     select: jest.fn(),
   },
 }));
 
-describe("GET /api/cases", () => {
+type ChainableQuery = {
+  from: jest.Mock;
+  leftJoin: jest.Mock;
+  innerJoin: jest.Mock;
+  where: jest.Mock;
+  groupBy: jest.Mock;
+  orderBy: jest.Mock;
+  then: (
+    onFulfilled: (rows: unknown[]) => unknown,
+    onRejected?: (err: unknown) => unknown
+  ) => Promise<unknown>;
+};
+
+const buildChain = (rows: unknown[]): ChainableQuery => {
+  const chain = {} as ChainableQuery;
+  const passthrough = jest.fn(() => chain);
+  chain.from = passthrough;
+  chain.leftJoin = passthrough;
+  chain.innerJoin = passthrough;
+  chain.where = passthrough;
+  chain.groupBy = passthrough;
+  chain.orderBy = passthrough;
+  chain.then = (onFulfilled, onRejected) =>
+    Promise.resolve(rows).then(onFulfilled, onRejected);
+  return chain;
+};
+
+describe("GET /api/cases/get-cases", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -31,39 +53,48 @@ describe("GET /api/cases", () => {
     expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
-  it("returns cases with stats and clients", async () => {
+  it("returns cases with SQL-aggregated stats and clients", async () => {
     (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.query.cases.findMany as jest.Mock).mockResolvedValue([
+
+    const caseRows = [
       {
         id: 1,
         name: "Case A",
-        tasks: [
-          { id: 1, completed: true },
-          { id: 2, completed: false },
-        ],
-        client: { id: 10, name: "Client A" },
+        description: null,
+        status: "active",
+        dueDate: null,
+        priority: "medium",
+        clientId: 10,
+        userId: "user_1",
+        clientName: "Client A",
+        totalTasks: 2,
+        completedTasks: 1,
       },
       {
         id: 2,
         name: "Case B",
-        tasks: [],
-        client: null,
+        description: null,
+        status: "active",
+        dueDate: null,
+        priority: "low",
+        clientId: null,
+        userId: "user_1",
+        clientName: null,
+        totalTasks: 0,
+        completedTasks: 0,
       },
-    ]);
-    (db.select as jest.Mock).mockReturnValue({
-      from: () => ({
-        orderBy: () => ({
-          where: () =>
-            Promise.resolve([
-              { id: 10, name: "Client A" },
-              { id: 11, name: "Client B" },
-            ]),
-        }),
-      }),
-    });
+    ];
+
+    const clientRows = [
+      { id: 10, name: "Client A" },
+      { id: 11, name: "Client B" },
+    ];
+
+    (db.select as jest.Mock)
+      .mockReturnValueOnce(buildChain(caseRows))
+      .mockReturnValueOnce(buildChain(clientRows));
 
     const res = await GET();
-
     expect(res.status).toBe(200);
 
     const json = await res.json();
@@ -72,26 +103,57 @@ describe("GET /api/cases", () => {
       expect.objectContaining({
         id: 1,
         clientName: "Client A",
-        stats: {
-          totalTasks: 2,
-          completedTasks: 1,
-          percentage: 50,
-        },
+        stats: { totalTasks: 2, completedTasks: 1, percentage: 50 },
       }),
       expect.objectContaining({
         id: 2,
         clientName: null,
-        stats: {
-          totalTasks: 0,
-          completedTasks: 0,
-          percentage: 0,
-        },
+        stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
       }),
     ]);
 
-    expect(json.allClients).toEqual([
-      { id: 10, name: "Client A" },
-      { id: 11, name: "Client B" },
-    ]);
+    expect(json.allClients).toEqual(clientRows);
+  });
+
+  it("returns empty arrays when user has no cases or clients", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+
+    (db.select as jest.Mock)
+      .mockReturnValueOnce(buildChain([]))
+      .mockReturnValueOnce(buildChain([]));
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.cases).toEqual([]);
+    expect(json.allClients).toEqual([]);
+  });
+
+  it("computes percentage correctly for fully-completed cases", async () => {
+    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+
+    (db.select as jest.Mock)
+      .mockReturnValueOnce(
+        buildChain([
+          {
+            id: 7,
+            name: "Done",
+            description: null,
+            status: "active",
+            dueDate: null,
+            priority: "low",
+            clientId: null,
+            userId: "user_1",
+            clientName: null,
+            totalTasks: 4,
+            completedTasks: 4,
+          },
+        ])
+      )
+      .mockReturnValueOnce(buildChain([]));
+
+    const res = await GET();
+    const json = await res.json();
+    expect(json.cases[0].stats.percentage).toBe(100);
   });
 });

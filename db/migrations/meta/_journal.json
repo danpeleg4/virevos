@@ -8,6 +8,27 @@
       "when": 1778288859045,
       "tag": "0000_amusing_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778368313497,
+      "tag": "0001_lean_famine",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778374433106,
+      "tag": "0002_doc_request_ai_analysis",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778374975450,
+      "tag": "0003_dark_penance",
+      "breakpoints": true
     }
   ]
 }

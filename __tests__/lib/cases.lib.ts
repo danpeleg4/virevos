@@ -23,15 +23,22 @@ const mockSelectWhere = jest.fn();
 const mockSelectFrom = jest.fn(() => ({ where: mockSelectWhere }));
 const mockSelect = jest.fn(() => ({ from: mockSelectFrom }));
 
-jest.mock("@db/db", () => ({
-  db: {
+jest.mock("@db/db", () => {
+  const dbMock = {
     delete: jest.fn(() => ({ where: mockDeleteWhere })),
     update: jest.fn(() => ({ set: mockSet })),
     insert: jest.fn(() => ({ values: mockValues })),
     // eslint-disable-next-line prefer-spread
     select: (...args: never[]) => mockSelect.apply(null, args),
-  },
-}));
+    transaction: jest.fn(),
+  };
+  // Run the transaction callback with the same db mock so tx.delete etc. flow
+  // through the same mocks as direct db.* calls.
+  dbMock.transaction.mockImplementation((cb: (tx: typeof dbMock) => unknown) =>
+    cb(dbMock)
+  );
+  return { db: dbMock };
+});
 
 jest.mock("@/lib/supabase", () => ({
   FILES_BUCKET: "projectFiles",
@@ -169,6 +176,25 @@ describe("addFileMetadata", () => {
 
     expect(result).toMatchObject({ name: "doc.pdf", size: 2048 });
     expect(result!.path).toContain("doc.pdf");
+  });
+
+  it("cleans up the uploaded file when the DB write fails", async () => {
+    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    mockUploadFile.mockResolvedValueOnce(undefined);
+    // Force the insert inside the transaction to reject.
+    mockValues.mockImplementationOnce(() => {
+      throw new Error("db down");
+    });
+
+    await expect(
+      addFileMetadata({ caseId: 1 }, makeFormData("orphan.pdf", 10))
+    ).rejects.toThrow("Failed to save file metadata");
+
+    expect(mockDeleteFile).toHaveBeenCalledTimes(1);
+    expect(mockDeleteFile).toHaveBeenCalledWith(
+      "projectFiles",
+      expect.stringContaining("orphan.pdf")
+    );
   });
 });
 

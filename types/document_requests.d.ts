@@ -4,6 +4,13 @@ export type DocumentRequestStatus =
   | "declined";
 export type DocumentRequestItemStatus = "pending" | "uploaded" | "rejected";
 
+export type DocumentRequestItemAiVerdict =
+  | "meets"
+  | "does_not_meet"
+  | "needs_review"
+  | "skipped"
+  | "error";
+
 export interface DocumentRequestItem {
   id: number;
   name: string;
@@ -12,6 +19,9 @@ export interface DocumentRequestItem {
   status: DocumentRequestItemStatus;
   uploadedFileId: number | null;
   uploadedAt: string | null;
+  aiVerdict: DocumentRequestItemAiVerdict | null;
+  aiReasoning: string | null;
+  aiAnalyzedAt: string | null;
   uploadedFile?: {
     id: number;
     name: string;
@@ -34,6 +44,15 @@ export interface PortalDocumentRequest {
   id: number;
   eventTitle: string;
   eventDateTime: string;
+  approvedAt: string | null;
+  items: DocumentRequestItem[];
+}
+
+export interface FulfilledDocRequest {
+  id: number;
+  eventTitle: string;
+  eventDateTime: string;
+  clientId: number | null;
   approvedAt: string | null;
   items: DocumentRequestItem[];
 }
