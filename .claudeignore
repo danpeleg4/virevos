@@ -4,9 +4,6 @@
 dist/
 build/
 out/
-.env
-./web/.env.local
-./db/.env
+.env.local
 .env.*
 node_modules/
-.env.local

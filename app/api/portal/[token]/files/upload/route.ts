@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import { clientPortalTokens, clients, cases, caseFiles } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import {
+  clientPortalTokens,
+  clients,
+  cases,
+  caseFiles,
+  users,
+} from "@db/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { uploadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate_limit";
+import { assertCanAddFile } from "@/lib/plan_limits";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_FILENAME_LENGTH = 255;
@@ -88,6 +95,8 @@ export async function POST(
       return NextResponse.json({ error: "Invalid mime type" }, { status: 400 });
     }
 
+    await assertCanAddFile(userId, file.size);
+
     // Resolve caseId
     let caseId: number;
 
@@ -148,6 +157,14 @@ export async function POST(
         mimeType: file.type,
       })
       .returning();
+
+    // Update user storage in database
+    if (inserted) {
+      await db
+        .update(users)
+        .set({ storage: sql`${users.storage} + ${file.size}` })
+        .where(eq(users.user_id, userId));
+    }
 
     return NextResponse.json(
       {
