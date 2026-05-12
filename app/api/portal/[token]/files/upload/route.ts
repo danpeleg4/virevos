@@ -8,7 +8,7 @@ import {
   users,
 } from "@db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { uploadFile } from "@/lib/storage";
+import { uploadFile, deleteFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate_limit";
 import { assertCanAddFile } from "@/lib/plan_limits";
@@ -145,25 +145,34 @@ export async function POST(
 
     await uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
 
-    // Insert metadata
-    const [inserted] = await db
-      .insert(caseFiles)
-      .values({
-        caseId,
-        userId,
-        name: file.name,
-        path: filePath,
-        size: file.size,
-        mimeType: file.type,
-      })
-      .returning();
-
-    // Update user storage in database
-    if (inserted) {
-      await db
-        .update(users)
-        .set({ storage: sql`${users.storage} + ${file.size}` })
-        .where(eq(users.user_id, userId));
+    let inserted;
+    try {
+      inserted = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(caseFiles)
+          .values({
+            caseId,
+            userId,
+            name: file.name,
+            path: filePath,
+            size: file.size,
+            mimeType: file.type,
+          })
+          .returning();
+        await tx
+          .update(users)
+          .set({ storage: sql`${users.storage} + ${file.size}` })
+          .where(eq(users.user_id, userId));
+        return row;
+      });
+    } catch (dbErr) {
+      // Best-effort cleanup so we don't leak orphaned files in storage.
+      try {
+        await deleteFile(FILES_BUCKET, filePath);
+      } catch (cleanupErr) {
+        console.error("Orphan file cleanup failed:", cleanupErr);
+      }
+      throw dbErr;
     }
 
     return NextResponse.json(

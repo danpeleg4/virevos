@@ -17,20 +17,33 @@ jest.mock("@db/db", () => ({
   db: {
     select: jest.fn(),
     insert: jest.fn(),
+    update: jest.fn(),
+    transaction: jest.fn(),
   },
 }));
 
 // eslint-disable-next-line no-var
 var mockUploadFile: jest.Mock;
+// eslint-disable-next-line no-var
+var mockDeleteFile: jest.Mock;
 
 jest.mock("@/lib/storage", () => {
   mockUploadFile = jest.fn().mockResolvedValue(undefined);
-  return { uploadFile: mockUploadFile };
+  mockDeleteFile = jest.fn().mockResolvedValue(undefined);
+  return { uploadFile: mockUploadFile, deleteFile: mockDeleteFile };
 });
 
 jest.mock("@/lib/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
+
+// eslint-disable-next-line no-var
+var mockAssertCanAddFile: jest.Mock;
+
+jest.mock("@/lib/plan_limits", () => {
+  mockAssertCanAddFile = jest.fn().mockResolvedValue(undefined);
+  return { assertCanAddFile: mockAssertCanAddFile };
+});
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const makeParams = (token: string) => Promise.resolve({ token });
@@ -62,6 +75,26 @@ function mockSelectChain(results: unknown[]) {
   const mockFrom = jest.fn(() => ({ where: mockWhere }));
   (db.select as jest.Mock).mockReturnValueOnce({ from: mockFrom });
   return { mockLimit, mockWhere, mockFrom };
+}
+
+// Wires `db.transaction` so the inner callback runs against tx.insert/tx.update mocks
+// and returns the inserted row (or throws on failure).
+function mockTransaction(insertedRow: unknown | Error) {
+  const txInsertReturning = jest.fn().mockImplementation(() => {
+    if (insertedRow instanceof Error) throw insertedRow;
+    return Promise.resolve([insertedRow]);
+  });
+  const txInsertValues = jest.fn(() => ({ returning: txInsertReturning }));
+  const txInsert = jest.fn(() => ({ values: txInsertValues }));
+  const txUpdateWhere = jest.fn().mockResolvedValue(undefined);
+  const txUpdateSet = jest.fn(() => ({ where: txUpdateWhere }));
+  const txUpdate = jest.fn(() => ({ set: txUpdateSet }));
+  (db.transaction as jest.Mock).mockImplementationOnce(
+    async (
+      fn: (tx: { insert: jest.Mock; update: jest.Mock }) => Promise<unknown>
+    ) => fn({ insert: txInsert, update: txUpdate })
+  );
+  return { txInsert, txInsertValues, txUpdate, txUpdateSet };
 }
 
 const mockToken = {
@@ -187,9 +220,8 @@ describe("POST /api/portal/[token]/files/upload", () => {
       mockSelectChain([{ id: 10 }]); // client
       mockSelectChain([mockProject]); // first project for client
 
-      const mockReturning = jest.fn().mockResolvedValue([mockInsertedFile]);
-      const mockValues = jest.fn(() => ({ returning: mockReturning }));
-      (db.insert as jest.Mock).mockReturnValueOnce({ values: mockValues });
+      const { txInsert, txUpdate, txUpdateSet } =
+        mockTransaction(mockInsertedFile);
 
       const req = makeRequest("valid-token", makeFormData());
       const res = await POST(req, { params: makeParams("valid-token") });
@@ -200,7 +232,12 @@ describe("POST /api/portal/[token]/files/upload", () => {
       expect(json.name).toBe(mockInsertedFile.name);
       expect(json.caseId).toBe(mockProject.id);
       expect(mockUploadFile).toHaveBeenCalledTimes(1);
-      expect(db.insert).toHaveBeenCalledTimes(1);
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(txInsert).toHaveBeenCalledTimes(1);
+      expect(txUpdate).toHaveBeenCalledTimes(1);
+      // storage increment fired with a sql expression — assert .set ran exactly once
+      expect(txUpdateSet).toHaveBeenCalledTimes(1);
+      expect(mockDeleteFile).not.toHaveBeenCalled();
     });
 
     it("uploads file and returns 201 when projectId is explicitly supplied", async () => {
@@ -208,9 +245,7 @@ describe("POST /api/portal/[token]/files/upload", () => {
       mockSelectChain([{ id: 10 }]); // client
       mockSelectChain([{ id: mockProject.id }]); // ownership check
 
-      const mockReturning = jest.fn().mockResolvedValue([mockInsertedFile]);
-      const mockValues = jest.fn(() => ({ returning: mockReturning }));
-      (db.insert as jest.Mock).mockReturnValueOnce({ values: mockValues });
+      mockTransaction(mockInsertedFile);
 
       const fd = makeFormData("doc.pdf", 512, mockProject.id); // explicit caseId
       const req = makeRequest("valid-token", fd);
@@ -219,6 +254,60 @@ describe("POST /api/portal/[token]/files/upload", () => {
       expect(res.status).toBe(201);
       const json = await res.json();
       expect(json.caseId).toBe(mockProject.id);
+    });
+  });
+
+  describe("storage quota", () => {
+    it("returns 500 and skips upload when assertCanAddFile rejects", async () => {
+      mockSelectChain([mockToken]); // token
+      mockSelectChain([{ id: 10 }]); // client
+
+      mockAssertCanAddFile.mockRejectedValueOnce(
+        new Error("Storage limit reached. The Free plan includes 1GB.")
+      );
+
+      const req = makeRequest("valid-token", makeFormData());
+      const res = await POST(req, { params: makeParams("valid-token") });
+
+      expect(res.status).toBe(500);
+      expect(mockUploadFile).not.toHaveBeenCalled();
+      expect(db.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("orphan cleanup", () => {
+    it("deletes uploaded file when DB transaction fails", async () => {
+      mockSelectChain([mockToken]); // token
+      mockSelectChain([{ id: 10 }]); // client
+      mockSelectChain([mockProject]); // first project for client
+
+      mockTransaction(new Error("boom"));
+
+      const req = makeRequest("valid-token", makeFormData());
+      const res = await POST(req, { params: makeParams("valid-token") });
+
+      expect(res.status).toBe(500);
+      expect(mockUploadFile).toHaveBeenCalledTimes(1);
+      expect(mockDeleteFile).toHaveBeenCalledTimes(1);
+      // verify the cleaned-up path matches what was uploaded
+      const uploadedPath = mockUploadFile.mock.calls[0][1];
+      const deletedPath = mockDeleteFile.mock.calls[0][1];
+      expect(deletedPath).toBe(uploadedPath);
+    });
+
+    it("still returns 500 if cleanup itself fails", async () => {
+      mockSelectChain([mockToken]); // token
+      mockSelectChain([{ id: 10 }]); // client
+      mockSelectChain([mockProject]); // first project for client
+
+      mockTransaction(new Error("db down"));
+      mockDeleteFile.mockRejectedValueOnce(new Error("storage also down"));
+
+      const req = makeRequest("valid-token", makeFormData());
+      const res = await POST(req, { params: makeParams("valid-token") });
+
+      expect(res.status).toBe(500);
+      expect(mockDeleteFile).toHaveBeenCalledTimes(1);
     });
   });
 });
