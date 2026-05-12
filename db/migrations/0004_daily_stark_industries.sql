@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "recording_size" bigint;

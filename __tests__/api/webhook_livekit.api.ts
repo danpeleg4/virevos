@@ -29,6 +29,7 @@ jest.mock("@db/db", () => ({
         onConflictDoNothing: jest.fn(),
       })),
     })),
+    transaction: jest.fn(),
   },
 }));
 
@@ -176,6 +177,86 @@ describe("POST /api/webhooks/livekit", () => {
 
     const valuesCall = insertCall.values.mock.results[0].value;
     expect(valuesCall.onConflictDoNothing).toHaveBeenCalled();
+  });
+
+  it("credits user storage on first egress_ended", async () => {
+    const recordingUpdate = {
+      set: jest.fn(() => ({
+        where: jest.fn(() => ({
+          returning: jest.fn(() => Promise.resolve([{ userId: "user_1" }])),
+        })),
+      })),
+    };
+    const storageUpdate = { set: jest.fn(() => ({ where: jest.fn() })) };
+    const txUpdate = jest
+      .fn()
+      .mockReturnValueOnce(recordingUpdate)
+      .mockReturnValueOnce(storageUpdate);
+    (db.transaction as jest.Mock).mockImplementationOnce(
+      async (fn: (tx: { update: jest.Mock }) => Promise<unknown>) =>
+        fn({ update: txUpdate })
+    );
+
+    const req = mockRequest({
+      event: "egress_ended",
+      egressInfo: {
+        roomName: "room_123",
+        fileResults: [{ size: 12345 }],
+      },
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+    expect(txUpdate).toHaveBeenCalledTimes(2);
+    expect(recordingUpdate.set).toHaveBeenCalledWith({ recordingSize: 12345 });
+    expect(storageUpdate.set).toHaveBeenCalled();
+  });
+
+  it("skips storage update on duplicate egress_ended", async () => {
+    const recordingUpdate = {
+      set: jest.fn(() => ({
+        where: jest.fn(() => ({
+          returning: jest.fn(() => Promise.resolve([])),
+        })),
+      })),
+    };
+    const storageUpdate = { set: jest.fn(() => ({ where: jest.fn() })) };
+    const txUpdate = jest
+      .fn()
+      .mockReturnValueOnce(recordingUpdate)
+      .mockReturnValueOnce(storageUpdate);
+    (db.transaction as jest.Mock).mockImplementationOnce(
+      async (fn: (tx: { update: jest.Mock }) => Promise<unknown>) =>
+        fn({ update: txUpdate })
+    );
+
+    const req = mockRequest({
+      event: "egress_ended",
+      egressInfo: {
+        roomName: "room_123",
+        fileResults: [{ size: 12345 }],
+      },
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(txUpdate).toHaveBeenCalledTimes(1);
+    expect(storageUpdate.set).not.toHaveBeenCalled();
+  });
+
+  it("skips transaction when egress_ended has no file size", async () => {
+    const req = mockRequest({
+      event: "egress_ended",
+      egressInfo: { roomName: "room_123", fileResults: [] },
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(db.transaction).not.toHaveBeenCalled();
   });
 
   it("does not duplicate attendee on reconnect", async () => {

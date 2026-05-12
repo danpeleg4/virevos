@@ -117,18 +117,6 @@ export function AIAssistant({
   });
   const pendingDocRequests = pendingDocRequestsQuery.data ?? [];
 
-  const fulfilledDocRequestsQuery = useQuery({
-    queryKey: ["documentRequests", "fulfilled"],
-    queryFn: async () => {
-      const res = await axios.get<FulfilledDocRequest[]>(
-        "/api/document-requests/fulfilled"
-      );
-      return res.data;
-    },
-    enabled: isOpen,
-  });
-  const fulfilledDocRequests = fulfilledDocRequestsQuery.data ?? [];
-
   const clientsQuery = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
@@ -486,23 +474,6 @@ export function AIAssistant({
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Fulfilled Document Requests (client uploads + AI verdicts) */}
-          {fulfilledDocRequests.length > 0 && (
-            <div className="border-b border-border bg-card">
-              <div className="px-4 py-2.5 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900">
-                <FileText className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                  Client Uploads — AI Review
-                </span>
-              </div>
-              <div className="divide-y divide-border max-h-[28rem] overflow-y-auto">
-                {fulfilledDocRequests.map((req) => (
-                  <FulfilledDocRequestCard key={req.id} request={req} />
-                ))}
-              </div>
             </div>
           )}
 
