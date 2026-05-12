@@ -29,6 +29,13 @@
       "when": 1778374975450,
       "tag": "0003_dark_penance",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778613799261,
+      "tag": "0004_daily_stark_industries",
+      "breakpoints": true
     }
   ]
 }

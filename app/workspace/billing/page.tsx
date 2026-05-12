@@ -86,7 +86,7 @@ const PLAN_DETAILS: Record<
     price: 0,
     features: [
       "Up to 5 clients",
-      "Up to 5 projects",
+      "Up to 5 cases",
       "50 AI credits/month",
       "Basic automation",
     ],
@@ -96,7 +96,7 @@ const PLAN_DETAILS: Record<
     price: 29,
     features: [
       "Unlimited clients",
-      "Unlimited projects",
+      "Unlimited cases",
       "250 AI credits/month",
       "Advanced automation",
       "AI Assistant",
@@ -227,9 +227,8 @@ export default function Billing() {
   });
 
   const { data: projectList } = useQuery<{ id: number }[]>({
-    queryKey: ["projects"],
-    queryFn: () =>
-      axios.get("/api/projects/get-projects").then((r) => r.data.projects),
+    queryKey: ["cases"],
+    queryFn: () => axios.get("/api/cases/get-cases").then((r) => r.data.cases),
   });
 
   const { data: setupSecret } = useQuery<string>({

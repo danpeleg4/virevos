@@ -9,7 +9,7 @@ import {
   meetingDocumentRequests,
   documentRequestItems,
 } from "@db/schema";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import {
   EgressClient,
   EncodedFileOutput,
@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const roomName = event?.room?.name ?? event?.room?.sid;
+  const roomName =
+    event?.room?.name ?? event?.room?.sid ?? event?.egressInfo?.roomName;
   if (!roomName) {
     return NextResponse.json({ status: "missing room" }, { status: 400 });
   }
@@ -245,6 +246,33 @@ export async function POST(req: NextRequest) {
       .update(users)
       .set({ ai_credits: sql`${users.ai_credits} + 1` })
       .where(eq(users.user_id, eventUser.userId));
+  }
+
+  if (event.event === "egress_ended") {
+    const fileResults = event.egressInfo?.fileResults ?? [];
+    const totalSize = fileResults.reduce(
+      (acc, f) => acc + Number(f.size ?? 0),
+      0
+    );
+
+    if (totalSize > 0) {
+      await db.transaction(async (tx) => {
+        const credited = await tx
+          .update(events)
+          .set({ recordingSize: totalSize })
+          .where(and(eq(events.id, roomName), isNull(events.recordingSize)))
+          .returning({ userId: events.userId });
+
+        if (credited.length === 0) return;
+
+        await tx
+          .update(users)
+          .set({ storage: sql`${users.storage} + ${totalSize}` })
+          .where(eq(users.user_id, credited[0].userId));
+      });
+    }
+
+    return NextResponse.json({ status: "ok" });
   }
 
   if (event.event === "participant_joined") {

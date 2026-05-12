@@ -171,6 +171,7 @@ export const events = pgTable(
     origin: text("origin").default("app"),
     googleEventId: text("google_event_id"),
     outlookEventId: text("outlook_event_id"),
+    recordingSize: bigint("recording_size", { mode: "number" }),
 
     clientId: integer("client_id").references(() => clients.id, {
       onDelete: "set null",
