@@ -28,12 +28,20 @@ jest.mock("@/lib/document_analysis", () => {
   return { analyzeDocumentRequirement: mockAnalyze };
 });
 
+// eslint-disable-next-line no-var
+var mockAssertCanUseAI: jest.Mock;
+jest.mock("@/lib/plan_limits", () => {
+  mockAssertCanUseAI = jest.fn();
+  return { assertCanUseAI: mockAssertCanUseAI };
+});
+
 let consoleErrorSpy: jest.SpyInstance;
 
 beforeEach(() => {
   jest.clearAllMocks();
   consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   mockAnalyze.mockResolvedValue({ verdict: "meets", reasoning: "Looks good" });
+  mockAssertCanUseAI.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -248,6 +256,82 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
         aiAnalyzedAt: expect.any(Date),
       })
     );
+    expect(updateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ ai_credits: expect.anything() })
+    );
+  });
+
+  it("increments ai_credits on does_not_meet verdict", async () => {
+    mockAnalyze.mockResolvedValueOnce({
+      verdict: "does_not_meet",
+      reasoning: "Wrong document",
+    });
+    const { updateSet } = primeHappyPath();
+
+    await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+
+    expect(updateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ ai_credits: expect.anything() })
+    );
+  });
+
+  it("does NOT increment ai_credits when verdict is skipped", async () => {
+    mockAnalyze.mockResolvedValueOnce({
+      verdict: "skipped",
+      reasoning: "File type not supported for automatic analysis.",
+    });
+    const { updateSet } = primeHappyPath();
+
+    await POST(
+      mockRequest(makeFile(100, "text/plain", "notes.txt")),
+      mockCtx("tok", "1")
+    );
+
+    const credits = updateSet.mock.calls.filter(
+      (call: unknown[]) =>
+        typeof call[0] === "object" &&
+        call[0] !== null &&
+        "ai_credits" in (call[0] as Record<string, unknown>)
+    );
+    expect(credits).toHaveLength(0);
+  });
+
+  it("skips AI analysis transparently when user is over AI limit (client sees only uploaded)", async () => {
+    mockAssertCanUseAI.mockRejectedValueOnce(
+      new Error("AI credit limit reached")
+    );
+    const { updateSet } = primeHappyPath();
+
+    const res = await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+
+    expect(res.status).toBe(201);
+    const json = await res.json();
+    expect(json.status).toBe("uploaded");
+
+    expect(json.analysis).toBeUndefined();
+
+    expect(mockAnalyze).not.toHaveBeenCalled();
+
+    const credits = updateSet.mock.calls.filter(
+      (call: unknown[]) =>
+        typeof call[0] === "object" &&
+        call[0] !== null &&
+        "ai_credits" in (call[0] as Record<string, unknown>)
+    );
+    expect(credits).toHaveLength(0);
+
+    const itemUpdates = updateSet.mock.calls.filter(
+      (call: unknown[]) =>
+        typeof call[0] === "object" &&
+        call[0] !== null &&
+        "status" in (call[0] as Record<string, unknown>)
+    );
+    expect(itemUpdates).toHaveLength(1);
+    const itemSet = itemUpdates[0][0] as Record<string, unknown>;
+    expect(itemSet.status).toBe("uploaded");
+    expect(itemSet).not.toHaveProperty("aiVerdict");
+    expect(itemSet).not.toHaveProperty("aiReasoning");
+    expect(itemSet).not.toHaveProperty("aiAnalyzedAt");
   });
 
   it("flips status to rejected when verdict is does_not_meet", async () => {
