@@ -868,7 +868,7 @@ export function CaseDetailView({
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3 shrink-0" />
-                        {file.uploadedAt}
+                        {formatNoteDate(file.createdAt)}
                       </div>
                     </td>
                     <td className="px-2 py-2.5">

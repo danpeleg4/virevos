@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
-import { clientPortalTokens, clients, cases, caseFiles } from "@db/schema";
-import { and, eq } from "drizzle-orm";
-import { uploadFile } from "@/lib/storage";
+import {
+  clientPortalTokens,
+  clients,
+  cases,
+  caseFiles,
+  users,
+} from "@db/schema";
+import { and, eq, sql } from "drizzle-orm";
+import { uploadFile, deleteFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate_limit";
+import { assertCanAddFile } from "@/lib/plan_limits";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_FILENAME_LENGTH = 255;
@@ -88,6 +95,8 @@ export async function POST(
       return NextResponse.json({ error: "Invalid mime type" }, { status: 400 });
     }
 
+    await assertCanAddFile(userId, file.size);
+
     // Resolve caseId
     let caseId: number;
 
@@ -136,18 +145,35 @@ export async function POST(
 
     await uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
 
-    // Insert metadata
-    const [inserted] = await db
-      .insert(caseFiles)
-      .values({
-        caseId,
-        userId,
-        name: file.name,
-        path: filePath,
-        size: file.size,
-        mimeType: file.type,
-      })
-      .returning();
+    let inserted;
+    try {
+      inserted = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(caseFiles)
+          .values({
+            caseId,
+            userId,
+            name: file.name,
+            path: filePath,
+            size: file.size,
+            mimeType: file.type,
+          })
+          .returning();
+        await tx
+          .update(users)
+          .set({ storage: sql`${users.storage} + ${file.size}` })
+          .where(eq(users.user_id, userId));
+        return row;
+      });
+    } catch (dbErr) {
+      // Best-effort cleanup so we don't leak orphaned files in storage.
+      try {
+        await deleteFile(FILES_BUCKET, filePath);
+      } catch (cleanupErr) {
+        console.error("Orphan file cleanup failed:", cleanupErr);
+      }
+      throw dbErr;
+    }
 
     return NextResponse.json(
       {

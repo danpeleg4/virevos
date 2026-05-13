@@ -4,11 +4,20 @@ import { render, screen, fireEvent } from "@testing-library/react";
 const mockUseQuery = jest.fn();
 const mockUseQueryClient = jest.fn(() => ({
   invalidateQueries: jest.fn(),
+  cancelQueries: jest.fn(),
+  getQueryData: jest.fn(),
+  setQueryData: jest.fn(),
+}));
+
+const mockDeleteMutate = jest.fn();
+const mockMutationFactory = jest.fn(() => ({
+  mutate: jest.fn(),
+  isPending: false,
 }));
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: () => ({ mutate: jest.fn(), isPending: false }),
+  useMutation: (opts: unknown) => mockMutationFactory(opts),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
@@ -21,6 +30,10 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@/lib/meetings", () => ({
   createInstantMeeting: jest.fn(),
+}));
+
+jest.mock("@/lib/calendar", () => ({
+  deleteEventFromCalendar: jest.fn(),
 }));
 
 jest.mock("@/lib/date_utils", () => ({
@@ -55,6 +68,12 @@ import { Meetings } from "@/app/components/scheduling/Meetings";
 
 describe("Meetings", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
+    mockDeleteMutate.mockReset();
+    mockMutationFactory.mockImplementation(() => ({
+      mutate: jest.fn(),
+      isPending: false,
+    }));
     mockUseQuery.mockReturnValue({
       data: mockMeetings,
       isLoading: false,
@@ -110,5 +129,51 @@ describe("Meetings", () => {
     render(<Meetings />);
     // Still renders the layout
     expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
+  });
+
+  it("renders a delete button for each meeting row", () => {
+    render(<Meetings />);
+    const deleteButtons = screen.getAllByRole("button", {
+      name: /delete meeting/i,
+    });
+    expect(deleteButtons.length).toBe(mockMeetings.length);
+  });
+
+  it("opens the delete confirmation dialog when the delete button is clicked", () => {
+    render(<Meetings />);
+    const deleteButtons = screen.getAllByRole("button", {
+      name: /delete meeting/i,
+    });
+    fireEvent.click(deleteButtons[0]);
+    expect(screen.getByText(/delete meeting\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/permanently deleted/i)).toBeInTheDocument();
+    expect(screen.getByText(/"sprint planning"/i)).toBeInTheDocument();
+  });
+
+  it("calls deleteMeeting.mutate with the meeting id when the user confirms", () => {
+    // Track the mutate function passed to the delete mutation specifically.
+    // The component calls useMutation three times: createMeeting, deleteMeeting,
+    // and (in CalendarView pattern only) no others — so deleteMeeting is the
+    // 2nd useMutation call.
+    const mutateFns: jest.Mock[] = [];
+    mockMutationFactory.mockImplementation(() => {
+      const mutate = jest.fn();
+      mutateFns.push(mutate);
+      return { mutate, isPending: false };
+    });
+
+    render(<Meetings />);
+    const deleteButtons = screen.getAllByRole("button", {
+      name: /delete meeting/i,
+    });
+    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    const calledMutates = mutateFns.filter((m) => m.mock.calls.length > 0);
+    expect(calledMutates).toHaveLength(1);
+    expect(calledMutates[0]).toHaveBeenCalledWith(
+      "m1",
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
   });
 });

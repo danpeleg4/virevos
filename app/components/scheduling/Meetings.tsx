@@ -17,6 +17,16 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
+import {
   Video,
   Plus,
   Calendar,
@@ -33,12 +43,14 @@ import {
   ArrowUpDown,
   SlidersHorizontal,
   CheckIcon,
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Event } from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/meetings";
+import { deleteEventFromCalendar } from "@/lib/calendar";
 import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
 
 const ROW_HEIGHT = 48;
@@ -87,10 +99,12 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [activeView, setActiveView] = useState<"home" | "summary">("home");
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
+  const [meetingToDelete, setMeetingToDelete] = useState<Event | null>(null);
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const tableRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const calculate = () => {
@@ -121,6 +135,24 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
       setMeetingLink(data.link);
       setCreatedMeetingId(data.id);
     },
+  });
+
+  const deleteMeeting = useMutation({
+    mutationFn: async (id: string) => deleteEventFromCalendar(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["meetings"] });
+      const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
+      queryClient.setQueryData<Event[]>(["meetings"], (old = []) =>
+        old.filter((m) => m.id !== id)
+      );
+      return { previousMeetings };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousMeetings) {
+        queryClient.setQueryData(["meetings"], context.previousMeetings);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
   });
 
   const handleCopyLink = () => {
@@ -417,6 +449,15 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                         Details
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setMeetingToDelete(meeting)}
+                      aria-label="Delete meeting"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -604,6 +645,41 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={!!meetingToDelete}
+        onOpenChange={(open) => !open && setMeetingToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete meeting?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {meetingToDelete
+                ? `"${decodeURIComponent(meetingToDelete.title)}" will be permanently deleted, along with its transcripts and recordings. This also removes it from any linked Google or Outlook calendar. This cannot be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMeeting.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={deleteMeeting.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!meetingToDelete) return;
+                deleteMeeting.mutate(meetingToDelete.id, {
+                  onSuccess: () => setMeetingToDelete(null),
+                });
+              }}
+            >
+              {deleteMeeting.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Join Meeting Modal */}
       <Dialog open={joinModalOpen} onOpenChange={setJoinModalOpen}>

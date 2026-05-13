@@ -2,7 +2,7 @@ export interface CaseFile {
   id: number;
   name: string;
   size: string;
-  uploadedAt: string;
+  createdAt: string;
   path: string;
   downloadUrl: string;
 }
