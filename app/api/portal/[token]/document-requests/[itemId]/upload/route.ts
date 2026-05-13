@@ -6,12 +6,17 @@ import {
   caseFiles,
   meetingDocumentRequests,
   documentRequestItems,
+  users,
 } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { uploadFile } from "@/lib/storage";
 import { FILES_BUCKET } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate_limit";
-import { analyzeDocumentRequirement } from "@/lib/document_analysis";
+import {
+  analyzeDocumentRequirement,
+  type DocumentAnalysisResult,
+} from "@/lib/document_analysis";
+import { assertCanUseAI } from "@/lib/plan_limits";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_FILENAME_LENGTH = 255;
@@ -159,16 +164,29 @@ export async function POST(
       })
       .returning();
 
-    const analysis = await analyzeDocumentRequirement({
-      itemName: item.itemName,
-      itemDescription: item.itemDescription,
-      fileBuffer,
-      mimeType: file.type,
-      fileName: file.name,
-    });
+    let analysis: DocumentAnalysisResult | null = null;
+    try {
+      await assertCanUseAI(userId);
+      analysis = await analyzeDocumentRequirement({
+        itemName: item.itemName,
+        itemDescription: item.itemDescription,
+        fileBuffer,
+        mimeType: file.type,
+        fileName: file.name,
+      });
+    } catch {
+      analysis = null;
+    }
+
+    if (analysis && analysis.verdict !== "skipped") {
+      await db
+        .update(users)
+        .set({ ai_credits: sql`${users.ai_credits} + 1` })
+        .where(eq(users.user_id, userId));
+    }
 
     const finalStatus =
-      analysis.verdict === "does_not_meet" ? "rejected" : "uploaded";
+      analysis?.verdict === "does_not_meet" ? "rejected" : "uploaded";
 
     await db
       .update(documentRequestItems)
@@ -176,9 +194,13 @@ export async function POST(
         status: finalStatus,
         uploadedFileId: inserted.id,
         uploadedAt: new Date(),
-        aiVerdict: analysis.verdict,
-        aiReasoning: analysis.reasoning,
-        aiAnalyzedAt: new Date(),
+        ...(analysis
+          ? {
+              aiVerdict: analysis.verdict,
+              aiReasoning: analysis.reasoning,
+              aiAnalyzedAt: new Date(),
+            }
+          : {}),
       })
       .where(eq(documentRequestItems.id, itemId));
 
@@ -186,7 +208,7 @@ export async function POST(
       {
         itemId,
         status: finalStatus,
-        analysis,
+        ...(analysis ? { analysis } : {}),
         file: {
           id: inserted.id,
           name: inserted.name,
