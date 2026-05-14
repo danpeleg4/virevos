@@ -2,10 +2,15 @@ import { POST } from "@/app/api/webhooks/livekit/route";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 import { ParticipantInfo_Kind } from "@livekit/protocol";
+import { assertCanUseAI } from "@/lib/plan_limits";
 
 jest.mock("next/server", () => ({
   ...jest.requireActual("next/server"),
   after: jest.fn(),
+}));
+
+jest.mock("@/lib/plan_limits", () => ({
+  assertCanUseAI: jest.fn(),
 }));
 
 // db mock
@@ -88,6 +93,14 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("updates event to active on room_started", async () => {
+    (db.select as jest.Mock).mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => [{ userId: "user_1", recordingStatus: false }],
+        }),
+      }),
+    });
+
     const req = mockRequest({
       event: "room_started",
       room: { name: "room_123" },
@@ -96,7 +109,34 @@ describe("POST /api/webhooks/livekit", () => {
     const res = await POST(req);
 
     expect(db.update).toHaveBeenCalled();
+    expect(assertCanUseAI).toHaveBeenCalledWith("user_1");
     expect(res.status).toBe(200);
+  });
+
+  it("returns 200 early when AI limit is reached on room_started", async () => {
+    (db.select as jest.Mock).mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => [{ userId: "user_1", recordingStatus: true }],
+        }),
+      }),
+    });
+    (assertCanUseAI as jest.Mock).mockRejectedValueOnce(
+      new Error("AI limit reached")
+    );
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    const req = mockRequest({
+      event: "room_started",
+      room: { name: "room_123" },
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    // First update sets status="active"; egress branch must NOT run after limit error
+    expect(db.update).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
   });
 
   it("updates duration and status on room_finished", async () => {
