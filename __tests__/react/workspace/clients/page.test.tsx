@@ -17,6 +17,9 @@ jest.mock("@tanstack/react-query", () => ({
 }));
 
 jest.mock("axios");
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
 jest.mock("@/lib/clients", () => ({
   addAClient: jest.fn(),
   deleteClient: jest.fn(),

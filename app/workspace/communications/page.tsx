@@ -4,12 +4,10 @@ import { useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { UnifiedInbox } from "@/app/components/communications/UnifiedInbox";
 import { ScheduledMessages } from "@/app/components/communications/ScheduledMessages";
-import { ClientPortal } from "@/app/components/communications/ClientPortal";
 
 const TABS = [
   { value: "inbox", label: "Inbox" },
   { value: "scheduled", label: "Scheduled" },
-  { value: "portal", label: "Client Portal" },
 ] as const;
 
 type TabValue = (typeof TABS)[number]["value"];
@@ -23,8 +21,6 @@ const fillStyle: React.CSSProperties = {
 
 export default function Communications() {
   const [activeTab, setActiveTab] = useState<TabValue>("inbox");
-  const [portalNavContainer, setPortalNavContainer] =
-    useState<HTMLDivElement | null>(null);
   const [scheduledNavContainer, setScheduledNavContainer] =
     useState<HTMLDivElement | null>(null);
   const [inboxNavContainer, setInboxNavContainer] =
@@ -35,9 +31,7 @@ export default function Communications() {
       className="p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden"
       style={{ height: "calc(100dvh - 65px)" }}
     >
-      {/* Card with embedded tabs */}
       <Card className="flex flex-col overflow-hidden" style={fillStyle}>
-        {/* Tab nav */}
         <div className="flex items-center gap-1 px-4 py-3 border-b border-border bg-muted/50 shrink-0 overflow-x-auto">
           {TABS.map((tab) => (
             <button
@@ -64,24 +58,14 @@ export default function Communications() {
               className="ml-auto flex items-center gap-2"
             />
           )}
-          {activeTab === "portal" && (
-            <div
-              ref={setPortalNavContainer}
-              className="ml-auto flex items-center"
-            />
-          )}
         </div>
 
-        {/* Tab content */}
         <div style={fillStyle} className="overflow-hidden">
           {activeTab === "inbox" && (
             <UnifiedInbox navContainer={inboxNavContainer} />
           )}
           {activeTab === "scheduled" && (
             <ScheduledMessages navContainer={scheduledNavContainer} />
-          )}
-          {activeTab === "portal" && (
-            <ClientPortal navContainer={portalNavContainer} />
           )}
         </div>
       </Card>

@@ -10,10 +10,6 @@ jest.mock("@/app/components/communications/ScheduledMessages", () => ({
   ScheduledMessages: () => <div data-testid="scheduled-messages" />,
 }));
 
-jest.mock("@/app/components/communications/ClientPortal", () => ({
-  ClientPortal: () => <div data-testid="client-portal" />,
-}));
-
 import Communications from "@/app/workspace/communications/page";
 
 describe("Communications Page", () => {
@@ -29,11 +25,11 @@ describe("Communications Page", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Client Portal tab button", () => {
+  it("does not render Client Portal tab", () => {
     render(<Communications />);
     expect(
-      screen.getByRole("button", { name: /client portal/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /client portal/i })
+    ).not.toBeInTheDocument();
   });
 
   it("shows UnifiedInbox by default (inbox tab active)", () => {
@@ -45,11 +41,5 @@ describe("Communications Page", () => {
     render(<Communications />);
     fireEvent.click(screen.getByRole("button", { name: /scheduled/i }));
     expect(screen.getByTestId("scheduled-messages")).toBeInTheDocument();
-  });
-
-  it("shows ClientPortal when Client Portal tab is clicked", () => {
-    render(<Communications />);
-    fireEvent.click(screen.getByRole("button", { name: /client portal/i }));
-    expect(screen.getByTestId("client-portal")).toBeInTheDocument();
   });
 });
