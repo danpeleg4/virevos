@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
@@ -91,6 +92,7 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<clients | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   useEffect(() => {
     const calculateItemsPerPage = () => {
@@ -459,7 +461,10 @@ export default function Clients() {
                   {paginatedClients.map((client, index) => (
                     <tr
                       key={client?.id ?? `temp-${index}-${client.name}`}
-                      className="transition-colors group hover:bg-muted/50"
+                      onClick={() =>
+                        router.push(`/workspace/clients/${client.id}`)
+                      }
+                      className="cursor-pointer transition-colors group hover:bg-muted/50"
                     >
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-2.5">

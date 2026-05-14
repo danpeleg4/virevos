@@ -19,6 +19,7 @@ import {
 } from "livekit-server-sdk";
 import { ParticipantInfo_Kind } from "@livekit/protocol";
 import OpenAI from "openai";
+import { assertCanUseAI } from "@/lib/plan_limits";
 
 export const maxDuration = 60;
 
@@ -57,6 +58,13 @@ export async function POST(req: NextRequest) {
       .from(events)
       .innerJoin(users, eq(events.userId, users.user_id))
       .where(eq(events.id, roomName));
+
+    try {
+      await assertCanUseAI(meeting.userId);
+    } catch (err) {
+      console.warn("AI limit reached for", meeting.userId, err);
+      return NextResponse.json({ ok: true }, { status: 200 }); // for webhooks
+    }
 
     if (meeting?.recordingStatus) {
       try {
