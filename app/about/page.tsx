@@ -55,7 +55,8 @@ export default function AboutPage() {
         <div>
           <h2 className="text-xl font-medium mb-2">Focus on the Outcome</h2>
           <p>
-            We don't just "manage projects"—we help people secure their futures.
+            We don&#39;t just &#34;manage projects&#34;—we help people secure
+            their futures.
           </p>
         </div>
 
@@ -64,10 +65,10 @@ export default function AboutPage() {
           <p>
             Have questions? Reach us at{" "}
             <a
-              href="mailto:support@virevos.com"
+              href="mailto:business@virevos.com"
               className="text-blue-600 hover:underline"
             >
-              support@virevos.com
+              business@virevos.com
             </a>
           </p>
         </div>

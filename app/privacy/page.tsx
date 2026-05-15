@@ -90,10 +90,10 @@ export default function PrivacyPolicyPage() {
             disconnecting your Google account from the Integrations settings
             page, or by emailing us at{" "}
             <a
-              href="mailto:support@virevos.com"
+              href="mailto:business@virevos.com"
               className="text-blue-600 hover:underline"
             >
-              support@virevos.com
+              business@virevos.com
             </a>
             . Upon disconnection, we will revoke the active sync channel and
             permanently delete your stored OAuth tokens and all synced calendar
@@ -153,10 +153,10 @@ export default function PrivacyPolicyPage() {
           <p>
             Email us at{" "}
             <a
-              href="mailto:support@virevos.com"
+              href="mailto:business@virevos.com"
               className="text-blue-600 hover:underline"
             >
-              support@virevos.com
+              business@virevos.com
             </a>
           </p>
         </div>

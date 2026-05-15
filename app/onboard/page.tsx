@@ -17,10 +17,10 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
-import { InfoCircledIcon } from "@radix-ui/react-icons";
 import type { ClerkAPIError } from "@clerk/types";
 import {
   AccountStepProps,
@@ -435,7 +435,7 @@ function AccountStep({
     <div className="space-y-6">
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start space-x-3">
-          <InfoCircledIcon className="h-5 w-5 text-red-600 mt-0.5" />
+          <Info className="h-5 w-5 text-red-600 mt-0.5" />
           <p className="text-sm text-red-600 font-medium">{error}</p>
         </div>
       )}
@@ -731,7 +731,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
     <div className="space-y-8">
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start space-x-3">
-          <InfoCircledIcon className="h-5 w-5 text-red-600 mt-0.5" />
+          <Info className="h-5 w-5 text-red-600 mt-0.5" />
           <p className="text-sm text-red-600 font-medium">{error}</p>
         </div>
       )}

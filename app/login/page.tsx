@@ -4,11 +4,16 @@ import React, { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Sparkles, ChevronLeft, Eye, EyeOff, ArrowRight } from "lucide-react";
+import {
+  Sparkles,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Info,
+} from "lucide-react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { InfoCircledIcon } from "@radix-ui/react-icons";
-import { Callout } from "@radix-ui/themes";
 import type { ClerkAPIError } from "@clerk/types";
 import Image from "next/image";
 
@@ -130,14 +135,12 @@ export default function Login() {
                             }
                                   `}
         >
-          <Callout.Root color="yellow">
-            <Callout.Icon>
-              <InfoCircledIcon />
-            </Callout.Icon>
-            <Callout.Text>
+          <div className="flex items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-yellow-900 shadow-sm">
+            <Info className="h-4 w-4 mt-0.5 text-yellow-700" />
+            <span className="text-sm">
               Please enter your email before resetting your password.
-            </Callout.Text>
-          </Callout.Root>
+            </span>
+          </div>
         </div>
       </div>
       {/* Left Column: Login Form */}
@@ -177,7 +180,7 @@ export default function Login() {
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start space-x-3">
-              <InfoCircledIcon className="h-5 w-5 text-red-600 mt-0.5" />
+              <Info className="h-5 w-5 text-red-600 mt-0.5" />
               <p className="text-sm text-red-600 font-medium">{error}</p>
             </div>
           )}

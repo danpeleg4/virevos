@@ -2,7 +2,6 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Theme } from "@radix-ui/themes";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 
@@ -30,7 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          <Theme>{children}</Theme>
+          {children}
         </ThemeProvider>
       </QueryClientProvider>
     </ClerkProvider>

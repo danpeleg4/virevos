@@ -11,6 +11,10 @@ jest.mock("drizzle-orm", () => ({
 jest.mock("@/lib/outlook_access", () => ({
   getFreshOutlookAccessToken: jest.fn(),
 }));
+jest.mock("@/lib/embeddings", () => ({
+  createEmbeddings: jest.fn(),
+  supabaseVector: { storage: { vectors: { from: jest.fn() } } },
+}));
 
 import { parseGraphDateTime } from "@/lib/outlook_sync";
 
