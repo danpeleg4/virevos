@@ -86,14 +86,30 @@ export function computeFloatingPosition({
   const margin = 8;
 
   let resolvedSide: Side = side;
-  if (side === "bottom" && trigger.bottom + sideOffset + floating.height > vh - margin) {
-    if (trigger.top - sideOffset - floating.height >= margin) resolvedSide = "top";
-  } else if (side === "top" && trigger.top - sideOffset - floating.height < margin) {
-    if (trigger.bottom + sideOffset + floating.height <= vh - margin) resolvedSide = "bottom";
-  } else if (side === "right" && trigger.right + sideOffset + floating.width > vw - margin) {
-    if (trigger.left - sideOffset - floating.width >= margin) resolvedSide = "left";
-  } else if (side === "left" && trigger.left - sideOffset - floating.width < margin) {
-    if (trigger.right + sideOffset + floating.width <= vw - margin) resolvedSide = "right";
+  if (
+    side === "bottom" &&
+    trigger.bottom + sideOffset + floating.height > vh - margin
+  ) {
+    if (trigger.top - sideOffset - floating.height >= margin)
+      resolvedSide = "top";
+  } else if (
+    side === "top" &&
+    trigger.top - sideOffset - floating.height < margin
+  ) {
+    if (trigger.bottom + sideOffset + floating.height <= vh - margin)
+      resolvedSide = "bottom";
+  } else if (
+    side === "right" &&
+    trigger.right + sideOffset + floating.width > vw - margin
+  ) {
+    if (trigger.left - sideOffset - floating.width >= margin)
+      resolvedSide = "left";
+  } else if (
+    side === "left" &&
+    trigger.left - sideOffset - floating.width < margin
+  ) {
+    if (trigger.right + sideOffset + floating.width <= vw - margin)
+      resolvedSide = "right";
   }
 
   let top = 0;
@@ -106,7 +122,8 @@ export function computeFloatingPosition({
         ? trigger.bottom + sideOffset
         : trigger.top - sideOffset - floating.height;
     if (align === "start") left = trigger.left + alignOffset;
-    else if (align === "end") left = trigger.right - floating.width - alignOffset;
+    else if (align === "end")
+      left = trigger.right - floating.width - alignOffset;
     else left = trigger.left + trigger.width / 2 - floating.width / 2;
     left = Math.max(margin, Math.min(left, vw - floating.width - margin));
   } else {
@@ -115,7 +132,8 @@ export function computeFloatingPosition({
         ? trigger.right + sideOffset
         : trigger.left - sideOffset - floating.width;
     if (align === "start") top = trigger.top + alignOffset;
-    else if (align === "end") top = trigger.bottom - floating.height - alignOffset;
+    else if (align === "end")
+      top = trigger.bottom - floating.height - alignOffset;
     else top = trigger.top + trigger.height / 2 - floating.height / 2;
     top = Math.max(margin, Math.min(top, vh - floating.height - margin));
   }
@@ -200,8 +218,13 @@ const FOCUSABLE_SELECTOR =
   'a[href], area[href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [contenteditable], [tabindex]:not([tabindex="-1"])';
 
 export function getFocusable(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1 && el.offsetParent !== null
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+  ).filter(
+    (el) =>
+      !el.hasAttribute("disabled") &&
+      el.tabIndex !== -1 &&
+      el.offsetParent !== null
   );
 }
 

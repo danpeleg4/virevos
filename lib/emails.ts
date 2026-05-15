@@ -29,10 +29,16 @@ interface EmailRecentHit extends EmailSearchHit {
 const BODY_PREVIEW_CHARS = 1500;
 
 function htmlToPlain(html: string): string {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function buildBody(bodyText: string | null, bodyHtml: string | null): string | null {
+function buildBody(
+  bodyText: string | null,
+  bodyHtml: string | null
+): string | null {
   const text = bodyText ?? (bodyHtml ? htmlToPlain(bodyHtml) : null);
   if (!text) return null;
   return text.length > BODY_PREVIEW_CHARS
@@ -132,7 +138,9 @@ export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
     .filter((hit): hit is EmailSearchHit => hit !== null);
 }
 
-export async function getRecentEmails(limit: number): Promise<EmailRecentHit[]> {
+export async function getRecentEmails(
+  limit: number
+): Promise<EmailRecentHit[]> {
   const user = await currentUser();
   if (!user?.id) return [];
 

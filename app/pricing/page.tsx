@@ -22,20 +22,20 @@ const comparisonFeatures = [
     category: "Core",
     features: [
       {
-        name: "Projects",
-        starter: "Up to 3",
+        name: "Cases",
+        starter: "Up to 5",
         pro: "Unlimited",
         business: "Unlimited",
       },
       {
-        name: "Tasks per project",
-        starter: "Up to 5",
+        name: "Tasks per case",
+        starter: "Up to 35",
         pro: "Unlimited",
         business: "Unlimited",
       },
       {
         name: "Clients",
-        starter: "Up to 5",
+        starter: "Up to 20",
         pro: "Unlimited",
         business: "Unlimited",
       },
@@ -47,14 +47,14 @@ const comparisonFeatures = [
     features: [
       {
         name: "AI credits / month",
-        starter: "10",
-        pro: "35",
-        business: "Unlimited",
+        starter: "50",
+        pro: "250",
+        business: "500",
       },
       { name: "AI assistant (chat)", starter: true, pro: true, business: true },
       {
         name: "Meeting transcription & summaries",
-        starter: false,
+        starter: true,
         pro: true,
         business: true,
       },
@@ -64,12 +64,6 @@ const comparisonFeatures = [
         pro: true,
         business: true,
       },
-      {
-        name: "Custom automation triggers",
-        starter: false,
-        pro: false,
-        business: true,
-      },
     ],
   },
   {
@@ -77,15 +71,9 @@ const comparisonFeatures = [
     features: [
       {
         name: "Built-in video meetings",
-        starter: "3 / month",
+        starter: "Unlimited",
         pro: "Unlimited",
         business: "Unlimited",
-      },
-      {
-        name: "AI meeting summaries",
-        starter: false,
-        pro: true,
-        business: true,
       },
       {
         name: "Auto action item capture",
@@ -100,14 +88,17 @@ const comparisonFeatures = [
     category: "Integrations",
     features: [
       {
-        name: "Google Calendar sync",
+        name: "Google sync",
         starter: true,
         pro: true,
         business: true,
       },
-      { name: "Full integrations", starter: false, pro: true, business: true },
-      { name: "API access", starter: false, pro: true, business: true },
-      { name: "Webhooks", starter: false, pro: true, business: true },
+      {
+        name: "Outlook sync",
+        starter: true,
+        pro: true,
+        business: true,
+      },
     ],
   },
   {
@@ -117,12 +108,6 @@ const comparisonFeatures = [
       { name: "Priority support", starter: false, pro: true, business: true },
       {
         name: "24/7 phone support",
-        starter: false,
-        pro: false,
-        business: true,
-      },
-      {
-        name: "Dedicated account manager",
         starter: false,
         pro: false,
         business: true,
@@ -146,17 +131,12 @@ const faqs = [
   {
     question: "How do AI credits work?",
     answer:
-      "AI credits power the AI assistant features — things like chatting with your assistant, generating meeting summaries, and transcript searches. Each plan includes a set number of credits per month. The Business plan includes unlimited credits.",
+      "AI credits power the AI assistant features — things like chatting with your assistant, generating meeting summaries, and transcript searches. Each plan includes a set number of credits per month.",
   },
   {
     question: "What happens if I exceed my plan limits?",
     answer:
       "We'll notify you when you're approaching your limits. You can upgrade to a higher plan or manage your usage. We never delete your data without notice.",
-  },
-  {
-    question: "Do you offer discounts for nonprofits or education?",
-    answer:
-      "Yes. We offer 50% discounts for verified nonprofits and educational institutions. Contact our team to verify your eligibility.",
   },
   {
     question: "Can I get a refund?",
@@ -365,12 +345,12 @@ export default function PricingPage() {
             <h2 className="text-4xl sm:text-5xl text-gray-900 mb-6 leading-tight">
               Still have questions?{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                We're here.
+                We&#39;re here.
               </span>
             </h2>
             <p className="text-xl text-gray-500 mb-10">
-              Talk to our team and we'll help you find the right plan for your
-              business.
+              Talk to our team and we&#39;ll help you find the right plan for
+              your business.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button

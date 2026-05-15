@@ -95,11 +95,7 @@ interface AvatarFallbackProps extends React.HTMLAttributes<HTMLSpanElement> {
   delayMs?: number;
 }
 
-function AvatarFallback({
-  className,
-  delayMs,
-  ...props
-}: AvatarFallbackProps) {
+function AvatarFallback({ className, delayMs, ...props }: AvatarFallbackProps) {
   const { status } = React.useContext(AvatarContext);
   const [canRender, setCanRender] = React.useState(delayMs === undefined);
 

@@ -48,15 +48,19 @@ function Popover({ open, defaultOpen, onOpenChange, children }: PopoverProps) {
 
   return (
     <PopoverContext.Provider
-      value={{ open: !!state, setOpen: (v) => setState(v), triggerRef, contentId }}
+      value={{
+        open: !!state,
+        setOpen: (v) => setState(v),
+        triggerRef,
+        contentId,
+      }}
     >
       {children}
     </PopoverContext.Provider>
   );
 }
 
-interface PopoverTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface PopoverTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
 }
 
@@ -66,7 +70,9 @@ const PopoverTrigger = React.forwardRef<HTMLButtonElement, PopoverTriggerProps>(
     const setRefs = (node: HTMLButtonElement | null) => {
       triggerRef.current = node;
       if (typeof ref === "function") ref(node);
-      else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+      else if (ref)
+        (ref as React.MutableRefObject<HTMLButtonElement | null>).current =
+          node;
     };
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       onClick?.(e);

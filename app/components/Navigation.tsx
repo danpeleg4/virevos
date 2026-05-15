@@ -14,7 +14,7 @@ export function Navigation() {
   const { isSignedIn } = useUser();
 
   const handleNavigation = (path: string) => {
-    //router.push(path);
+    router.push(path);
     setMobileMenuOpen(false);
   };
 

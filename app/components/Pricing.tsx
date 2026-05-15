@@ -14,10 +14,9 @@ const plans = [
     features: [
       "Free forever",
       "50 AI Credits/month",
-      "Limited integrations",
       "1GB storage",
       "Email support",
-      "Up to 5 projects",
+      "Up to 5 cases",
       "Up to 5 clients",
     ],
     cta: "Start for free",
@@ -30,11 +29,10 @@ const plans = [
     features: [
       "Everything in Starter plan +",
       "250 AI Credits/month",
-      "Unlimited projects",
-      "Unlimited meetings",
       "50GB storage",
+      "Unlimited cases",
+      "Unlimited meetings",
       "Priority support",
-      "Full integrations",
     ],
     cta: "Start Pro Plan",
     popular: true,
@@ -45,11 +43,9 @@ const plans = [
     description: "For bigger organizations with advanced needs and necessities",
     features: [
       "Everything in Professional plan +",
-      "Unlimited everything",
-      "Custom automations",
+      "500 AI Credits/month",
       "250GB storage",
-      "24/7 phone support",
-      "Dedicated account manager",
+      "Custom automations",
       "Custom contracts",
     ],
     cta: "Start Business Plan",
@@ -163,13 +159,6 @@ export function Pricing() {
                     className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl"
                   >
                     Talk to sales
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push("/pricing")}
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-white rounded-xl"
-                  >
-                    Compare plans
                   </Button>
                 </div>
               </div>

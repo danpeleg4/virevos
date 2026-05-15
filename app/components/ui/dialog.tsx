@@ -84,7 +84,9 @@ const DialogTrigger = React.forwardRef<HTMLButtonElement, DialogTriggerProps>(
     const setRefs = (node: HTMLButtonElement | null) => {
       triggerRef.current = node;
       if (typeof ref === "function") ref(node);
-      else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+      else if (ref)
+        (ref as React.MutableRefObject<HTMLButtonElement | null>).current =
+          node;
     };
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       onClick?.(e);
@@ -150,13 +152,21 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
     },
     ref
   ) {
-    const { open, setOpen, contentId, titleId, descriptionId, modal, triggerRef } =
-      useDialog();
+    const {
+      open,
+      setOpen,
+      contentId,
+      titleId,
+      descriptionId,
+      modal,
+      triggerRef,
+    } = useDialog();
     const localRef = React.useRef<HTMLDivElement | null>(null);
     const setRefs = (node: HTMLDivElement | null) => {
       localRef.current = node;
       if (typeof ref === "function") ref(node);
-      else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      else if (ref)
+        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
     };
 
     useFocusTrap(localRef, open);
@@ -176,7 +186,9 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
       const handler = (e: PointerEvent) => {
         if (!localRef.current) return;
         if (localRef.current.contains(e.target as Node)) return;
-        const overlayEl = (e.target as HTMLElement).closest('[data-slot="dialog-overlay"]');
+        const overlayEl = (e.target as HTMLElement).closest(
+          '[data-slot="dialog-overlay"]'
+        );
         if (!overlayEl) return;
         onPointerDownOutside?.(e);
         if (!e.defaultPrevented) {
@@ -211,9 +223,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
         >
           {children}
           {!hideClose && (
-            <DialogClose
-              className="cursor-pointer ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-            >
+            <DialogClose className="cursor-pointer ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
               <XIcon />
               <span className="sr-only">Close</span>
             </DialogClose>
@@ -251,7 +261,10 @@ const DialogClose = React.forwardRef<HTMLButtonElement, DialogCloseProps>(
   }
 );
 
-function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function DialogHeader({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="dialog-header"
@@ -261,7 +274,10 @@ function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   );
 }
 
-function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function DialogFooter({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="dialog-footer"
@@ -291,8 +307,7 @@ function DialogTitle({ className, asChild, ...props }: DialogTitleProps) {
   );
 }
 
-interface DialogDescriptionProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {
+interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
   asChild?: boolean;
 }
 

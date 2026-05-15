@@ -30,7 +30,10 @@ const DropdownContext = React.createContext<DropdownContextValue | null>(null);
 
 function useDropdown() {
   const ctx = React.useContext(DropdownContext);
-  if (!ctx) throw new Error("DropdownMenu components must be used within <DropdownMenu>");
+  if (!ctx)
+    throw new Error(
+      "DropdownMenu components must be used within <DropdownMenu>"
+    );
   return ctx;
 }
 
@@ -76,8 +79,7 @@ function DropdownMenuPortal({ children }: { children?: React.ReactNode }) {
   return createPortal(children, document.body);
 }
 
-interface DropdownMenuTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface DropdownMenuTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
 }
 
@@ -89,7 +91,8 @@ const DropdownMenuTrigger = React.forwardRef<
   const setRefs = (node: HTMLButtonElement | null) => {
     triggerRef.current = node;
     if (typeof ref === "function") ref(node);
-    else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+    else if (ref)
+      (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
   };
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e);
@@ -135,123 +138,127 @@ function getMenuItems(content: HTMLElement): HTMLElement[] {
   );
 }
 
-const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContentProps>(
-  function DropdownMenuContent(
-    {
-      className,
-      side = "bottom",
-      align = "start",
-      sideOffset = 4,
-      alignOffset = 0,
-      onKeyDown,
-      ...props
+const DropdownMenuContent = React.forwardRef<
+  HTMLDivElement,
+  DropdownMenuContentProps
+>(function DropdownMenuContent(
+  {
+    className,
+    side = "bottom",
+    align = "start",
+    sideOffset = 4,
+    alignOffset = 0,
+    onKeyDown,
+    ...props
+  },
+  ref
+) {
+  const { open, setOpen, triggerRef, contentRef, contentId } = useDropdown();
+  const [floatingNode, setFloatingNode] = React.useState<HTMLDivElement | null>(
+    null
+  );
+  const { position } = useFloating({
+    open,
+    triggerRef,
+    floatingNode,
+    side,
+    align,
+    sideOffset,
+    alignOffset,
+  });
+  const setRefs = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setFloatingNode(node);
+      contentRef.current = node;
+      if (typeof ref === "function") ref(node);
+      else if (ref)
+        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
     },
-    ref
-  ) {
-    const { open, setOpen, triggerRef, contentRef, contentId } = useDropdown();
-    const [floatingNode, setFloatingNode] =
-      React.useState<HTMLDivElement | null>(null);
-    const { position } = useFloating({
-      open,
-      triggerRef,
-      floatingNode,
-      side,
-      align,
-      sideOffset,
-      alignOffset,
-    });
-    const setRefs = React.useCallback(
-      (node: HTMLDivElement | null) => {
-        setFloatingNode(node);
-        contentRef.current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref)
-          (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      },
-      [ref, contentRef]
-    );
+    [ref, contentRef]
+  );
 
-    useEscape(open, () => {
+  useEscape(open, () => {
+    setOpen(false);
+    triggerRef.current?.focus?.();
+  });
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (contentRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
       setOpen(false);
-      triggerRef.current?.focus?.();
-    });
-
-    React.useEffect(() => {
-      if (!open) return;
-      const handler = (e: PointerEvent) => {
-        const target = e.target as Node;
-        if (contentRef.current?.contains(target)) return;
-        if (triggerRef.current?.contains(target)) return;
-        setOpen(false);
-      };
-      document.addEventListener("pointerdown", handler);
-      return () => document.removeEventListener("pointerdown", handler);
-    }, [open, contentRef, triggerRef, setOpen]);
-
-    React.useEffect(() => {
-      if (!open || !contentRef.current) return;
-      const items = getMenuItems(contentRef.current);
-      items[0]?.focus();
-    }, [open, contentRef]);
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(e);
-      if (e.defaultPrevented) return;
-      const root = contentRef.current;
-      if (!root) return;
-      const items = getMenuItems(root);
-      if (items.length === 0) return;
-      const active = document.activeElement as HTMLElement | null;
-      const i = active ? items.indexOf(active) : -1;
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        items[(i + 1 + items.length) % items.length]?.focus();
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        items[(i - 1 + items.length) % items.length]?.focus();
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        items[0]?.focus();
-      } else if (e.key === "End") {
-        e.preventDefault();
-        items[items.length - 1]?.focus();
-      } else if (e.key === "Tab") {
-        e.preventDefault();
-      }
     };
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
+  }, [open, contentRef, triggerRef, setOpen]);
 
-    if (!open) return null;
+  React.useEffect(() => {
+    if (!open || !contentRef.current) return;
+    const items = getMenuItems(contentRef.current);
+    items[0]?.focus();
+  }, [open, contentRef]);
 
-    return (
-      <DropdownMenuPortal>
-        <div
-          ref={setRefs}
-          id={contentId}
-          role="menu"
-          tabIndex={-1}
-          data-slot="dropdown-menu-content"
-          data-state="open"
-          data-side={position?.side ?? side}
-          data-align={position?.align ?? align}
-          style={position?.style ?? { position: "fixed", visibility: "hidden" }}
-          onKeyDown={handleKeyDown}
-          className={cn(
-            "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
-            className
-          )}
-          {...props}
-        />
-      </DropdownMenuPortal>
-    );
-  }
-);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(e);
+    if (e.defaultPrevented) return;
+    const root = contentRef.current;
+    if (!root) return;
+    const items = getMenuItems(root);
+    if (items.length === 0) return;
+    const active = document.activeElement as HTMLElement | null;
+    const i = active ? items.indexOf(active) : -1;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      items[(i + 1 + items.length) % items.length]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      items[(i - 1 + items.length) % items.length]?.focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      items[0]?.focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      items[items.length - 1]?.focus();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <DropdownMenuPortal>
+      <div
+        ref={setRefs}
+        id={contentId}
+        role="menu"
+        tabIndex={-1}
+        data-slot="dropdown-menu-content"
+        data-state="open"
+        data-side={position?.side ?? side}
+        data-align={position?.align ?? align}
+        style={position?.style ?? { position: "fixed", visibility: "hidden" }}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+          className
+        )}
+        {...props}
+      />
+    </DropdownMenuPortal>
+  );
+});
 
 function DropdownMenuGroup(props: React.HTMLAttributes<HTMLDivElement>) {
   return <div role="group" data-slot="dropdown-menu-group" {...props} />;
 }
 
-interface DropdownMenuItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onSelect"> {
+interface DropdownMenuItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "onSelect"
+> {
   inset?: boolean;
   variant?: "default" | "destructive";
   disabled?: boolean;
@@ -310,8 +317,10 @@ function DropdownMenuItem({
   );
 }
 
-interface DropdownMenuCheckboxItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onSelect"> {
+interface DropdownMenuCheckboxItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "onSelect"
+> {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   disabled?: boolean;
@@ -373,8 +382,7 @@ const RadioGroupContext = React.createContext<{
   onValueChange?: (value: string) => void;
 } | null>(null);
 
-interface DropdownMenuRadioGroupProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface DropdownMenuRadioGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: string;
   onValueChange?: (value: string) => void;
 }
@@ -455,7 +463,11 @@ interface DropdownMenuLabelProps extends React.HTMLAttributes<HTMLDivElement> {
   inset?: boolean;
 }
 
-function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLabelProps) {
+function DropdownMenuLabel({
+  className,
+  inset,
+  ...props
+}: DropdownMenuLabelProps) {
   return (
     <div
       data-slot="dropdown-menu-label"

@@ -1,9 +1,8 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
-const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: jest.fn() }),
   usePathname: jest.fn(() => "/"),
   useParams: jest.fn(() => ({})),
 }));
@@ -12,7 +11,6 @@ import { Hero } from "@/app/components/Hero";
 
 describe("Hero", () => {
   beforeEach(() => {
-    mockPush.mockClear();
     render(<Hero />);
   });
 
@@ -24,20 +22,9 @@ describe("Hero", () => {
     expect(screen.getByText(/practice flows better/i)).toBeInTheDocument();
   });
 
-  it("renders 'Start for free' button", () => {
+  it("renders the announcement badge", () => {
     expect(
-      screen.getByRole("button", { name: /start for free/i })
-    ).toBeInTheDocument();
-  });
-
-  it("navigates to /onboard when 'Start for free' is clicked", () => {
-    fireEvent.click(screen.getByRole("button", { name: /start for free/i }));
-    expect(mockPush).toHaveBeenCalledWith("/onboard");
-  });
-
-  it("renders 'Watch demo' button", () => {
-    expect(
-      screen.getByRole("button", { name: /watch demo/i })
+      screen.getByText(/introducing ai-powered automations/i)
     ).toBeInTheDocument();
   });
 

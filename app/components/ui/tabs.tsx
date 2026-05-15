@@ -83,8 +83,7 @@ function TabsList({
   );
 }
 
-interface TabsTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   value: string;
 }
 
@@ -105,7 +104,13 @@ function TabsTrigger({
     const horizontal = ctx.orientation === "horizontal";
     const nextKey = horizontal ? "ArrowRight" : "ArrowDown";
     const prevKey = horizontal ? "ArrowLeft" : "ArrowUp";
-    if (e.key !== nextKey && e.key !== prevKey && e.key !== "Home" && e.key !== "End") return;
+    if (
+      e.key !== nextKey &&
+      e.key !== prevKey &&
+      e.key !== "Home" &&
+      e.key !== "End"
+    )
+      return;
     const list = e.currentTarget.parentElement;
     if (!list) return;
     const triggers = Array.from(

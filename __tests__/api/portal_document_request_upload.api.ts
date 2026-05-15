@@ -327,7 +327,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
         "status" in (call[0] as Record<string, unknown>)
     );
     expect(itemUpdates).toHaveLength(1);
-    const itemSet = itemUpdates[0][0] as Record<string, unknown>;
+    const itemSet = (itemUpdates[0] as unknown[])[0] as Record<string, unknown>;
     expect(itemSet.status).toBe("uploaded");
     expect(itemSet).not.toHaveProperty("aiVerdict");
     expect(itemSet).not.toHaveProperty("aiReasoning");

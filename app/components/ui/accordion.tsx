@@ -14,7 +14,9 @@ type AccordionContextValue = {
   disabled?: boolean;
 };
 
-const AccordionContext = React.createContext<AccordionContextValue | null>(null);
+const AccordionContext = React.createContext<AccordionContextValue | null>(
+  null
+);
 const AccordionItemContext = React.createContext<{
   value: string;
   open: boolean;
@@ -25,13 +27,17 @@ const AccordionItemContext = React.createContext<{
 
 function useAccordion() {
   const ctx = React.useContext(AccordionContext);
-  if (!ctx) throw new Error("Accordion components must be used within <Accordion>");
+  if (!ctx)
+    throw new Error("Accordion components must be used within <Accordion>");
   return ctx;
 }
 
 function useAccordionItem() {
   const ctx = React.useContext(AccordionItemContext);
-  if (!ctx) throw new Error("AccordionItem components must be used within <AccordionItem>");
+  if (!ctx)
+    throw new Error(
+      "AccordionItem components must be used within <AccordionItem>"
+    );
   return ctx;
 }
 
@@ -58,7 +64,7 @@ type AccordionProps = {
 
 function Accordion(props: AccordionProps) {
   const { type, children, className, disabled } = props;
-  const collapsible = type === "single" ? props.collapsible ?? false : true;
+  const collapsible = type === "single" ? (props.collapsible ?? false) : true;
 
   const [value, setValue] = useControllableState<string | string[]>({
     value: props.value,
@@ -70,7 +76,8 @@ function Accordion(props: AccordionProps) {
     (itemValue: string) => {
       if (type === "single") {
         const current = value as string | undefined;
-        const next = current === itemValue ? (collapsible ? "" : current) : itemValue;
+        const next =
+          current === itemValue ? (collapsible ? "" : current) : itemValue;
         setValue(next ?? "");
       } else {
         const current = (value as string[]) ?? [];

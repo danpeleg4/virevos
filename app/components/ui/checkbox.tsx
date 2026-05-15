@@ -8,11 +8,10 @@ import { useControllableState } from "./_internal";
 
 type CheckedState = boolean | "indeterminate";
 
-interface CheckboxProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    "checked" | "defaultChecked" | "onChange"
-  > {
+interface CheckboxProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "checked" | "defaultChecked" | "onChange"
+> {
   checked?: CheckedState;
   defaultChecked?: CheckedState;
   onCheckedChange?: (checked: CheckedState) => void;
@@ -53,7 +52,11 @@ const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
           aria-checked={isIndeterminate ? "mixed" : isChecked}
           aria-required={required}
           data-state={
-            isIndeterminate ? "indeterminate" : isChecked ? "checked" : "unchecked"
+            isIndeterminate
+              ? "indeterminate"
+              : isChecked
+                ? "checked"
+                : "unchecked"
           }
           data-slot="checkbox"
           disabled={disabled}
@@ -82,7 +85,14 @@ const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
             required={required}
             disabled={disabled}
             readOnly
-            style={{ position: "absolute", pointerEvents: "none", opacity: 0, margin: 0, width: 0, height: 0 }}
+            style={{
+              position: "absolute",
+              pointerEvents: "none",
+              opacity: 0,
+              margin: 0,
+              width: 0,
+              height: 0,
+            }}
           />
         )}
       </>

@@ -5,11 +5,10 @@ import * as React from "react";
 import { cn } from "./utils";
 import { useControllableState } from "./_internal";
 
-interface SwitchProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    "checked" | "defaultChecked" | "onChange"
-  > {
+interface SwitchProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "checked" | "defaultChecked" | "onChange"
+> {
   checked?: boolean;
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
@@ -77,7 +76,14 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
           required={required}
           disabled={disabled}
           readOnly
-          style={{ position: "absolute", pointerEvents: "none", opacity: 0, margin: 0, width: 0, height: 0 }}
+          style={{
+            position: "absolute",
+            pointerEvents: "none",
+            opacity: 0,
+            margin: 0,
+            width: 0,
+            height: 0,
+          }}
         />
       )}
     </>

@@ -80,7 +80,10 @@ function Select<T extends string = string>({
     const walk = (node: React.ReactNode) => {
       React.Children.forEach(node, (child) => {
         if (!React.isValidElement(child)) return;
-        const el = child as React.ReactElement<{ value?: string; children?: React.ReactNode }>;
+        const el = child as React.ReactElement<{
+          value?: string;
+          children?: React.ReactNode;
+        }>;
         if (el.type === SelectItem && typeof el.props.value === "string") {
           map.set(el.props.value, el.props.children);
         } else if (el.props && "children" in el.props) {
@@ -105,7 +108,16 @@ function Select<T extends string = string>({
       disabled,
       labels,
     }),
-    [isOpen, currentValue, contentId, triggerId, disabled, labels, setOpenState, setValueState]
+    [
+      isOpen,
+      currentValue,
+      contentId,
+      triggerId,
+      disabled,
+      labels,
+      setOpenState,
+      setValueState,
+    ]
   );
 
   return (
@@ -150,8 +162,7 @@ function SelectValue({ placeholder, className, ...props }: SelectValueProps) {
   );
 }
 
-interface SelectTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "default";
 }
 
@@ -165,7 +176,9 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
     const setRefs = (node: HTMLButtonElement | null) => {
       triggerRef.current = node;
       if (typeof ref === "function") ref(node);
-      else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+      else if (ref)
+        (ref as React.MutableRefObject<HTMLButtonElement | null>).current =
+          node;
     };
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       onClick?.(e);
@@ -216,7 +229,9 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
 
 function getOptionElements(content: HTMLElement): HTMLElement[] {
   return Array.from(
-    content.querySelectorAll<HTMLElement>('[role="option"]:not([data-disabled])')
+    content.querySelectorAll<HTMLElement>(
+      '[role="option"]:not([data-disabled])'
+    )
   );
 }
 
@@ -281,7 +296,9 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
       if (!open || !contentRef.current) return;
       const root = contentRef.current;
       const options = getOptionElements(root);
-      const selected = options.find((el) => el.getAttribute("data-value") === value);
+      const selected = options.find(
+        (el) => el.getAttribute("data-value") === value
+      );
       (selected ?? options[0])?.focus();
     }, [open, value, contentRef]);
 
@@ -326,7 +343,7 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
         data-align={pos?.align ?? "start"}
         style={
           open
-            ? pos?.style ?? { position: "fixed", visibility: "hidden" }
+            ? (pos?.style ?? { position: "fixed", visibility: "hidden" })
             : { position: "fixed", visibility: "hidden", pointerEvents: "none" }
         }
         onKeyDown={handleKeyDown}
