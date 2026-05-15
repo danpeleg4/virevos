@@ -3,6 +3,12 @@ import { db } from "@db/db";
 import { events, outlookEmails, outlookSyncState } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+import {
+  createEmbeddings,
+  supabaseVector,
+  EMAILS_BUCKET,
+  EMAILS_INDEX,
+} from "@/lib/embeddings";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -10,6 +16,72 @@ const EVENT_SELECT =
   "id,subject,bodyPreview,start,end,isOnlineMeeting,onlineMeetingUrl,webLink,showAs,isCancelled";
 const EMAIL_SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,isRead,hasAttachments,receivedDateTime,isDraft,flag";
+
+// text-embedding-3-large accepts up to ~8k tokens. Conservative char cap.
+const EMBED_MAX_CHARS = 20000;
+const VECTOR_BATCH_SIZE = 100;
+
+function buildEmbeddingInput(args: {
+  subject: string | null;
+  bodyText: string | null;
+  bodyHtml: string | null;
+  snippet: string | null;
+}): string | null {
+  const body =
+    args.bodyText ??
+    (args.bodyHtml ? args.bodyHtml.replace(/<[^>]+>/g, " ") : null) ??
+    args.snippet;
+  const subject = args.subject?.trim();
+  const bodyClean = body?.replace(/\s+/g, " ").trim();
+  if (!subject && !bodyClean) return null;
+  const combined = [subject, bodyClean].filter(Boolean).join("\n\n");
+  return combined.slice(0, EMBED_MAX_CHARS);
+}
+
+async function indexEmailVectors(
+  rows: Array<{
+    outlookId: string;
+    userId: string;
+    conversationId: string;
+    subject: string;
+    fromEmail: string | null;
+    sentAt: Date;
+    isSent: boolean;
+    input: string;
+  }>
+): Promise<void> {
+  if (rows.length === 0) return;
+  const index = supabaseVector.storage.vectors
+    .from(EMAILS_BUCKET)
+    .index(EMAILS_INDEX);
+
+  for (let start = 0; start < rows.length; start += VECTOR_BATCH_SIZE) {
+    const chunk = rows.slice(start, start + VECTOR_BATCH_SIZE);
+    try {
+      const embeddings = await createEmbeddings(chunk.map((r) => r.input));
+      await index.putVectors({
+        vectors: chunk.map((r, i) => ({
+          key: `${r.userId}/${r.outlookId}`,
+          data: { float32: embeddings[i] },
+          metadata: {
+            user_id: r.userId,
+            outlook_id: r.outlookId,
+            conversation_id: r.conversationId,
+            subject: r.subject,
+            from_email: r.fromEmail,
+            sent_at: r.sentAt.toISOString(),
+            is_sent: r.isSent,
+          },
+        })),
+      });
+    } catch (err) {
+      console.error(
+        "[outlook_sync] Failed to index email batch into vector bucket:",
+        err
+      );
+    }
+  }
+}
 
 interface GraphEvent {
   id: string;
@@ -216,6 +288,16 @@ async function applyOutlookEmailsToDb(
   const existingMap = new Map(existingEmails.map((e) => [e.outlookId, e]));
 
   const toInsert = [];
+  const toEmbed: Array<{
+    outlookId: string;
+    userId: string;
+    conversationId: string;
+    subject: string;
+    fromEmail: string | null;
+    sentAt: Date;
+    isSent: boolean;
+    input: string;
+  }> = [];
 
   for (const msg of messages) {
     if (!msg.id) continue;
@@ -261,11 +343,15 @@ async function applyOutlookEmailsToDb(
       continue;
     }
 
+    const subject = msg.subject ?? "(no subject)";
+    const conversationId = msg.conversationId ?? msg.id;
+    const snippet = msg.bodyPreview ?? null;
+
     toInsert.push({
       outlookId: msg.id,
-      conversationId: msg.conversationId ?? msg.id,
-      subject: msg.subject ?? "(no subject)",
-      snippet: msg.bodyPreview ?? null,
+      conversationId,
+      subject,
+      snippet,
       fromEmail,
       fromName,
       toEmails,
@@ -280,11 +366,32 @@ async function applyOutlookEmailsToDb(
       sentAt,
       userId,
     });
+
+    const input = buildEmbeddingInput({
+      subject,
+      bodyText,
+      bodyHtml,
+      snippet,
+    });
+    if (input) {
+      toEmbed.push({
+        outlookId: msg.id,
+        userId,
+        conversationId,
+        subject,
+        fromEmail,
+        sentAt,
+        isSent: isSentFolder,
+        input,
+      });
+    }
   }
 
   if (toInsert.length > 0) {
     await db.insert(outlookEmails).values(toInsert);
   }
+
+  await indexEmailVectors(toEmbed);
 }
 
 export async function performFullSync(userId: string): Promise<void> {

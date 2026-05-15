@@ -5,6 +5,7 @@ import { getPastMeetingTranscript } from "@/lib/meetings";
 import { createCase, updateCase } from "@/lib/cases";
 import { addProjectTasksAction, updateTask } from "@/lib/tasks";
 import { addMeetingToCalendar, updateEvent } from "@/lib/calendar";
+import { getEmailData, getRecentEmails } from "@/lib/emails";
 import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { Event } from "@/types/meeting";
@@ -258,6 +259,44 @@ export const tools: OpenAI.Responses.Tool[] = [
     },
     strict: true,
   },
+  {
+    type: "function",
+    name: "getEmailData",
+    description:
+      "Semantic search across the user's synced emails. Use this when the user is looking for emails about a TOPIC, SENDER, or CONTENT (e.g. 'find emails about the Acme deal', 'what did Alice say last week'). Returns up to 10 emails ranked by similarity to the query, each with subject, sender, sent date, sent/received flag, and a snippet. Do NOT use for chronological 'last N emails' queries — use getRecentEmails instead.",
+    parameters: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string",
+          description:
+            "Natural-language search query (topic, sender, keywords, or paraphrased content).",
+        },
+      },
+      required: ["text"],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: "function",
+    name: "getRecentEmails",
+    description:
+      "Fetch the user's most recent INBOX emails in chronological order (newest first). Use this for 'summarize my last N emails', 'what's in my inbox', 'recent emails', etc. Returns subject, sender, sent date, snippet, and a truncated body (~1500 chars) for each email so you can summarize.",
+    parameters: {
+      type: "object",
+      properties: {
+        limit: {
+          type: "number",
+          description:
+            "How many recent emails to fetch (1-25). Default to 5 if the user did not specify.",
+        },
+      },
+      required: ["limit"],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
 ];
 
 export async function executeTool(
@@ -356,6 +395,28 @@ export async function executeTool(
     return {
       kind: "event_updated",
       message: "Event updated successfully",
+    };
+  }
+  if (name === "getEmailData") {
+    const hits = await getEmailData(args.text as string);
+    return {
+      kind: "email_data",
+      emails: hits,
+      message:
+        hits.length === 0
+          ? "No matching emails found."
+          : `Found ${hits.length} matching email${hits.length === 1 ? "" : "s"}.`,
+    };
+  }
+  if (name === "getRecentEmails") {
+    const hits = await getRecentEmails(args.limit as number);
+    return {
+      kind: "recent_emails",
+      emails: hits,
+      message:
+        hits.length === 0
+          ? "No emails found in the inbox."
+          : `Returning ${hits.length} most recent email${hits.length === 1 ? "" : "s"}.`,
     };
   }
   throw new Error(`Unknown tool: ${name}`);
