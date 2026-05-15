@@ -9,7 +9,10 @@ interface ScrollAreaProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
-  function ScrollArea({ className, viewportClassName, children, ...props }, ref) {
+  function ScrollArea(
+    { className, viewportClassName, children, ...props },
+    ref
+  ) {
     return (
       <div
         ref={ref}

@@ -23,11 +23,14 @@ interface AlertDialogContextValue {
   descriptionId: string;
 }
 
-const AlertDialogContext = React.createContext<AlertDialogContextValue | null>(null);
+const AlertDialogContext = React.createContext<AlertDialogContextValue | null>(
+  null
+);
 
 function useAlertDialog() {
   const ctx = React.useContext(AlertDialogContext);
-  if (!ctx) throw new Error("AlertDialog components must be used within <AlertDialog>");
+  if (!ctx)
+    throw new Error("AlertDialog components must be used within <AlertDialog>");
   return ctx;
 }
 
@@ -70,39 +73,40 @@ function AlertDialog({
   );
 }
 
-interface AlertDialogTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface AlertDialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
 }
 
-const AlertDialogTrigger = React.forwardRef<HTMLButtonElement, AlertDialogTriggerProps>(
-  function AlertDialogTrigger({ asChild, onClick, ...props }, ref) {
-    const { open, setOpen, triggerRef, contentId } = useAlertDialog();
-    const setRefs = (node: HTMLButtonElement | null) => {
-      triggerRef.current = node;
-      if (typeof ref === "function") ref(node);
-      else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
-    };
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      onClick?.(e);
-      if (!e.defaultPrevented) setOpen(!open);
-    };
-    const Comp: React.ElementType = asChild ? Slot : "button";
-    return (
-      <Comp
-        ref={setRefs}
-        type={asChild ? undefined : "button"}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls={contentId}
-        data-state={open ? "open" : "closed"}
-        data-slot="alert-dialog-trigger"
-        onClick={handleClick}
-        {...props}
-      />
-    );
-  }
-);
+const AlertDialogTrigger = React.forwardRef<
+  HTMLButtonElement,
+  AlertDialogTriggerProps
+>(function AlertDialogTrigger({ asChild, onClick, ...props }, ref) {
+  const { open, setOpen, triggerRef, contentId } = useAlertDialog();
+  const setRefs = (node: HTMLButtonElement | null) => {
+    triggerRef.current = node;
+    if (typeof ref === "function") ref(node);
+    else if (ref)
+      (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+  };
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(e);
+    if (!e.defaultPrevented) setOpen(!open);
+  };
+  const Comp: React.ElementType = asChild ? Slot : "button";
+  return (
+    <Comp
+      ref={setRefs}
+      type={asChild ? undefined : "button"}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      aria-controls={contentId}
+      data-state={open ? "open" : "closed"}
+      data-slot="alert-dialog-trigger"
+      onClick={handleClick}
+      {...props}
+    />
+  );
+});
 
 function AlertDialogPortal({ children }: { children?: React.ReactNode }) {
   if (typeof document === "undefined") return null;
@@ -137,7 +141,8 @@ const AlertDialogContent = React.forwardRef<
   const setRefs = (node: HTMLDivElement | null) => {
     localRef.current = node;
     if (typeof ref === "function") ref(node);
-    else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    else if (ref)
+      (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
   };
 
   useFocusTrap(localRef, open);
@@ -233,53 +238,53 @@ function AlertDialogDescription({
   );
 }
 
-interface AlertDialogActionProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+interface AlertDialogActionProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
-const AlertDialogAction = React.forwardRef<HTMLButtonElement, AlertDialogActionProps>(
-  function AlertDialogAction({ className, onClick, ...props }, ref) {
-    const { setOpen, triggerRef } = useAlertDialog();
-    return (
-      <button
-        ref={ref}
-        type="button"
-        onClick={(e) => {
-          onClick?.(e);
-          if (!e.defaultPrevented) {
-            setOpen(false);
-            triggerRef.current?.focus?.();
-          }
-        }}
-        className={cn(buttonVariants(), className)}
-        {...props}
-      />
-    );
-  }
-);
+const AlertDialogAction = React.forwardRef<
+  HTMLButtonElement,
+  AlertDialogActionProps
+>(function AlertDialogAction({ className, onClick, ...props }, ref) {
+  const { setOpen, triggerRef } = useAlertDialog();
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={(e) => {
+        onClick?.(e);
+        if (!e.defaultPrevented) {
+          setOpen(false);
+          triggerRef.current?.focus?.();
+        }
+      }}
+      className={cn(buttonVariants(), className)}
+      {...props}
+    />
+  );
+});
 
-interface AlertDialogCancelProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+interface AlertDialogCancelProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
-const AlertDialogCancel = React.forwardRef<HTMLButtonElement, AlertDialogCancelProps>(
-  function AlertDialogCancel({ className, onClick, ...props }, ref) {
-    const { setOpen, triggerRef } = useAlertDialog();
-    return (
-      <button
-        ref={ref}
-        type="button"
-        onClick={(e) => {
-          onClick?.(e);
-          if (!e.defaultPrevented) {
-            setOpen(false);
-            triggerRef.current?.focus?.();
-          }
-        }}
-        className={cn(buttonVariants({ variant: "outline" }), className)}
-        {...props}
-      />
-    );
-  }
-);
+const AlertDialogCancel = React.forwardRef<
+  HTMLButtonElement,
+  AlertDialogCancelProps
+>(function AlertDialogCancel({ className, onClick, ...props }, ref) {
+  const { setOpen, triggerRef } = useAlertDialog();
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={(e) => {
+        onClick?.(e);
+        if (!e.defaultPrevented) {
+          setOpen(false);
+          triggerRef.current?.focus?.();
+        }
+      }}
+      className={cn(buttonVariants({ variant: "outline" }), className)}
+      {...props}
+    />
+  );
+});
 
 export {
   AlertDialog,

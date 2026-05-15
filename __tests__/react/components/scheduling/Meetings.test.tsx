@@ -10,14 +10,14 @@ const mockUseQueryClient = jest.fn(() => ({
 }));
 
 const mockDeleteMutate = jest.fn();
-const mockMutationFactory = jest.fn(() => ({
+const mockMutationFactory = jest.fn((..._args: unknown[]) => ({
   mutate: jest.fn(),
   isPending: false,
 }));
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (opts: unknown) => mockMutationFactory(opts),
+  useMutation: (...args: unknown[]) => mockMutationFactory(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 

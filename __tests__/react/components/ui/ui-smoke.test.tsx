@@ -87,7 +87,10 @@ describe("Trivial components", () => {
 
   it("Separator renders with orientation", () => {
     render(<Separator orientation="vertical" data-testid="sep" />);
-    expect(screen.getByTestId("sep")).toHaveAttribute("data-orientation", "vertical");
+    expect(screen.getByTestId("sep")).toHaveAttribute(
+      "data-orientation",
+      "vertical"
+    );
   });
 
   it("Avatar fallback renders when image fails", () => {
@@ -119,10 +122,18 @@ describe("Checkbox / Switch", () => {
   });
 
   it("Checkbox respects controlled checked prop", () => {
-    const { rerender } = render(<Checkbox checked={false} onCheckedChange={() => {}} />);
-    expect(screen.getByRole("checkbox")).toHaveAttribute("data-state", "unchecked");
+    const { rerender } = render(
+      <Checkbox checked={false} onCheckedChange={() => {}} />
+    );
+    expect(screen.getByRole("checkbox")).toHaveAttribute(
+      "data-state",
+      "unchecked"
+    );
     rerender(<Checkbox checked={true} onCheckedChange={() => {}} />);
-    expect(screen.getByRole("checkbox")).toHaveAttribute("data-state", "checked");
+    expect(screen.getByRole("checkbox")).toHaveAttribute(
+      "data-state",
+      "checked"
+    );
   });
 });
 
