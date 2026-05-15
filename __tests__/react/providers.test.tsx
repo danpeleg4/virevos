@@ -22,10 +22,6 @@ jest.mock("next-themes", () => ({
   ),
 }));
 
-jest.mock("@radix-ui/themes", () => ({
-  Theme: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 import { Providers } from "@/app/providers";
 
 describe("Providers", () => {

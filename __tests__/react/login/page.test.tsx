@@ -12,24 +12,6 @@ jest.mock("@clerk/nextjs", () => ({
   useSignIn: () => mockUseSignIn(),
 }));
 
-jest.mock("@radix-ui/themes", () => ({
-  Callout: {
-    Root: ({ children }: { children: React.ReactNode }) => (
-      <div>{children}</div>
-    ),
-    Icon: ({ children }: { children: React.ReactNode }) => (
-      <span>{children}</span>
-    ),
-    Text: ({ children }: { children: React.ReactNode }) => (
-      <span>{children}</span>
-    ),
-  },
-}));
-
-jest.mock("@radix-ui/react-icons", () => ({
-  InfoCircledIcon: () => <span data-testid="info-icon" />,
-}));
-
 const mockSignIn = {
   create: jest.fn(),
   authenticateWithRedirect: jest.fn(),

@@ -75,10 +75,10 @@ export default function TermsPage() {
           <p>
             Questions? Contact{" "}
             <a
-              href="mailto:support@virevos.com"
+              href="mailto:business@virevos.com"
               className="text-blue-600 hover:underline"
             >
-              support@virevos.com
+              business@virevos.com
             </a>
           </p>
         </div>

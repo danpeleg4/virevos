@@ -615,7 +615,7 @@ export default function Billing() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
                 <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Projects</p>
+                <p className="text-sm text-muted-foreground">Cases</p>
               </div>
               <p className="text-sm text-foreground">
                 {projectCount} / {projectLimit ?? "Unlimited"}

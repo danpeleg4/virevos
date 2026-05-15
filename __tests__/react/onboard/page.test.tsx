@@ -43,10 +43,6 @@ jest.mock("motion/react", () => {
   };
 });
 
-jest.mock("@radix-ui/react-icons", () => ({
-  InfoCircledIcon: () => <span data-testid="info-icon" />,
-}));
-
 jest.mock("@/lib/billing", () => ({
   registerFreePlan: jest.fn(),
 }));
