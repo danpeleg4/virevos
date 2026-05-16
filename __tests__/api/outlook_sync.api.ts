@@ -2,13 +2,13 @@ import { GET } from "@/app/api/outlook/sync/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
@@ -43,7 +43,7 @@ const mockEmail = {
 };
 
 function mockDbSelect(rows: (typeof mockEmail)[]) {
-  (db.select as jest.Mock).mockReturnValue({
+  (db.select as Mock).mockReturnValue({
     from: () => ({
       leftJoin: () => ({
         where: () => ({
@@ -59,16 +59,16 @@ function mockDbSelect(rows: (typeof mockEmail)[]) {
 }
 
 describe("GET /api/outlook/sync", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it("returns 401 if not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeGetRequest() as Parameters<typeof GET>[0]);
     expect(res.status).toBe(401);
   });
 
   it("returns paginated email messages", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbSelect([mockEmail]);
 
     const res = await GET(makeGetRequest() as Parameters<typeof GET>[0]);
@@ -86,7 +86,7 @@ describe("GET /api/outlook/sync", () => {
   });
 
   it("sets hasMore=true when there are more results", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbSelect(Array(51).fill(mockEmail));
 
     const res = await GET(
@@ -98,11 +98,11 @@ describe("GET /api/outlook/sync", () => {
   });
 
   it("returns 500 on db error", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockImplementation(() => {
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as Mock).mockImplementation(() => {
       throw new Error("db error");
     });
-    jest.spyOn(console, "error").mockImplementationOnce(() => {});
+    vi.spyOn(console, "error").mockImplementationOnce(() => {});
 
     const res = await GET(makeGetRequest() as Parameters<typeof GET>[0]);
     expect(res.status).toBe(500);

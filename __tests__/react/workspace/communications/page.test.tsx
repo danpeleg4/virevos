@@ -2,11 +2,11 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 // Mock heavy child components
-jest.mock("@/app/components/communications/UnifiedInbox", () => ({
+vi.mock("@/app/components/communications/UnifiedInbox", () => ({
   UnifiedInbox: () => <div data-testid="unified-inbox" />,
 }));
 
-jest.mock("@/app/components/communications/ScheduledMessages", () => ({
+vi.mock("@/app/components/communications/ScheduledMessages", () => ({
   ScheduledMessages: () => <div data-testid="scheduled-messages" />,
 }));
 

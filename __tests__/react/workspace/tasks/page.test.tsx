@@ -1,28 +1,28 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(() => []),
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(() => []),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("axios");
-jest.mock("@/lib/tasks", () => ({
-  updateTaskStatus: jest.fn(),
-  addProjectTasksAction: jest.fn(),
+vi.mock("axios");
+vi.mock("@/lib/tasks", () => ({
+  updateTaskStatus: vi.fn(),
+  addProjectTasksAction: vi.fn(),
 }));
-jest.mock("@/lib/date_utils", () => ({
-  parseDateOnlyString: jest.fn((s: string) => new Date(s)),
+vi.mock("@/lib/date_utils", () => ({
+  parseDateOnlyString: vi.fn((s: string) => new Date(s)),
 }));
 
 const mockTasks = [
@@ -59,7 +59,7 @@ import Tasks from "@/app/workspace/tasks/page";
 
 describe("Tasks Page", () => {
   beforeEach(() => {
-    mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
     mockUseQuery.mockReturnValue({
       data: mockTasks,
       isLoading: false,

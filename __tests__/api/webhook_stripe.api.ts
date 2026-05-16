@@ -1,30 +1,30 @@
 import { POST } from "@/app/api/webhooks/stripe/route";
 import { NextRequest } from "next/server";
 
-const mockUpdatePlanLimits = jest.fn().mockResolvedValue(undefined);
-jest.mock("@/lib/billing", () => ({
+const mockUpdatePlanLimits = vi.fn().mockResolvedValue(undefined);
+vi.mock("@/lib/billing", () => ({
   updatePlanLimits: (...args: unknown[]) => mockUpdatePlanLimits(...args),
   PLAN_RANK: { starter: 0, professional: 1, business: 2 },
 }));
 
-const mockDbWhere = jest.fn().mockResolvedValue(undefined);
-const mockDbSet = jest.fn(() => ({ where: mockDbWhere }));
-const mockDbLimit = jest.fn().mockResolvedValue([{ userId: "user_1" }]);
-const mockDbSelectWhere = jest.fn(() => ({ limit: mockDbLimit }));
-const mockDbFrom = jest.fn(() => ({ where: mockDbSelectWhere }));
+const mockDbWhere = vi.fn().mockResolvedValue(undefined);
+const mockDbSet = vi.fn(() => ({ where: mockDbWhere }));
+const mockDbLimit = vi.fn().mockResolvedValue([{ userId: "user_1" }]);
+const mockDbSelectWhere = vi.fn(() => ({ limit: mockDbLimit }));
+const mockDbFrom = vi.fn(() => ({ where: mockDbSelectWhere }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    update: jest.fn(() => ({ set: mockDbSet })),
-    select: jest.fn(() => ({ from: mockDbFrom })),
+    update: vi.fn(() => ({ set: mockDbSet })),
+    select: vi.fn(() => ({ from: mockDbFrom })),
   },
 }));
 
-const mockConstructEvent = jest.fn();
-const mockSubscriptionsRetrieve = jest.fn();
+const mockConstructEvent = vi.fn();
+const mockSubscriptionsRetrieve = vi.fn();
 
-jest.mock("@/lib/stripe", () => ({
-  ...jest.requireActual("@/lib/stripe"),
+vi.mock("@/lib/stripe", async () => ({
+  ...(await vi.importActual<typeof import("@/lib/stripe")>("@/lib/stripe")),
   stripe: {
     webhooks: {
       constructEvent: (...args: unknown[]) => mockConstructEvent(...args),
@@ -40,7 +40,7 @@ function makeRequest(
   sig: string | null = "valid-sig"
 ): NextRequest {
   return {
-    text: jest.fn().mockResolvedValue(body),
+    text: vi.fn().mockResolvedValue(body),
     headers: {
       get: (key: string) => {
         if (key === "stripe-signature") return sig;
@@ -59,16 +59,16 @@ const baseSubscription = {
   cancel_at_period_end: false,
 };
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY = "price_pro";
   process.env.STRIPE_PRICE_BUSINESS_MONTHLY = "price_biz";
   mockDbSet.mockReturnValue({ where: mockDbWhere });
   mockDbLimit.mockResolvedValue([{ userId: "user_1" }]);
   mockUpdatePlanLimits.mockResolvedValue(undefined);
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {

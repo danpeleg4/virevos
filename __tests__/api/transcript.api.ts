@@ -2,23 +2,23 @@ import { GET } from "@/app/api/transcript/[id]/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
 // eslint-disable-next-line no-var
-var mockSelect: jest.Mock;
+var mockSelect: Mock;
 
-jest.mock("@db/db", () => {
-  mockSelect = jest.fn();
+vi.mock("@db/db", () => {
+  mockSelect = vi.fn();
   return { db: { select: mockSelect } };
 });
 
-jest.mock("@db/schema", () => ({ events: {}, meetingTranscripts: {} }));
-jest.mock("drizzle-orm", () => ({
-  and: jest.fn(),
-  eq: jest.fn(),
-  asc: jest.fn(),
+vi.mock("@db/schema", () => ({ events: {}, meetingTranscripts: {} }));
+vi.mock("drizzle-orm", () => ({
+  and: vi.fn(),
+  eq: vi.fn(),
+  asc: vi.fn(),
 }));
 
 function mockCtx(id: string) {
@@ -27,17 +27,17 @@ function mockCtx(id: string) {
 
 function makeEventsChain(result: unknown[]) {
   return {
-    from: jest.fn(() => ({
-      where: jest.fn().mockResolvedValue(result),
+    from: vi.fn(() => ({
+      where: vi.fn().mockResolvedValue(result),
     })),
   };
 }
 
 function makeTranscriptsChain(result: unknown[]) {
   return {
-    from: jest.fn(() => ({
-      where: jest.fn(() => ({
-        orderBy: jest.fn().mockResolvedValue(result),
+    from: vi.fn(() => ({
+      where: vi.fn(() => ({
+        orderBy: vi.fn().mockResolvedValue(result),
       })),
     })),
   };
@@ -45,7 +45,7 @@ function makeTranscriptsChain(result: unknown[]) {
 
 describe("GET /api/transcript/[id]", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockSelect
       .mockReturnValueOnce(
         makeEventsChain([
@@ -53,15 +53,15 @@ describe("GET /api/transcript/[id]", () => {
         ])
       )
       .mockReturnValueOnce(makeTranscriptsChain([]));
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as NextRequest, mockCtx("1"));
 
@@ -70,7 +70,7 @@ describe("GET /api/transcript/[id]", () => {
   });
 
   it("returns 400 if id is empty", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET({} as NextRequest, mockCtx(""));
 
@@ -79,7 +79,7 @@ describe("GET /api/transcript/[id]", () => {
   });
 
   it("returns 404 if meeting not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockSelect.mockReset().mockReturnValueOnce(makeEventsChain([]));
 
     const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
@@ -88,7 +88,7 @@ describe("GET /api/transcript/[id]", () => {
   });
 
   it("returns 404 if no transcript chunks found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     // default beforeEach gives empty chunks
 
     const res = await GET({} as NextRequest, mockCtx("abc123_xyz"));
@@ -98,7 +98,7 @@ describe("GET /api/transcript/[id]", () => {
   });
 
   it("returns 404 if meeting has no meetingStartTimeEpoch", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockSelect
       .mockReset()
       .mockReturnValueOnce(makeEventsChain([{ id: "abc123_xyz" }]));
@@ -109,7 +109,7 @@ describe("GET /api/transcript/[id]", () => {
   });
 
   it("returns parsed chunks from all transcript rows", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const chunks = [
       { speaker: "Alice", text: "Hello", createdAt: new Date("2026-01-01") },

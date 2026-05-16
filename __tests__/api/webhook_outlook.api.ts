@@ -1,14 +1,14 @@
 import { POST } from "@/app/api/webhooks/outlook/route";
 import { db } from "@db/db";
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
-jest.mock("@/lib/outlook_sync", () => ({
-  performIncrementalSync: jest.fn().mockResolvedValue(undefined),
+vi.mock("@/lib/outlook_sync", () => ({
+  performIncrementalSync: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { performIncrementalSync } from "@/lib/outlook_sync";
@@ -32,7 +32,7 @@ function makeRequest(
 
 describe("POST /api/webhooks/outlook", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("responds with validationToken for subscription validation", async () => {
@@ -52,7 +52,7 @@ describe("POST /api/webhooks/outlook", () => {
   });
 
   it("triggers incremental sync on valid notification", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce({
+    (db.select as Mock).mockReturnValueOnce({
       from: () => ({
         where: () => ({
           limit: () =>
@@ -86,7 +86,7 @@ describe("POST /api/webhooks/outlook", () => {
   });
 
   it("skips notification if clientState does not match", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce({
+    (db.select as Mock).mockReturnValueOnce({
       from: () => ({
         where: () => ({
           limit: () =>
@@ -102,7 +102,7 @@ describe("POST /api/webhooks/outlook", () => {
       }),
     });
 
-    jest.spyOn(console, "warn").mockImplementationOnce(() => {});
+    vi.spyOn(console, "warn").mockImplementationOnce(() => {});
 
     const req = makeRequest({
       value: [
@@ -122,7 +122,7 @@ describe("POST /api/webhooks/outlook", () => {
   });
 
   it("skips notification if subscription is not found", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce({
         from: () => ({
           where: () => ({

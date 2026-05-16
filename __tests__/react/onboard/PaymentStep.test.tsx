@@ -1,37 +1,38 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-jest.mock("@stripe/stripe-js", () => ({
-  loadStripe: jest.fn(() => Promise.resolve(null)),
+vi.mock("@stripe/stripe-js", () => ({
+  loadStripe: vi.fn(() => Promise.resolve(null)),
 }));
 
-jest.mock("@stripe/react-stripe-js", () => ({
+vi.mock("@stripe/react-stripe-js", () => ({
   Elements: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PaymentElement: () => <div data-testid="payment-element" />,
-  useStripe: jest.fn(() => null),
-  useElements: jest.fn(() => null),
+  useStripe: vi.fn(() => null),
+  useElements: vi.fn(() => null),
 }));
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
-jest.mock("axios");
+vi.mock("axios");
 
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: jest.fn(() => ({
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(() => ({
     data: "secret_123",
     isLoading: false,
     isError: false,
   })),
-  useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })),
-  useQueryClient: jest.fn(() => ({ invalidateQueries: jest.fn() })),
+  useMutation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useQueryClient: vi.fn(() => ({ invalidateQueries: vi.fn() })),
 }));
 
-jest.mock("@/lib/billing", () => ({
-  registerFreePlan: jest.fn(),
-  changePlan: jest.fn(),
-  cancelSubscription: jest.fn(),
+vi.mock("@/lib/billing", () => ({
+  registerFreePlan: vi.fn(),
+  changePlan: vi.fn(),
+  cancelSubscription: vi.fn(),
+  createSetupIntent: vi.fn(),
 }));
 
 import PaymentStep from "@/app/onboard/PaymentStep";

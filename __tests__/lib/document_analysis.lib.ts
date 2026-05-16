@@ -1,20 +1,20 @@
 import { analyzeDocumentRequirement } from "@/lib/document_analysis";
 
 // eslint-disable-next-line no-var
-var mockCreate: jest.Mock;
-jest.mock("@/lib/ai_tools", () => {
-  mockCreate = jest.fn();
+var mockCreate: Mock;
+vi.mock("@/lib/ai_tools", () => {
+  mockCreate = vi.fn();
   return {
     openai: { responses: { create: mockCreate } },
     MODEL: "gpt-test",
   };
 });
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {

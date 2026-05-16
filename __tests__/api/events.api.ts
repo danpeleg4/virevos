@@ -5,15 +5,15 @@ import { events } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 // Mocks
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
     query: {
       events: {
-        findMany: jest.fn(),
+        findMany: vi.fn(),
       },
     },
   },
@@ -22,11 +22,11 @@ jest.mock("@db/db", () => ({
 // Tests
 describe("GET /api/events", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -45,8 +45,8 @@ describe("GET /api/events", () => {
       },
     ];
 
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.query.events.findMany as jest.Mock).mockResolvedValue(mockEvents);
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.query.events.findMany as Mock).mockResolvedValue(mockEvents);
 
     const res = await GET();
     const json = await res.json();
@@ -65,8 +65,8 @@ describe("GET /api/events", () => {
   });
 
   it("derives 'active' status for past meetings whose stored status is 'upcoming'", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_123" });
-    (db.query.events.findMany as jest.Mock).mockResolvedValue([
+    (currentUser as Mock).mockResolvedValue({ id: "user_123" });
+    (db.query.events.findMany as Mock).mockResolvedValue([
       {
         id: "evt_past",
         title: "Started already",
@@ -91,8 +91,8 @@ describe("GET /api/events", () => {
   });
 
   it("does not modify status for non-meeting events", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_123" });
-    (db.query.events.findMany as jest.Mock).mockResolvedValue([
+    (currentUser as Mock).mockResolvedValue({ id: "user_123" });
+    (db.query.events.findMany as Mock).mockResolvedValue([
       {
         id: "evt_1",
         title: "Block",

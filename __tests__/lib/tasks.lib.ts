@@ -8,21 +8,21 @@ import {
 } from "@/lib/tasks";
 import { currentUser } from "@clerk/nextjs/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-const mockWhere = jest.fn();
-const mockSet = jest.fn(() => ({ where: mockWhere }));
-const mockReturning = jest.fn();
-const mockValues = jest.fn(() => ({ returning: mockReturning }));
-const mockFindFirst = jest.fn();
+const mockWhere = vi.fn();
+const mockSet = vi.fn(() => ({ where: mockWhere }));
+const mockReturning = vi.fn();
+const mockValues = vi.fn(() => ({ returning: mockReturning }));
+const mockFindFirst = vi.fn();
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    delete: jest.fn(() => ({ where: mockWhere })),
-    update: jest.fn(() => ({ set: mockSet })),
-    insert: jest.fn(() => ({ values: mockValues })),
+    delete: vi.fn(() => ({ where: mockWhere })),
+    update: vi.fn(() => ({ set: mockSet })),
+    insert: vi.fn(() => ({ values: mockValues })),
     query: {
       tasks: {
         findFirst: (...args: unknown[]) => mockFindFirst(...args),
@@ -34,7 +34,7 @@ jest.mock("@db/db", () => ({
 const mockUser = { id: "user_1" };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockWhere.mockResolvedValue(undefined);
   mockSet.mockReturnValue({ where: mockWhere });
 });
@@ -43,12 +43,12 @@ beforeEach(() => {
 
 describe("deleteTask", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(deleteTask(1)).rejects.toThrow("No user");
   });
 
   it("deletes the task for the current user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await deleteTask(42);
     expect(mockWhere).toHaveBeenCalledTimes(1);
   });
@@ -58,19 +58,19 @@ describe("deleteTask", () => {
 
 describe("updateTaskStatus", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(updateTaskStatus("in-progress", 1)).rejects.toThrow("No user");
   });
 
   it("throws on invalid status", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await expect(updateTaskStatus("invalid", 1)).rejects.toThrow(
       "status must be one of"
     );
   });
 
   it("throws when task not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockFindFirst.mockResolvedValue(undefined);
     await expect(updateTaskStatus("in-progress", 99)).rejects.toThrow(
       "Task not found"
@@ -78,7 +78,7 @@ describe("updateTaskStatus", () => {
   });
 
   it("sets completed=true when status is 'completed'", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockFindFirst.mockResolvedValue({ id: 2, userId: "user_1" });
 
     const result = await updateTaskStatus("completed", 2);
@@ -91,7 +91,7 @@ describe("updateTaskStatus", () => {
   });
 
   it("sets completed=false when status is 'in-progress'", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockFindFirst.mockResolvedValue({ id: 3, userId: "user_1" });
 
     await updateTaskStatus("in-progress", 3);
@@ -107,12 +107,12 @@ describe("updateTaskStatus", () => {
 
 describe("changePriorityStatus", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(changePriorityStatus(1, "high")).rejects.toThrow("No user");
   });
 
   it("updates the priority for the current user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await changePriorityStatus(5, "low");
     expect(mockSet).toHaveBeenCalledWith({ priority: "low" });
     expect(mockWhere).toHaveBeenCalledTimes(1);
@@ -123,12 +123,12 @@ describe("changePriorityStatus", () => {
 
 describe("updateTaskDueDate", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(updateTaskDueDate(1, "2026-03-01")).rejects.toThrow("No user");
   });
 
   it("updates the due date for the current user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await updateTaskDueDate(7, "2026-03-01");
     expect(mockSet).toHaveBeenCalledWith({ dueDate: "2026-03-01" });
     expect(mockWhere).toHaveBeenCalledTimes(1);
@@ -139,18 +139,18 @@ describe("updateTaskDueDate", () => {
 
 describe("updateTask", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(updateTask({ id: 1, title: "X" })).rejects.toThrow("No user");
   });
 
   it("does nothing when no fields provided", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await updateTask({ id: 1 });
     expect(mockSet).not.toHaveBeenCalled();
   });
 
   it("updates provided fields with correct where clause", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await updateTask({ id: 5, title: "New Title", priority: "high" });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ title: "New Title", priority: "high" })
@@ -159,7 +159,7 @@ describe("updateTask", () => {
   });
 
   it("sets completed=true when status is 'completed'", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await updateTask({ id: 5, status: "completed" });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ status: "completed", completed: true })
@@ -167,7 +167,7 @@ describe("updateTask", () => {
   });
 
   it("sets completed=false when status is not 'completed'", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await updateTask({ id: 5, status: "in-progress" });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ status: "in-progress", completed: false })
@@ -175,7 +175,7 @@ describe("updateTask", () => {
   });
 
   it("updates dueDate to null", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await updateTask({ id: 5, dueDate: null });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ dueDate: null })
@@ -200,12 +200,12 @@ describe("addProjectTasksAction", () => {
   };
 
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(addProjectTasksAction(baseTask)).rejects.toThrow("No user");
   });
 
   it("inserts task and returns the created record", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     const created = {
       ...baseTask,
       id: 10,
@@ -228,7 +228,7 @@ describe("addProjectTasksAction", () => {
   });
 
   it("trims whitespace from title", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockReturning.mockResolvedValue([{ ...baseTask, title: "New Task" }]);
 
     await addProjectTasksAction({ ...baseTask, title: "   New Task   " });
@@ -239,7 +239,7 @@ describe("addProjectTasksAction", () => {
   });
 
   it("omits caseId from insert when not provided", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockReturning.mockResolvedValue([{ ...baseTask, title: "New Task" }]);
 
     await addProjectTasksAction({ ...baseTask, caseId: null });
@@ -250,7 +250,7 @@ describe("addProjectTasksAction", () => {
   });
 
   it("includes caseId in insert when provided", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockReturning.mockResolvedValue([
       { ...baseTask, title: "New Task", caseId: 5 },
     ]);
@@ -263,7 +263,7 @@ describe("addProjectTasksAction", () => {
   });
 
   it("falls back to current ISO timestamp when dueDate not provided", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockReturning.mockResolvedValue([{ ...baseTask, title: "New Task" }]);
 
     await addProjectTasksAction({ ...baseTask, dueDate: null });

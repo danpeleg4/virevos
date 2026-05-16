@@ -1,15 +1,15 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockMutate = jest.fn();
+const mockMutate = vi.fn();
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useMutation: () => ({ mutate: mockMutate, isPending: false }),
-  useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-jest.mock("@/lib/cases", () => ({
-  updateCase: jest.fn(),
+vi.mock("@/lib/cases", () => ({
+  updateCase: vi.fn(),
 }));
 
 const mockCase = {
@@ -39,7 +39,7 @@ const mockClients = [
 import { CaseEditDialog } from "@/app/workspace/cases/CaseEditDialog";
 
 describe("CaseEditDialog", () => {
-  const onOpenChange = jest.fn();
+  const onOpenChange = vi.fn();
 
   beforeEach(() => {
     mockMutate.mockClear();

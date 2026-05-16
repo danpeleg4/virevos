@@ -1,22 +1,22 @@
 import { GET } from "@/app/api/cron/credit-reset/route";
 
-const mockReturning = jest.fn();
-const mockWhere = jest.fn(() => ({ returning: mockReturning }));
-const mockSet = jest.fn(() => ({ where: mockWhere }));
-const mockUpdate = jest.fn<unknown, unknown[]>(() => ({ set: mockSet }));
+const mockReturning = vi.fn();
+const mockWhere = vi.fn(() => ({ returning: mockReturning }));
+const mockSet = vi.fn(() => ({ where: mockWhere }));
+const mockUpdate = vi.fn<unknown, unknown[]>(() => ({ set: mockSet }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: { update: (...args: unknown[]) => mockUpdate(...args) },
 }));
 
-jest.mock("@db/schema", () => ({
+vi.mock("@db/schema", () => ({
   users: { creditsResetAt: "creditsResetAt", user_id: "user_id" },
 }));
 
-jest.mock("drizzle-orm", () => ({
-  or: jest.fn((...args) => ({ type: "or", args })),
-  isNull: jest.fn((col) => ({ type: "isNull", col })),
-  lte: jest.fn((col, val) => ({ type: "lte", col, val })),
+vi.mock("drizzle-orm", () => ({
+  or: vi.fn((...args: unknown[]) => ({ type: "or", args })),
+  isNull: vi.fn((col: unknown) => ({ type: "isNull", col })),
+  lte: vi.fn((col: unknown, val: unknown) => ({ type: "lte", col, val })),
 }));
 
 const makeRequest = (token?: string) =>
@@ -24,11 +24,11 @@ const makeRequest = (token?: string) =>
     headers: new Headers(token ? { authorization: `Bearer ${token}` } : {}),
   }) as Request;
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   process.env.CRON_SECRET = "test-secret";
   mockReturning.mockResolvedValue([]);
 });

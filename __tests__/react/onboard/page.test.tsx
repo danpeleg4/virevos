@@ -1,19 +1,20 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockPush = jest.fn();
-const mockUseSignUp = jest.fn();
+const mockPush = vi.fn();
+const mockUseSignUp = vi.fn();
 
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   useSignUp: () => mockUseSignUp(),
 }));
 
-jest.mock("motion/react", () => {
-  const { createElement } = jest.requireActual<typeof import("react")>("react");
+vi.mock("motion/react", async () => {
+  const { createElement } =
+    await vi.importActual<typeof import("react")>("react");
   const motion = new Proxy(
     {},
     {
@@ -43,21 +44,21 @@ jest.mock("motion/react", () => {
   };
 });
 
-jest.mock("@/lib/billing", () => ({
-  registerFreePlan: jest.fn(),
+vi.mock("@/lib/billing", () => ({
+  registerFreePlan: vi.fn(),
 }));
 
-jest.mock("@/app/onboard/PaymentStep", () => ({
+vi.mock("@/app/onboard/PaymentStep", () => ({
   __esModule: true,
   default: () => <div data-testid="payment-step" />,
 }));
 
 const mockSignUp = {
-  create: jest.fn(),
-  prepareEmailAddressVerification: jest.fn(),
-  attemptEmailAddressVerification: jest.fn(),
+  create: vi.fn(),
+  prepareEmailAddressVerification: vi.fn(),
+  attemptEmailAddressVerification: vi.fn(),
 };
-const mockSetActive = jest.fn();
+const mockSetActive = vi.fn();
 
 import Onboarding from "@/app/onboard/page";
 

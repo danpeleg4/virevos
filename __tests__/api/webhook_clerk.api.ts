@@ -1,11 +1,11 @@
-jest.mock("@clerk/backend/webhooks", () => ({
-  verifyWebhook: jest.fn(),
+vi.mock("@clerk/backend/webhooks", () => ({
+  verifyWebhook: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    insert: jest.fn(() => ({
-      values: jest.fn(),
+    insert: vi.fn(() => ({
+      values: vi.fn(),
     })),
   },
 }));
@@ -16,11 +16,11 @@ import { verifyWebhook } from "@clerk/backend/webhooks";
 
 describe("Clerk webhook", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("inserts user when event type is user.created", async () => {
-    (verifyWebhook as jest.Mock).mockResolvedValue({
+    (verifyWebhook as Mock).mockResolvedValue({
       type: "user.created",
       data: {
         id: "user_123",
@@ -41,7 +41,7 @@ describe("Clerk webhook", () => {
     expect(verifyWebhook).toHaveBeenCalledTimes(1);
     expect(db.insert).toHaveBeenCalled();
 
-    const insertCall = (db.insert as jest.Mock).mock.results[0].value;
+    const insertCall = (db.insert as Mock).mock.results[0].value;
     expect(insertCall.values).toHaveBeenCalledWith({
       user_id: "user_123",
       email: "test@example.com",
@@ -52,7 +52,7 @@ describe("Clerk webhook", () => {
   });
 
   it("400 invalid webhook (verifyWebhook returns undefined)", async () => {
-    (verifyWebhook as jest.Mock).mockResolvedValue(undefined);
+    (verifyWebhook as Mock).mockResolvedValue(undefined);
 
     const req = new Request("http://localhost/api/webhook", {
       method: "POST",

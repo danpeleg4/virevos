@@ -2,44 +2,44 @@ import { POST } from "@/app/api/portal/[token]/document-requests/[itemId]/upload
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
 // eslint-disable-next-line no-var
-var mockUpload: jest.Mock;
-jest.mock("@/lib/storage", () => {
-  mockUpload = jest.fn();
+var mockUpload: Mock;
+vi.mock("@/lib/storage", () => {
+  mockUpload = vi.fn();
   return { uploadFile: mockUpload };
 });
 
-jest.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
 // eslint-disable-next-line no-var
-var mockAnalyze: jest.Mock;
-jest.mock("@/lib/document_analysis", () => {
-  mockAnalyze = jest.fn();
+var mockAnalyze: Mock;
+vi.mock("@/lib/document_analysis", () => {
+  mockAnalyze = vi.fn();
   return { analyzeDocumentRequirement: mockAnalyze };
 });
 
 // eslint-disable-next-line no-var
-var mockAssertCanUseAI: jest.Mock;
-jest.mock("@/lib/plan_limits", () => {
-  mockAssertCanUseAI = jest.fn();
+var mockAssertCanUseAI: Mock;
+vi.mock("@/lib/plan_limits", () => {
+  mockAssertCanUseAI = vi.fn();
   return { assertCanUseAI: mockAssertCanUseAI };
 });
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockAnalyze.mockResolvedValue({ verdict: "meets", reasoning: "Looks good" });
   mockAssertCanUseAI.mockResolvedValue(undefined);
 });
@@ -56,7 +56,7 @@ function mockRequest(file: File | null): NextRequest {
   const fd = new FormData();
   if (file) fd.append("file", file);
   return {
-    formData: jest.fn().mockResolvedValue(fd),
+    formData: vi.fn().mockResolvedValue(fd),
   } as unknown as NextRequest;
 }
 
@@ -84,24 +84,24 @@ const baseItemRow = {
 };
 
 function setupPortalLookup(rows: unknown[]) {
-  const tokenLimit = jest.fn().mockResolvedValue(rows);
-  const tokenWhere = jest.fn(() => ({ limit: tokenLimit }));
-  const tokenFrom = jest.fn(() => ({ where: tokenWhere }));
+  const tokenLimit = vi.fn().mockResolvedValue(rows);
+  const tokenWhere = vi.fn(() => ({ limit: tokenLimit }));
+  const tokenFrom = vi.fn(() => ({ where: tokenWhere }));
   return { from: tokenFrom };
 }
 
 function setupItemLookup(rows: unknown[]) {
-  const itemLimit = jest.fn().mockResolvedValue(rows);
-  const itemWhere = jest.fn(() => ({ limit: itemLimit }));
-  const itemInnerJoin = jest.fn(() => ({ where: itemWhere }));
-  const itemFrom = jest.fn(() => ({ innerJoin: itemInnerJoin }));
+  const itemLimit = vi.fn().mockResolvedValue(rows);
+  const itemWhere = vi.fn(() => ({ limit: itemLimit }));
+  const itemInnerJoin = vi.fn(() => ({ where: itemWhere }));
+  const itemFrom = vi.fn(() => ({ innerJoin: itemInnerJoin }));
   return { from: itemFrom };
 }
 
 function setupCaseLookup(rows: unknown[]) {
-  const caseLimit = jest.fn().mockResolvedValue(rows);
-  const caseWhere = jest.fn(() => ({ limit: caseLimit }));
-  const caseFrom = jest.fn(() => ({ where: caseWhere }));
+  const caseLimit = vi.fn().mockResolvedValue(rows);
+  const caseWhere = vi.fn(() => ({ limit: caseLimit }));
+  const caseFrom = vi.fn(() => ({ where: caseWhere }));
   return { from: caseFrom };
 }
 
@@ -117,18 +117,18 @@ function primeHappyPath() {
     createdAt: new Date(),
   };
 
-  (db.select as jest.Mock)
+  (db.select as Mock)
     .mockReturnValueOnce(setupPortalLookup([portalToken]))
     .mockReturnValueOnce(setupItemLookup([baseItemRow]))
     .mockReturnValueOnce(setupCaseLookup([{ id: 22 }]));
 
-  const returning = jest.fn().mockResolvedValue([insertedRow]);
-  const insertValues = jest.fn(() => ({ returning }));
-  (db.insert as jest.Mock).mockReturnValue({ values: insertValues });
+  const returning = vi.fn().mockResolvedValue([insertedRow]);
+  const insertValues = vi.fn(() => ({ returning }));
+  (db.insert as Mock).mockReturnValue({ values: insertValues });
 
-  const updateWhere = jest.fn().mockResolvedValue(undefined);
-  const updateSet = jest.fn(() => ({ where: updateWhere }));
-  (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+  const updateWhere = vi.fn().mockResolvedValue(undefined);
+  const updateSet = vi.fn(() => ({ where: updateWhere }));
+  (db.update as Mock).mockReturnValue({ set: updateSet });
 
   mockUpload.mockResolvedValueOnce(undefined);
 
@@ -142,13 +142,13 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 404 for invalid token", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce(setupPortalLookup([]));
+    (db.select as Mock).mockReturnValueOnce(setupPortalLookup([]));
     const res = await POST(mockRequest(null), mockCtx("bad", "1"));
     expect(res.status).toBe(404);
   });
 
   it("returns 404 for disabled portal", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce(
+    (db.select as Mock).mockReturnValueOnce(
       setupPortalLookup([{ ...portalToken, enabled: false }])
     );
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
@@ -156,7 +156,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 403 when fileSharing is disabled", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce(
+    (db.select as Mock).mockReturnValueOnce(
       setupPortalLookup([{ ...portalToken, settings: { fileSharing: false } }])
     );
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
@@ -164,7 +164,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 404 when item is not found", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(setupItemLookup([]));
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
@@ -172,7 +172,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 403 when item belongs to a different client", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([{ ...baseItemRow, requestClientId: 999 }])
@@ -182,7 +182,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 403 when request is not approved", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([{ ...baseItemRow, requestStatus: "pending_approval" }])
@@ -192,7 +192,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 409 when item is already uploaded", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([{ ...baseItemRow, itemStatus: "uploaded" }])
@@ -202,7 +202,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 400 when no file provided", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(setupItemLookup([baseItemRow]));
     const res = await POST(mockRequest(null), mockCtx("tok", "1"));
@@ -210,7 +210,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("returns 400 when file exceeds 10 MB", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(setupItemLookup([baseItemRow]));
     const big = makeFile(11 * 1024 * 1024);
@@ -379,14 +379,14 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
   });
 
   it("allows upload when current status is rejected (re-upload after AI failure)", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([{ ...baseItemRow, itemStatus: "rejected" }])
       )
       .mockReturnValueOnce(setupCaseLookup([{ id: 22 }]));
 
-    const returning = jest.fn().mockResolvedValue([
+    const returning = vi.fn().mockResolvedValue([
       {
         id: 556,
         caseId: 22,
@@ -398,11 +398,11 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
         createdAt: new Date(),
       },
     ]);
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn(() => ({ returning })),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn(() => ({ returning })),
     });
-    (db.update as jest.Mock).mockReturnValue({
-      set: jest.fn(() => ({ where: jest.fn().mockResolvedValue(undefined) })),
+    (db.update as Mock).mockReturnValue({
+      set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })),
     });
     mockUpload.mockResolvedValueOnce(undefined);
 

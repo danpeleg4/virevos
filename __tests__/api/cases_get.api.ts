@@ -2,23 +2,23 @@ import { GET } from "@/app/api/cases/get-cases/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
 type ChainableQuery = {
-  from: jest.Mock;
-  leftJoin: jest.Mock;
-  innerJoin: jest.Mock;
-  where: jest.Mock;
-  groupBy: jest.Mock;
-  orderBy: jest.Mock;
+  from: Mock;
+  leftJoin: Mock;
+  innerJoin: Mock;
+  where: Mock;
+  groupBy: Mock;
+  orderBy: Mock;
   then: (
     onFulfilled: (rows: unknown[]) => unknown,
     onRejected?: (err: unknown) => unknown
@@ -27,7 +27,7 @@ type ChainableQuery = {
 
 const buildChain = (rows: unknown[]): ChainableQuery => {
   const chain = {} as ChainableQuery;
-  const passthrough = jest.fn(() => chain);
+  const passthrough = vi.fn(() => chain);
   chain.from = passthrough;
   chain.leftJoin = passthrough;
   chain.innerJoin = passthrough;
@@ -41,11 +41,11 @@ const buildChain = (rows: unknown[]): ChainableQuery => {
 
 describe("GET /api/cases/get-cases", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -54,7 +54,7 @@ describe("GET /api/cases/get-cases", () => {
   });
 
   it("returns cases with SQL-aggregated stats and clients", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const caseRows = [
       {
@@ -90,7 +90,7 @@ describe("GET /api/cases/get-cases", () => {
       { id: 11, name: "Client B" },
     ];
 
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(buildChain(caseRows))
       .mockReturnValueOnce(buildChain(clientRows));
 
@@ -116,9 +116,9 @@ describe("GET /api/cases/get-cases", () => {
   });
 
   it("returns empty arrays when user has no cases or clients", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(buildChain([]))
       .mockReturnValueOnce(buildChain([]));
 
@@ -130,9 +130,9 @@ describe("GET /api/cases/get-cases", () => {
   });
 
   it("computes percentage correctly for fully-completed cases", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce(
         buildChain([
           {

@@ -40,7 +40,7 @@ Prefer generics in TanStack Query for strongly-typed queries and mutations.
 
 ## **Testing Requirements**
 
-Use Jest for all testing.
+Use Vitest for all testing.
 
 Every new feature or code implementation must include corresponding unit tests.
 

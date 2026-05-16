@@ -1,44 +1,44 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockUseQuery = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  invalidateQueries: jest.fn(),
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(),
-  setQueryData: jest.fn(),
+const mockUseQuery = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  invalidateQueries: vi.fn(),
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(),
+  setQueryData: vi.fn(),
 }));
 
-const mockDeleteMutate = jest.fn();
-const mockMutationFactory = jest.fn((..._args: unknown[]) => ({
-  mutate: jest.fn(),
+const mockDeleteMutate = vi.fn();
+const mockMutationFactory = vi.fn((..._args: unknown[]) => ({
+  mutate: vi.fn(),
   isPending: false,
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockMutationFactory(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("axios");
+vi.mock("axios");
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/workspace/calendar",
 }));
 
-jest.mock("@/lib/meetings", () => ({
-  createInstantMeeting: jest.fn(),
+vi.mock("@/lib/meetings", () => ({
+  createInstantMeeting: vi.fn(),
 }));
 
-jest.mock("@/lib/calendar", () => ({
-  deleteEventFromCalendar: jest.fn(),
+vi.mock("@/lib/calendar", () => ({
+  deleteEventFromCalendar: vi.fn(),
 }));
 
-jest.mock("@/lib/date_utils", () => ({
-  formatDateOnly: jest.fn(() => "2026-05-10"),
-  formatTimeOnly: jest.fn(() => "10:00 AM"),
+vi.mock("@/lib/date_utils", () => ({
+  formatDateOnly: vi.fn(() => "2026-05-10"),
+  formatTimeOnly: vi.fn(() => "10:00 AM"),
 }));
 
 const mockMeetings = [
@@ -68,10 +68,10 @@ import { Meetings } from "@/app/components/scheduling/Meetings";
 
 describe("Meetings", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockDeleteMutate.mockReset();
     mockMutationFactory.mockImplementation(() => ({
-      mutate: jest.fn(),
+      mutate: vi.fn(),
       isPending: false,
     }));
     mockUseQuery.mockReturnValue({
@@ -155,9 +155,9 @@ describe("Meetings", () => {
     // The component calls useMutation three times: createMeeting, deleteMeeting,
     // and (in CalendarView pattern only) no others — so deleteMeeting is the
     // 2nd useMutation call.
-    const mutateFns: jest.Mock[] = [];
+    const mutateFns: Mock[] = [];
     mockMutationFactory.mockImplementation(() => {
-      const mutate = jest.fn();
+      const mutate = vi.fn();
       mutateFns.push(mutate);
       return { mutate, isPending: false };
     });

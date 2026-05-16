@@ -1,29 +1,32 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-const mockInvalidateQueries = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
+const mockInvalidateQueries = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
   invalidateQueries: mockInvalidateQueries,
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-const mockAxiosGet = jest.fn();
-jest.mock("axios", () => ({
-  get: (...args: unknown[]) => mockAxiosGet(...args),
-}));
+const mockAxiosGet = vi.fn();
+vi.mock("axios", () => {
+  const axios = {
+    get: (...args: unknown[]) => mockAxiosGet(...args),
+  };
+  return { default: axios, ...axios };
+});
 
-jest.mock("@/lib/tasks", () => ({
-  addProjectTasksAction: jest.fn().mockResolvedValue(undefined),
+vi.mock("@/lib/tasks", () => ({
+  addProjectTasksAction: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock("@/lib/meetings", () => ({
-  markActionItemAdded: jest.fn().mockResolvedValue(undefined),
+vi.mock("@/lib/meetings", () => ({
+  markActionItemAdded: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock("@/lib/date_utils", () => ({
-  formatDateOnly: jest.fn(() => "Jan 1, 2026"),
-  formatTimeOnly: jest.fn(() => "10:00 AM"),
+vi.mock("@/lib/date_utils", () => ({
+  formatDateOnly: vi.fn(() => "Jan 1, 2026"),
+  formatTimeOnly: vi.fn(() => "10:00 AM"),
 }));
 
 import { EventDetailsDialog } from "@/app/components/scheduling/EventDetailsDialog";
@@ -44,7 +47,7 @@ const baseEvent: Event = {
 
 describe("EventDetailsDialog", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("renders the event title", () => {
@@ -52,7 +55,7 @@ describe("EventDetailsDialog", () => {
       <EventDetailsDialog
         event={baseEvent}
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
       />
     );
     expect(screen.getByText("Team Sync")).toBeInTheDocument();
@@ -63,7 +66,7 @@ describe("EventDetailsDialog", () => {
       <EventDetailsDialog
         event={baseEvent}
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
       />
     );
     expect(screen.getByText("Jan 1, 2026")).toBeInTheDocument();
@@ -77,7 +80,7 @@ describe("EventDetailsDialog", () => {
       attendees: [{ name: "Alice", initials: "A" }],
     };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
@@ -85,7 +88,7 @@ describe("EventDetailsDialog", () => {
   it("renders tags when provided", () => {
     const event: Event = { ...baseEvent, tags: ["design", "frontend"] };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(screen.getByText("design")).toBeInTheDocument();
     expect(screen.getByText("frontend")).toBeInTheDocument();
@@ -94,7 +97,7 @@ describe("EventDetailsDialog", () => {
   it("renders meeting link with Copy and Open buttons", () => {
     const event: Event = { ...baseEvent, link: "https://meet.example.com/abc" };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(
       screen.getByDisplayValue("https://meet.example.com/abc")
@@ -110,7 +113,7 @@ describe("EventDetailsDialog", () => {
       ai_summary: "This meeting covered Q1 goals.",
     };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(
       screen.getByText("This meeting covered Q1 goals.")
@@ -124,7 +127,7 @@ describe("EventDetailsDialog", () => {
       key_points: ["Point A", "Point B"],
     };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(screen.getByText("Point A")).toBeInTheDocument();
     expect(screen.getByText("Point B")).toBeInTheDocument();
@@ -152,7 +155,7 @@ describe("EventDetailsDialog", () => {
       ],
     };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(screen.getByText("Write report")).toBeInTheDocument();
     expect(screen.getByText("Send email")).toBeInTheDocument();
@@ -177,7 +180,7 @@ describe("EventDetailsDialog", () => {
       ],
     };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
     await waitFor(() => {
@@ -205,7 +208,7 @@ describe("EventDetailsDialog", () => {
       ],
     };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(screen.getByRole("button", { name: /all added/i })).toBeDisabled();
   });
@@ -223,7 +226,7 @@ describe("EventDetailsDialog", () => {
 
     const event: Event = { ...baseEvent, hasTranscript: true };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
 
     await waitFor(() => {
@@ -248,7 +251,7 @@ describe("EventDetailsDialog", () => {
 
     const event: Event = { ...baseEvent, hasTranscript: true };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
 
     await waitFor(() => {
@@ -271,7 +274,7 @@ describe("EventDetailsDialog", () => {
     mockAxiosGet.mockReturnValueOnce(new Promise(() => {})); // never resolves
     const event: Event = { ...baseEvent, hasTranscript: true };
     render(
-      <EventDetailsDialog event={event} open={true} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     expect(screen.getByText(/loading transcript/i)).toBeInTheDocument();
   });
@@ -279,7 +282,7 @@ describe("EventDetailsDialog", () => {
   it("does not fetch transcript when dialog is closed", () => {
     const event: Event = { ...baseEvent, hasTranscript: true };
     render(
-      <EventDetailsDialog event={event} open={false} onOpenChange={jest.fn()} />
+      <EventDetailsDialog event={event} open={false} onOpenChange={vi.fn()} />
     );
     expect(mockAxiosGet).not.toHaveBeenCalled();
   });

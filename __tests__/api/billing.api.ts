@@ -1,22 +1,22 @@
 import { GET } from "@/app/api/billing/route";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-const mockGetBillingOverview = jest.fn();
+const mockGetBillingOverview = vi.fn();
 
-jest.mock("@/lib/billing", () => ({
+vi.mock("@/lib/billing", () => ({
   getBillingOverview: (...args: unknown[]) => mockGetBillingOverview(...args),
 }));
 
 import { currentUser } from "@clerk/nextjs/server";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -25,13 +25,13 @@ afterEach(() => {
 
 describe("GET /api/billing", () => {
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await GET();
     expect(res.status).toBe(401);
   });
 
   it("returns 200 with BillingOverview when authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     const overview = {
       subscription: {
         plan: "professional",
@@ -72,7 +72,7 @@ describe("GET /api/billing", () => {
   });
 
   it("returns 500 when getBillingOverview throws", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetBillingOverview.mockRejectedValue(new Error("Stripe error"));
 
     const res = await GET();

@@ -5,19 +5,19 @@ import {
 } from "@/lib/meetings";
 import { currentUser } from "@clerk/nextjs/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-// var so it can be assigned inside the jest.mock factory (hoisted before const declarations)
+// var so it can be assigned inside the vi.mock factory (hoisted before const declarations)
 /* eslint-disable no-var */
-var mockQueryVectors: jest.Mock;
-var mockCreateEmbedding: jest.Mock;
+var mockQueryVectors: Mock;
+var mockCreateEmbedding: Mock;
 /* eslint-enable no-var */
 
-jest.mock("@/lib/embeddings", () => {
-  mockQueryVectors = jest.fn();
-  mockCreateEmbedding = jest.fn().mockResolvedValue([0.1, 0.2, 0.3]);
+vi.mock("@/lib/embeddings", () => {
+  mockQueryVectors = vi.fn();
+  mockCreateEmbedding = vi.fn().mockResolvedValue([0.1, 0.2, 0.3]);
   return {
     TRANSCRIPT_BUCKET: "recording",
     TRANSCRIPT_INDEX: "transcription",
@@ -32,25 +32,25 @@ jest.mock("@/lib/embeddings", () => {
   };
 });
 
-const mockUpdateWhere = jest.fn();
-const mockSet = jest.fn(() => ({ where: mockUpdateWhere }));
-const mockValues = jest.fn();
-const mockSelectWhere = jest.fn();
-const mockSelectFrom = jest.fn(() => ({ where: mockSelectWhere }));
-const mockSelect = jest.fn(() => ({ from: mockSelectFrom }));
+const mockUpdateWhere = vi.fn();
+const mockSet = vi.fn(() => ({ where: mockUpdateWhere }));
+const mockValues = vi.fn();
+const mockSelectWhere = vi.fn();
+const mockSelectFrom = vi.fn(() => ({ where: mockSelectWhere }));
+const mockSelect = vi.fn(() => ({ from: mockSelectFrom }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    insert: jest.fn(() => ({ values: mockValues })),
+    insert: vi.fn(() => ({ values: mockValues })),
     select: (...args: any[]) => mockSelect.apply(null, args),
-    update: jest.fn(() => ({ set: mockSet })),
+    update: vi.fn(() => ({ set: mockSet })),
   },
 }));
 
 const mockUser = { id: "user_1" };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockUpdateWhere.mockResolvedValue(undefined);
   mockSet.mockReturnValue({ where: mockUpdateWhere });
   mockValues.mockResolvedValue(undefined);
@@ -63,14 +63,14 @@ beforeEach(() => {
 
 describe("createInstantMeeting", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(createInstantMeeting("standup")).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("inserts an event and returns { id, link } where link contains the id", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     const result = await createInstantMeeting("Weekly Sync");
 
     expect(mockValues).toHaveBeenCalledWith(
@@ -89,21 +89,21 @@ describe("createInstantMeeting", () => {
 
 describe("markActionItemAdded", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(markActionItemAdded("evt-1", 0)).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("returns early when event has no action_items", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([{ action_items: null }]);
     await markActionItemAdded("evt-1", 0);
     expect(mockSet).not.toHaveBeenCalled();
   });
 
   it("marks item at the given index as added: true and leaves others unchanged", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     const items = [
       { text: "a", added: false },
       { text: "b", added: false },
@@ -124,13 +124,13 @@ describe("markActionItemAdded", () => {
 
 describe("getPastMeetingTranscript", () => {
   it("returns ['Unauthorized'] when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const result = await getPastMeetingTranscript("query");
     expect(result).toEqual(["Unauthorized"]);
   });
 
   it("returns array of chunk_text strings from Supabase vector hits", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -145,7 +145,7 @@ describe("getPastMeetingTranscript", () => {
   });
 
   it("returns empty array when no hits have chunk_text", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: { vectors: [{ metadata: {} }, { metadata: { other: "data" } }] },
     });

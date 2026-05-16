@@ -2,19 +2,19 @@ import { GET } from "@/app/api/portal/[token]/availability/route";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
@@ -54,7 +54,7 @@ const mockPortal = {
 
 describe("GET /api/portal/[token]/availability", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 400 when date param is missing", async () => {
@@ -85,10 +85,10 @@ describe("GET /api/portal/[token]/availability", () => {
   });
 
   it("returns 404 when token does not exist", async () => {
-    const mockLimit = jest.fn().mockResolvedValue([]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockLimit = vi.fn().mockResolvedValue([]);
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("bad-token", {
       date: "2026-05-05",
@@ -99,12 +99,12 @@ describe("GET /api/portal/[token]/availability", () => {
   });
 
   it("returns 404 when portal is disabled", async () => {
-    const mockLimit = jest
+    const mockLimit = vi
       .fn()
       .mockResolvedValue([{ ...mockPortal, enabled: false }]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("test-token", {
       date: "2026-05-05",
@@ -119,10 +119,10 @@ describe("GET /api/portal/[token]/availability", () => {
       ...mockPortal,
       settings: { ...mockPortal.settings, meetingSchedulingEnabled: false },
     };
-    const mockLimit = jest.fn().mockResolvedValue([portal]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockLimit = vi.fn().mockResolvedValue([portal]);
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("test-token", {
       date: "2026-05-05",
@@ -136,10 +136,10 @@ describe("GET /api/portal/[token]/availability", () => {
 
   it("returns empty slots when the day is disabled in weeklySchedule", async () => {
     // 2026-05-09 is a Saturday
-    const mockLimit = jest.fn().mockResolvedValue([mockPortal]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockLimit = vi.fn().mockResolvedValue([mockPortal]);
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("test-token", {
       date: "2026-05-09",
@@ -155,17 +155,17 @@ describe("GET /api/portal/[token]/availability", () => {
     // 2026-05-04 is a Monday, 09:00–10:00 → two 30-min slots
     const callCount = { n: 0 };
 
-    (db.select as jest.Mock).mockImplementation(() => {
+    (db.select as Mock).mockImplementation(() => {
       callCount.n++;
       if (callCount.n === 1) {
         // Portal lookup
-        const mockLimit = jest.fn().mockResolvedValue([mockPortal]);
-        const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-        return { from: jest.fn(() => ({ where: mockWhere })) };
+        const mockLimit = vi.fn().mockResolvedValue([mockPortal]);
+        const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+        return { from: vi.fn(() => ({ where: mockWhere })) };
       } else {
         // Bookings lookup – no existing bookings
-        const mockWhere = jest.fn().mockResolvedValue([]);
-        return { from: jest.fn(() => ({ where: mockWhere })) };
+        const mockWhere = vi.fn().mockResolvedValue([]);
+        return { from: vi.fn(() => ({ where: mockWhere })) };
       }
     });
 
@@ -187,19 +187,19 @@ describe("GET /api/portal/[token]/availability", () => {
   it("marks conflicting slots as unavailable", async () => {
     const callCount = { n: 0 };
 
-    (db.select as jest.Mock).mockImplementation(() => {
+    (db.select as Mock).mockImplementation(() => {
       callCount.n++;
       if (callCount.n === 1) {
-        const mockLimit = jest.fn().mockResolvedValue([mockPortal]);
-        const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-        return { from: jest.fn(() => ({ where: mockWhere })) };
+        const mockLimit = vi.fn().mockResolvedValue([mockPortal]);
+        const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+        return { from: vi.fn(() => ({ where: mockWhere })) };
       } else {
         // Booked slot at 09:00 for 30 min
         const bookedDateTime = new Date("2030-05-06T09:00:00");
-        const mockWhere = jest
+        const mockWhere = vi
           .fn()
           .mockResolvedValue([{ dateTime: bookedDateTime, duration: 30 }]);
-        return { from: jest.fn(() => ({ where: mockWhere })) };
+        return { from: vi.fn(() => ({ where: mockWhere })) };
       }
     });
 

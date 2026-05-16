@@ -1,14 +1,15 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockPush = jest.fn();
+const mockPush = vi.fn();
 
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-jest.mock("motion/react", () => {
-  const { createElement } = jest.requireActual<typeof import("react")>("react");
+vi.mock("motion/react", async () => {
+  const { createElement } =
+    await vi.importActual<typeof import("react")>("react");
   const motion = new Proxy(
     {},
     {

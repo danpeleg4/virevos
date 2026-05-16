@@ -1,42 +1,42 @@
 import React, { Suspense } from "react";
 import { render, screen, act } from "@testing-library/react";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(() => []),
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(() => []),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
 
-jest.mock("axios");
+vi.mock("axios");
 
-jest.mock("@/lib/cases", () => ({
-  addFileMetadata: jest.fn(),
-  addCaseNotes: jest.fn(),
-  deleteCase: jest.fn(),
-  deleteCaseFile: jest.fn(),
+vi.mock("@/lib/cases", () => ({
+  addFileMetadata: vi.fn(),
+  addCaseNotes: vi.fn(),
+  deleteCase: vi.fn(),
+  deleteCaseFile: vi.fn(),
 }));
 
-jest.mock("@/lib/tasks", () => ({
-  updateTaskStatus: jest.fn(),
-  deleteTask: jest.fn(),
-  addProjectTasksAction: jest.fn(),
+vi.mock("@/lib/tasks", () => ({
+  updateTaskStatus: vi.fn(),
+  deleteTask: vi.fn(),
+  addProjectTasksAction: vi.fn(),
 }));
 
-jest.mock("@/lib/task_percentage", () => ({
-  task_percentage: jest.fn(() => 50),
+vi.mock("@/lib/task_percentage", () => ({
+  task_percentage: vi.fn(() => 50),
 }));
 
 const mockProject = {
@@ -83,7 +83,7 @@ const renderPage = async () => {
 
 describe("Case Detail Page", () => {
   beforeEach(() => {
-    mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
     mockUseQuery.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "case")
         return { data: mockProject, isLoading: false, isError: false };

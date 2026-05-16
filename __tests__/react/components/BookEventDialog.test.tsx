@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 // Radix Select doesn't drive cleanly in jsdom (pointer events). Swap it for a
 // native <select> so the Duration field can be exercised in tests.
-jest.mock("@/app/components/ui/select", () => {
+vi.mock("@/app/components/ui/select", () => {
   const ReactMod = require("react");
   const SelectCtx = ReactMod.createContext({});
   return {
@@ -51,8 +51,8 @@ jest.mock("@/app/components/ui/select", () => {
 import { BookEventDialog } from "@/app/components/BookEventDialog";
 
 describe("BookEventDialog", () => {
-  const addMeeting = jest.fn();
-  const setDialogOpen = jest.fn();
+  const addMeeting = vi.fn();
+  const setDialogOpen = vi.fn();
 
   beforeEach(() => {
     addMeeting.mockClear();

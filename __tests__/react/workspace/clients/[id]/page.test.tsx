@@ -1,47 +1,47 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockPush = jest.fn();
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  invalidateQueries: jest.fn(),
+const mockPush = vi.fn();
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  invalidateQueries: vi.fn(),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-jest.mock("axios", () => ({
+vi.mock("axios", () => ({
   __esModule: true,
-  default: { get: jest.fn() },
-  get: jest.fn(),
+  default: { get: vi.fn() },
+  get: vi.fn(),
   isAxiosError: () => false,
 }));
 
-jest.mock("@/lib/clients", () => ({
-  deleteClient: jest.fn(),
+vi.mock("@/lib/clients", () => ({
+  deleteClient: vi.fn(),
 }));
 
-jest.mock("@/app/components/clients/ClientPortalSettings", () => ({
+vi.mock("@/app/components/clients/ClientPortalSettings", () => ({
   ClientPortalSettings: ({ clientId }: { clientId: number }) => (
     <div data-testid="portal-settings">Portal for {clientId}</div>
   ),
 }));
 
-jest.mock("@/app/components/communications/PortalChatPane", () => ({
+vi.mock("@/app/components/communications/PortalChatPane", () => ({
   PortalChatPane: ({ clientName }: { clientName: string }) => (
     <div data-testid="chat-pane">Chat with {clientName}</div>
   ),
 }));
 
-jest.mock("@/app/workspace/clients/ClientEditDialog", () => ({
+vi.mock("@/app/workspace/clients/ClientEditDialog", () => ({
   ClientEditDialog: () => <div data-testid="edit-dialog" />,
 }));
 
@@ -135,8 +135,8 @@ function setupQueries(
 
 describe("Client Detail Page", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    vi.clearAllMocks();
+    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
   });
 
   it("shows a loader while client query is loading", () => {

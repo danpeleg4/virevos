@@ -7,32 +7,32 @@ import {
 } from "@/lib/document_requests";
 import { currentUser } from "@clerk/nextjs/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-const mockUpdateWhere = jest.fn();
-const mockUpdateSet = jest.fn(() => ({ where: mockUpdateWhere }));
-const mockDeleteWhere = jest.fn();
-const mockInsertValues = jest.fn();
+const mockUpdateWhere = vi.fn();
+const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
+const mockDeleteWhere = vi.fn();
+const mockInsertValues = vi.fn();
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
-    update: jest.fn(() => ({ set: mockUpdateSet })),
-    delete: jest.fn(() => ({ where: mockDeleteWhere })),
-    insert: jest.fn(() => ({ values: mockInsertValues })),
-    transaction: jest.fn(),
+    select: vi.fn(),
+    update: vi.fn(() => ({ set: mockUpdateSet })),
+    delete: vi.fn(() => ({ where: mockDeleteWhere })),
+    insert: vi.fn(() => ({ values: mockInsertValues })),
+    transaction: vi.fn(),
   },
 }));
 
 import { db } from "@db/db";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockUpdateWhere.mockResolvedValue(undefined);
   mockUpdateSet.mockReturnValue({ where: mockUpdateWhere });
   mockDeleteWhere.mockResolvedValue(undefined);
@@ -49,24 +49,24 @@ const mockUser = { id: "user_1" };
 
 describe("listPendingDocumentRequests", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(listPendingDocumentRequests()).rejects.toThrow("Unauthorized");
   });
 
   it("returns empty array when no pending requests exist", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const orderBy = jest.fn().mockResolvedValue([]);
-    const where = jest.fn(() => ({ orderBy }));
-    const innerJoin = jest.fn(() => ({ where }));
-    const from = jest.fn(() => ({ innerJoin }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    const orderBy = vi.fn().mockResolvedValue([]);
+    const where = vi.fn(() => ({ orderBy }));
+    const innerJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ innerJoin }));
+    (db.select as Mock).mockReturnValue({ from });
 
     const result = await listPendingDocumentRequests();
     expect(result).toEqual([]);
   });
 
   it("returns mapped requests with their items", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
     const requestRow = {
       id: 7,
@@ -88,16 +88,16 @@ describe("listPendingDocumentRequests", () => {
       uploadedAt: null,
     };
 
-    const orderBy1 = jest.fn().mockResolvedValue([requestRow]);
-    const where1 = jest.fn(() => ({ orderBy: orderBy1 }));
-    const innerJoin = jest.fn(() => ({ where: where1 }));
-    const from1 = jest.fn(() => ({ innerJoin }));
+    const orderBy1 = vi.fn().mockResolvedValue([requestRow]);
+    const where1 = vi.fn(() => ({ orderBy: orderBy1 }));
+    const innerJoin = vi.fn(() => ({ where: where1 }));
+    const from1 = vi.fn(() => ({ innerJoin }));
 
-    const orderBy2 = jest.fn().mockResolvedValue([itemRow]);
-    const where2 = jest.fn(() => ({ orderBy: orderBy2 }));
-    const from2 = jest.fn(() => ({ where: where2 }));
+    const orderBy2 = vi.fn().mockResolvedValue([itemRow]);
+    const where2 = vi.fn(() => ({ orderBy: orderBy2 }));
+    const from2 = vi.fn(() => ({ where: where2 }));
 
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce({ from: from1 })
       .mockReturnValueOnce({ from: from2 });
 
@@ -126,18 +126,18 @@ describe("listPendingDocumentRequests", () => {
 
 describe("updateDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(updateDocumentRequest(1, { clientId: 5 })).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("throws when the request is not owned by the user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const limit = jest.fn().mockResolvedValue([]);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    const limit = vi.fn().mockResolvedValue([]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
 
     await expect(updateDocumentRequest(1, { clientId: 5 })).rejects.toThrow(
       "Document request not found"
@@ -145,28 +145,28 @@ describe("updateDocumentRequest", () => {
   });
 
   it("runs a transaction that updates clientId and diffs items", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const limit = jest.fn().mockResolvedValue([{ id: 1 }]);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    const limit = vi.fn().mockResolvedValue([{ id: 1 }]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
 
-    const txUpdateWhere = jest.fn().mockResolvedValue(undefined);
-    const txUpdateSet = jest.fn(() => ({ where: txUpdateWhere }));
-    const txDeleteWhere = jest.fn().mockResolvedValue(undefined);
-    const txInsertValues = jest.fn().mockResolvedValue(undefined);
+    const txUpdateWhere = vi.fn().mockResolvedValue(undefined);
+    const txUpdateSet = vi.fn(() => ({ where: txUpdateWhere }));
+    const txDeleteWhere = vi.fn().mockResolvedValue(undefined);
+    const txInsertValues = vi.fn().mockResolvedValue(undefined);
     const txExistingItems = [{ id: 11 }, { id: 12 }];
-    const txSelectWhere = jest.fn().mockResolvedValue(txExistingItems);
-    const txSelectFrom = jest.fn(() => ({ where: txSelectWhere }));
+    const txSelectWhere = vi.fn().mockResolvedValue(txExistingItems);
+    const txSelectFrom = vi.fn(() => ({ where: txSelectWhere }));
 
     const tx = {
-      update: jest.fn(() => ({ set: txUpdateSet })),
-      delete: jest.fn(() => ({ where: txDeleteWhere })),
-      insert: jest.fn(() => ({ values: txInsertValues })),
-      select: jest.fn(() => ({ from: txSelectFrom })),
+      update: vi.fn(() => ({ set: txUpdateSet })),
+      delete: vi.fn(() => ({ where: txDeleteWhere })),
+      insert: vi.fn(() => ({ values: txInsertValues })),
+      select: vi.fn(() => ({ from: txSelectFrom })),
     };
 
-    (db.transaction as jest.Mock).mockImplementation(
+    (db.transaction as Mock).mockImplementation(
       async (fn: (t: unknown) => Promise<void>) => fn(tx)
     );
 
@@ -192,16 +192,16 @@ describe("updateDocumentRequest", () => {
 
 describe("approveDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(approveDocumentRequest(1)).rejects.toThrow("Unauthorized");
   });
 
   it("throws when the request is not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const limit = jest.fn().mockResolvedValue([]);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    const limit = vi.fn().mockResolvedValue([]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
 
     await expect(approveDocumentRequest(1)).rejects.toThrow(
       "Document request not found"
@@ -209,11 +209,11 @@ describe("approveDocumentRequest", () => {
   });
 
   it("throws when clientId is null", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const limit = jest.fn().mockResolvedValue([{ clientId: null }]);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    const limit = vi.fn().mockResolvedValue([{ clientId: null }]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
 
     await expect(approveDocumentRequest(1)).rejects.toThrow(
       "Client must be selected before approval"
@@ -221,11 +221,11 @@ describe("approveDocumentRequest", () => {
   });
 
   it("sets status to approved with approvedAt when clientId is set", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const limit = jest.fn().mockResolvedValue([{ clientId: 42 }]);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    const limit = vi.fn().mockResolvedValue([{ clientId: 42 }]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
 
     await approveDocumentRequest(1);
 
@@ -243,16 +243,16 @@ describe("approveDocumentRequest", () => {
 
 describe("declineDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(declineDocumentRequest(1)).rejects.toThrow("Unauthorized");
   });
 
   it("sets status to declined for an owned request", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    const limit = jest.fn().mockResolvedValue([{ id: 1 }]);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    const limit = vi.fn().mockResolvedValue([{ id: 1 }]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
 
     await declineDocumentRequest(1);
 
@@ -264,11 +264,11 @@ describe("declineDocumentRequest", () => {
 
 describe("listApprovedRequestsForClient", () => {
   it("returns empty when no approved requests exist", async () => {
-    const orderBy = jest.fn().mockResolvedValue([]);
-    const where = jest.fn(() => ({ orderBy }));
-    const innerJoin = jest.fn(() => ({ where }));
-    const from = jest.fn(() => ({ innerJoin }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    const orderBy = vi.fn().mockResolvedValue([]);
+    const where = vi.fn(() => ({ orderBy }));
+    const innerJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ innerJoin }));
+    (db.select as Mock).mockReturnValue({ from });
 
     const result = await listApprovedRequestsForClient(5);
     expect(result).toEqual([]);
@@ -294,17 +294,17 @@ describe("listApprovedRequestsForClient", () => {
       uploadedFilePath: "documents/u/req-1/passport.pdf",
     };
 
-    const orderBy1 = jest.fn().mockResolvedValue([requestRow]);
-    const where1 = jest.fn(() => ({ orderBy: orderBy1 }));
-    const innerJoin = jest.fn(() => ({ where: where1 }));
-    const from1 = jest.fn(() => ({ innerJoin }));
+    const orderBy1 = vi.fn().mockResolvedValue([requestRow]);
+    const where1 = vi.fn(() => ({ orderBy: orderBy1 }));
+    const innerJoin = vi.fn(() => ({ where: where1 }));
+    const from1 = vi.fn(() => ({ innerJoin }));
 
-    const orderBy2 = jest.fn().mockResolvedValue([itemRow]);
-    const where2 = jest.fn(() => ({ orderBy: orderBy2 }));
-    const leftJoin = jest.fn(() => ({ where: where2 }));
-    const from2 = jest.fn(() => ({ leftJoin }));
+    const orderBy2 = vi.fn().mockResolvedValue([itemRow]);
+    const where2 = vi.fn(() => ({ orderBy: orderBy2 }));
+    const leftJoin = vi.fn(() => ({ where: where2 }));
+    const from2 = vi.fn(() => ({ leftJoin }));
 
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce({ from: from1 })
       .mockReturnValueOnce({ from: from2 });
 

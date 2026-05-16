@@ -1,15 +1,15 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockMutate = jest.fn();
+const mockMutate = vi.fn();
 const mockQueryClient = {
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(() => []),
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(() => []),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 };
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useMutation: (opts: { onSettled?: (...args: unknown[]) => void }) => ({
     mutate: mockMutate,
     isPending: false,
@@ -17,11 +17,11 @@ jest.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockQueryClient,
 }));
 
-jest.mock("@/lib/tasks", () => ({
-  deleteTask: jest.fn(),
-  updateTaskStatus: jest.fn(),
-  changePriorityStatus: jest.fn(),
-  updateTaskDueDate: jest.fn(),
+vi.mock("@/lib/tasks", () => ({
+  deleteTask: vi.fn(),
+  updateTaskStatus: vi.fn(),
+  changePriorityStatus: vi.fn(),
+  updateTaskDueDate: vi.fn(),
 }));
 
 import { TaskDetailModal } from "@/app/components/TaskDetailModal";
@@ -43,7 +43,7 @@ const mockTask: Task = {
 };
 
 describe("TaskDetailModal", () => {
-  const onOpenChange = jest.fn();
+  const onOpenChange = vi.fn();
 
   beforeEach(() => {
     mockMutate.mockClear();

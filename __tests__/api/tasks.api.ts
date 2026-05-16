@@ -1,36 +1,30 @@
 import { GET } from "@/app/api/tasks/route";
 import { currentUser } from "@clerk/nextjs/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => {
-  const where = jest.fn();
+const { where } = vi.hoisted(() => ({ where: vi.fn() }));
 
-  return {
-    __esModule: true,
-    where,
-    db: {
-      select: jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          leftJoin: jest.fn().mockReturnValue({
-            where,
-          }),
+vi.mock("@db/db", () => ({
+  __esModule: true,
+  where,
+  db: {
+    select: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        leftJoin: vi.fn().mockReturnValue({
           where,
         }),
+        where,
       }),
-    },
-  };
-});
-
-const { where } = jest.requireMock("@db/db") as {
-  where: jest.Mock;
-};
+    }),
+  },
+}));
 
 describe("GET /tasks", () => {
   it("401 unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -38,7 +32,7 @@ describe("GET /tasks", () => {
   });
 
   it("returns tasks", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     where.mockResolvedValueOnce([
       { tasks: { id: 1 }, projectName: "Project A" },

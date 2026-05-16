@@ -1,19 +1,19 @@
-jest.mock("@db/db", () => ({ db: {} }));
-jest.mock("@db/schema", () => ({
+vi.mock("@db/db", () => ({ db: {} }));
+vi.mock("@db/schema", () => ({
   events: {},
   outlookEmails: {},
   outlookSyncState: {},
 }));
-jest.mock("drizzle-orm", () => ({
-  and: jest.fn(),
-  eq: jest.fn(),
+vi.mock("drizzle-orm", () => ({
+  and: vi.fn(),
+  eq: vi.fn(),
 }));
-jest.mock("@/lib/outlook_access", () => ({
-  getFreshOutlookAccessToken: jest.fn(),
+vi.mock("@/lib/outlook_access", () => ({
+  getFreshOutlookAccessToken: vi.fn(),
 }));
-jest.mock("@/lib/embeddings", () => ({
-  createEmbeddings: jest.fn(),
-  supabaseVector: { storage: { vectors: { from: jest.fn() } } },
+vi.mock("@/lib/embeddings", () => ({
+  createEmbeddings: vi.fn(),
+  supabaseVector: { storage: { vectors: { from: vi.fn() } } },
 }));
 
 import { parseGraphDateTime } from "@/lib/outlook_sync";

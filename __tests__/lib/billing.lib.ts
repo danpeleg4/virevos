@@ -9,41 +9,41 @@ import {
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-const mockWhere = jest.fn();
-const mockLimit = jest.fn();
-const mockSet = jest.fn(() => ({ where: mockWhere }));
-const mockReturning = jest.fn();
-const mockOnConflictDoNothing = jest.fn();
-const mockValues = jest.fn(() => ({
+const mockWhere = vi.fn();
+const mockLimit = vi.fn();
+const mockSet = vi.fn(() => ({ where: mockWhere }));
+const mockReturning = vi.fn();
+const mockOnConflictDoNothing = vi.fn();
+const mockValues = vi.fn(() => ({
   returning: mockReturning,
   onConflictDoNothing: mockOnConflictDoNothing,
 }));
-const mockFrom = jest.fn(() => ({ where: mockWhere }));
-const mockSelect = jest.fn(() => ({ from: mockFrom }));
+const mockFrom = vi.fn(() => ({ where: mockWhere }));
+const mockSelect = vi.fn(() => ({ from: mockFrom }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(() => ({ from: mockFrom })),
-    insert: jest.fn(() => ({ values: mockValues })),
-    update: jest.fn(() => ({ set: mockSet })),
+    select: vi.fn(() => ({ from: mockFrom })),
+    insert: vi.fn(() => ({ values: mockValues })),
+    update: vi.fn(() => ({ set: mockSet })),
   },
 }));
 
-const mockStripeSetupIntentCreate = jest.fn();
-const mockStripeCustomerCreate = jest.fn();
-const mockStripeCustomerRetrieve = jest.fn();
-const mockStripeCustomerUpdate = jest.fn();
-const mockStripePaymentMethodAttach = jest.fn();
-const mockStripeSubscriptionCreate = jest.fn();
-const mockStripeSubscriptionUpdate = jest.fn();
-const mockStripeSubscriptionRetrieve = jest.fn();
-const mockStripeInvoiceList = jest.fn();
+const mockStripeSetupIntentCreate = vi.fn();
+const mockStripeCustomerCreate = vi.fn();
+const mockStripeCustomerRetrieve = vi.fn();
+const mockStripeCustomerUpdate = vi.fn();
+const mockStripePaymentMethodAttach = vi.fn();
+const mockStripeSubscriptionCreate = vi.fn();
+const mockStripeSubscriptionUpdate = vi.fn();
+const mockStripeSubscriptionRetrieve = vi.fn();
+const mockStripeInvoiceList = vi.fn();
 
-jest.mock("@/lib/stripe", () => ({
+vi.mock("@/lib/stripe", () => ({
   stripe: {
     setupIntents: {
       create: (...args: unknown[]) => mockStripeSetupIntentCreate(...args),
@@ -71,20 +71,20 @@ const mockUser = {
 };
 
 function mockDbSelect(rows: unknown[]) {
-  const limitMock = jest.fn().mockResolvedValue(rows);
-  const whereMock = jest.fn(() => ({ limit: limitMock }));
-  const fromMock = jest.fn(() => ({ where: whereMock }));
-  (db.select as jest.Mock).mockReturnValue({
+  const limitMock = vi.fn().mockResolvedValue(rows);
+  const whereMock = vi.fn(() => ({ limit: limitMock }));
+  const fromMock = vi.fn(() => ({ where: whereMock }));
+  (db.select as Mock).mockReturnValue({
     from: fromMock,
   });
   return { fromMock, whereMock, limitMock };
 }
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockWhere.mockResolvedValue(undefined);
   mockLimit.mockResolvedValue([]);
   mockSet.mockReturnValue({ where: mockWhere });
@@ -104,12 +104,12 @@ afterEach(() => {
 
 describe("createSetupIntent", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(createSetupIntent()).rejects.toThrow("Unauthorized");
   });
 
   it("returns client_secret from Stripe SetupIntent", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([{ stripeCustomerId: "cus_existing" }]);
     mockStripeSetupIntentCreate.mockResolvedValue({
       client_secret: "seti_secret_123",
@@ -123,7 +123,7 @@ describe("createSetupIntent", () => {
   });
 
   it("creates new Stripe customer if none exists", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
     mockStripeCustomerCreate.mockResolvedValue({ id: "cus_new" });
     mockReturning.mockResolvedValue([]);
@@ -143,12 +143,12 @@ describe("createSetupIntent", () => {
 
 describe("getUserSubscription", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(getUserSubscription()).rejects.toThrow("Unauthorized");
   });
 
   it("returns starter defaults when no subscription row exists", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
 
     const result = await getUserSubscription();
@@ -158,7 +158,7 @@ describe("getUserSubscription", () => {
   });
 
   it("returns subscription data from DB when row exists", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -182,14 +182,14 @@ describe("getUserSubscription", () => {
 
 describe("changePlan", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(changePlan({ planId: "professional" })).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("throws when no active subscription", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
 
     await expect(changePlan({ planId: "professional" })).rejects.toThrow(
@@ -198,7 +198,7 @@ describe("changePlan", () => {
   });
 
   it("sets cancel_at_period_end when downgrading to starter", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -224,7 +224,7 @@ describe("changePlan", () => {
   });
 
   it("updates limits immediately when upgrading between paid plans", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     process.env.STRIPE_PRICE_BUSINESS_MONTHLY = "price_biz";
     mockDbSelect([
       {
@@ -249,7 +249,7 @@ describe("changePlan", () => {
   });
 
   it("does not update limits immediately when downgrading between paid plans", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY = "price_pro";
     mockDbSelect([
       {
@@ -278,12 +278,12 @@ describe("changePlan", () => {
 
 describe("cancelSubscription", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(cancelSubscription()).rejects.toThrow("Unauthorized");
   });
 
   it("calls stripe.subscriptions.update with cancel_at_period_end: true", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -309,12 +309,12 @@ describe("cancelSubscription", () => {
 
 describe("updatePaymentMethod", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(updatePaymentMethod("pm_123")).rejects.toThrow("Unauthorized");
   });
 
   it("throws when no stripe customer", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
 
     await expect(updatePaymentMethod("pm_123")).rejects.toThrow(
@@ -323,7 +323,7 @@ describe("updatePaymentMethod", () => {
   });
 
   it("attaches PM and updates customer default", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -356,12 +356,12 @@ describe("updatePaymentMethod", () => {
 
 describe("registerFreePlan", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(registerFreePlan()).rejects.toThrow("Unauthorized");
   });
 
   it("returns existing customer id without creating new one", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([{ stripeCustomerId: "cus_existing" }]);
 
     await registerFreePlan();

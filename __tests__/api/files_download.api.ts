@@ -3,31 +3,31 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
 // eslint-disable-next-line no-var
-var mockDownload: jest.Mock;
+var mockDownload: Mock;
 
-jest.mock("@/lib/storage", () => {
-  mockDownload = jest.fn();
+vi.mock("@/lib/storage", () => {
+  mockDownload = vi.fn();
   return { downloadFile: mockDownload };
 });
 
-jest.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
 describe("GET /api/project-files/[id]", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   function mockCtx(id: string) {
@@ -37,7 +37,7 @@ describe("GET /api/project-files/[id]", () => {
   }
 
   it("returns 401 if not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as NextRequest, mockCtx("1"));
 
@@ -46,8 +46,8 @@ describe("GET /api/project-files/[id]", () => {
   });
 
   it("returns 404 if file not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => Promise.resolve([]),
       }),
@@ -60,8 +60,8 @@ describe("GET /api/project-files/[id]", () => {
   });
 
   it("returns 500 if storage download fails", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () =>
           Promise.resolve([
@@ -84,7 +84,7 @@ describe("GET /api/project-files/[id]", () => {
   });
 
   it("returns file buffer with correct headers on success", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const mockFile = {
       id: 1,
@@ -93,7 +93,7 @@ describe("GET /api/project-files/[id]", () => {
       mimeType: "application/pdf",
     };
 
-    (db.select as jest.Mock).mockReturnValue({
+    (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => Promise.resolve([mockFile]),
       }),

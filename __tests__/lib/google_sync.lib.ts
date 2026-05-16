@@ -1,45 +1,45 @@
 import { db } from "@db/db";
 
 // These must be var (not const/let) so they're hoisted and can be assigned
-// inside the jest.mock factory before google_sync.ts imports are resolved
+// inside the vi.mock factory before google_sync.ts imports are resolved
 /* eslint-disable no-var */
-var mockEventsList: jest.Mock;
-var mockEventsWatch: jest.Mock;
-var mockChannelsStop: jest.Mock;
-var mockCalendar: jest.Mock;
+var mockEventsList: Mock;
+var mockEventsWatch: Mock;
+var mockChannelsStop: Mock;
+var mockCalendar: Mock;
 /* eslint-enable no-var */
 
-jest.mock("googleapis", () => {
-  mockEventsList = jest.fn();
-  mockEventsWatch = jest.fn();
-  mockChannelsStop = jest.fn();
-  mockCalendar = jest.fn().mockReturnValue({
+vi.mock("googleapis", () => {
+  mockEventsList = vi.fn();
+  mockEventsWatch = vi.fn();
+  mockChannelsStop = vi.fn();
+  mockCalendar = vi.fn().mockReturnValue({
     events: { list: mockEventsList, watch: mockEventsWatch },
     channels: { stop: mockChannelsStop },
   });
   return {
     google: {
       auth: {
-        OAuth2: jest.fn().mockImplementation(() => ({
-          setCredentials: jest.fn(),
-        })),
+        OAuth2: vi.fn(function () {
+          return { setCredentials: vi.fn() };
+        }),
       },
       calendar: mockCalendar,
     },
   };
 });
 
-jest.mock("@/lib/google_access", () => ({
-  getFreshGoogleAccessToken: jest.fn().mockResolvedValue("mock-access-token"),
+vi.mock("@/lib/google_access", () => ({
+  getFreshGoogleAccessToken: vi.fn().mockResolvedValue("mock-access-token"),
 }));
 
-jest.mock("@db/db", () => {
+vi.mock("@db/db", () => {
   const dbMock = {
-    select: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    transaction: jest.fn(),
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    transaction: vi.fn(),
   };
   // Run the transaction callback against the same mock so tx.* assertions
   // line up with the existing db.* spies.
@@ -77,14 +77,14 @@ function makeSelectReturn(rows: unknown[]) {
 
 // Mock db.select to always return given rows (all calls get same result)
 function mockSelect(rows: unknown[]) {
-  (db.select as jest.Mock).mockReturnValue(makeSelectReturn(rows));
+  (db.select as Mock).mockReturnValue(makeSelectReturn(rows));
 }
 
 // Mock db.select for two sequential patterns:
 //   first call  → firstRows  (e.g. syncToken lookup with .limit())
 //   later calls → laterRows  (e.g. events lookup without .limit())
 function mockSelectSequence(firstRows: unknown[], laterRows: unknown[]) {
-  (db.select as jest.Mock)
+  (db.select as Mock)
     .mockReturnValueOnce(makeSelectReturn(firstRows))
     .mockReturnValue(makeSelectReturn(laterRows));
 }
@@ -92,26 +92,26 @@ function mockSelectSequence(firstRows: unknown[], laterRows: unknown[]) {
 // Helper: set up standard DB mocks for a full-sync path
 function mockFullSyncDb() {
   mockSelect([]);
-  (db.insert as jest.Mock).mockReturnValue({
-    values: jest.fn().mockReturnValue({
-      onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+  (db.insert as Mock).mockReturnValue({
+    values: vi.fn().mockReturnValue({
+      onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
     }),
   });
-  (db.update as jest.Mock).mockReturnValue({
-    set: jest.fn().mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
+  (db.update as Mock).mockReturnValue({
+    set: vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     }),
   });
-  (db.delete as jest.Mock).mockReturnValue({
-    where: jest.fn().mockResolvedValue(undefined),
+  (db.delete as Mock).mockReturnValue({
+    where: vi.fn().mockResolvedValue(undefined),
   });
 }
 
 describe("getCalendarClient", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it("throws when no access token exists", async () => {
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValueOnce(null);
+    (getFreshGoogleAccessToken as Mock).mockResolvedValueOnce(null);
     await expect(getCalendarClient("user_1")).rejects.toThrow();
   });
 
@@ -127,10 +127,8 @@ describe("getCalendarClient", () => {
 
 describe("performFullSync", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
-      "mock-access-token"
-    );
+    vi.clearAllMocks();
+    (getFreshGoogleAccessToken as Mock).mockResolvedValue("mock-access-token");
   });
 
   it("fetches events and stores syncToken on a single page", async () => {
@@ -225,25 +223,25 @@ describe("performFullSync", () => {
       },
     });
 
-    const deleteWhere = jest.fn().mockResolvedValue(undefined);
-    const updateWhere = jest.fn().mockResolvedValue(undefined);
-    const insertValues = jest.fn().mockResolvedValue(undefined);
-    (db.delete as jest.Mock).mockReturnValue({ where: deleteWhere });
-    (db.update as jest.Mock).mockReturnValue({
-      set: jest.fn().mockReturnValue({ where: updateWhere }),
+    const deleteWhere = vi.fn().mockResolvedValue(undefined);
+    const updateWhere = vi.fn().mockResolvedValue(undefined);
+    const insertValues = vi.fn().mockResolvedValue(undefined);
+    (db.delete as Mock).mockReturnValue({ where: deleteWhere });
+    (db.update as Mock).mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: updateWhere }),
     });
-    (db.insert as jest.Mock)
+    (db.insert as Mock)
       .mockReturnValueOnce({ values: insertValues })
       .mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+        values: vi.fn().mockReturnValue({
+          onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
         }),
       });
 
     await performFullSync("user_1");
 
     // The transaction was used (not direct db calls for the events writes).
-    expect((db.transaction as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    expect((db.transaction as Mock).mock.calls.length).toBeGreaterThan(0);
     // One batched delete (for removed-1) — not one per row.
     expect(deleteWhere).toHaveBeenCalledTimes(1);
     // One update for the changed row.
@@ -258,10 +256,8 @@ describe("performFullSync", () => {
 
 describe("performIncrementalSync", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
-      "mock-access-token"
-    );
+    vi.clearAllMocks();
+    (getFreshGoogleAccessToken as Mock).mockResolvedValue("mock-access-token");
   });
 
   it("falls back to full sync when no syncToken is stored (null)", async () => {
@@ -271,13 +267,13 @@ describe("performIncrementalSync", () => {
     mockEventsList.mockResolvedValueOnce({
       data: { items: [], nextSyncToken: "new-sync-token" },
     });
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
       }),
     });
-    (db.delete as jest.Mock).mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
+    (db.delete as Mock).mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
 
     await performIncrementalSync("user_1");
@@ -298,13 +294,13 @@ describe("performIncrementalSync", () => {
     mockEventsList.mockResolvedValueOnce({
       data: { items: [], nextSyncToken: "new-sync-token" },
     });
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
       }),
     });
-    (db.delete as jest.Mock).mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
+    (db.delete as Mock).mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
 
     await performIncrementalSync("user_1");
@@ -325,13 +321,13 @@ describe("performIncrementalSync", () => {
     mockEventsList.mockResolvedValueOnce({
       data: { items: [], nextSyncToken: "new-token" },
     });
-    (db.update as jest.Mock).mockReturnValue({
-      set: jest
+    (db.update as Mock).mockReturnValue({
+      set: vi
         .fn()
-        .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
+        .mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
     });
-    (db.delete as jest.Mock).mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
+    (db.delete as Mock).mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
 
     await performIncrementalSync("user_1");
@@ -344,20 +340,20 @@ describe("performIncrementalSync", () => {
   it("falls back to full sync on 410 Gone error", async () => {
     // First select: returns expired syncToken; subsequent: empty existing events (full sync fallback)
     mockSelectSequence([{ syncToken: "expired-token" }], []);
-    jest.spyOn(console, "log").mockImplementationOnce(() => {});
+    vi.spyOn(console, "log").mockImplementationOnce(() => {});
 
     const goneError = Object.assign(new Error("Gone"), { code: 410 });
     mockEventsList.mockRejectedValueOnce(goneError).mockResolvedValueOnce({
       data: { items: [], nextSyncToken: "new-token" },
     });
 
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
       }),
     });
-    (db.delete as jest.Mock).mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
+    (db.delete as Mock).mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
 
     await expect(performIncrementalSync("user_1")).resolves.not.toThrow();
@@ -366,7 +362,7 @@ describe("performIncrementalSync", () => {
   });
 
   it("rethrows non-410 errors", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce({
+    (db.select as Mock).mockReturnValueOnce({
       from: () => ({
         where: () => ({
           limit: () => Promise.resolve([{ syncToken: "token" }]),
@@ -387,10 +383,8 @@ describe("performIncrementalSync", () => {
 
 describe("setupWatchChannel", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
-      "mock-access-token"
-    );
+    vi.clearAllMocks();
+    (getFreshGoogleAccessToken as Mock).mockResolvedValue("mock-access-token");
     // Jest runs with NODE_ENV=test (non-production), so setupWatchChannel uses NEXT_PUBLIC_APP_URL_NGROK
     process.env.NEXT_PUBLIC_APP_URL_NGROK = "https://example.ngrok.io";
   });
@@ -399,9 +393,9 @@ describe("setupWatchChannel", () => {
     mockEventsWatch.mockResolvedValueOnce({
       data: { resourceId: "resource-id-123", expiration: "1700000000000" },
     });
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
       }),
     });
 
@@ -423,15 +417,15 @@ describe("setupWatchChannel", () => {
     mockEventsWatch.mockResolvedValueOnce({
       data: { resourceId: "res-123", expiration: "1700000000000" },
     });
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
       }),
     });
 
     await setupWatchChannel("user_1");
 
-    const callArg = (mockEventsWatch as jest.Mock).mock.calls[0][0];
+    const callArg = (mockEventsWatch as Mock).mock.calls[0][0];
     expect(callArg.requestBody.id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
     );
@@ -440,10 +434,8 @@ describe("setupWatchChannel", () => {
 
 describe("stopWatchChannel", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getFreshGoogleAccessToken as jest.Mock).mockResolvedValue(
-      "mock-access-token"
-    );
+    vi.clearAllMocks();
+    (getFreshGoogleAccessToken as Mock).mockResolvedValue("mock-access-token");
   });
 
   it("does nothing if no sync state exists for user", async () => {
@@ -457,8 +449,8 @@ describe("stopWatchChannel", () => {
   it("calls channels.stop and deletes the sync state row", async () => {
     mockSelect([{ channelId: "ch-uuid", resourceId: "res-uuid" }]);
     mockChannelsStop.mockResolvedValueOnce({});
-    (db.delete as jest.Mock).mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
+    (db.delete as Mock).mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
 
     await stopWatchChannel("user_1");
@@ -472,9 +464,9 @@ describe("stopWatchChannel", () => {
   it("still deletes sync state row even if channels.stop throws", async () => {
     mockSelect([{ channelId: "ch-uuid", resourceId: "res-uuid" }]);
     mockChannelsStop.mockRejectedValueOnce(new Error("Channel not found"));
-    jest.spyOn(console, "error").mockImplementationOnce(() => {});
-    (db.delete as jest.Mock).mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
+    vi.spyOn(console, "error").mockImplementationOnce(() => {});
+    (db.delete as Mock).mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
 
     await expect(stopWatchChannel("user_1")).resolves.not.toThrow();

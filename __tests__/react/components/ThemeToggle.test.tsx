@@ -1,10 +1,10 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockSetTheme = jest.fn();
-const mockUseTheme = jest.fn();
+const mockSetTheme = vi.fn();
+const mockUseTheme = vi.fn();
 
-jest.mock("next-themes", () => ({
+vi.mock("next-themes", () => ({
   useTheme: () => mockUseTheme(),
 }));
 

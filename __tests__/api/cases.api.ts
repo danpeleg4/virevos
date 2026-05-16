@@ -4,30 +4,30 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
 beforeAll(() => {
-  jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterAll(() => {
-  (console.error as jest.Mock).mockRestore();
+  (console.error as Mock).mockRestore();
 });
 
 // ─────────────────────────────
 // Mocks
 // ─────────────────────────────
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
 // Drizzle chain mock helper
 function mockDrizzleResult(result: unknown) {
-  (db.select as jest.Mock).mockReturnValue({
+  (db.select as Mock).mockReturnValue({
     from: () => ({
       leftJoin: () => ({
         where: () => ({
@@ -46,11 +46,11 @@ const mockRequest = {} as NextRequest;
 
 describe("GET /api/cases/[id]", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET(mockRequest, {
       params: Promise.resolve({ id: "1" }),
@@ -61,7 +61,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns 400 if caseId is invalid", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET(mockRequest, {
       params: Promise.resolve({ id: "abc" }),
@@ -72,7 +72,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns 404 if case is not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDrizzleResult([]);
 
     const res = await GET(mockRequest, {
@@ -84,7 +84,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns case data when found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     mockDrizzleResult([
       {
@@ -109,8 +109,8 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns 500 on unexpected error", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockImplementation(() => {
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as Mock).mockImplementation(() => {
       throw new Error("DB crashed");
     });
 
