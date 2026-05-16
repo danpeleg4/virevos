@@ -1,15 +1,15 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockMutate = jest.fn();
+const mockMutate = vi.fn();
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useMutation: () => ({ mutate: mockMutate, isPending: false }),
-  useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-jest.mock("@/lib/cases", () => ({
-  createCase: jest.fn(),
+vi.mock("@/lib/cases", () => ({
+  createCase: vi.fn(),
 }));
 
 const mockClients = [

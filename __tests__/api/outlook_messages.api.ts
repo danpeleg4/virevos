@@ -2,13 +2,13 @@ import { GET } from "@/app/api/outlook/messages/[id]/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
@@ -39,7 +39,7 @@ function makeRequest(): Request {
 }
 
 function mockDbFound() {
-  (db.select as jest.Mock).mockReturnValue({
+  (db.select as Mock).mockReturnValue({
     from: () => ({
       where: () => ({
         limit: () => Promise.resolve([mockEmail]),
@@ -49,7 +49,7 @@ function mockDbFound() {
 }
 
 function mockDbEmpty() {
-  (db.select as jest.Mock).mockReturnValue({
+  (db.select as Mock).mockReturnValue({
     from: () => ({
       where: () => ({
         limit: () => Promise.resolve([]),
@@ -61,16 +61,16 @@ function mockDbEmpty() {
 const params = Promise.resolve({ id: "1" });
 
 describe("GET /api/outlook/messages/[id]", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it("returns 401 if not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeRequest(), { params });
     expect(res.status).toBe(401);
   });
 
   it("returns 400 for non-numeric id", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     const res = await GET(makeRequest(), {
       params: Promise.resolve({ id: "abc" }),
     });
@@ -78,14 +78,14 @@ describe("GET /api/outlook/messages/[id]", () => {
   });
 
   it("returns 404 when message not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbEmpty();
     const res = await GET(makeRequest(), { params });
     expect(res.status).toBe(404);
   });
 
   it("returns the message when found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbFound();
     const res = await GET(makeRequest(), { params });
     expect(res.status).toBe(200);

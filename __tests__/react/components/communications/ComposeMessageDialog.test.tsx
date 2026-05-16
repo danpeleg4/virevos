@@ -24,29 +24,32 @@ class MockFileReader {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).FileReader = MockFileReader;
 
-const mockAxiosPost = jest.fn();
-const mockAxiosGet = jest.fn().mockResolvedValue({ data: [] });
+const mockAxiosPost = vi.fn();
+const mockAxiosGet = vi.fn().mockResolvedValue({ data: [] });
 
-jest.mock("axios", () => ({
-  post: (...args: unknown[]) => mockAxiosPost(...args),
-  get: (...args: unknown[]) => mockAxiosGet(...args),
-}));
+vi.mock("axios", () => {
+  const axios = {
+    post: (...args: unknown[]) => mockAxiosPost(...args),
+    get: (...args: unknown[]) => mockAxiosGet(...args),
+  };
+  return { default: axios, ...axios };
+});
 
-jest.mock("sonner", () => ({
+vi.mock("sonner", () => ({
   toast: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
-const mockSendOutlookEmail = jest.fn();
-const mockSendAgencyChatMessage = jest.fn();
+const mockSendOutlookEmail = vi.fn();
+const mockSendAgencyChatMessage = vi.fn();
 
-jest.mock("@/lib/outlook_actions", () => ({
+vi.mock("@/lib/outlook_actions", () => ({
   sendOutlookEmail: (...args: unknown[]) => mockSendOutlookEmail(...args),
 }));
 
-jest.mock("@/lib/portal_chat", () => ({
+vi.mock("@/lib/portal_chat", () => ({
   sendAgencyChatMessage: (...args: unknown[]) =>
     mockSendAgencyChatMessage(...args),
 }));
@@ -58,8 +61,8 @@ const makeQueryClient = () =>
 
 const renderDialog = (
   open = true,
-  onOpenChange = jest.fn(),
-  onSent = jest.fn()
+  onOpenChange = vi.fn(),
+  onSent = vi.fn()
 ) => {
   const queryClient = makeQueryClient();
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -76,8 +79,8 @@ const renderDialog = (
 };
 
 describe("ComposeMessageDialog", () => {
-  const onOpenChange = jest.fn();
-  const onSent = jest.fn();
+  const onOpenChange = vi.fn();
+  const onSent = vi.fn();
 
   beforeEach(() => {
     onOpenChange.mockClear();
@@ -172,7 +175,7 @@ describe("ComposeMessageDialog", () => {
 
   describe("attachments", () => {
     beforeEach(() => {
-      (toast.error as jest.Mock).mockClear();
+      (toast.error as Mock).mockClear();
     });
 
     it("renders the Attach files button on the email tab", () => {

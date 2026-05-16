@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -29,7 +29,7 @@ describe("DropdownMenu with asChild trigger", () => {
   });
 
   it("fires the consumer's onClick on a DropdownMenuItem and closes", () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     render(
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

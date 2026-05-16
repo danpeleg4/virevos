@@ -1,46 +1,45 @@
 import { POST } from "@/app/api/token/route";
 import { NextRequest } from "next/server";
 
-jest.mock("next/navigation", () => ({
-  notFound: jest.fn(() => {
+vi.mock("next/navigation", () => ({
+  notFound: vi.fn(() => {
     throw new Error("NOT_FOUND");
   }),
 }));
 
-jest.mock("@db/db", () => {
-  const where = jest.fn();
-  return {
-    db: {
-      select: jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where,
-        }),
+const { where } = vi.hoisted(() => ({ where: vi.fn() }));
+
+vi.mock("@db/db", () => ({
+  db: {
+    select: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where,
       }),
-    },
-    where,
-  };
-});
+    }),
+  },
+  where,
+}));
 
-jest.mock("livekit-server-sdk", () => {
+vi.mock("livekit-server-sdk", () => {
   return {
-    AccessToken: jest.fn().mockImplementation(() => ({
-      addGrant: jest.fn(),
-      toJwt: jest.fn().mockResolvedValue("jwt-token"),
-    })),
-    RoomServiceClient: jest.fn().mockImplementation(() => ({
-      listRooms: jest.fn().mockResolvedValue([]),
-      createRoom: jest.fn().mockResolvedValue({ name: "room1" }),
-    })),
+    AccessToken: vi.fn(function () {
+      return {
+        addGrant: vi.fn(),
+        toJwt: vi.fn().mockResolvedValue("jwt-token"),
+      };
+    }),
+    RoomServiceClient: vi.fn(function () {
+      return {
+        listRooms: vi.fn().mockResolvedValue([]),
+        createRoom: vi.fn().mockResolvedValue({ name: "room1" }),
+      };
+    }),
   };
 });
-
-const { where } = jest.requireMock("@db/db") as {
-  where: jest.Mock;
-};
 
 function req(body: unknown): NextRequest {
   return {
-    json: jest.fn().mockResolvedValue(body),
+    json: vi.fn().mockResolvedValue(body),
   } as unknown as NextRequest;
 }
 

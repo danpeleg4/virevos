@@ -1,12 +1,12 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
-  usePathname: jest.fn(() => "/"),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: vi.fn(() => "/"),
 }));
 
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({ isSignedIn: false, user: null, isLoaded: true }),
   SignOutButton: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
@@ -14,12 +14,13 @@ jest.mock("@clerk/nextjs", () => ({
   UserButton: () => <div data-testid="user-button" />,
 }));
 
-jest.mock("next-themes", () => ({
-  useTheme: jest.fn(() => ({ resolvedTheme: "light", setTheme: jest.fn() })),
+vi.mock("next-themes", () => ({
+  useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
 
-jest.mock("motion/react", () => {
-  const { createElement } = jest.requireActual<typeof import("react")>("react");
+vi.mock("motion/react", async () => {
+  const { createElement } =
+    await vi.importActual<typeof import("react")>("react");
   const motion = new Proxy(
     {},
     {

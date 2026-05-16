@@ -4,70 +4,65 @@ import { NextRequest } from "next/server";
 import { ParticipantInfo_Kind } from "@livekit/protocol";
 import { assertCanUseAI } from "@/lib/plan_limits";
 
-jest.mock("next/server", () => ({
-  ...jest.requireActual("next/server"),
-  after: jest.fn(),
+vi.mock("next/server", async () => ({
+  ...(await vi.importActual<typeof import("next/server")>("next/server")),
+  after: vi.fn(),
 }));
 
-jest.mock("@/lib/plan_limits", () => ({
-  assertCanUseAI: jest.fn(),
+vi.mock("@/lib/plan_limits", () => ({
+  assertCanUseAI: vi.fn(),
 }));
 
 // db mock
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    update: jest.fn(() => ({
-      set: jest.fn(() => ({
-        where: jest.fn(),
+    update: vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(),
       })),
     })),
-    select: jest.fn(() => ({
-      from: jest.fn(() => ({
-        innerJoin: jest.fn(() => ({
-          where: jest.fn(() => []),
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        innerJoin: vi.fn(() => ({
+          where: vi.fn(() => []),
         })),
-        where: jest.fn(() => []),
+        where: vi.fn(() => []),
       })),
     })),
-    insert: jest.fn(() => ({
-      values: jest.fn(() => ({
-        onConflictDoNothing: jest.fn(),
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn(),
       })),
     })),
-    transaction: jest.fn(),
+    transaction: vi.fn(),
   },
 }));
 
 // livekit mock
-jest.mock("livekit-server-sdk", () => {
-  const receiveFn = jest.fn();
-  return {
-    EgressClient: jest.fn().mockImplementation(() => ({
-      startParticipantEgress: jest.fn(),
-    })),
-    EncodedFileOutput: jest.fn(),
-    WebhookReceiver: jest.fn().mockImplementation(() => ({
-      receive: receiveFn,
-    })),
-    __receiveFn: receiveFn,
-  };
-});
+const { mockReceive } = vi.hoisted(() => ({ mockReceive: vi.fn() }));
 
-const { __receiveFn: mockReceive } = jest.requireMock("livekit-server-sdk") as {
-  __receiveFn: jest.Mock;
-};
+vi.mock("livekit-server-sdk", () => ({
+  EgressClient: vi.fn(function () {
+    return { startParticipantEgress: vi.fn() };
+  }),
+  EncodedFileOutput: vi.fn(),
+  WebhookReceiver: vi.fn(function () {
+    return { receive: mockReceive };
+  }),
+  __receiveFn: mockReceive,
+}));
 
 // Helper
 function mockRequest<T>(event: T, authHeader = "valid-token"): NextRequest {
   return {
-    text: jest.fn().mockResolvedValue(JSON.stringify(event)),
-    headers: { get: jest.fn().mockReturnValue(authHeader) },
+    text: vi.fn().mockResolvedValue(JSON.stringify(event)),
+    headers: { get: vi.fn().mockReturnValue(authHeader) },
   } as unknown as NextRequest;
 }
 
 describe("POST /api/webhooks/livekit", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockReceive.mockImplementation((_body: string, _auth: string) =>
       Promise.resolve(JSON.parse(_body))
     );
@@ -93,7 +88,7 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("updates event to active on room_started", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce({
+    (db.select as Mock).mockReturnValueOnce({
       from: () => ({
         innerJoin: () => ({
           where: () => [{ userId: "user_1", recordingStatus: false }],
@@ -114,17 +109,17 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("returns 200 early when AI limit is reached on room_started", async () => {
-    (db.select as jest.Mock).mockReturnValueOnce({
+    (db.select as Mock).mockReturnValueOnce({
       from: () => ({
         innerJoin: () => ({
           where: () => [{ userId: "user_1", recordingStatus: true }],
         }),
       }),
     });
-    (assertCanUseAI as jest.Mock).mockRejectedValueOnce(
+    (assertCanUseAI as Mock).mockRejectedValueOnce(
       new Error("AI limit reached")
     );
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const req = mockRequest({
       event: "room_started",
@@ -140,7 +135,7 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("updates duration and status on room_finished", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce({
         from: () => ({
           where: () => [{ id: "room_123", duration: 10 }],
@@ -181,7 +176,7 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("inserts attendee when participant joins", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce({
         from: () => ({
           where: () => [{ id: "room_123", userId: "user_1" }],
@@ -207,7 +202,7 @@ describe("POST /api/webhooks/livekit", () => {
     expect(db.insert).toHaveBeenCalled();
     expect(res.status).toBe(200);
 
-    const insertCall = (db.insert as jest.Mock).mock.results[0].value;
+    const insertCall = (db.insert as Mock).mock.results[0].value;
 
     expect(insertCall.values).toHaveBeenCalledWith({
       meetingId: "room_123",
@@ -221,19 +216,19 @@ describe("POST /api/webhooks/livekit", () => {
 
   it("credits user storage on first egress_ended", async () => {
     const recordingUpdate = {
-      set: jest.fn(() => ({
-        where: jest.fn(() => ({
-          returning: jest.fn(() => Promise.resolve([{ userId: "user_1" }])),
+      set: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([{ userId: "user_1" }])),
         })),
       })),
     };
-    const storageUpdate = { set: jest.fn(() => ({ where: jest.fn() })) };
-    const txUpdate = jest
+    const storageUpdate = { set: vi.fn(() => ({ where: vi.fn() })) };
+    const txUpdate = vi
       .fn()
       .mockReturnValueOnce(recordingUpdate)
       .mockReturnValueOnce(storageUpdate);
-    (db.transaction as jest.Mock).mockImplementationOnce(
-      async (fn: (tx: { update: jest.Mock }) => Promise<unknown>) =>
+    (db.transaction as Mock).mockImplementationOnce(
+      async (fn: (tx: { update: Mock }) => Promise<unknown>) =>
         fn({ update: txUpdate })
     );
 
@@ -256,19 +251,19 @@ describe("POST /api/webhooks/livekit", () => {
 
   it("skips storage update on duplicate egress_ended", async () => {
     const recordingUpdate = {
-      set: jest.fn(() => ({
-        where: jest.fn(() => ({
-          returning: jest.fn(() => Promise.resolve([])),
+      set: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([])),
         })),
       })),
     };
-    const storageUpdate = { set: jest.fn(() => ({ where: jest.fn() })) };
-    const txUpdate = jest
+    const storageUpdate = { set: vi.fn(() => ({ where: vi.fn() })) };
+    const txUpdate = vi
       .fn()
       .mockReturnValueOnce(recordingUpdate)
       .mockReturnValueOnce(storageUpdate);
-    (db.transaction as jest.Mock).mockImplementationOnce(
-      async (fn: (tx: { update: jest.Mock }) => Promise<unknown>) =>
+    (db.transaction as Mock).mockImplementationOnce(
+      async (fn: (tx: { update: Mock }) => Promise<unknown>) =>
         fn({ update: txUpdate })
     );
 
@@ -300,7 +295,7 @@ describe("POST /api/webhooks/livekit", () => {
   });
 
   it("does not duplicate attendee on reconnect", async () => {
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce({
         from: () => ({
           where: () => [{ id: "room_123", userId: "user_1" }],
@@ -338,7 +333,7 @@ describe("POST /api/webhooks/livekit", () => {
 
     expect(db.insert).toHaveBeenCalledTimes(2);
 
-    for (const result of (db.insert as jest.Mock).mock.results) {
+    for (const result of (db.insert as Mock).mock.results) {
       const valuesCall = result.value.values.mock.results[0].value;
       expect(valuesCall.onConflictDoNothing).toHaveBeenCalled();
     }

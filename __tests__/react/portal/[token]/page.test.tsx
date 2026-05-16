@@ -17,12 +17,13 @@ function renderWithClient(ui: React.ReactElement) {
   );
 }
 
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useParams: () => ({ token: "test-token-abc" }),
 }));
 
-jest.mock("motion/react", () => {
-  const { createElement } = jest.requireActual<typeof import("react")>("react");
+vi.mock("motion/react", async () => {
+  const { createElement } =
+    await vi.importActual<typeof import("react")>("react");
   const motion = new Proxy(
     {},
     {
@@ -52,24 +53,27 @@ jest.mock("motion/react", () => {
   };
 });
 
-jest.mock("sonner", () => ({
-  toast: { success: jest.fn(), error: jest.fn() },
+vi.mock("sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-jest.mock("@/lib/date_utils", () => ({
-  parseDateOnlyString: jest.fn((s: string) => new Date(s)),
+vi.mock("@/lib/date_utils", () => ({
+  parseDateOnlyString: vi.fn((s: string) => new Date(s)),
 }));
 
-jest.mock("axios", () => ({
-  get: jest.fn(),
-  post: jest.fn(() => Promise.resolve({ data: {}, status: 200 })),
-  isAxiosError: jest.fn(() => false),
-}));
+vi.mock("axios", () => {
+  const axios = {
+    get: vi.fn(),
+    post: vi.fn(() => Promise.resolve({ data: {}, status: 200 })),
+    isAxiosError: vi.fn(() => false),
+  };
+  return { default: axios, ...axios };
+});
 
 import axios from "axios";
 import PortalPage from "@/app/portal/[token]/page";
 
-const mockedAxiosGet = axios.get as jest.Mock;
+const mockedAxiosGet = axios.get as Mock;
 
 interface PortalOverrides {
   cases?: unknown[];

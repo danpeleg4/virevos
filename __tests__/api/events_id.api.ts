@@ -2,23 +2,20 @@ import { GET } from "@/app/api/events/[id]/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => {
-  const where = jest.fn();
-  return {
-    db: {
-      select: jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({ where }),
-      }),
-    },
-    where,
-  };
-});
+const { where } = vi.hoisted(() => ({ where: vi.fn() }));
 
-const { where } = jest.requireMock("@db/db") as { where: jest.Mock };
+vi.mock("@db/db", () => ({
+  db: {
+    select: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({ where }),
+    }),
+  },
+  where,
+}));
 
 function params(id: string) {
   return { params: Promise.resolve({ id }) };
@@ -26,7 +23,7 @@ function params(id: string) {
 
 describe("GET /api/events/[id]", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 404 when meeting not found", async () => {
@@ -36,7 +33,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("derives 'active' for a past upcoming meeting", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",
@@ -56,7 +53,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("preserves 'ended' status without re-deriving", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",
@@ -74,7 +71,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("keeps 'upcoming' for a future meeting", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",
@@ -92,7 +89,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("isHost is false when current user differs", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_2" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_2" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",

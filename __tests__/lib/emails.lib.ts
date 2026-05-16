@@ -1,11 +1,11 @@
 import { getEmailData, getRecentEmails } from "@/lib/emails";
 import { currentUser } from "@clerk/nextjs/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/schema", () => ({
+vi.mock("@db/schema", () => ({
   outlookEmails: {
     outlookId: "outlook_id",
     subject: "subject",
@@ -20,7 +20,7 @@ jest.mock("@db/schema", () => ({
   },
 }));
 
-jest.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", () => ({
   and: (...args: unknown[]) => ({ __op: "and", args }),
   desc: (col: unknown) => ({ __op: "desc", col }),
   eq: (col: unknown, val: unknown) => ({ __op: "eq", col, val }),
@@ -30,13 +30,13 @@ jest.mock("drizzle-orm", () => ({
 // var so the mock factory below can capture them (factories run before const
 // declarations are hoisted)
 /* eslint-disable no-var */
-var mockQueryVectors: jest.Mock;
-var mockCreateEmbedding: jest.Mock;
+var mockQueryVectors: Mock;
+var mockCreateEmbedding: Mock;
 /* eslint-enable no-var */
 
-jest.mock("@/lib/embeddings", () => {
-  mockQueryVectors = jest.fn();
-  mockCreateEmbedding = jest.fn().mockResolvedValue([0.1, 0.2, 0.3]);
+vi.mock("@/lib/embeddings", () => {
+  mockQueryVectors = vi.fn();
+  mockCreateEmbedding = vi.fn().mockResolvedValue([0.1, 0.2, 0.3]);
   return {
     EMAILS_BUCKET: "emails",
     EMAILS_INDEX: "emails",
@@ -51,18 +51,18 @@ jest.mock("@/lib/embeddings", () => {
   };
 });
 
-const mockWhere = jest.fn();
-const mockFrom = jest.fn(() => ({ where: mockWhere }));
-const mockSelect = jest.fn(() => ({ from: mockFrom }));
+const mockWhere = vi.fn();
+const mockFrom = vi.fn(() => ({ where: mockWhere }));
+const mockSelect = vi.fn(() => ({ from: mockFrom }));
 
-const mockLimit = jest.fn();
-const mockOrderBy = jest.fn(() => ({ limit: mockLimit }));
-const mockWhereChain = jest.fn(() => ({ orderBy: mockOrderBy }));
-const mockFromChain = jest.fn(() => ({ where: mockWhereChain }));
+const mockLimit = vi.fn();
+const mockOrderBy = vi.fn(() => ({ limit: mockLimit }));
+const mockWhereChain = vi.fn(() => ({ orderBy: mockOrderBy }));
+const mockFromChain = vi.fn(() => ({ where: mockWhereChain }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
@@ -70,11 +70,11 @@ import { db } from "@db/db";
 
 const mockUser = { id: "user_1" };
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockWhere.mockResolvedValue([]);
   mockFrom.mockReturnValue({ where: mockWhere });
   mockSelect.mockReturnValue({ from: mockFrom });
@@ -93,15 +93,15 @@ afterEach(() => {
 
 describe("getEmailData", () => {
   it("returns [] when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     expect(await getEmailData("query")).toEqual([]);
     expect(mockCreateEmbedding).not.toHaveBeenCalled();
   });
 
   it("calls queryVectors scoped to the current user_id and topK=10", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({ data: { vectors: [] } });
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
     await getEmailData("Acme contract");
     expect(mockCreateEmbedding).toHaveBeenCalledWith("Acme contract");
     expect(mockQueryVectors).toHaveBeenCalledWith({
@@ -113,7 +113,7 @@ describe("getEmailData", () => {
   });
 
   it("returns [] and logs when queryVectors returns an error", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       error: { message: "boom" },
     });
@@ -122,14 +122,14 @@ describe("getEmailData", () => {
   });
 
   it("returns [] when no vectors come back", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({ data: { vectors: [] } });
     expect(await getEmailData("query")).toEqual([]);
     expect(db.select).not.toHaveBeenCalled();
   });
 
   it("enriches each hit with DB row data when present, preserving rank order", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -155,7 +155,7 @@ describe("getEmailData", () => {
       },
     });
 
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
     mockWhere.mockResolvedValueOnce([
       {
         outlookId: "msg-B",
@@ -185,7 +185,7 @@ describe("getEmailData", () => {
   });
 
   it("falls back to vector metadata when the DB row is missing", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -201,7 +201,7 @@ describe("getEmailData", () => {
         ],
       },
     });
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
     mockWhere.mockResolvedValueOnce([]); // no DB rows
 
     const result = await getEmailData("query");
@@ -219,7 +219,7 @@ describe("getEmailData", () => {
   });
 
   it("skips vectors whose metadata has no outlook_id", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -228,7 +228,7 @@ describe("getEmailData", () => {
         ],
       },
     });
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
     mockWhere.mockResolvedValueOnce([]);
 
     const result = await getEmailData("query");
@@ -236,7 +236,7 @@ describe("getEmailData", () => {
   });
 
   it("throws ValidationError when text is empty", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await expect(getEmailData("")).rejects.toThrow();
   });
 });
@@ -245,37 +245,37 @@ describe("getEmailData", () => {
 
 describe("getRecentEmails", () => {
   it("returns [] when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     expect(await getRecentEmails(5)).toEqual([]);
     expect(db.select).not.toHaveBeenCalled();
   });
 
   it("clamps limit to 25 when caller asks for more", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockReturnValue({ from: mockFromChain });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([]);
     await getRecentEmails(500);
     expect(mockLimit).toHaveBeenCalledWith(25);
   });
 
   it("clamps limit to 1 when caller asks for less", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockReturnValue({ from: mockFromChain });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([]);
     await getRecentEmails(0);
     expect(mockLimit).toHaveBeenCalledWith(1);
   });
 
   it("throws ValidationError when limit is not a number", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     await expect(
       getRecentEmails("five" as unknown as number)
     ).rejects.toThrow();
   });
 
   it("uses bodyText when present, truncated only above 1500 chars", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockReturnValue({ from: mockFromChain });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {
         outlookId: "msg-1",
@@ -295,8 +295,8 @@ describe("getRecentEmails", () => {
   });
 
   it("strips HTML when bodyText is null and bodyHtml is present", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockReturnValue({ from: mockFromChain });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {
         outlookId: "msg-2",
@@ -316,8 +316,8 @@ describe("getRecentEmails", () => {
   });
 
   it("truncates body at 1500 chars and appends an ellipsis", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockReturnValue({ from: mockFromChain });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockReturnValue({ from: mockFromChain });
     const longBody = "a".repeat(2000);
     mockLimit.mockResolvedValueOnce([
       {
@@ -338,8 +338,8 @@ describe("getRecentEmails", () => {
   });
 
   it("returns body=null when both bodyText and bodyHtml are null", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockReturnValue({ from: mockFromChain });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {
         outlookId: "msg-4",
@@ -359,8 +359,8 @@ describe("getRecentEmails", () => {
   });
 
   it("maps sentAt to ISO string and isSent to a boolean", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockReturnValue({ from: mockFromChain });
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {
         outlookId: "msg-5",

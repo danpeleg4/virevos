@@ -2,15 +2,15 @@ import { GET } from "@/app/api/recording/[id]/route";
 import { NextRequest } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
 // eslint-disable-next-line no-var
-var mockDbWhere: jest.Mock;
+var mockDbWhere: Mock;
 
-jest.mock("@db/db", () => {
-  mockDbWhere = jest.fn();
+vi.mock("@db/db", () => {
+  mockDbWhere = vi.fn();
   return {
     db: {
       select: () => ({ from: () => ({ where: mockDbWhere }) }),
@@ -18,18 +18,18 @@ jest.mock("@db/db", () => {
   };
 });
 
-jest.mock("@db/schema", () => ({ events: {} }));
-jest.mock("drizzle-orm", () => ({ and: jest.fn(), eq: jest.fn() }));
+vi.mock("@db/schema", () => ({ events: {} }));
+vi.mock("drizzle-orm", () => ({ and: vi.fn(), eq: vi.fn() }));
 
-jest.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase", () => ({
   RECORDINGS_BUCKET: "recording",
 }));
 
 // eslint-disable-next-line no-var
-var mockGetSignedUrl: jest.Mock;
+var mockGetSignedUrl: Mock;
 
-jest.mock("@/lib/storage", () => {
-  mockGetSignedUrl = jest.fn();
+vi.mock("@/lib/storage", () => {
+  mockGetSignedUrl = vi.fn();
   return { getSignedUrl: mockGetSignedUrl };
 });
 
@@ -39,17 +39,17 @@ function mockCtx(id: string) {
 
 describe("GET /api/recording/[id]", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockDbWhere.mockResolvedValue([{ id: "meeting_1" }]);
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 
@@ -57,7 +57,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 400 if id is empty", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET({} as NextRequest, mockCtx(""));
 
@@ -66,7 +66,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 404 if recording not found in storage", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetSignedUrl.mockRejectedValueOnce(new Error("not found"));
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
@@ -75,7 +75,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 404 if getSignedUrl throws", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetSignedUrl.mockRejectedValueOnce(new Error("storage error"));
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
@@ -84,7 +84,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns signed url on success", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetSignedUrl.mockResolvedValueOnce("https://signed-url");
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
@@ -95,7 +95,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 404 if event not found in db", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbWhere.mockResolvedValue([]);
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));

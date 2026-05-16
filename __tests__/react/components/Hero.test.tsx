@@ -1,10 +1,10 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
-  usePathname: jest.fn(() => "/"),
-  useParams: jest.fn(() => ({})),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: vi.fn(() => "/"),
+  useParams: vi.fn(() => ({})),
 }));
 
 import { Hero } from "@/app/components/Hero";

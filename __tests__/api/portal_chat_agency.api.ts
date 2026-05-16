@@ -3,24 +3,24 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
-    update: jest.fn(),
+    select: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
@@ -40,38 +40,38 @@ const mockPortal = {
 };
 
 function mockPortalLookup(rows: object[]) {
-  const mockLimit = jest.fn().mockResolvedValue(rows);
-  const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-  const mockFrom = jest.fn(() => ({ where: mockWhere }));
-  (db.select as jest.Mock).mockReturnValueOnce({ from: mockFrom });
+  const mockLimit = vi.fn().mockResolvedValue(rows);
+  const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+  const mockFrom = vi.fn(() => ({ where: mockWhere }));
+  (db.select as Mock).mockReturnValueOnce({ from: mockFrom });
 }
 
 function mockMessagesSelect(rows: object[]) {
-  const mockOrderBy = jest.fn().mockResolvedValue(rows);
-  const mockWhere = jest.fn(() => ({ orderBy: mockOrderBy }));
-  const mockFrom = jest.fn(() => ({ where: mockWhere }));
-  (db.select as jest.Mock).mockReturnValueOnce({ from: mockFrom });
+  const mockOrderBy = vi.fn().mockResolvedValue(rows);
+  const mockWhere = vi.fn(() => ({ orderBy: mockOrderBy }));
+  const mockFrom = vi.fn(() => ({ where: mockWhere }));
+  (db.select as Mock).mockReturnValueOnce({ from: mockFrom });
 }
 
 function mockUpdateChain() {
-  const mockWhere = jest.fn().mockResolvedValue(undefined);
-  const mockSet = jest.fn(() => ({ where: mockWhere }));
-  (db.update as jest.Mock).mockReturnValueOnce({ set: mockSet });
+  const mockWhere = vi.fn().mockResolvedValue(undefined);
+  const mockSet = vi.fn(() => ({ where: mockWhere }));
+  (db.update as Mock).mockReturnValueOnce({ set: mockSet });
 }
 
 describe("GET /api/portal-chat/[clientId]", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 401 when not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeGetRequest("10"), { params: makeParams("10") });
     expect(res.status).toBe(401);
   });
 
   it("returns 400 when clientId is not numeric", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     const res = await GET(makeGetRequest("abc"), {
       params: makeParams("abc"),
     });
@@ -79,14 +79,14 @@ describe("GET /api/portal-chat/[clientId]", () => {
   });
 
   it("returns 404 when no portal exists for this client/user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockPortalLookup([]);
     const res = await GET(makeGetRequest("10"), { params: makeParams("10") });
     expect(res.status).toBe(404);
   });
 
   it("returns messages and marks client messages read", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockPortalLookup([mockPortal]);
     const created = new Date("2026-05-01T10:00:00Z");
     mockMessagesSelect([

@@ -4,54 +4,54 @@ import { db } from "@db/db";
 import { NextRequest } from "next/server";
 import { openai, tools } from "@/lib/ai_tools";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    update: jest.fn(),
+    update: vi.fn(),
   },
 }));
 
-jest.mock("@/lib/ai_tools", () => ({
+vi.mock("@/lib/ai_tools", () => ({
   openai: {
     responses: {
-      stream: jest.fn(),
+      stream: vi.fn(),
     },
   },
   tools: [],
-  executeTool: jest.fn(),
+  executeTool: vi.fn(),
   MODEL: "gpt-4o",
   MAX_STEPS: 5,
 }));
 
-jest.mock("@/lib/plan_limits", () => ({
-  assertCanUseAI: jest.fn().mockResolvedValue(undefined),
+vi.mock("@/lib/plan_limits", () => ({
+  assertCanUseAI: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock("@/lib/clients", () => ({
-  addAClient: jest.fn(),
-  updateExistingClient: jest.fn(),
+vi.mock("@/lib/clients", () => ({
+  addAClient: vi.fn(),
+  updateExistingClient: vi.fn(),
 }));
 
-jest.mock("@/lib/meetings", () => ({
-  getPastMeetingTranscript: jest.fn(),
+vi.mock("@/lib/meetings", () => ({
+  getPastMeetingTranscript: vi.fn(),
 }));
 
-jest.mock("@/lib/cases", () => ({
-  createCase: jest.fn(),
-  updateCase: jest.fn(),
+vi.mock("@/lib/cases", () => ({
+  createCase: vi.fn(),
+  updateCase: vi.fn(),
 }));
 
-jest.mock("@/lib/tasks", () => ({
-  addProjectTasksAction: jest.fn(),
-  updateTask: jest.fn(),
+vi.mock("@/lib/tasks", () => ({
+  addProjectTasksAction: vi.fn(),
+  updateTask: vi.fn(),
 }));
 
-jest.mock("@/lib/calendar", () => ({
-  addMeetingToCalendar: jest.fn(),
-  updateEvent: jest.fn(),
+vi.mock("@/lib/calendar", () => ({
+  addMeetingToCalendar: vi.fn(),
+  updateEvent: vi.fn(),
 }));
 
 function createTextStreamMock(textContent: string, responseId = "resp_1") {
@@ -62,7 +62,7 @@ function createTextStreamMock(textContent: string, responseId = "resp_1") {
   }
   return {
     [Symbol.asyncIterator]: eventIterator,
-    finalResponse: jest.fn().mockResolvedValue({
+    finalResponse: vi.fn().mockResolvedValue({
       id: responseId,
       output: [],
     }),
@@ -75,7 +75,7 @@ function createToolCallStreamMock(toolName: string, toolArgs: object) {
   }
   return {
     [Symbol.asyncIterator]: eventIterator,
-    finalResponse: jest.fn().mockResolvedValue({
+    finalResponse: vi.fn().mockResolvedValue({
       id: "resp_1",
       output: [
         {
@@ -91,7 +91,7 @@ function createToolCallStreamMock(toolName: string, toolArgs: object) {
 
 describe("POST /api/chat", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   function mockRequest(body: {
@@ -99,12 +99,12 @@ describe("POST /api/chat", () => {
     previousResponseId?: string;
   }) {
     return {
-      json: jest.fn().mockResolvedValue(body),
+      json: vi.fn().mockResolvedValue(body),
     } as unknown as NextRequest;
   }
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await POST(
       mockRequest({ messages: [{ role: "user", content: "Hi" }] })
@@ -115,9 +115,9 @@ describe("POST /api/chat", () => {
   });
 
   it("returns 401 if user has no AI credits", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
     const { assertCanUseAI } = await import("@/lib/plan_limits");
-    (assertCanUseAI as jest.Mock).mockRejectedValueOnce(
+    (assertCanUseAI as Mock).mockRejectedValueOnce(
       new Error("AI credit limit reached")
     );
 
@@ -130,13 +130,13 @@ describe("POST /api/chat", () => {
   });
 
   it("increments AI credits and streams a response", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
-    const updateWhere = jest.fn();
-    const updateSet = jest.fn(() => ({ where: updateWhere }));
-    (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+    const updateWhere = vi.fn();
+    const updateSet = vi.fn(() => ({ where: updateWhere }));
+    (db.update as Mock).mockReturnValue({ set: updateSet });
 
-    (openai.responses.stream as jest.Mock).mockReturnValue(
+    (openai.responses.stream as Mock).mockReturnValue(
       createTextStreamMock("Hello!")
     );
 
@@ -162,12 +162,12 @@ describe("POST /api/chat", () => {
   });
 
   it("uses previousResponseId from request for conversation chaining", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    const updateWhere = jest.fn();
-    const updateSet = jest.fn(() => ({ where: updateWhere }));
-    (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    const updateWhere = vi.fn();
+    const updateSet = vi.fn(() => ({ where: updateWhere }));
+    (db.update as Mock).mockReturnValue({ set: updateSet });
 
-    (openai.responses.stream as jest.Mock).mockReturnValue(
+    (openai.responses.stream as Mock).mockReturnValue(
       createTextStreamMock("Follow-up response.", "resp_2")
     );
 
@@ -192,11 +192,12 @@ describe("POST /api/chat", () => {
     expect(events.at(-1)).toEqual({ type: "done", response_id: "resp_2" });
   });
 
-  const toolTestCases: Array<{
+  type ToolTestCase = {
     toolName: string;
     args: object;
     resultKind: string;
-  }> = [
+  };
+  const toolTestCases: ToolTestCase[] = [
     {
       toolName: "createProject",
       args: { name: "Test Project" },
@@ -240,20 +241,20 @@ describe("POST /api/chat", () => {
 
   it.each(toolTestCases)(
     "executes $toolName tool and streams tool_result event",
-    async ({ toolName, args, resultKind }) => {
-      (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-      const updateWhere = jest.fn();
-      const updateSet = jest.fn(() => ({ where: updateWhere }));
-      (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+    async ({ toolName, args, resultKind }: ToolTestCase) => {
+      (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+      const updateWhere = vi.fn();
+      const updateSet = vi.fn(() => ({ where: updateWhere }));
+      (db.update as Mock).mockReturnValue({ set: updateSet });
 
       const { executeTool: mockExecuteTool } = await import("@/lib/ai_tools");
-      (mockExecuteTool as jest.Mock).mockResolvedValueOnce({
+      (mockExecuteTool as Mock).mockResolvedValueOnce({
         kind: resultKind,
         message: "ok",
       });
 
       // First call returns tool call stream, second call returns a text completion
-      (openai.responses.stream as jest.Mock)
+      (openai.responses.stream as Mock)
         .mockReturnValueOnce(createToolCallStreamMock(toolName, args))
         .mockReturnValueOnce(createTextStreamMock("Done."));
 

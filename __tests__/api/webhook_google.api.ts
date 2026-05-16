@@ -2,14 +2,14 @@ import { POST } from "@/app/api/webhooks/google/route";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
-jest.mock("@/lib/google_sync", () => ({
-  performIncrementalSync: jest.fn().mockResolvedValue(undefined),
+vi.mock("@/lib/google_sync", () => ({
+  performIncrementalSync: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { performIncrementalSync } from "@/lib/google_sync";
@@ -23,7 +23,7 @@ function makeRequest(headers: Record<string, string>): NextRequest {
 }
 
 function mockDbSelect(rows: unknown[]) {
-  (db.select as jest.Mock).mockReturnValue({
+  (db.select as Mock).mockReturnValue({
     from: () => ({
       where: () => ({
         limit: () => Promise.resolve(rows),
@@ -34,7 +34,7 @@ function mockDbSelect(rows: unknown[]) {
 
 describe("POST /api/webhooks/google", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 200 for resource-state=sync (initial handshake)", async () => {
@@ -124,10 +124,10 @@ describe("POST /api/webhooks/google", () => {
 
   it("returns 500 if performIncrementalSync rejects", async () => {
     mockDbSelect([{ channelId: "channel-uuid", resourceId: "res-1" }]);
-    (performIncrementalSync as jest.Mock).mockRejectedValueOnce(
+    (performIncrementalSync as Mock).mockRejectedValueOnce(
       new Error("sync error")
     );
-    jest.spyOn(console, "error").mockImplementationOnce(() => {});
+    vi.spyOn(console, "error").mockImplementationOnce(() => {});
     const res = await POST(
       makeRequest({
         "X-Goog-Resource-State": "exists",

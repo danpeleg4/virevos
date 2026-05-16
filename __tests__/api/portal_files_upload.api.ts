@@ -2,46 +2,46 @@ import { POST } from "@/app/api/portal/[token]/files/upload/route";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
-    transaction: jest.fn(),
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    transaction: vi.fn(),
   },
 }));
 
 // eslint-disable-next-line no-var
-var mockUploadFile: jest.Mock;
+var mockUploadFile: Mock;
 // eslint-disable-next-line no-var
-var mockDeleteFile: jest.Mock;
+var mockDeleteFile: Mock;
 
-jest.mock("@/lib/storage", () => {
-  mockUploadFile = jest.fn().mockResolvedValue(undefined);
-  mockDeleteFile = jest.fn().mockResolvedValue(undefined);
+vi.mock("@/lib/storage", () => {
+  mockUploadFile = vi.fn().mockResolvedValue(undefined);
+  mockDeleteFile = vi.fn().mockResolvedValue(undefined);
   return { uploadFile: mockUploadFile, deleteFile: mockDeleteFile };
 });
 
-jest.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
 // eslint-disable-next-line no-var
-var mockAssertCanAddFile: jest.Mock;
+var mockAssertCanAddFile: Mock;
 
-jest.mock("@/lib/plan_limits", () => {
-  mockAssertCanAddFile = jest.fn().mockResolvedValue(undefined);
+vi.mock("@/lib/plan_limits", () => {
+  mockAssertCanAddFile = vi.fn().mockResolvedValue(undefined);
   return { assertCanAddFile: mockAssertCanAddFile };
 });
 
@@ -70,29 +70,28 @@ function makeRequest(token: string, formData: FormData) {
 }
 
 function mockSelectChain(results: unknown[]) {
-  const mockLimit = jest.fn().mockResolvedValue(results);
-  const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-  const mockFrom = jest.fn(() => ({ where: mockWhere }));
-  (db.select as jest.Mock).mockReturnValueOnce({ from: mockFrom });
+  const mockLimit = vi.fn().mockResolvedValue(results);
+  const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+  const mockFrom = vi.fn(() => ({ where: mockWhere }));
+  (db.select as Mock).mockReturnValueOnce({ from: mockFrom });
   return { mockLimit, mockWhere, mockFrom };
 }
 
 // Wires `db.transaction` so the inner callback runs against tx.insert/tx.update mocks
 // and returns the inserted row (or throws on failure).
 function mockTransaction(insertedRow: unknown | Error) {
-  const txInsertReturning = jest.fn().mockImplementation(() => {
+  const txInsertReturning = vi.fn().mockImplementation(() => {
     if (insertedRow instanceof Error) throw insertedRow;
     return Promise.resolve([insertedRow]);
   });
-  const txInsertValues = jest.fn(() => ({ returning: txInsertReturning }));
-  const txInsert = jest.fn(() => ({ values: txInsertValues }));
-  const txUpdateWhere = jest.fn().mockResolvedValue(undefined);
-  const txUpdateSet = jest.fn(() => ({ where: txUpdateWhere }));
-  const txUpdate = jest.fn(() => ({ set: txUpdateSet }));
-  (db.transaction as jest.Mock).mockImplementationOnce(
-    async (
-      fn: (tx: { insert: jest.Mock; update: jest.Mock }) => Promise<unknown>
-    ) => fn({ insert: txInsert, update: txUpdate })
+  const txInsertValues = vi.fn(() => ({ returning: txInsertReturning }));
+  const txInsert = vi.fn(() => ({ values: txInsertValues }));
+  const txUpdateWhere = vi.fn().mockResolvedValue(undefined);
+  const txUpdateSet = vi.fn(() => ({ where: txUpdateWhere }));
+  const txUpdate = vi.fn(() => ({ set: txUpdateSet }));
+  (db.transaction as Mock).mockImplementationOnce(
+    async (fn: (tx: { insert: Mock; update: Mock }) => Promise<unknown>) =>
+      fn({ insert: txInsert, update: txUpdate })
   );
   return { txInsert, txInsertValues, txUpdate, txUpdateSet };
 }

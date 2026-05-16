@@ -6,24 +6,24 @@ import { GET as getClientPortal } from "@/app/api/clients/[id]/portal/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
 const mockUser = { id: "user_abc" };
 const req = {} as NextRequest;
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -34,13 +34,13 @@ describe("GET /api/clients/[id]", () => {
   const params = Promise.resolve({ id: "42" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await getClient(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns 400 for invalid id", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     const res = await getClient(req, {
       params: Promise.resolve({ id: "not-a-number" }),
     });
@@ -48,21 +48,21 @@ describe("GET /api/clients/[id]", () => {
   });
 
   it("returns 404 when client not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
-    const limit = jest.fn().mockResolvedValue([]);
-    const groupBy = jest.fn(() => ({ limit }));
-    const where = jest.fn(() => ({ groupBy }));
-    const leftJoin = jest.fn(() => ({ where }));
-    const from = jest.fn(() => ({ leftJoin }));
-    (db.select as jest.Mock).mockReturnValueOnce({ from });
+    const limit = vi.fn().mockResolvedValue([]);
+    const groupBy = vi.fn(() => ({ limit }));
+    const where = vi.fn(() => ({ groupBy }));
+    const leftJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ leftJoin }));
+    (db.select as Mock).mockReturnValueOnce({ from });
 
     const res = await getClient(req, { params });
     expect(res.status).toBe(404);
   });
 
   it("returns client + portal=null when found with no portal", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
     const clientRow = {
       id: 42,
@@ -79,18 +79,18 @@ describe("GET /api/clients/[id]", () => {
     };
 
     // First db.select() call — client lookup
-    const limit1 = jest.fn().mockResolvedValue([clientRow]);
-    const groupBy = jest.fn(() => ({ limit: limit1 }));
-    const where1 = jest.fn(() => ({ groupBy }));
-    const leftJoin = jest.fn(() => ({ where: where1 }));
-    const from1 = jest.fn(() => ({ leftJoin }));
+    const limit1 = vi.fn().mockResolvedValue([clientRow]);
+    const groupBy = vi.fn(() => ({ limit: limit1 }));
+    const where1 = vi.fn(() => ({ groupBy }));
+    const leftJoin = vi.fn(() => ({ where: where1 }));
+    const from1 = vi.fn(() => ({ leftJoin }));
 
     // Second db.select() call — portal lookup
-    const limit2 = jest.fn().mockResolvedValue([]);
-    const where2 = jest.fn(() => ({ limit: limit2 }));
-    const from2 = jest.fn(() => ({ where: where2 }));
+    const limit2 = vi.fn().mockResolvedValue([]);
+    const where2 = vi.fn(() => ({ limit: limit2 }));
+    const from2 = vi.fn(() => ({ where: where2 }));
 
-    (db.select as jest.Mock)
+    (db.select as Mock)
       .mockReturnValueOnce({ from: from1 })
       .mockReturnValueOnce({ from: from2 });
 
@@ -103,8 +103,8 @@ describe("GET /api/clients/[id]", () => {
   });
 
   it("returns 500 on db error", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockImplementation(() => {
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockImplementation(() => {
       throw new Error("boom");
     });
     const res = await getClient(req, { params });
@@ -116,13 +116,13 @@ describe("GET /api/clients/[id]/cases", () => {
   const params = Promise.resolve({ id: "5" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await getClientCases(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns cases-with-stats for the client", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
     const rows = [
       {
@@ -140,12 +140,12 @@ describe("GET /api/clients/[id]/cases", () => {
       },
     ];
 
-    const groupBy = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ groupBy }));
-    const leftJoin2 = jest.fn(() => ({ where }));
-    const leftJoin1 = jest.fn(() => ({ leftJoin: leftJoin2 }));
-    const from = jest.fn(() => ({ leftJoin: leftJoin1 }));
-    (db.select as jest.Mock).mockReturnValueOnce({ from });
+    const groupBy = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ groupBy }));
+    const leftJoin2 = vi.fn(() => ({ where }));
+    const leftJoin1 = vi.fn(() => ({ leftJoin: leftJoin2 }));
+    const from = vi.fn(() => ({ leftJoin: leftJoin1 }));
+    (db.select as Mock).mockReturnValueOnce({ from });
 
     const res = await getClientCases(req, { params });
     const json = await res.json();
@@ -160,13 +160,13 @@ describe("GET /api/clients/[id]/outlook-emails", () => {
   const params = Promise.resolve({ id: "5" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await getClientEmails(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns emails for the client", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
     const emails = [
       {
@@ -183,11 +183,11 @@ describe("GET /api/clients/[id]/outlook-emails", () => {
       },
     ];
 
-    const limit = jest.fn().mockResolvedValue(emails);
-    const orderBy = jest.fn(() => ({ limit }));
-    const where = jest.fn(() => ({ orderBy }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValueOnce({ from });
+    const limit = vi.fn().mockResolvedValue(emails);
+    const orderBy = vi.fn(() => ({ limit }));
+    const where = vi.fn(() => ({ orderBy }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValueOnce({ from });
 
     const res = await getClientEmails(req, { params });
     const json = await res.json();
@@ -200,19 +200,19 @@ describe("GET /api/clients/[id]/portal", () => {
   const params = Promise.resolve({ id: "5" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await getClientPortal(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns portal=null when no portal exists for the client", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
-    const limit = jest.fn().mockResolvedValue([]);
-    const where = jest.fn(() => ({ limit }));
-    const leftJoin = jest.fn(() => ({ where }));
-    const from = jest.fn(() => ({ leftJoin }));
-    (db.select as jest.Mock).mockReturnValueOnce({ from });
+    const limit = vi.fn().mockResolvedValue([]);
+    const where = vi.fn(() => ({ limit }));
+    const leftJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ leftJoin }));
+    (db.select as Mock).mockReturnValueOnce({ from });
 
     const res = await getClientPortal(req, { params });
     const json = await res.json();
@@ -222,7 +222,7 @@ describe("GET /api/clients/[id]/portal", () => {
   });
 
   it("returns the portal record with a portalUrl when present", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
 
     const row = {
@@ -237,11 +237,11 @@ describe("GET /api/clients/[id]/portal", () => {
       clientEmail: "a@b.com",
     };
 
-    const limit = jest.fn().mockResolvedValue([row]);
-    const where = jest.fn(() => ({ limit }));
-    const leftJoin = jest.fn(() => ({ where }));
-    const from = jest.fn(() => ({ leftJoin }));
-    (db.select as jest.Mock).mockReturnValueOnce({ from });
+    const limit = vi.fn().mockResolvedValue([row]);
+    const where = vi.fn(() => ({ limit }));
+    const leftJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ leftJoin }));
+    (db.select as Mock).mockReturnValueOnce({ from });
 
     const res = await getClientPortal(req, { params });
     const json = await res.json();

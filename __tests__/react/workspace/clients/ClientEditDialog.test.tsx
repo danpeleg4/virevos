@@ -1,20 +1,20 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockMutate = jest.fn();
+const mockMutate = vi.fn();
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useMutation: () => ({ mutate: mockMutate, isPending: false }),
   useQueryClient: () => ({
-    cancelQueries: jest.fn(),
-    getQueryData: jest.fn(),
-    setQueryData: jest.fn(),
-    invalidateQueries: jest.fn(),
+    cancelQueries: vi.fn(),
+    getQueryData: vi.fn(),
+    setQueryData: vi.fn(),
+    invalidateQueries: vi.fn(),
   }),
 }));
 
-jest.mock("@/lib/clients", () => ({
-  updateExistingClient: jest.fn(),
+vi.mock("@/lib/clients", () => ({
+  updateExistingClient: vi.fn(),
 }));
 
 const mockClient = {
@@ -33,7 +33,7 @@ const mockClient = {
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
 
 describe("ClientEditDialog", () => {
-  const onOpenChange = jest.fn();
+  const onOpenChange = vi.fn();
 
   beforeEach(() => {
     mockMutate.mockClear();

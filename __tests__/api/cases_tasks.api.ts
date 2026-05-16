@@ -2,13 +2,13 @@ import { GET } from "@/app/api/cases/[id]/tasks/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
@@ -20,11 +20,11 @@ function makeCtx(id: string) {
 
 describe("GET /api/cases/[id]/tasks", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as never, makeCtx("1"));
 
@@ -33,7 +33,7 @@ describe("GET /api/cases/[id]/tasks", () => {
   });
 
   it("returns 400 for invalid caseId", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET({} as never, makeCtx("abc"));
 
@@ -42,14 +42,14 @@ describe("GET /api/cases/[id]/tasks", () => {
   });
 
   it("returns tasks", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const rows = [
       { id: 1, title: "Task A" },
       { id: 2, title: "Task B" },
     ];
 
-    (db.select as jest.Mock).mockReturnValue({
+    (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => Promise.resolve(rows),
       }),

@@ -1,16 +1,16 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-const mockMutate = jest.fn();
-const mockUseQuery = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(() => []),
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+const mockMutate = vi.fn();
+const mockUseQuery = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(() => []),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (opts: {
     mutationFn: unknown;
@@ -24,9 +24,9 @@ jest.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("axios");
-jest.mock("@/lib/tasks", () => ({
-  addCaseTasksAction: jest.fn(),
+vi.mock("axios");
+vi.mock("@/lib/tasks", () => ({
+  addCaseTasksAction: vi.fn(),
 }));
 
 import AddNewTask from "@/app/components/AddNewTask";

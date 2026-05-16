@@ -1,26 +1,26 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(() => []),
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(() => []),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
-jest.mock("next/link", () => ({
+vi.mock("next/link", () => ({
   __esModule: true,
   default: ({
     href,
@@ -31,11 +31,11 @@ jest.mock("next/link", () => ({
   }) => <a href={href}>{children}</a>,
 }));
 
-jest.mock("@/lib/tasks", () => ({
-  updateTaskStatus: jest.fn(),
+vi.mock("@/lib/tasks", () => ({
+  updateTaskStatus: vi.fn(),
 }));
-jest.mock("@/lib/task_percentage", () => ({
-  task_percentage: jest.fn(() => 50),
+vi.mock("@/lib/task_percentage", () => ({
+  task_percentage: vi.fn(() => 50),
 }));
 
 const mockProjects = [
@@ -86,7 +86,7 @@ import Dashboard from "@/app/workspace/dashboard/page";
 
 describe("Dashboard Page", () => {
   beforeEach(() => {
-    mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
     mockUseQuery.mockImplementation(({ queryKey }: { queryKey: string[] }) => {
       if (queryKey[0] === "clients")
         return { data: [{ id: 1 }, { id: 2 }], isLoading: false };

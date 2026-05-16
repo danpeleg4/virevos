@@ -1,33 +1,34 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn();
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
-  useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-jest.mock("axios");
+vi.mock("axios");
 
-jest.mock("@stripe/stripe-js", () => ({
-  loadStripe: jest.fn(() => Promise.resolve(null)),
+vi.mock("@stripe/stripe-js", () => ({
+  loadStripe: vi.fn(() => Promise.resolve(null)),
 }));
 
-jest.mock("@stripe/react-stripe-js", () => ({
+vi.mock("@stripe/react-stripe-js", () => ({
   Elements: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PaymentElement: () => <div data-testid="payment-element" />,
-  useStripe: jest.fn(() => null),
-  useElements: jest.fn(() => null),
+  useStripe: vi.fn(() => null),
+  useElements: vi.fn(() => null),
 }));
 
-jest.mock("@/lib/billing", () => ({
-  changePlan: jest.fn(),
-  cancelSubscription: jest.fn(),
-  resubscribe: jest.fn(),
-  updatePaymentMethod: jest.fn(),
+vi.mock("@/lib/billing", () => ({
+  changePlan: vi.fn(),
+  cancelSubscription: vi.fn(),
+  resubscribe: vi.fn(),
+  updatePaymentMethod: vi.fn(),
+  createSetupIntent: vi.fn(),
 }));
 
 const mockBillingData = {
@@ -58,7 +59,7 @@ import Billing from "@/app/workspace/billing/page";
 
 describe("Billing Page", () => {
   beforeEach(() => {
-    mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
     mockUseQuery.mockReturnValue({
       data: mockBillingData,
       isLoading: false,

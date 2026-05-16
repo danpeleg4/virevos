@@ -2,31 +2,32 @@ import React, { JSX } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockQueryClient = {
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 };
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockQueryClient,
-  useMutation: jest.fn(() => ({
-    mutate: jest.fn(),
+  useMutation: vi.fn(() => ({
+    mutate: vi.fn(),
     isPending: false,
     variables: undefined,
   })),
-  useQuery: jest.fn(() => ({
+  useQuery: vi.fn(() => ({
     data: undefined,
     isLoading: false,
     isError: false,
   })),
 }));
 
-jest.mock("react-markdown", () => ({
+vi.mock("react-markdown", () => ({
   __esModule: true,
   default: ({ children }: { children: string }) => <p>{children}</p>,
 }));
 
-jest.mock("motion/react", () => {
-  const { createElement } = jest.requireActual<typeof import("react")>("react");
+vi.mock("motion/react", async () => {
+  const { createElement } =
+    await vi.importActual<typeof import("react")>("react");
   const motion = new Proxy(
     {},
     {
@@ -60,36 +61,36 @@ jest.mock("motion/react", () => {
   };
 });
 
-jest.mock("@/lib/portal_bookings", () => ({
-  acceptBookingWithCalendar: jest.fn(),
-  updateBookingStatus: jest.fn(),
+vi.mock("@/lib/portal_bookings", () => ({
+  acceptBookingWithCalendar: vi.fn(),
+  updateBookingStatus: vi.fn(),
 }));
 
-jest.mock("@/lib/document_requests", () => ({
-  approveDocumentRequest: jest.fn(),
-  declineDocumentRequest: jest.fn(),
-  updateDocumentRequest: jest.fn(),
+vi.mock("@/lib/document_requests", () => ({
+  approveDocumentRequest: vi.fn(),
+  declineDocumentRequest: vi.fn(),
+  updateDocumentRequest: vi.fn(),
 }));
 
-jest.mock("sonner", () => ({
+vi.mock("sonner", () => ({
   toast: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
 // Mock fetch for streaming
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 import { waitFor } from "@testing-library/react";
 import { AIAssistant } from "@/app/components/AIAssistant";
 
 describe("AIAssistant", () => {
-  const onClose = jest.fn();
+  const onClose = vi.fn();
 
   beforeEach(() => {
     onClose.mockClear();
-    (global.fetch as jest.Mock).mockClear();
+    (global.fetch as Mock).mockClear();
   });
 
   it("renders panel when isOpen=true", () => {
@@ -267,9 +268,7 @@ describe("AIAssistant", () => {
   });
 
   it("shows error message when fetch fails", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(
-      new Error("Network error")
-    );
+    (global.fetch as Mock).mockRejectedValueOnce(new Error("Network error"));
     render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );

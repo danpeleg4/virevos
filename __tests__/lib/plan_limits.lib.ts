@@ -17,24 +17,24 @@ const STORAGE_LIMIT_BYTES: Record<PlanId, number> = {
   professional: 50 * 1024 * 1024 * 1024,
   business: 250 * 1024 * 1024 * 1024,
 };
-const mockDbWhere = jest.fn().mockResolvedValue([]);
-const mockDbFrom = jest.fn(() => ({ where: mockDbWhere }));
+const mockDbWhere = vi.fn().mockResolvedValue([]);
+const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(() => ({ from: mockDbFrom })),
+    select: vi.fn(() => ({ from: mockDbFrom })),
   },
 }));
 
-const mockGetUserSubscriptionByUserId = jest.fn();
+const mockGetUserSubscriptionByUserId = vi.fn();
 
-jest.mock("@/lib/billing", () => ({
+vi.mock("@/lib/billing", () => ({
   getUserSubscriptionByUserId: (...args: unknown[]) =>
     mockGetUserSubscriptionByUserId(...args),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-jest.mock("@clerk/nextjs/server", () => ({ currentUser: jest.fn() }));
+vi.mock("@clerk/nextjs/server", () => ({ currentUser: vi.fn() }));
 
 function mockSubscription(plan: string) {
   mockGetUserSubscriptionByUserId.mockResolvedValue({ plan });
@@ -45,7 +45,7 @@ function mockClientCount(count: number) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockDbFrom.mockReturnValue({ where: mockDbWhere });
   mockDbWhere.mockResolvedValue([{ count: 1 }]);
 });

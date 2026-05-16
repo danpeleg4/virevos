@@ -1,22 +1,24 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
   useParams: () => ({ roomId: "test-room-123" }),
 }));
 
-jest.mock("axios");
+vi.mock("axios");
 
-jest.mock("livekit-client", () => ({
-  Room: jest.fn().mockImplementation(() => ({
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    localParticipant: { publishTrack: jest.fn() },
-    on: jest.fn(),
-    off: jest.fn(),
-  })),
-  createLocalTracks: jest.fn(() => Promise.resolve([])),
+vi.mock("livekit-client", () => ({
+  Room: vi.fn(function () {
+    return {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      localParticipant: { publishTrack: vi.fn() },
+      on: vi.fn(),
+      off: vi.fn(),
+    };
+  }),
+  createLocalTracks: vi.fn(() => Promise.resolve([])),
   RoomEvent: {},
   ParticipantEvent: {},
   ParticipantKind: {},
@@ -26,13 +28,13 @@ jest.mock("livekit-client", () => ({
 }));
 
 // Prevent Clerk ESM import chain from failing in Jest
-jest.mock("@/lib/meetings", () => ({
-  startMeeting: jest.fn(),
+vi.mock("@/lib/meetings", () => ({
+  startMeeting: vi.fn(),
 }));
 
 // Mock TanStack Query — return a resolved active meeting so the name-input renders
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: jest.fn(() => ({
+const { mockUseQuery } = vi.hoisted(() => ({
+  mockUseQuery: vi.fn(() => ({
     data: {
       meeting: {
         status: "active",
@@ -43,8 +45,12 @@ jest.mock("@tanstack/react-query", () => ({
     },
     isLoading: false,
   })),
-  useMutation: jest.fn(() => ({
-    mutate: jest.fn(),
+}));
+
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: mockUseQuery,
+  useMutation: vi.fn(() => ({
+    mutate: vi.fn(),
     isPending: false,
   })),
 }));
@@ -74,8 +80,7 @@ describe("InMeetingView Page", () => {
   });
 
   it("renders loading state when meeting info is loading", () => {
-    const { useQuery } = require("@tanstack/react-query");
-    (useQuery as jest.Mock).mockReturnValueOnce({
+    mockUseQuery.mockReturnValueOnce({
       data: undefined,
       isLoading: true,
     });
@@ -85,8 +90,7 @@ describe("InMeetingView Page", () => {
   });
 
   it("renders pre-meeting screen for upcoming meetings", () => {
-    const { useQuery } = require("@tanstack/react-query");
-    (useQuery as jest.Mock).mockReturnValueOnce({
+    mockUseQuery.mockReturnValueOnce({
       data: {
         meeting: {
           status: "upcoming",

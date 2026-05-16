@@ -1,12 +1,12 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-jest.mock("next-themes", () => ({
-  useTheme: jest.fn(() => ({ resolvedTheme: "light", setTheme: jest.fn() })),
+vi.mock("next-themes", () => ({
+  useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
 
 // Mock IntegrationSettings sub-component
-jest.mock("@/app/components/scheduling/IntegrationSettings", () => ({
+vi.mock("@/app/components/scheduling/IntegrationSettings", () => ({
   IntegrationSettings: () => <div data-testid="integration-settings" />,
   VideoMeetingPreferences: () => <div data-testid="video-preferences" />,
 }));

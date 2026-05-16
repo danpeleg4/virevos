@@ -1,22 +1,22 @@
 import { GET } from "@/app/api/google/route";
 import { google } from "googleapis";
 
-jest.mock("googleapis", () => ({
+vi.mock("googleapis", () => ({
   google: {
     auth: {
-      OAuth2: jest.fn(),
+      OAuth2: vi.fn(),
     },
   },
 }));
 
-const mockGenerateAuthUrl = jest.fn();
+const mockGenerateAuthUrl = vi.fn();
 
 describe("GET /api/google", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (google.auth.OAuth2 as unknown as jest.Mock).mockImplementation(() => ({
-      generateAuthUrl: mockGenerateAuthUrl,
-    }));
+    vi.clearAllMocks();
+    (google.auth.OAuth2 as unknown as Mock).mockImplementation(function () {
+      return { generateAuthUrl: mockGenerateAuthUrl };
+    });
     mockGenerateAuthUrl.mockReturnValue(
       "https://accounts.google.com/o/oauth2/auth?mock=1"
     );

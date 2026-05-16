@@ -3,34 +3,34 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 import { google } from "googleapis";
 
-jest.mock("googleapis", () => ({
+vi.mock("googleapis", () => ({
   google: {
     auth: {
-      OAuth2: jest.fn(),
+      OAuth2: vi.fn(),
     },
   },
 }));
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
-jest.mock("@/lib/google_sync", () => ({
-  performFullSync: jest.fn().mockResolvedValue(undefined),
-  setupWatchChannel: jest.fn().mockResolvedValue(undefined),
+vi.mock("@/lib/google_sync", () => ({
+  performFullSync: vi.fn().mockResolvedValue(undefined),
+  setupWatchChannel: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { performFullSync, setupWatchChannel } from "@/lib/google_sync";
 
-const mockGetToken = jest.fn();
+const mockGetToken = vi.fn();
 
 function makeRequest(code?: string): Request {
   const url = code
@@ -40,7 +40,7 @@ function makeRequest(code?: string): Request {
 }
 
 function mockDbSelectEmpty() {
-  (db.select as jest.Mock).mockReturnValue({
+  (db.select as Mock).mockReturnValue({
     from: () => ({
       where: () => ({
         limit: () => Promise.resolve([]),
@@ -51,13 +51,13 @@ function mockDbSelectEmpty() {
 
 describe("GET /api/google/callback", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
-    (google.auth.OAuth2 as unknown as jest.Mock).mockImplementation(() => ({
-      getToken: mockGetToken,
-    }));
-    (performFullSync as jest.Mock).mockResolvedValue(undefined);
-    (setupWatchChannel as jest.Mock).mockResolvedValue(undefined);
+    (google.auth.OAuth2 as unknown as Mock).mockImplementation(function () {
+      return { getToken: mockGetToken };
+    });
+    (performFullSync as Mock).mockResolvedValue(undefined);
+    (setupWatchChannel as Mock).mockResolvedValue(undefined);
   });
 
   it("returns 400 if code is missing", async () => {
@@ -67,14 +67,14 @@ describe("GET /api/google/callback", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeRequest("auth_code_123"));
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
   it("inserts a new token and redirects for a new user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({
+    (currentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -88,11 +88,11 @@ describe("GET /api/google/callback", () => {
       },
     });
     mockDbSelectEmpty();
-    const onConflictDoNothingMock = jest.fn().mockResolvedValue(undefined);
-    const insertValuesMock = jest
+    const onConflictDoNothingMock = vi.fn().mockResolvedValue(undefined);
+    const insertValuesMock = vi
       .fn()
       .mockReturnValue({ onConflictDoNothing: onConflictDoNothingMock });
-    (db.insert as jest.Mock).mockReturnValue({ values: insertValuesMock });
+    (db.insert as Mock).mockReturnValue({ values: insertValuesMock });
 
     const res = await GET(makeRequest("auth_code_123"));
 
@@ -110,7 +110,7 @@ describe("GET /api/google/callback", () => {
   });
 
   it("updates an existing token and redirects", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({
+    (currentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -123,7 +123,7 @@ describe("GET /api/google/callback", () => {
         expiry_date: 9999999999,
       },
     });
-    (db.select as jest.Mock).mockReturnValue({
+    (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => ({
           limit: () =>
@@ -133,9 +133,9 @@ describe("GET /api/google/callback", () => {
         }),
       }),
     });
-    const whereMock = jest.fn().mockResolvedValue(undefined);
-    const setMock = jest.fn().mockReturnValue({ where: whereMock });
-    (db.update as jest.Mock).mockReturnValue({ set: setMock });
+    const whereMock = vi.fn().mockResolvedValue(undefined);
+    const setMock = vi.fn().mockReturnValue({ where: whereMock });
+    (db.update as Mock).mockReturnValue({ set: setMock });
 
     const res = await GET(makeRequest("auth_code_123"));
 
@@ -152,7 +152,7 @@ describe("GET /api/google/callback", () => {
   });
 
   it("still redirects when performFullSync fails", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({
+    (currentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -166,22 +166,20 @@ describe("GET /api/google/callback", () => {
       },
     });
     mockDbSelectEmpty();
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
       }),
     });
-    (performFullSync as jest.Mock).mockRejectedValueOnce(
-      new Error("sync error")
-    );
-    jest.spyOn(console, "error").mockImplementationOnce(() => {});
+    (performFullSync as Mock).mockRejectedValueOnce(new Error("sync error"));
+    vi.spyOn(console, "error").mockImplementationOnce(() => {});
 
     const res = await GET(makeRequest("auth_code_123"));
     expect(res.status).toBe(307);
   });
 
   it("still redirects when setupWatchChannel fails", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({
+    (currentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -195,15 +193,13 @@ describe("GET /api/google/callback", () => {
       },
     });
     mockDbSelectEmpty();
-    (db.insert as jest.Mock).mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+    (db.insert as Mock).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
       }),
     });
-    (setupWatchChannel as jest.Mock).mockRejectedValueOnce(
-      new Error("watch error")
-    );
-    jest.spyOn(console, "error").mockImplementationOnce(() => {});
+    (setupWatchChannel as Mock).mockRejectedValueOnce(new Error("watch error"));
+    vi.spyOn(console, "error").mockImplementationOnce(() => {});
 
     const res = await GET(makeRequest("auth_code_123"));
     expect(res.status).toBe(307);

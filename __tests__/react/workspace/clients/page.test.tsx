@@ -1,28 +1,28 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(() => []),
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(() => []),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("axios");
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock("axios");
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
-jest.mock("@/lib/clients", () => ({
-  addAClient: jest.fn(),
-  deleteClient: jest.fn(),
+vi.mock("@/lib/clients", () => ({
+  addAClient: vi.fn(),
+  deleteClient: vi.fn(),
 }));
 
 const mockClients = [
@@ -54,7 +54,7 @@ import Clients from "@/app/workspace/clients/page";
 
 describe("Clients Page", () => {
   beforeEach(() => {
-    mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
     mockUseQuery.mockReturnValue({
       data: mockClients,
       isLoading: false,

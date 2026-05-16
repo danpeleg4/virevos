@@ -2,23 +2,23 @@ import { GET } from "@/app/api/integrations/outlook/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
 describe("GET /api/integrations/outlook", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -27,8 +27,8 @@ describe("GET /api/integrations/outlook", () => {
   });
 
   it("returns connected=true when token exists and is connected", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => ({
           limit: () => Promise.resolve([{ connected: true }]),
@@ -43,8 +43,8 @@ describe("GET /api/integrations/outlook", () => {
   });
 
   it("returns connected=false when no token exists", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "user_1" });
-    (db.select as jest.Mock).mockReturnValue({
+    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => ({
           limit: () => Promise.resolve([]),

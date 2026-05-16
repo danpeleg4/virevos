@@ -2,20 +2,20 @@ import { POST } from "@/app/api/portal/[token]/book/route";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
-    insert: jest.fn(),
+    select: vi.fn(),
+    insert: vi.fn(),
   },
 }));
 
@@ -45,7 +45,7 @@ const mockPortal = {
 
 describe("POST /api/portal/[token]/book", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 400 when clientName is missing", async () => {
@@ -86,10 +86,10 @@ describe("POST /api/portal/[token]/book", () => {
   });
 
   it("returns 404 when token is unknown", async () => {
-    const mockLimit = jest.fn().mockResolvedValue([]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockLimit = vi.fn().mockResolvedValue([]);
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("unknown-token", {
       clientName: "Alice",
@@ -102,12 +102,12 @@ describe("POST /api/portal/[token]/book", () => {
   });
 
   it("returns 404 when portal is disabled", async () => {
-    const mockLimit = jest
+    const mockLimit = vi
       .fn()
       .mockResolvedValue([{ ...mockPortal, enabled: false }]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("test-token", {
       clientName: "Alice",
@@ -124,10 +124,10 @@ describe("POST /api/portal/[token]/book", () => {
       ...mockPortal,
       settings: { ...mockPortal.settings, meetingSchedulingEnabled: false },
     };
-    const mockLimit = jest.fn().mockResolvedValue([portal]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockLimit = vi.fn().mockResolvedValue([portal]);
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("test-token", {
       clientName: "Alice",
@@ -140,10 +140,10 @@ describe("POST /api/portal/[token]/book", () => {
   });
 
   it("returns 400 when duration is not in allowedDurations", async () => {
-    const mockLimit = jest.fn().mockResolvedValue([mockPortal]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockLimit = vi.fn().mockResolvedValue([mockPortal]);
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const req = makeRequest("test-token", {
       clientName: "Alice",
@@ -158,14 +158,14 @@ describe("POST /api/portal/[token]/book", () => {
   });
 
   it("successfully creates a booking and returns bookingId", async () => {
-    const mockLimit = jest.fn().mockResolvedValue([mockPortal]);
-    const mockWhere = jest.fn(() => ({ limit: mockLimit }));
-    const mockFrom = jest.fn(() => ({ where: mockWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockLimit = vi.fn().mockResolvedValue([mockPortal]);
+    const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+    const mockFrom = vi.fn(() => ({ where: mockWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
-    const mockReturning = jest.fn().mockResolvedValue([{ id: 42 }]);
-    const mockValues = jest.fn(() => ({ returning: mockReturning }));
-    (db.insert as jest.Mock).mockReturnValue({ values: mockValues });
+    const mockReturning = vi.fn().mockResolvedValue([{ id: 42 }]);
+    const mockValues = vi.fn(() => ({ returning: mockReturning }));
+    (db.insert as Mock).mockReturnValue({ values: mockValues });
 
     const req = makeRequest("test-token", {
       clientName: "Alice",

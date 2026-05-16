@@ -1,23 +1,23 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockPush = jest.fn();
-const mockUseSignIn = jest.fn();
+const mockPush = vi.fn();
+const mockUseSignIn = vi.fn();
 
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   useSignIn: () => mockUseSignIn(),
 }));
 
 const mockSignIn = {
-  create: jest.fn(),
-  authenticateWithRedirect: jest.fn(),
-  attemptFirstFactor: jest.fn(),
+  create: vi.fn(),
+  authenticateWithRedirect: vi.fn(),
+  attemptFirstFactor: vi.fn(),
 };
-const mockSetActive = jest.fn();
+const mockSetActive = vi.fn();
 
 import Login from "@/app/login/page";
 

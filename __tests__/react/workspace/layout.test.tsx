@@ -1,12 +1,12 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
-  usePathname: jest.fn(() => "/workspace/dashboard"),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: vi.fn(() => "/workspace/dashboard"),
 }));
 
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({
     user: {
       firstName: "John",
@@ -18,12 +18,13 @@ jest.mock("@clerk/nextjs", () => ({
   UserButton: () => <div data-testid="user-button" />,
 }));
 
-jest.mock("next-themes", () => ({
-  useTheme: jest.fn(() => ({ resolvedTheme: "light", setTheme: jest.fn() })),
+vi.mock("next-themes", () => ({
+  useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
 
-jest.mock("motion/react", () => {
-  const { createElement } = jest.requireActual<typeof import("react")>("react");
+vi.mock("motion/react", async () => {
+  const { createElement } =
+    await vi.importActual<typeof import("react")>("react");
   const motion = new Proxy(
     {},
     {
@@ -53,20 +54,23 @@ jest.mock("motion/react", () => {
   };
 });
 
-jest.mock("next/image", () => ({
+vi.mock("next/image", () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => <img {...props} />,
 }));
 
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: jest.fn(() => ({ data: undefined, isLoading: false })),
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(() => ({ data: undefined, isLoading: false })),
 }));
 
-jest.mock("axios", () => ({
-  get: jest.fn(() => Promise.resolve({ data: { bookings: [] } })),
-}));
+vi.mock("axios", () => {
+  const axios = {
+    get: vi.fn(() => Promise.resolve({ data: { bookings: [] } })),
+  };
+  return { default: axios, ...axios };
+});
 
-jest.mock("@/app/components/AIAssistant", () => ({
+vi.mock("@/app/components/AIAssistant", () => ({
   AIAssistant: () => null,
 }));
 

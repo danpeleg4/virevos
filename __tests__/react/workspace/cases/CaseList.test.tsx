@@ -1,19 +1,19 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-jest.mock("@tanstack/react-query", () => ({
-  useMutation: () => ({ mutate: jest.fn(), isPending: false }),
-  useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+vi.mock("@tanstack/react-query", () => ({
+  useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-jest.mock("@/lib/task_percentage", () => ({
-  task_percentage: jest.fn(() => 60),
+vi.mock("@/lib/task_percentage", () => ({
+  task_percentage: vi.fn(() => 60),
 }));
 
-jest.mock("@/lib/cases", () => ({
-  createCase: jest.fn(),
-  updateCase: jest.fn(),
-  deleteCase: jest.fn(),
+vi.mock("@/lib/cases", () => ({
+  createCase: vi.fn(),
+  updateCase: vi.fn(),
+  deleteCase: vi.fn(),
 }));
 
 const mockCases = [
@@ -56,7 +56,7 @@ const mockClients = [
 import { CaseList } from "@/app/workspace/cases/CaseList";
 
 describe("CaseList", () => {
-  const onSelect = jest.fn();
+  const onSelect = vi.fn();
 
   beforeEach(() => {
     onSelect.mockClear();

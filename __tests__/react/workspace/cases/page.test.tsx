@@ -1,31 +1,31 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  cancelQueries: jest.fn(),
-  getQueryData: jest.fn(() => []),
-  setQueryData: jest.fn(),
-  invalidateQueries: jest.fn(),
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn();
+const mockUseQueryClient = vi.fn(() => ({
+  cancelQueries: vi.fn(),
+  getQueryData: vi.fn(() => []),
+  setQueryData: vi.fn(),
+  invalidateQueries: vi.fn(),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("axios");
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock("axios");
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
-jest.mock("@/lib/cases", () => ({
-  changeCaseStatus: jest.fn(),
-  createCase: jest.fn(),
-  updateCase: jest.fn(),
-  deleteCase: jest.fn(),
+vi.mock("@/lib/cases", () => ({
+  changeCaseStatus: vi.fn(),
+  createCase: vi.fn(),
+  updateCase: vi.fn(),
+  deleteCase: vi.fn(),
 }));
 
 const mockCasesData = {
@@ -61,7 +61,7 @@ import CasesPage from "@/app/workspace/cases/page";
 
 describe("Cases Page", () => {
   beforeEach(() => {
-    mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
     mockUseQuery.mockReturnValue({
       data: mockCasesData,
       isLoading: false,

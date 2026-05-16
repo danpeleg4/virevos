@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -58,7 +58,7 @@ import {
 
 describe("Trivial components", () => {
   it("Button renders and handles click", () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     render(<Button onClick={handler}>Click</Button>);
     fireEvent.click(screen.getByRole("button", { name: /click/i }));
     expect(handler).toHaveBeenCalled();
@@ -105,7 +105,7 @@ describe("Trivial components", () => {
 
 describe("Checkbox / Switch", () => {
   it("Checkbox toggles checked state", () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     render(<Checkbox onCheckedChange={handler} />);
     const box = screen.getByRole("checkbox");
     expect(box).toHaveAttribute("data-state", "unchecked");
@@ -114,7 +114,7 @@ describe("Checkbox / Switch", () => {
   });
 
   it("Switch toggles checked state", () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     render(<Switch onCheckedChange={handler} />);
     const sw = screen.getByRole("switch");
     fireEvent.click(sw);
@@ -227,7 +227,7 @@ describe("Popover", () => {
 
 describe("DropdownMenu", () => {
   it("opens, item click closes and fires onSelect", () => {
-    const onSelect = jest.fn();
+    const onSelect = vi.fn();
     render(
       <DropdownMenu>
         <DropdownMenuTrigger>Menu</DropdownMenuTrigger>
@@ -244,7 +244,7 @@ describe("DropdownMenu", () => {
 
 describe("Select", () => {
   it("renders trigger, shows placeholder, picks an option", () => {
-    const onValueChange = jest.fn();
+    const onValueChange = vi.fn();
     render(
       <Select onValueChange={onValueChange}>
         <SelectTrigger>

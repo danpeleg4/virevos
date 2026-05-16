@@ -5,22 +5,22 @@ import {
 } from "@/lib/portal_bookings";
 import { currentUser } from "@clerk/nextjs/server";
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-const mockWhere = jest.fn();
-const mockSet = jest.fn(() => ({ where: mockWhere }));
+const mockWhere = vi.fn();
+const mockSet = vi.fn(() => ({ where: mockWhere }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
-    update: jest.fn(() => ({ set: mockSet })),
+    select: vi.fn(),
+    update: vi.fn(() => ({ set: mockSet })),
   },
 }));
 
-const mockAddMeetingToCalendar = jest.fn();
-jest.mock("@/lib/calendar", () => ({
+const mockAddMeetingToCalendar = vi.fn();
+vi.mock("@/lib/calendar", () => ({
   addMeetingToCalendar: (...args: never[]) =>
     // eslint-disable-next-line prefer-spread
     mockAddMeetingToCalendar.apply(null, args),
@@ -28,11 +28,11 @@ jest.mock("@/lib/calendar", () => ({
 
 import { db } from "@db/db";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockWhere.mockResolvedValue(undefined);
   mockSet.mockReturnValue({ where: mockWhere });
 });
@@ -63,21 +63,21 @@ const mockBookingRow = {
 
 describe("getPortalBookings", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(getPortalBookings("user_1")).rejects.toThrow("Unauthorized");
   });
 
   it("throws Unauthorized when authenticated user does not match requested userId", async () => {
-    (currentUser as jest.Mock).mockResolvedValue({ id: "other_user" });
+    (currentUser as Mock).mockResolvedValue({ id: "other_user" });
     await expect(getPortalBookings("user_1")).rejects.toThrow("Unauthorized");
   });
 
   it("returns mapped bookings for authenticated user", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
-    const mockFromWhere = jest.fn().mockResolvedValue([mockBookingRow]);
-    const mockFrom = jest.fn(() => ({ where: mockFromWhere }));
-    (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+    const mockFromWhere = vi.fn().mockResolvedValue([mockBookingRow]);
+    const mockFrom = vi.fn(() => ({ where: mockFromWhere }));
+    (db.select as Mock).mockReturnValue({ from: mockFrom });
 
     const result = await getPortalBookings("user_1");
 
@@ -98,14 +98,14 @@ describe("getPortalBookings", () => {
 
 describe("updateBookingStatus", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(updateBookingStatus(1, "confirmed")).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("calls db.update with correct status and ownership condition for 'confirmed'", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
     await updateBookingStatus(1, "confirmed");
 
@@ -115,7 +115,7 @@ describe("updateBookingStatus", () => {
   });
 
   it("calls db.update with correct status for 'cancelled'", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
     await updateBookingStatus(2, "cancelled");
 
@@ -128,19 +128,19 @@ describe("updateBookingStatus", () => {
 
 describe("acceptBookingWithCalendar", () => {
   function mockSelectReturning(rows: unknown[]) {
-    const limit = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    (db.select as jest.Mock).mockReturnValue({ from });
+    const limit = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
   }
 
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
     await expect(acceptBookingWithCalendar(1)).rejects.toThrow("Unauthorized");
   });
 
   it("throws when the booking is not found", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([]);
     await expect(acceptBookingWithCalendar(1)).rejects.toThrow(
       "Booking not found"
@@ -148,7 +148,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("marks booking confirmed and persists eventId + meetingLink from the created calendar event", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockResolvedValueOnce({
       id: "evt-123",
@@ -172,7 +172,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("stores meetingLink as null when the created event has no link", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockResolvedValueOnce({
       id: "evt-123",
@@ -188,7 +188,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("still confirms the booking and swallows the error when calendar sync fails", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockRejectedValueOnce(new Error("calendar down"));
 
@@ -199,7 +199,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("does not persist eventId when calendar event has no id", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockResolvedValueOnce({ id: null, link: null });
 

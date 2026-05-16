@@ -1,22 +1,22 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   ClerkProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
-  QueryClient: jest.fn().mockImplementation(() => ({
-    defaultOptions: {},
-  })),
+vi.mock("@tanstack/react-query", () => ({
+  QueryClient: vi.fn(function () {
+    return { defaultOptions: {} };
+  }),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
 }));
 
-jest.mock("next-themes", () => ({
+vi.mock("next-themes", () => ({
   ThemeProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),

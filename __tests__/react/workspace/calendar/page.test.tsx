@@ -1,42 +1,42 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
-  useSearchParams: () => ({ get: jest.fn(() => null) }),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => ({ get: vi.fn(() => null) }),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: jest.fn(() => ({ data: [], isLoading: false })),
-  useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })),
-  useQueryClient: jest.fn(() => ({
-    invalidateQueries: jest.fn(),
-    setQueryData: jest.fn(),
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(() => ({ data: [], isLoading: false })),
+  useMutation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+    setQueryData: vi.fn(),
   })),
 }));
 
-jest.mock("axios");
+vi.mock("axios");
 
 // Mock heavy child components — render tabNav so the tab buttons appear in the DOM
-jest.mock("@/app/components/scheduling/CalendarView", () => ({
+vi.mock("@/app/components/scheduling/CalendarView", () => ({
   CalendarView: ({ tabNav }: { tabNav: React.ReactNode }) => (
     <div data-testid="calendar-view">{tabNav}</div>
   ),
 }));
 
-jest.mock("@/app/components/scheduling/Meetings", () => ({
+vi.mock("@/app/components/scheduling/Meetings", () => ({
   Meetings: ({ tabNav }: { tabNav: React.ReactNode }) => (
     <div data-testid="meetings-view">{tabNav}</div>
   ),
 }));
 
-jest.mock("@/app/components/scheduling/MeetingNotes", () => ({
+vi.mock("@/app/components/scheduling/MeetingNotes", () => ({
   MeetingNotes: ({ tabNav }: { tabNav: React.ReactNode }) => (
     <div data-testid="meeting-notes">{tabNav}</div>
   ),
 }));
 
-jest.mock("@/app/components/scheduling/IntegrationSettings", () => ({
+vi.mock("@/app/components/scheduling/IntegrationSettings", () => ({
   IntegrationSettings: () => <div data-testid="integration-settings" />,
   VideoMeetingPreferences: () => <div data-testid="video-preferences" />,
 }));

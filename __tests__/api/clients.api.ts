@@ -2,23 +2,23 @@ import { GET } from "@/app/api/clients/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@db/db";
 
-let consoleErrorSpy: jest.SpyInstance;
+let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-jest.mock("@clerk/nextjs/server", () => ({
-  currentUser: jest.fn(),
+vi.mock("@clerk/nextjs/server", () => ({
+  currentUser: vi.fn(),
 }));
 
-jest.mock("@db/db", () => ({
+vi.mock("@db/db", () => ({
   db: {
-    select: jest.fn(),
+    select: vi.fn(),
   },
 }));
 
@@ -26,11 +26,11 @@ describe("GET /api/clients", () => {
   const mockUser = { id: "user_123" };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(null);
+    (currentUser as Mock).mockResolvedValue(null);
 
     const response = await GET();
 
@@ -41,7 +41,7 @@ describe("GET /api/clients", () => {
   });
 
   it("returns clients with project counts", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
+    (currentUser as Mock).mockResolvedValue(mockUser);
 
     const mockResult = [
       {
@@ -54,12 +54,12 @@ describe("GET /api/clients", () => {
     ];
 
     // Mock the drizzle chain
-    const mockGroupBy = jest.fn().mockResolvedValue(mockResult);
-    const mockWhere = jest.fn(() => ({ groupBy: mockGroupBy }));
-    const mockLeftJoin = jest.fn(() => ({ where: mockWhere }));
-    const mockFrom = jest.fn(() => ({ leftJoin: mockLeftJoin }));
+    const mockGroupBy = vi.fn().mockResolvedValue(mockResult);
+    const mockWhere = vi.fn(() => ({ groupBy: mockGroupBy }));
+    const mockLeftJoin = vi.fn(() => ({ where: mockWhere }));
+    const mockFrom = vi.fn(() => ({ leftJoin: mockLeftJoin }));
 
-    (db.select as jest.Mock).mockReturnValue({
+    (db.select as Mock).mockReturnValue({
       from: mockFrom,
     });
 
@@ -74,8 +74,8 @@ describe("GET /api/clients", () => {
   });
 
   it("returns 500 if database throws", async () => {
-    (currentUser as jest.Mock).mockResolvedValue(mockUser);
-    (db.select as jest.Mock).mockImplementation(() => {
+    (currentUser as Mock).mockResolvedValue(mockUser);
+    (db.select as Mock).mockImplementation(() => {
       throw new Error("DB failure");
     });
 
