@@ -1,6 +1,5 @@
 import { GET } from "@/app/api/events/[id]/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),

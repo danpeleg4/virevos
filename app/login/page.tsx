@@ -5,7 +5,6 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import {
-  Sparkles,
   ChevronLeft,
   Eye,
   EyeOff,
@@ -46,7 +45,7 @@ export default function Login() {
         return;
       }
 
-      router.push("/");
+      router.push("/workspace/dashboard");
       router.refresh();
     } finally {
       setLoading(false);

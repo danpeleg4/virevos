@@ -27,7 +27,6 @@ const mockValues = vi.fn(() => ({
   onConflictDoNothing: mockOnConflictDoNothing,
 }));
 const mockFrom = vi.fn(() => ({ where: mockWhere }));
-const mockSelect = vi.fn(() => ({ from: mockFrom }));
 
 vi.mock("@db/db", () => ({
   db: {

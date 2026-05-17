@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 
 vi.mock("@stripe/stripe-js", () => ({
   loadStripe: vi.fn(() => Promise.resolve(null)),
