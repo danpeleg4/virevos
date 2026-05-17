@@ -28,8 +28,8 @@ import {
 import { AIAssistant } from "./AIAssistant";
 import { ThemeToggle } from "./ThemeToggle";
 import Link from "next/link";
-import { UserButton, useUser } from "@clerk/nextjs";
-import Image from "next/image";
+import { useAuthUser } from "@/app/hooks/useAuthUser";
+import { createBrowserSupabase } from "@/lib/supabase/client";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
@@ -54,7 +54,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
 
-  const { user, isLoaded } = useUser();
+  const { data: user, isPending } = useAuthUser();
+  const router = useRouter();
+  const currentPath = usePathname();
 
   const { data: allBookings } = useQuery({
     queryKey: ["portalBookings"],
@@ -65,16 +67,21 @@ export function AppLayout({ children }: AppLayoutProps) {
       return data.bookings;
     },
     refetchInterval: 60000,
-    enabled: isLoaded && !!user,
+    enabled: !isPending && !!user,
   });
 
   const pendingBookings =
     allBookings?.filter((b) => b.status === "pending") ?? [];
   const pendingCount = pendingBookings.length;
-  const router = useRouter();
-  const currentPath = usePathname();
 
-  if (!isLoaded)
+  const handleSignOut = async () => {
+    const supabase = createBrowserSupabase();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
+
+  if (isPending)
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -86,9 +93,19 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const navigate = (path: string) => router.push(path);
 
+  const fullName = (user?.user_metadata?.name as string | undefined) ?? "";
+  const initials =
+    fullName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("")
+      .slice(0, 2) ||
+    user?.email?.[0]?.toUpperCase() ||
+    "?";
+
   return (
     <div className="h-screen flex bg-background overflow-hidden">
-      {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-card border-r border-border">
         <div className="p-6 border-b border-border">
           <h1
@@ -147,18 +164,21 @@ export function AppLayout({ children }: AppLayoutProps) {
 
         <div className="p-4 border-t border-border">
           <div className="flex items-center space-x-3">
-            <UserButton />
+            <div className="h-9 w-9 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-semibold text-foreground">
+              {initials}
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground truncate">{`${user?.firstName} ${user?.lastName}`}</p>
-              <p className="text-xs text-muted-foreground">
-                {user?.primaryEmailAddress?.emailAddress}
+              <p className="text-sm text-foreground truncate">{fullName}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email}
               </p>
             </div>
             <Button
               style={{ cursor: "pointer" }}
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/")}
+              onClick={handleSignOut}
+              aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -166,7 +186,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </aside>
 
-      {/* Mobile Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -252,13 +271,25 @@ export function AppLayout({ children }: AppLayoutProps) {
 
               <div className="p-4 border-t border-border">
                 <div className="flex items-center space-x-3">
-                  <UserButton />
+                  <div className="h-9 w-9 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-semibold text-foreground">
+                    {initials}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">{`${user?.firstName} ${user?.lastName}`}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {user?.primaryEmailAddress?.emailAddress}
+                    <p className="text-sm text-foreground truncate">
+                      {fullName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user?.email}
                     </p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleSignOut}
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </motion.aside>
@@ -266,7 +297,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-card border-b border-border sticky top-0 z-30">
           <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">

@@ -2,9 +2,9 @@
 
 import { db } from "@db/db";
 import { outlookEmails } from "@db/schema";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { MAX_MESSAGE, requireInt, requireString } from "./validation";
+import { MAX_MESSAGE, requireInt, requireString } from "./util/validation";
 import {
   EMAILS_BUCKET,
   EMAILS_INDEX,
@@ -47,7 +47,7 @@ function buildBody(
 }
 
 export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) return [];
 
   const validText = requireString(text, "text", MAX_MESSAGE);
@@ -141,7 +141,7 @@ export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
 export async function getRecentEmails(
   limit: number
 ): Promise<EmailRecentHit[]> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) return [];
 
   const raw = requireInt(limit, "limit");

@@ -17,7 +17,7 @@ const TRANSCRIPT_INDEX = "transcription";
 
 async function main() {
   const supabase = createClient(
-    process.env.SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_API_SECRET!
   );
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

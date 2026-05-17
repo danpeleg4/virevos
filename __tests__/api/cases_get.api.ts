@@ -1,9 +1,9 @@
 import { GET } from "@/app/api/cases/get-cases/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -45,7 +45,7 @@ describe("GET /api/cases/get-cases", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -54,7 +54,7 @@ describe("GET /api/cases/get-cases", () => {
   });
 
   it("returns cases with SQL-aggregated stats and clients", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const caseRows = [
       {
@@ -116,7 +116,7 @@ describe("GET /api/cases/get-cases", () => {
   });
 
   it("returns empty arrays when user has no cases or clients", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     (db.select as Mock)
       .mockReturnValueOnce(buildChain([]))
@@ -130,7 +130,7 @@ describe("GET /api/cases/get-cases", () => {
   });
 
   it("computes percentage correctly for fully-completed cases", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     (db.select as Mock)
       .mockReturnValueOnce(

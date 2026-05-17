@@ -1,9 +1,9 @@
 import { GET } from "@/app/api/integrations/outlook/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -18,7 +18,7 @@ describe("GET /api/integrations/outlook", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -27,7 +27,7 @@ describe("GET /api/integrations/outlook", () => {
   });
 
   it("returns connected=true when token exists and is connected", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => ({
@@ -43,7 +43,7 @@ describe("GET /api/integrations/outlook", () => {
   });
 
   it("returns connected=false when no token exists", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => ({

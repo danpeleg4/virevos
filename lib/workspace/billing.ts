@@ -1,10 +1,11 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
+import { ensureUserRow } from "../user";
 import { db } from "@db/db";
 import { subscriptions, users } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { stripe } from "./stripe";
+import { stripe } from "../stripe";
 import type Stripe from "stripe";
 
 function getPriceId(planId: string): string | undefined {
@@ -45,10 +46,12 @@ export async function getOrCreateStripeCustomer(
 }
 
 export async function createSetupIntent(): Promise<string> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const email = user.emailAddresses[0]?.emailAddress ?? "";
+  await ensureUserRow();
+
+  const email = user.email ?? "";
   const customerId = await getOrCreateStripeCustomer(user.id, email);
 
   const setupIntent = await stripe.setupIntents.create({
@@ -62,10 +65,12 @@ export async function createSetupIntent(): Promise<string> {
 export async function createSubscription(
   input: CreateSubscriptionInput
 ): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const email = user.emailAddresses[0]?.emailAddress ?? "";
+  await ensureUserRow();
+
+  const email = user.email ?? "";
   const customerId = await getOrCreateStripeCustomer(user.id, email);
 
   await stripe.paymentMethods.attach(input.paymentMethodId, {
@@ -87,15 +92,14 @@ export async function createSubscription(
 }
 
 export async function registerFreePlan(): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const email = user.emailAddresses[0]?.emailAddress ?? "";
-  await getOrCreateStripeCustomer(user.id, email);
+  await ensureUserRow();
 }
 
 export async function getUserSubscription(): Promise<UserSubscription> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const rows = await db
@@ -129,7 +133,7 @@ export async function getUserSubscription(): Promise<UserSubscription> {
 }
 
 export async function getBillingOverview(): Promise<BillingOverview> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const subscription = await getUserSubscription();
@@ -210,7 +214,7 @@ export async function updatePlanLimits(
 }
 
 export async function changePlan(input: ChangePlanInput): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const sub = await getUserSubscription();
@@ -273,7 +277,7 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
 }
 
 export async function cancelSubscription(): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const sub = await getUserSubscription();
@@ -285,7 +289,7 @@ export async function cancelSubscription(): Promise<void> {
 }
 
 export async function resubscribe(): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const sub = await getUserSubscription();
@@ -298,7 +302,7 @@ export async function resubscribe(): Promise<void> {
 }
 
 export async function updatePaymentMethod(pmId: string): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const sub = await getUserSubscription();

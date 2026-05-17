@@ -25,7 +25,7 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("axios");
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   addCaseTasksAction: vi.fn(),
 }));
 

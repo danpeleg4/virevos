@@ -3,7 +3,7 @@ import { db } from "@db/db";
 import { clientPortalTokens, caseFiles, cases } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { downloadFile } from "@/lib/storage";
-import { FILES_BUCKET } from "@/lib/supabase";
+import { FILES_BUCKET } from "@/lib/supabase/supabase";
 
 export async function GET(
   _req: NextRequest,

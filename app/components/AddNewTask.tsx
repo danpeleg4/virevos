@@ -22,7 +22,7 @@ import {
 } from "@/app/components/ui/select";
 import { Separator } from "@/app/components/ui/separator";
 import { useState } from "react";
-import { addProjectTasksAction } from "@/lib/tasks";
+import { addProjectTasksAction } from "@/lib/workspace/tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Case } from "@/types/cases";

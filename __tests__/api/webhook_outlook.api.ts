@@ -7,11 +7,11 @@ vi.mock("@db/db", () => ({
   },
 }));
 
-vi.mock("@/lib/outlook_sync", () => ({
+vi.mock("@/lib/outlook/outlook_sync", () => ({
   performIncrementalSync: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { performIncrementalSync } from "@/lib/outlook_sync";
+import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
 
 function makeRequest(
   body: unknown,

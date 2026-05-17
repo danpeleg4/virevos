@@ -3,11 +3,11 @@ import {
   updateExistingClient,
   deleteClient,
   updateNotes,
-} from "@/lib/clients";
-import { currentUser } from "@clerk/nextjs/server";
+} from "@/lib/workspace/clients";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const mockAssertCanAddClient = vi.fn();
@@ -55,31 +55,31 @@ describe("addAClient", () => {
   };
 
   it("returns Unauthorized message when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const result = await addAClient(baseInput);
     expect(result).toEqual({ message: "Unauthorized" });
   });
 
   it("returns validation message when name is missing", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const result = await addAClient({ ...baseInput, name: "" });
     expect(result).toEqual({ message: "name is required" });
   });
 
   it("returns validation message when email is missing", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const result = await addAClient({ ...baseInput, email: "" });
     expect(result).toEqual({ message: "email is required" });
   });
 
   it("returns validation message when email format is invalid", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const result = await addAClient({ ...baseInput, email: "not-an-email" });
     expect(result).toEqual({ message: "email is not a valid email" });
   });
 
   it("inserts client and returns the created record", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const created = {
       id: 1,
       name: "John",
@@ -101,7 +101,7 @@ describe("addAClient", () => {
   });
 
   it("returns server error on DB error", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockReturning.mockRejectedValueOnce(new Error("DB error"));
 
     const result = await addAClient(baseInput);
@@ -111,20 +111,20 @@ describe("addAClient", () => {
 
 describe("updateExistingClient", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(updateExistingClient({ id: 1 })).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("returns early without DB call when no non-empty fields provided", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateExistingClient({ id: 1, name: "", email: "" });
     expect(mockSet).not.toHaveBeenCalled();
   });
 
   it("calls db.update only with non-empty fields", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateExistingClient({ id: 1, name: "Updated Name", email: "" });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Updated Name" })
@@ -135,7 +135,7 @@ describe("updateExistingClient", () => {
   });
 
   it("updates all fields when all are provided", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateExistingClient({
       id: 1,
       name: "Name",
@@ -156,13 +156,13 @@ describe("updateExistingClient", () => {
   });
 
   it("updates status when provided alone", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateExistingClient({ id: 1, status: "active" });
     expect(mockSet).toHaveBeenCalledWith({ status: "active" });
   });
 
   it("rejects an invalid status value", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await expect(
       updateExistingClient({
         id: 1,
@@ -175,12 +175,12 @@ describe("updateExistingClient", () => {
 
 describe("deleteClient", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(deleteClient({ id: 1 })).rejects.toThrow("Unauthorized");
   });
 
   it("calls db.delete with correct where clause", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await deleteClient({ id: 42 });
     expect(mockWhere).toHaveBeenCalledTimes(1);
   });
@@ -188,14 +188,14 @@ describe("deleteClient", () => {
 
 describe("updateNotes", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(updateNotes({ id: 1, notes: "hi" })).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("calls db.update with { notes } and correct where clause", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateNotes({ id: 7, notes: "my notes" });
     expect(mockSet).toHaveBeenCalledWith({ notes: "my notes" });
     expect(mockWhere).toHaveBeenCalledTimes(1);

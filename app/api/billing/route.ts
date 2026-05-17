@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { getBillingOverview } from "@/lib/billing";
+import { getCurrentUser } from "@/lib/supabase/auth";
+import { getBillingOverview } from "@/lib/workspace/billing";
 
 export async function GET(): Promise<NextResponse> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }

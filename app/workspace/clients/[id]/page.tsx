@@ -26,7 +26,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { ClientPortalSettings } from "@/app/components/clients/ClientPortalSettings";
 import { PortalChatPane } from "@/app/components/communications/PortalChatPane";
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
-import { deleteClient } from "@/lib/clients";
+import { deleteClient } from "@/lib/workspace/clients";
 import type { clients } from "@/types/clients";
 
 type Section = "portal" | "cases" | "communications";

@@ -3,7 +3,7 @@
 import { db } from "@db/db";
 import { clients, cases, users } from "@db/schema";
 import { eq, count } from "drizzle-orm";
-import { getUserSubscriptionByUserId } from "./billing";
+import { getUserSubscriptionByUserId } from "./workspace/billing";
 
 const AI_CREDIT_LIMITS: Record<PlanId, number> = {
   starter: 50,

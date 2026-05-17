@@ -28,13 +28,13 @@ vi.mock("@db/db", () => ({
 
 const mockGetUserSubscriptionByUserId = vi.fn();
 
-vi.mock("@/lib/billing", () => ({
+vi.mock("@/lib/workspace/billing", () => ({
   getUserSubscriptionByUserId: (...args: unknown[]) =>
     mockGetUserSubscriptionByUserId(...args),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-vi.mock("@clerk/nextjs/server", () => ({ currentUser: vi.fn() }));
+vi.mock("@/lib/supabase/auth", () => ({ getCurrentUser: vi.fn() }));
 
 function mockSubscription(plan: string) {
   mockGetUserSubscriptionByUserId.mockResolvedValue({ plan });

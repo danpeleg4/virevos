@@ -66,7 +66,7 @@ import {
   sendOutlookEmail,
   syncOutlookInbox,
   updateOutlookMessage,
-} from "@/lib/outlook_actions";
+} from "@/lib/outlook/outlook_actions";
 import { deletePortalChat, updatePortalChat } from "@/lib/portal_chat";
 import { createScheduledEmail } from "@/lib/scheduled_emails";
 

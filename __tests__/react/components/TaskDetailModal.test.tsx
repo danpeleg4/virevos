@@ -17,7 +17,7 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockQueryClient,
 }));
 
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   deleteTask: vi.fn(),
   updateTaskStatus: vi.fn(),
   changePriorityStatus: vi.fn(),

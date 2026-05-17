@@ -4,14 +4,17 @@ import { render, screen } from "@testing-library/react";
 const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({ isSignedIn: false, user: null, isLoaded: true }),
-  SignOutButton: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
+vi.mock("@/app/hooks/useAuthUser", () => ({
+  useAuthUser: () => ({ data: null, isPending: false }),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: { signOut: vi.fn() },
+  }),
 }));
 
 vi.mock("motion/react", async () => {
@@ -51,7 +54,6 @@ import FeaturesPage from "@/app/features/page";
 describe("Features Page", () => {
   it("renders features content", () => {
     render(<FeaturesPage />);
-    // Features page renders main feature titles
     expect(screen.getAllByText(/AI Assistant/i).length).toBeGreaterThan(0);
   });
 

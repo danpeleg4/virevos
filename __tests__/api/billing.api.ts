@@ -1,16 +1,16 @@
 import { GET } from "@/app/api/billing/route";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const mockGetBillingOverview = vi.fn();
 
-vi.mock("@/lib/billing", () => ({
+vi.mock("@/lib/workspace/billing", () => ({
   getBillingOverview: (...args: unknown[]) => mockGetBillingOverview(...args),
 }));
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
 let consoleErrorSpy: MockInstance;
 
@@ -25,13 +25,13 @@ afterEach(() => {
 
 describe("GET /api/billing", () => {
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await GET();
     expect(res.status).toBe(401);
   });
 
   it("returns 200 with BillingOverview when authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     const overview = {
       subscription: {
         plan: "professional",
@@ -72,7 +72,7 @@ describe("GET /api/billing", () => {
   });
 
   it("returns 500 when getBillingOverview throws", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetBillingOverview.mockRejectedValue(new Error("Stripe error"));
 
     const res = await GET();

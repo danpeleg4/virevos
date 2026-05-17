@@ -25,7 +25,7 @@ import {
   addMeetingToCalendar,
   deleteEventFromCalendar,
   updateEventDateTime,
-} from "@/lib/calendar";
+} from "@/lib/workspace/calendar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const hours = Array.from({ length: 24 }, (_, i) => i);

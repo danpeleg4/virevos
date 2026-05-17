@@ -1,9 +1,9 @@
 import { GET } from "@/app/api/recording/[id]/route";
 import { NextRequest } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 // eslint-disable-next-line no-var
@@ -21,7 +21,7 @@ vi.mock("@db/db", () => {
 vi.mock("@db/schema", () => ({ events: {} }));
 vi.mock("drizzle-orm", () => ({ and: vi.fn(), eq: vi.fn() }));
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase/supabase", () => ({
   RECORDINGS_BUCKET: "recording",
 }));
 
@@ -49,7 +49,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 
@@ -57,7 +57,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 400 if id is empty", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET({} as NextRequest, mockCtx(""));
 
@@ -66,7 +66,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 404 if recording not found in storage", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetSignedUrl.mockRejectedValueOnce(new Error("not found"));
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
@@ -75,7 +75,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 404 if getSignedUrl throws", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetSignedUrl.mockRejectedValueOnce(new Error("storage error"));
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
@@ -84,7 +84,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns signed url on success", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockGetSignedUrl.mockResolvedValueOnce("https://signed-url");
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
@@ -95,7 +95,7 @@ describe("GET /api/recording/[id]", () => {
   });
 
   it("returns 404 if event not found in db", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbWhere.mockResolvedValue([]);
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));

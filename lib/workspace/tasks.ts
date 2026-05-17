@@ -3,7 +3,7 @@
 import { db } from "@db/db";
 import { cases, tasks } from "@db/schema";
 import { and, eq } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { Task } from "@/types/tasks";
 import {
   MAX_NOTES,
@@ -12,13 +12,13 @@ import {
   optionalString,
   requireOneOf,
   requireString,
-} from "./validation";
+} from "../util/validation";
 
 const TASK_PRIORITIES = ["low", "medium", "high"] as const;
 const TASK_STATUSES = ["in-progress", "completed"] as const;
 
 export async function deleteTask(taskId: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   await db
     .delete(tasks)
@@ -26,7 +26,7 @@ export async function deleteTask(taskId: number) {
 }
 
 export async function updateTaskStatus(status: string, taskId: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   const validStatus = requireOneOf(status, "status", TASK_STATUSES);
 
@@ -48,7 +48,7 @@ export async function updateTaskStatus(status: string, taskId: number) {
 }
 
 export async function changePriorityStatus(taskId: number, priority: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   const validPriority = requireOneOf(priority, "priority", TASK_PRIORITIES);
   await db
@@ -61,7 +61,7 @@ export async function updateTaskDueDate(
   taskId: number,
   dueDate: string | null
 ) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   await db
     .update(tasks)
@@ -77,7 +77,7 @@ export async function updateTask(input: {
   status?: string;
   dueDate?: string | null;
 }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   const updateData: Record<string, unknown> = {};
@@ -152,7 +152,7 @@ async function resolveCaseId(
 }
 
 export async function addProjectTasksAction(task: AddTaskInput): Promise<Task> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   const title = requireString(task.title, "title", MAX_TITLE);

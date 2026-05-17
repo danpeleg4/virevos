@@ -1,15 +1,15 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { outlookEmails } from "@db/schema";
 import { and, eq, InferSelectModel } from "drizzle-orm";
 import axios from "axios";
-import { performIncrementalSync } from "@/lib/outlook_sync";
-import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
+import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import { downloadFile } from "@/lib/storage";
-import { FILES_BUCKET } from "@/lib/supabase";
-import { sanitizeEmailHtml } from "@/lib/html_sanitizer";
+import { FILES_BUCKET } from "@/lib/supabase/supabase";
+import { sanitizeEmailHtml } from "@/lib/util/html_sanitizer";
 import {
   MAX_ATTACHMENTS,
   MAX_HTML_BODY,
@@ -23,7 +23,7 @@ import {
   requireInt,
   requireOneOf,
   requireString,
-} from "./validation";
+} from "../util/validation";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const LARGE_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;
@@ -209,14 +209,14 @@ async function addLargeAttachment(
 }
 
 export async function syncOutlookInbox() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
   await performIncrementalSync(user.id);
   return { success: true };
 }
 
 export async function sendOutlookEmail(raw: SendOutlookEmailInput) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const input = validateSendInput(raw);
@@ -308,7 +308,7 @@ type EmailUpdate = Partial<
 >;
 
 export async function updateOutlookMessage(id: number, action: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");
@@ -390,7 +390,7 @@ export async function updateOutlookMessage(id: number, action: string) {
 }
 
 export async function deleteOutlookMessage(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");

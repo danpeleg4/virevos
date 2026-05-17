@@ -25,7 +25,7 @@ vi.mock("axios", () => ({
   isAxiosError: () => false,
 }));
 
-vi.mock("@/lib/clients", () => ({
+vi.mock("@/lib/workspace/clients", () => ({
   deleteClient: vi.fn(),
 }));
 

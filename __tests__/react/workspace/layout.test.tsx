@@ -2,20 +2,25 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
   usePathname: vi.fn(() => "/workspace/dashboard"),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({
-    user: {
-      firstName: "John",
-      lastName: "Doe",
-      primaryEmailAddress: { emailAddress: "john@example.com" },
+vi.mock("@/app/hooks/useAuthUser", () => ({
+  useAuthUser: () => ({
+    data: {
+      id: "user_1",
+      email: "john@example.com",
+      user_metadata: { name: "John Doe" },
     },
-    isLoaded: true,
+    isPending: false,
   }),
-  UserButton: () => <div data-testid="user-button" />,
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: { signOut: vi.fn() },
+  }),
 }));
 
 vi.mock("next-themes", () => ({

@@ -28,8 +28,8 @@ import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateTaskStatus } from "@/lib/tasks";
-import { parseDateOnlyString } from "@/lib/date_utils";
+import { updateTaskStatus } from "@/lib/workspace/tasks";
+import { parseDateOnlyString } from "@/lib/util/date_utils";
 import { Task } from "@/types/tasks";
 
 const ROW_HEIGHT = 48;

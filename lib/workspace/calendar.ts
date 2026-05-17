@@ -1,19 +1,19 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { events, users } from "@db/schema";
 import { eq, and } from "drizzle-orm";
 import { Event } from "@/types/meeting";
-import { getFreshGoogleAccessToken } from "@/lib/google_access";
+import { getFreshGoogleAccessToken } from "@/lib/google/google_access";
 import { google } from "googleapis";
-import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import axios from "axios";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 export async function addMeetingToCalendar(meeting: Event) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
@@ -140,7 +140,7 @@ export async function updateEvent(input: {
   duration?: number;
   status?: string;
 }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const updateData: Record<string, unknown> = {};
@@ -237,7 +237,7 @@ export async function updateEvent(input: {
 }
 
 export async function deleteEventFromCalendar(id: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
@@ -289,7 +289,7 @@ export async function deleteEventFromCalendar(id: string) {
 }
 
 export async function updateEventDateTime(id: string, newDateTime: Date) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const [eventRow] = await db

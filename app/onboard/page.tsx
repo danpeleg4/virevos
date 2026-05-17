@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -20,8 +20,6 @@ import {
   Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSignUp } from "@clerk/nextjs";
-import type { ClerkAPIError } from "@clerk/types";
 import {
   AccountStepProps,
   AIPersonalizationStepProps,
@@ -30,7 +28,8 @@ import {
   VerificationStepProps,
 } from "@/types/onboard";
 import PaymentStep from "./PaymentStep";
-import { registerFreePlan } from "@/lib/billing";
+import { registerFreePlan } from "@/lib/workspace/billing";
+import { createBrowserSupabase } from "@/lib/supabase/client";
 import Image from "next/image";
 
 const plans = [
@@ -43,45 +42,9 @@ const plans = [
     features: ["Up to 5 cases", "50 AI credits per month", "1GB storage"],
     highlighted: false,
   },
-  /*{
-    id: "professional",
-    name: "Professional",
-    price: 29,
-    period: "month",
-    description: "For growing teams and agencies",
-    features: [
-      "Unlimited projects",
-      "250 AI credits per month",
-      "Advanced automation",
-      "50GB storage",
-      "Unlimited tasks",
-    ],
-    highlighted: true,
-  },
-  {
-    id: "business",
-    name: "Business",
-    price: 79,
-    period: "month",
-    description: "For business",
-    features: [
-      "Unlimited clients",
-      "Unlimited projects",
-      "Highest AI credits per month",
-      "Full app access",
-    ],
-    highlighted: false,
-  },*/
 ];
 
-const getClerkErrorMessage = (err: unknown) => {
-  const e = err as { errors?: ClerkAPIError[] };
-  console.error("Clerk error:", e);
-  return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
-};
-
 export default function Onboarding() {
-  const { isLoaded, signUp, setActive } = useSignUp();
   const [currentStep, setCurrentStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
@@ -103,19 +66,6 @@ export default function Onboarding() {
     workStyle: "",
     aiContext: "",
   });
-
-  if (!isLoaded || !signUp || !setActive) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
-          <div className="h-4 w-24 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
 
   const steps = [
     {
@@ -146,7 +96,7 @@ export default function Onboarding() {
       id: 4,
       name: "Verify",
       title: "Verify Email",
-      subtitle: "We've sent a 4-digit code to your email.",
+      subtitle: "We've sent a 6-digit code to your email.",
     },
     {
       id: 5,
@@ -181,7 +131,6 @@ export default function Onboarding() {
 
   const prevStep = () => {
     if (currentStep <= 0) return;
-    // Step 5 (Payment) skips back over step 4 (Verify — already completed)
     if (currentStep === 5) {
       setCurrentStep(3);
       return;
@@ -239,7 +188,6 @@ export default function Onboarding() {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-white font-sans overflow-hidden">
-      {/* Left Column: Form Content */}
       <div className="w-full lg:w-1/2 p-6 sm:p-12 lg:p-16 xl:p-24 flex flex-col h-screen overflow-y-auto">
         <div className="flex items-center space-x-3 mb-12 sm:mb-20">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
@@ -301,9 +249,7 @@ export default function Onboarding() {
         </div>
       </div>
 
-      {/* Right Column: Visual Side */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#3D4AE0] relative p-12 lg:p-20 flex-col items-center justify-center overflow-hidden">
-        {/* Abstract background shapes */}
         <div className="absolute top-0 right-0 w-full h-full opacity-10">
           <div className="absolute top-[10%] right-[-10%] w-[500px] h-[500px] border-[60px] border-white rounded-full"></div>
           <div className="absolute bottom-[-20%] left-[-10%] w-[400px] h-[400px] border-[40px] border-white rounded-full"></div>
@@ -326,7 +272,6 @@ export default function Onboarding() {
   );
 }
 
-// Welcome Step Component
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   const router = useRouter();
   return (
@@ -387,7 +332,6 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-// Account Step Component
 function AccountStep({
   formData,
   updateFormData,
@@ -396,7 +340,7 @@ function AccountStep({
   setShowPassword,
 }: AccountStepProps) {
   const router = useRouter();
-  const { isLoaded, signUp } = useSignUp();
+  const supabase = useMemo(() => createBrowserSupabase(), []);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -406,26 +350,24 @@ function AccountStep({
     formData.password.trim() !== "";
 
   const completeSignUp = async () => {
-    if (!isLoaded) return;
     setError(null);
     setLoading(true);
 
     try {
-      await signUp.create({
-        emailAddress: formData.email,
-        firstName: formData.fullName.trim().split(/\s+/)[0],
-        lastName: formData.fullName.trim().split(/\s+/)[1],
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
         password: formData.password,
+        options: {
+          data: { name: formData.fullName.trim() },
+        },
       });
 
-      // Start email verification (OTP)
-      await signUp.prepareEmailAddressVerification({
-        strategy: "email_code",
-      });
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
 
       onNext();
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -485,8 +427,6 @@ function AccountStep({
         </div>
       </div>
 
-      <div id="clerk-captcha" />
-
       <Button
         onClick={completeSignUp}
         disabled={!canContinue || loading}
@@ -514,7 +454,6 @@ function AccountStep({
   );
 }
 
-// Plan Step Component
 function PlanStep({ formData, updateFormData, onNext }: PlanStepProps) {
   return (
     <div className="space-y-4">
@@ -574,7 +513,6 @@ function PlanStep({ formData, updateFormData, onNext }: PlanStepProps) {
   );
 }
 
-// AI Personalization Step Component
 function AIPersonalizationStep({
   formData,
   updateFormData,
@@ -623,59 +561,67 @@ function AIPersonalizationStep({
   );
 }
 
-// Verification Step Component
 function VerificationStep({ formData, onNext }: VerificationStepProps) {
-  const { isLoaded, signUp, setActive } = useSignUp();
+  const supabase = useMemo(() => createBrowserSupabase(), []);
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const getClerkErrorMessage = (err: unknown) => {
-    const e = err as { errors?: ClerkAPIError[] };
-    return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
-  };
 
   const verifyEmail = async (overrideCode?: string) => {
-    if (!isLoaded) return;
     setError(null);
     setLoading(true);
 
     try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: overrideCode ?? code.join(""),
+      const token = overrideCode ?? code.join("");
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token,
+        type: "email",
       });
 
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-
-        if (formData.selectedPlan && formData.selectedPlan !== "starter") {
-          // Paid plan — go to payment step (user is now authenticated)
-          onNext();
-        } else {
-          // Starter plan — register free tier and redirect
-          await registerFreePlan();
-          router.push("/workspace/dashboard");
-        }
+      if (verifyError) {
+        setError(verifyError.message);
+        console.log(verifyError);
+        return;
       }
-    } catch (err) {
-      setError(getClerkErrorMessage(err));
+
+      const userId = data.user?.id;
+      if (!userId) {
+        setError("Verification succeeded but no user was returned.");
+        return;
+      }
+
+      if (formData.selectedPlan && formData.selectedPlan !== "starter") {
+        onNext();
+      } else {
+        try {
+          await registerFreePlan();
+        } catch (err) {
+          console.error("registerFreePlan failed", err);
+          setError(
+            `Could not register free plan: ${err instanceof Error ? err.message : String(err)}`
+          );
+          return;
+        }
+        // Hard navigation so the new Supabase session cookies are picked up by
+        // the middleware before /workspace/dashboard renders.
+        window.location.href = "/workspace/dashboard";
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const resendCode = async () => {
-    if (!isLoaded) return;
     setError(null);
     setLoading(true);
 
     try {
-      await signUp.prepareEmailAddressVerification({
-        strategy: "email_code",
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: formData.email,
       });
-    } catch (err) {
-      setError(getClerkErrorMessage(err));
+      if (resendError) setError(resendError.message);
     } finally {
       setLoading(false);
     }
@@ -689,7 +635,6 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
     newCode[index] = value;
     setCode(newCode);
 
-    // Auto-focus next input
     if (value && index < 5) {
       const nextInput = document.getElementById(`code-${index + 1}`);
       nextInput?.focus();

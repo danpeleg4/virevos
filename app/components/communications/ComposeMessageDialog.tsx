@@ -18,7 +18,7 @@ import { Separator } from "../ui/separator";
 import { Mail, MessageSquare, Send, Loader2, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
-import { sendOutlookEmail } from "@/lib/outlook_actions";
+import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
 import { sendAgencyChatMessage } from "@/lib/portal_chat";
 
 interface AttachmentFile {

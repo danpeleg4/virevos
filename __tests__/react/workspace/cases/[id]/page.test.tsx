@@ -22,20 +22,20 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("axios");
 
-vi.mock("@/lib/cases", () => ({
+vi.mock("@/lib/workspace/cases", () => ({
   addFileMetadata: vi.fn(),
   addCaseNotes: vi.fn(),
   deleteCase: vi.fn(),
   deleteCaseFile: vi.fn(),
 }));
 
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   updateTaskStatus: vi.fn(),
   deleteTask: vi.fn(),
   addProjectTasksAction: vi.fn(),
 }));
 
-vi.mock("@/lib/task_percentage", () => ({
+vi.mock("@/lib/util/task_percentage", () => ({
   task_percentage: vi.fn(() => 50),
 }));
 

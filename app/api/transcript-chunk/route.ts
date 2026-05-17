@@ -13,7 +13,7 @@ import {
   MAX_SHORT,
   ValidationError,
   requireString,
-} from "@/lib/validation";
+} from "@/lib/util/validation";
 
 interface TranscriptChunkBody {
   roomId: string;

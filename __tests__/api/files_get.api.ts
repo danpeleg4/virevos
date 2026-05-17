@@ -1,10 +1,10 @@
 import { GET } from "@/app/api/files/[id]/get-files/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -25,7 +25,7 @@ describe("GET /api/project-files/project/[id]", () => {
   }
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as NextRequest, mockCtx("1"));
 
@@ -34,7 +34,7 @@ describe("GET /api/project-files/project/[id]", () => {
   });
 
   it("returns 400 if projectId is invalid", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET({} as NextRequest, mockCtx("abc"));
 
@@ -43,7 +43,7 @@ describe("GET /api/project-files/project/[id]", () => {
   });
 
   it("returns files for a valid projectId", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const mockFiles = [
       { id: 1, projectId: 10, name: "file1.pdf" },

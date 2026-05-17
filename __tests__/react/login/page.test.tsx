@@ -2,45 +2,31 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockPush = vi.fn();
-const mockUseSignIn = vi.fn();
+const mockSignInWithPassword = vi.fn();
+const mockResetPasswordForEmail = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useSignIn: () => mockUseSignIn(),
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: {
+      signInWithPassword: (...args: unknown[]) =>
+        mockSignInWithPassword(...args),
+      resetPasswordForEmail: (...args: unknown[]) =>
+        mockResetPasswordForEmail(...args),
+    },
+  }),
 }));
-
-const mockSignIn = {
-  create: vi.fn(),
-  authenticateWithRedirect: vi.fn(),
-  attemptFirstFactor: vi.fn(),
-};
-const mockSetActive = vi.fn();
 
 import Login from "@/app/login/page";
 
 describe("Login Page", () => {
   beforeEach(() => {
     mockPush.mockClear();
-    mockUseSignIn.mockReturnValue({
-      signIn: mockSignIn,
-      isLoaded: true,
-      setActive: mockSetActive,
-    });
-  });
-
-  it("shows loading state when Clerk not loaded", () => {
-    mockUseSignIn.mockReturnValue({
-      signIn: null,
-      isLoaded: false,
-      setActive: null,
-    });
-    render(<Login />);
-    // Loading spinner shown
-    const sparkles = document.querySelector(".animate-pulse");
-    expect(sparkles).toBeInTheDocument();
+    mockSignInWithPassword.mockReset();
+    mockResetPasswordForEmail.mockReset();
   });
 
   it("renders email input", () => {
@@ -86,12 +72,26 @@ describe("Login Page", () => {
     render(<Login />);
     const passwordInput = screen.getByPlaceholderText(/••••••••/);
     expect(passwordInput).toHaveAttribute("type", "password");
-    // Click the eye toggle
     const eyeBtn = screen.getByRole("button", { name: "" });
     fireEvent.click(eyeBtn);
     expect(screen.getByPlaceholderText(/••••••••/)).toHaveAttribute(
       "type",
       "text"
     );
+  });
+
+  it("shows error when sign-in fails", async () => {
+    mockSignInWithPassword.mockResolvedValue({
+      error: { message: "Invalid credentials" },
+    });
+    render(<Login />);
+    fireEvent.change(screen.getByPlaceholderText(/name@company\.com/i), {
+      target: { value: "user@example.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/••••••••/), {
+      target: { value: "wrong" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument();
   });
 });

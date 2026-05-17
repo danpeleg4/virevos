@@ -2,16 +2,18 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
   usePathname: vi.fn(() => "/"),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({ isSignedIn: false, user: null, isLoaded: true }),
-  SignOutButton: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-  UserButton: () => <div data-testid="user-button" />,
+vi.mock("@/app/hooks/useAuthUser", () => ({
+  useAuthUser: () => ({ data: null, isPending: false }),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: { signOut: vi.fn() },
+  }),
 }));
 
 vi.mock("next-themes", () => ({
@@ -74,7 +76,6 @@ describe("Root Page (Landing)", () => {
   });
 
   it("renders navigation", () => {
-    // Nav renders the brand
     const vireTypes = screen.getAllByText(/virevos/i);
     expect(vireTypes.length).toBeGreaterThan(0);
   });

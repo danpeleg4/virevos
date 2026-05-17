@@ -28,7 +28,7 @@ vi.mock("livekit-client", () => ({
 }));
 
 // Prevent Clerk ESM import chain from failing in Jest
-vi.mock("@/lib/meetings", () => ({
+vi.mock("@/lib/workspace/meetings", () => ({
   startMeeting: vi.fn(),
 }));
 

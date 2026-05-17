@@ -6,11 +6,11 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-vi.mock("@/lib/task_percentage", () => ({
+vi.mock("@/lib/util/task_percentage", () => ({
   task_percentage: vi.fn(() => 60),
 }));
 
-vi.mock("@/lib/cases", () => ({
+vi.mock("@/lib/workspace/cases", () => ({
   createCase: vi.fn(),
   updateCase: vi.fn(),
   deleteCase: vi.fn(),

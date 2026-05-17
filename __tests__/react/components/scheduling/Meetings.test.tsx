@@ -28,15 +28,15 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/workspace/calendar",
 }));
 
-vi.mock("@/lib/meetings", () => ({
+vi.mock("@/lib/workspace/meetings", () => ({
   createInstantMeeting: vi.fn(),
 }));
 
-vi.mock("@/lib/calendar", () => ({
+vi.mock("@/lib/workspace/calendar", () => ({
   deleteEventFromCalendar: vi.fn(),
 }));
 
-vi.mock("@/lib/date_utils", () => ({
+vi.mock("@/lib/util/date_utils", () => ({
   formatDateOnly: vi.fn(() => "2026-05-10"),
   formatTimeOnly: vi.fn(() => "10:00 AM"),
 }));

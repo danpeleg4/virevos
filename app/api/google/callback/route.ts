@@ -1,10 +1,10 @@
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { googleTokens, users } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { performFullSync, setupWatchChannel } from "@/lib/google_sync";
+import { performFullSync, setupWatchChannel } from "@/lib/google/google_sync";
 
 /*
 Authorized Google redirect URIs
@@ -17,18 +17,17 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing code" }, { status: 400 });
   }
 
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Ensure user row exists (Clerk webhook may not have fired yet)
   await db
     .insert(users)
     .values({
       user_id: user.id,
-      email: user.emailAddresses[0]?.emailAddress ?? "",
-      name: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || null,
+      email: user.email ?? "",
+      name: (user.user_metadata?.name as string | undefined) ?? null,
     })
     .onConflictDoNothing({ target: users.user_id });
 

@@ -23,7 +23,7 @@ vi.mock("@stripe/react-stripe-js", () => ({
   useElements: vi.fn(() => null),
 }));
 
-vi.mock("@/lib/billing", () => ({
+vi.mock("@/lib/workspace/billing", () => ({
   changePlan: vi.fn(),
   cancelSubscription: vi.fn(),
   resubscribe: vi.fn(),

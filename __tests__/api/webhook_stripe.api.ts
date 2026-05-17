@@ -2,7 +2,7 @@ import { POST } from "@/app/api/webhooks/stripe/route";
 import { NextRequest } from "next/server";
 
 const mockUpdatePlanLimits = vi.fn().mockResolvedValue(undefined);
-vi.mock("@/lib/billing", () => ({
+vi.mock("@/lib/workspace/billing", () => ({
   updatePlanLimits: (...args: unknown[]) => mockUpdatePlanLimits(...args),
   PLAN_RANK: { starter: 0, professional: 1, business: 2 },
 }));

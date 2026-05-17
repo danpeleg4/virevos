@@ -34,7 +34,7 @@ import {
 import { toast } from "sonner";
 import type { PortalData, PortalChatMessage, TimeSlot } from "@/types/portal";
 import type { DocumentRequestItem } from "@/types/document_requests";
-import { parseDateOnlyString } from "@/lib/date_utils";
+import { parseDateOnlyString } from "@/lib/util/date_utils";
 import axios from "axios";
 
 function formatFileSize(bytes: number): string {

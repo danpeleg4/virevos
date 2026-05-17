@@ -2,7 +2,7 @@
 
 import { db } from "@db/db";
 import { events } from "@db/schema";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { and, eq } from "drizzle-orm";
 import {
   MAX_MESSAGE,
@@ -11,16 +11,16 @@ import {
   ValidationError,
   requireInt,
   requireString,
-} from "./validation";
+} from "../util/validation";
 import {
   TRANSCRIPT_BUCKET,
   TRANSCRIPT_INDEX,
   createEmbedding,
   supabaseVector,
-} from "./embeddings";
+} from "../embeddings";
 
 export async function startMeeting(meetingId: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
   const id = requireString(meetingId, "meetingId", MAX_SHORT);
   await db
@@ -30,7 +30,7 @@ export async function startMeeting(meetingId: string) {
 }
 
 export async function createInstantMeeting(title: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
   const validTitle = requireString(title, "title", MAX_TITLE);
 
@@ -51,7 +51,7 @@ export async function createInstantMeeting(title: string) {
 }
 
 export async function markActionItemAdded(eventId: string, itemIndex: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
   const id = requireString(eventId, "eventId", MAX_SHORT);
   const idx = requireInt(itemIndex, "itemIndex");
@@ -74,7 +74,7 @@ export async function markActionItemAdded(eventId: string, itemIndex: number) {
 }
 
 export async function getPastMeetingTranscript(text: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return ["Unauthorized"];
   }

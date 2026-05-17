@@ -28,7 +28,7 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: vi.fn(() => ({ invalidateQueries: vi.fn() })),
 }));
 
-vi.mock("@/lib/billing", () => ({
+vi.mock("@/lib/workspace/billing", () => ({
   registerFreePlan: vi.fn(),
   changePlan: vi.fn(),
   cancelSubscription: vi.fn(),

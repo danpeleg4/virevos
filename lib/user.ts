@@ -1,15 +1,12 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "./supabase/auth";
 import { db } from "@db/db";
 import { users } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 export async function changeRecordingStatus() {
-  /*
-    Changes the user record meeting status between true and false in the database
-     */
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   try {
@@ -27,4 +24,17 @@ export async function changeRecordingStatus() {
   } catch (err) {
     console.error(err);
   }
+}
+
+export async function ensureUserRow() {
+  const user = await getCurrentUser();
+  if (!user?.id) return;
+
+  const email = user.email ?? "";
+  const name = (user.user_metadata?.name as string | undefined) ?? "";
+
+  await db
+    .insert(users)
+    .values({ user_id: user.id, email, name })
+    .onConflictDoNothing({ target: users.user_id });
 }

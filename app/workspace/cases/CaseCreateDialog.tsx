@@ -22,7 +22,7 @@ import { Plus } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createCase } from "@/lib/cases";
+import { createCase } from "@/lib/workspace/cases";
 import { Case } from "@/types/cases";
 
 export function CaseCreateDialog({ clients }: { clients: clients[] }) {

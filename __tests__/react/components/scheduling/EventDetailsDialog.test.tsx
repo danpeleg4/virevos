@@ -18,20 +18,20 @@ vi.mock("axios", () => {
   return { default: axios, ...axios };
 });
 
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   addProjectTasksAction: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("@/lib/meetings", () => ({
+vi.mock("@/lib/workspace/meetings", () => ({
   markActionItemAdded: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("@/lib/date_utils", () => ({
+vi.mock("@/lib/util/date_utils", () => ({
   formatDateOnly: vi.fn(() => "Jan 1, 2026"),
   formatTimeOnly: vi.fn(() => "10:00 AM"),
 }));
 
 import { EventDetailsDialog } from "@/app/components/scheduling/EventDetailsDialog";
-import { addProjectTasksAction } from "@/lib/tasks";
-import { markActionItemAdded } from "@/lib/meetings";
+import { addProjectTasksAction } from "@/lib/workspace/tasks";
+import { markActionItemAdded } from "@/lib/workspace/meetings";
 import { Event } from "@/types/meeting";
 
 const baseEvent: Event = {

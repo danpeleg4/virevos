@@ -8,7 +8,7 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-vi.mock("@/lib/cases", () => ({
+vi.mock("@/lib/workspace/cases", () => ({
   updateCase: vi.fn(),
 }));
 

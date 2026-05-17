@@ -1,6 +1,6 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { scheduledEmails } from "@db/schema";
 import { and, eq } from "drizzle-orm";
@@ -16,8 +16,8 @@ import {
   requireInt,
   requireOneOf,
   requireString,
-} from "./validation";
-import { sanitizeEmailHtml } from "./html_sanitizer";
+} from "./util/validation";
+import { sanitizeEmailHtml } from "./util/html_sanitizer";
 
 const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
 
@@ -34,7 +34,7 @@ export interface ScheduleEmailInput {
 }
 
 export async function createScheduledEmail(input: ScheduleEmailInput) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const toEmail = requireEmail(input.toEmail, "toEmail");
@@ -77,7 +77,7 @@ export async function createScheduledEmail(input: ScheduleEmailInput) {
 }
 
 export async function deleteScheduledEmail(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");

@@ -3,7 +3,7 @@ import type { calendar_v3 } from "googleapis";
 import { db } from "@db/db";
 import { events, googleSyncState } from "@db/schema";
 import { and, eq, inArray } from "drizzle-orm";
-import { getFreshGoogleAccessToken } from "@/lib/google_access";
+import { getFreshGoogleAccessToken } from "@/lib/google/google_access";
 
 export async function getCalendarClient(userId: string) {
   const token = await getFreshGoogleAccessToken(userId);

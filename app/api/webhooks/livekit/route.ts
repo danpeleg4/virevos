@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
                 value: {
                   accessKey: process.env.SUPABASE_S3_ACCESS_KEY_ID,
                   secret: process.env.SUPABASE_S3_SECRET_ACCESS_KEY,
-                  endpoint: `${process.env.SUPABASE_URL}/storage/v1/s3`,
+                  endpoint: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/s3`,
                   bucket: "recording",
                   region: "auto",
                   forcePathStyle: true,

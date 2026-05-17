@@ -17,13 +17,13 @@ vi.mock("@/lib/storage", () => {
   return { uploadFile: mockUpload };
 });
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
 // eslint-disable-next-line no-var
 var mockAnalyze: Mock;
-vi.mock("@/lib/document_analysis", () => {
+vi.mock("@/lib/ai/document_analysis", () => {
   mockAnalyze = vi.fn();
   return { analyzeDocumentRequirement: mockAnalyze };
 });

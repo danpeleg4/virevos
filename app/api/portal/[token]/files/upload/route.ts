@@ -9,8 +9,8 @@ import {
 } from "@db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { uploadFile, deleteFile } from "@/lib/storage";
-import { FILES_BUCKET } from "@/lib/supabase";
-import { rateLimit } from "@/lib/rate_limit";
+import { FILES_BUCKET } from "@/lib/supabase/supabase";
+import { rateLimit } from "@/lib/util/rate_limit";
 import { assertCanAddFile } from "@/lib/plan_limits";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB

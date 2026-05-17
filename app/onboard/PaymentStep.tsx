@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "../components/ui/button";
 import { Shield, Info } from "lucide-react";
 import type { PaymentStepProps } from "@/types/onboard";
-import { createSetupIntent, createSubscription } from "@/lib/billing";
+import { createSetupIntent, createSubscription } from "@/lib/workspace/billing";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!

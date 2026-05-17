@@ -3,10 +3,10 @@ import {
   getPortalBookings,
   updateBookingStatus,
 } from "@/lib/portal_bookings";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const mockWhere = vi.fn();
@@ -20,7 +20,7 @@ vi.mock("@db/db", () => ({
 }));
 
 const mockAddMeetingToCalendar = vi.fn();
-vi.mock("@/lib/calendar", () => ({
+vi.mock("@/lib/workspace/calendar", () => ({
   addMeetingToCalendar: (...args: never[]) =>
     // eslint-disable-next-line prefer-spread
     mockAddMeetingToCalendar.apply(null, args),
@@ -63,17 +63,17 @@ const mockBookingRow = {
 
 describe("getPortalBookings", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(getPortalBookings("user_1")).rejects.toThrow("Unauthorized");
   });
 
   it("throws Unauthorized when authenticated user does not match requested userId", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "other_user" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "other_user" });
     await expect(getPortalBookings("user_1")).rejects.toThrow("Unauthorized");
   });
 
   it("returns mapped bookings for authenticated user", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const mockFromWhere = vi.fn().mockResolvedValue([mockBookingRow]);
     const mockFrom = vi.fn(() => ({ where: mockFromWhere }));
@@ -98,14 +98,14 @@ describe("getPortalBookings", () => {
 
 describe("updateBookingStatus", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(updateBookingStatus(1, "confirmed")).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("calls db.update with correct status and ownership condition for 'confirmed'", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     await updateBookingStatus(1, "confirmed");
 
@@ -115,7 +115,7 @@ describe("updateBookingStatus", () => {
   });
 
   it("calls db.update with correct status for 'cancelled'", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     await updateBookingStatus(2, "cancelled");
 
@@ -135,12 +135,12 @@ describe("acceptBookingWithCalendar", () => {
   }
 
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(acceptBookingWithCalendar(1)).rejects.toThrow("Unauthorized");
   });
 
   it("throws when the booking is not found", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([]);
     await expect(acceptBookingWithCalendar(1)).rejects.toThrow(
       "Booking not found"
@@ -148,7 +148,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("marks booking confirmed and persists eventId + meetingLink from the created calendar event", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockResolvedValueOnce({
       id: "evt-123",
@@ -172,7 +172,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("stores meetingLink as null when the created event has no link", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockResolvedValueOnce({
       id: "evt-123",
@@ -188,7 +188,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("still confirms the booking and swallows the error when calendar sync fails", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockRejectedValueOnce(new Error("calendar down"));
 
@@ -199,7 +199,7 @@ describe("acceptBookingWithCalendar", () => {
   });
 
   it("does not persist eventId when calendar event has no id", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectReturning([mockBookingRow]);
     mockAddMeetingToCalendar.mockResolvedValueOnce({ id: null, link: null });
 

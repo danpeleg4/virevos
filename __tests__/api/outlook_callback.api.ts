@@ -1,9 +1,9 @@
 import { GET } from "@/app/api/outlook/callback/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -14,17 +14,20 @@ vi.mock("@db/db", () => ({
   },
 }));
 
-vi.mock("@/lib/outlook_access", () => ({
+vi.mock("@/lib/outlook/outlook_access", () => ({
   exchangeOutlookCode: vi.fn(),
 }));
 
-vi.mock("@/lib/outlook_sync", () => ({
+vi.mock("@/lib/outlook/outlook_sync", () => ({
   performFullSync: vi.fn().mockResolvedValue(undefined),
   setupSubscriptions: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { exchangeOutlookCode } from "@/lib/outlook_access";
-import { performFullSync, setupSubscriptions } from "@/lib/outlook_sync";
+import { exchangeOutlookCode } from "@/lib/outlook/outlook_access";
+import {
+  performFullSync,
+  setupSubscriptions,
+} from "@/lib/outlook/outlook_sync";
 
 function makeRequest(code?: string): Request {
   const url = code
@@ -58,14 +61,14 @@ describe("GET /api/outlook/callback", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeRequest("auth_code_123"));
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
   it("inserts a new token and redirects for a new user", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -99,7 +102,7 @@ describe("GET /api/outlook/callback", () => {
   });
 
   it("updates an existing token and redirects", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -139,7 +142,7 @@ describe("GET /api/outlook/callback", () => {
   });
 
   it("still redirects when performFullSync fails", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -164,7 +167,7 @@ describe("GET /api/outlook/callback", () => {
   });
 
   it("still redirects when setupSubscriptions fails", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",

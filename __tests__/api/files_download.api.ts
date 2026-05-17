@@ -1,10 +1,10 @@
 import { GET } from "@/app/api/files/[id]/download/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -21,7 +21,7 @@ vi.mock("@/lib/storage", () => {
   return { downloadFile: mockDownload };
 });
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
@@ -37,7 +37,7 @@ describe("GET /api/project-files/[id]", () => {
   }
 
   it("returns 401 if not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as NextRequest, mockCtx("1"));
 
@@ -46,7 +46,7 @@ describe("GET /api/project-files/[id]", () => {
   });
 
   it("returns 404 if file not found", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () => Promise.resolve([]),
@@ -60,7 +60,7 @@ describe("GET /api/project-files/[id]", () => {
   });
 
   it("returns 500 if storage download fails", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     (db.select as Mock).mockReturnValue({
       from: () => ({
         where: () =>
@@ -84,7 +84,7 @@ describe("GET /api/project-files/[id]", () => {
   });
 
   it("returns file buffer with correct headers on success", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const mockFile = {
       id: 1,

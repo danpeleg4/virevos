@@ -1,11 +1,11 @@
 "use server";
 
 import { CreateClientInput, UpdateClientInput } from "@/types/clients";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { clients } from "@db/schema";
 import { and, eq } from "drizzle-orm";
-import { assertCanAddClient } from "./plan_limits";
+import { assertCanAddClient } from "../plan_limits";
 import {
   MAX_NAME,
   MAX_NOTES,
@@ -15,13 +15,13 @@ import {
   requireEmail,
   requireOneOf,
   requireString,
-} from "./validation";
+} from "../util/validation";
 
 const CLIENT_STATUSES = ["active", "inactive"] as const;
 
 export async function addAClient(body: CreateClientInput) {
   try {
-    const user = await currentUser();
+    const user = await getCurrentUser();
     if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
     await assertCanAddClient(user.id);
@@ -54,7 +54,7 @@ export async function addAClient(body: CreateClientInput) {
 }
 
 export async function updateExistingClient(newClient: UpdateClientInput) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const { id, name, email, phone, notes, status } = newClient;
@@ -85,7 +85,7 @@ export async function updateExistingClient(newClient: UpdateClientInput) {
 }
 
 export async function deleteClient({ id }: { id: number }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
   await db
     .delete(clients)
@@ -99,7 +99,7 @@ export async function updateNotes({
   id: number;
   notes: string;
 }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
   const validNotes = requireString(notes, "notes", MAX_NOTES, {
     allowEmpty: true,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOutlookAuthUrl } from "@/lib/outlook_access";
+import { getOutlookAuthUrl } from "@/lib/outlook/outlook_access";
 
 export async function GET() {
   const url = getOutlookAuthUrl();

@@ -5,10 +5,10 @@ import {
   listPendingDocumentRequests,
   updateDocumentRequest,
 } from "@/lib/document_requests";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const mockUpdateWhere = vi.fn();
@@ -49,12 +49,12 @@ const mockUser = { id: "user_1" };
 
 describe("listPendingDocumentRequests", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(listPendingDocumentRequests()).rejects.toThrow("Unauthorized");
   });
 
   it("returns empty array when no pending requests exist", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const orderBy = vi.fn().mockResolvedValue([]);
     const where = vi.fn(() => ({ orderBy }));
     const innerJoin = vi.fn(() => ({ where }));
@@ -66,7 +66,7 @@ describe("listPendingDocumentRequests", () => {
   });
 
   it("returns mapped requests with their items", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const requestRow = {
       id: 7,
@@ -126,14 +126,14 @@ describe("listPendingDocumentRequests", () => {
 
 describe("updateDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(updateDocumentRequest(1, { clientId: 5 })).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("throws when the request is not owned by the user", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const limit = vi.fn().mockResolvedValue([]);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));
@@ -145,7 +145,7 @@ describe("updateDocumentRequest", () => {
   });
 
   it("runs a transaction that updates clientId and diffs items", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const limit = vi.fn().mockResolvedValue([{ id: 1 }]);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));
@@ -192,12 +192,12 @@ describe("updateDocumentRequest", () => {
 
 describe("approveDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(approveDocumentRequest(1)).rejects.toThrow("Unauthorized");
   });
 
   it("throws when the request is not found", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const limit = vi.fn().mockResolvedValue([]);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));
@@ -209,7 +209,7 @@ describe("approveDocumentRequest", () => {
   });
 
   it("throws when clientId is null", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const limit = vi.fn().mockResolvedValue([{ clientId: null }]);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));
@@ -221,7 +221,7 @@ describe("approveDocumentRequest", () => {
   });
 
   it("sets status to approved with approvedAt when clientId is set", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const limit = vi.fn().mockResolvedValue([{ clientId: 42 }]);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));
@@ -243,12 +243,12 @@ describe("approveDocumentRequest", () => {
 
 describe("declineDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(declineDocumentRequest(1)).rejects.toThrow("Unauthorized");
   });
 
   it("sets status to declined for an owned request", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const limit = vi.fn().mockResolvedValue([{ id: 1 }]);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));

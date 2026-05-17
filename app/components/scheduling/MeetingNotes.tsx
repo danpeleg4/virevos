@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { addProjectTasksAction } from "@/lib/tasks";
-import { markActionItemAdded } from "@/lib/meetings";
+import { addProjectTasksAction } from "@/lib/workspace/tasks";
+import { markActionItemAdded } from "@/lib/workspace/meetings";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
-import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
+import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 import { Separator } from "../ui/separator";
 
 const ROW_HEIGHT = 52;

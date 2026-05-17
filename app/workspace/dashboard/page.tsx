@@ -16,11 +16,11 @@ import {
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { task_percentage } from "@/lib/task_percentage";
+import { task_percentage } from "@/lib/util/task_percentage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
-import { updateTaskStatus } from "@/lib/tasks";
+import { updateTaskStatus } from "@/lib/workspace/tasks";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
 const fadeInUp = {

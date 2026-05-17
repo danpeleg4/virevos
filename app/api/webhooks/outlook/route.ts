@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { outlookSyncState } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { performIncrementalSync } from "@/lib/outlook_sync";
+import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
 
 interface OutlookNotification {
   subscriptionId: string;

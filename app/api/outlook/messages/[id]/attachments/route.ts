@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { outlookEmails } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import axios from "axios";
-import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -43,7 +43,7 @@ async function resolveEmail(numericId: number, userId: string) {
  *     param rather than a URL path segment)
  **/
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }

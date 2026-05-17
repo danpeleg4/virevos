@@ -1,6 +1,6 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import {
   meetingDocumentRequests,
@@ -18,7 +18,7 @@ import type {
 export async function listPendingDocumentRequests(): Promise<
   PendingDocRequest[]
 > {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const requestRows = await db
@@ -101,7 +101,7 @@ export async function updateDocumentRequest(
   requestId: number,
   patch: UpdateDocumentRequestPatch
 ): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   await ensureRequestOwnership(requestId, user.id);
@@ -156,7 +156,7 @@ export async function updateDocumentRequest(
 }
 
 export async function approveDocumentRequest(requestId: number): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const rows = await db
@@ -184,7 +184,7 @@ export async function approveDocumentRequest(requestId: number): Promise<void> {
 }
 
 export async function declineDocumentRequest(requestId: number): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   await ensureRequestOwnership(requestId, user.id);
@@ -205,7 +205,7 @@ export async function listFulfilledRequestsForAgency(): Promise<
     items: DocumentRequestItem[];
   }>
 > {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const requestRows = await db

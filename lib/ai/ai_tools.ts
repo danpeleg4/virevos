@@ -1,10 +1,10 @@
 import OpenAI from "openai";
 import { CreateClientInput, UpdateClientInput } from "@/types/clients";
-import { addAClient, updateExistingClient } from "@/lib/clients";
-import { getPastMeetingTranscript } from "@/lib/meetings";
-import { createCase, updateCase } from "@/lib/cases";
-import { addProjectTasksAction, updateTask } from "@/lib/tasks";
-import { addMeetingToCalendar, updateEvent } from "@/lib/calendar";
+import { addAClient, updateExistingClient } from "@/lib/workspace/clients";
+import { getPastMeetingTranscript } from "@/lib/workspace/meetings";
+import { createCase, updateCase } from "@/lib/workspace/cases";
+import { addProjectTasksAction, updateTask } from "@/lib/workspace/tasks";
+import { addMeetingToCalendar, updateEvent } from "@/lib/workspace/calendar";
 import { getEmailData, getRecentEmails } from "@/lib/emails";
 import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
