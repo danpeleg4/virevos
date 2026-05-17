@@ -1,12 +1,12 @@
 import { GET } from "@/app/api/events/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { events } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 // Mocks
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -26,7 +26,7 @@ describe("GET /api/events", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -45,7 +45,7 @@ describe("GET /api/events", () => {
       },
     ];
 
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.query.events.findMany as Mock).mockResolvedValue(mockEvents);
 
     const res = await GET();
@@ -65,7 +65,7 @@ describe("GET /api/events", () => {
   });
 
   it("derives 'active' status for past meetings whose stored status is 'upcoming'", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_123" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_123" });
     (db.query.events.findMany as Mock).mockResolvedValue([
       {
         id: "evt_past",
@@ -91,7 +91,7 @@ describe("GET /api/events", () => {
   });
 
   it("does not modify status for non-meeting events", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_123" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_123" });
     (db.query.events.findMany as Mock).mockResolvedValue([
       {
         id: "evt_1",

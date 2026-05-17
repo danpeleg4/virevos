@@ -10,14 +10,14 @@ const mockQueryClient = {
 };
 
 vi.mock("@tanstack/react-query", () => ({
-  useMutation: (opts: { onSettled?: (...args: unknown[]) => void }) => ({
+  useMutation: () => ({
     mutate: mockMutate,
     isPending: false,
   }),
   useQueryClient: () => mockQueryClient,
 }));
 
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   deleteTask: vi.fn(),
   updateTaskStatus: vi.fn(),
   changePriorityStatus: vi.fn(),

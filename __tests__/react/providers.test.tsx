@@ -1,12 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-vi.mock("@clerk/nextjs", () => ({
-  ClerkProvider: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-}));
-
 vi.mock("@tanstack/react-query", () => ({
   QueryClient: vi.fn(function () {
     return { defaultOptions: {} };

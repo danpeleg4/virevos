@@ -57,7 +57,7 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock("@/lib/date_utils", () => ({
+vi.mock("@/lib/util/date_utils", () => ({
   parseDateOnlyString: vi.fn((s: string) => new Date(s)),
 }));
 

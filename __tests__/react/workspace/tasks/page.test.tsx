@@ -17,11 +17,11 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("axios");
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   updateTaskStatus: vi.fn(),
   addProjectTasksAction: vi.fn(),
 }));
-vi.mock("@/lib/date_utils", () => ({
+vi.mock("@/lib/util/date_utils", () => ({
   parseDateOnlyString: vi.fn((s: string) => new Date(s)),
 }));
 

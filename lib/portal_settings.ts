@@ -1,10 +1,10 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { clientPortalTokens, clients } from "@db/schema";
 import { and, eq, InferSelectModel } from "drizzle-orm";
-import { ValidationError, requireInt } from "./validation";
+import { ValidationError, requireInt } from "./util/validation";
 
 type DbPortalSettings = NonNullable<
   InferSelectModel<typeof clientPortalTokens>["settings"]
@@ -19,7 +19,7 @@ export interface SavePortalSettingsInput {
 }
 
 export async function savePortalSettings(input: SavePortalSettingsInput) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const clientId = requireInt(input.clientId, "clientId");

@@ -3,14 +3,14 @@
 import { db } from "@db/db";
 import { caseNotes, caseFiles, cases, tasks, users } from "@db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { AddFileMetadataInput, Case } from "@/types/cases";
-import { uploadFile, deleteFile } from "./storage";
-import { FILES_BUCKET } from "./supabase";
-import { assertCanAddCase, assertCanAddFile } from "./plan_limits";
+import { uploadFile, deleteFile } from "../storage";
+import { FILES_BUCKET } from "../supabase/supabase";
+import { assertCanAddCase, assertCanAddFile } from "../plan_limits";
 
 export async function deleteCase(caseId: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   const files = await db
@@ -52,7 +52,7 @@ export async function addFileMetadata(
   input: AddFileMetadataInput,
   formData: FormData
 ) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   const file = formData.get("file") as File | null;
   if (!file) throw new Error("No file provided");
@@ -98,7 +98,7 @@ export async function addFileMetadata(
 }
 
 export async function createCase(aCase: Case) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
@@ -125,7 +125,7 @@ export async function createCase(aCase: Case) {
 }
 
 export async function addCaseNotes(newNote: string, caseId: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   await db.insert(caseNotes).values({
@@ -144,7 +144,7 @@ export async function updateCase(input: {
   priority?: string;
   clientId?: number | null;
 }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   const updateData: Record<string, unknown> = {};
@@ -165,7 +165,7 @@ export async function updateCase(input: {
 }
 
 export async function changeCaseStatus(aCase: Case, newStatus: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   const { id } = aCase;
@@ -176,7 +176,7 @@ export async function changeCaseStatus(aCase: Case, newStatus: string) {
 }
 
 export async function deleteCaseFile(fileId: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   const [file] = await db

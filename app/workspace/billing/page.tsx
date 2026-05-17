@@ -59,7 +59,7 @@ import {
   resubscribe,
   updatePaymentMethod,
   createSetupIntent,
-} from "@/lib/billing";
+} from "@/lib/workspace/billing";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!

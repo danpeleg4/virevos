@@ -1,5 +1,5 @@
 import { GET } from "@/app/api/google/callback/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { google } from "googleapis";
 
@@ -11,8 +11,8 @@ vi.mock("googleapis", () => ({
   },
 }));
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -23,12 +23,12 @@ vi.mock("@db/db", () => ({
   },
 }));
 
-vi.mock("@/lib/google_sync", () => ({
+vi.mock("@/lib/google/google_sync", () => ({
   performFullSync: vi.fn().mockResolvedValue(undefined),
   setupWatchChannel: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { performFullSync, setupWatchChannel } from "@/lib/google_sync";
+import { performFullSync, setupWatchChannel } from "@/lib/google/google_sync";
 
 const mockGetToken = vi.fn();
 
@@ -67,14 +67,14 @@ describe("GET /api/google/callback", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeRequest("auth_code_123"));
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
   it("inserts a new token and redirects for a new user", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -110,7 +110,7 @@ describe("GET /api/google/callback", () => {
   });
 
   it("updates an existing token and redirects", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -152,7 +152,7 @@ describe("GET /api/google/callback", () => {
   });
 
   it("still redirects when performFullSync fails", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",
@@ -179,7 +179,7 @@ describe("GET /api/google/callback", () => {
   });
 
   it("still redirects when setupWatchChannel fails", async () => {
-    (currentUser as Mock).mockResolvedValue({
+    (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
       emailAddresses: [{ emailAddress: "user@example.com" }],
       firstName: "Test",

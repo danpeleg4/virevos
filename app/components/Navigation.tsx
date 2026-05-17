@@ -5,24 +5,32 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
-import { SignOutButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
+import { useAuthUser } from "@/app/hooks/useAuthUser";
+import { createBrowserSupabase } from "@/lib/supabase/client";
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
-  const { isSignedIn } = useUser();
+  const { data: user } = useAuthUser();
+  const isSignedIn = !!user;
 
   const handleNavigation = (path: string) => {
     router.push(path);
     setMobileMenuOpen(false);
   };
 
+  const handleSignOut = async () => {
+    const supabase = createBrowserSupabase();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
+
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -40,7 +48,6 @@ export function Navigation() {
             </div>
           </motion.div>
 
-          {/* Desktop Navigation */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -70,7 +77,6 @@ export function Navigation() {
             </Button>
           </motion.div>
 
-          {/* Desktop CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -79,14 +85,13 @@ export function Navigation() {
           >
             {isSignedIn ? (
               <>
-                <SignOutButton>
-                  <Button
-                    variant="ghost"
-                    className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
-                  >
-                    Logout
-                  </Button>
-                </SignOutButton>
+                <Button
+                  onClick={handleSignOut}
+                  variant="ghost"
+                  className="text-sm text-gray-700 hover:text-gray-900 hover:bg-transparent"
+                >
+                  Logout
+                </Button>
                 <Button
                   onClick={() => router.push("/workspace/dashboard")}
                   className="bg-gray-900 hover:bg-gray-800 text-sm px-4 rounded-lg text-white"
@@ -113,7 +118,6 @@ export function Navigation() {
             )}
           </motion.div>
 
-          {/* Mobile menu button */}
           <div className="md:hidden">
             <Button
               variant="ghost"
@@ -129,7 +133,6 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -140,7 +143,6 @@ export function Navigation() {
               className="md:hidden overflow-hidden"
             >
               <div className="py-4 space-y-2">
-                {/* Simple Links */}
                 <button
                   onClick={() => handleNavigation("/features")}
                   className="block w-full text-left text-sm text-gray-700 hover:text-gray-900 transition-colors py-2 px-2"

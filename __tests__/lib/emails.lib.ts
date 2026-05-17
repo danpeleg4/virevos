@@ -1,8 +1,8 @@
 import { getEmailData, getRecentEmails } from "@/lib/emails";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/schema", () => ({
@@ -93,13 +93,13 @@ afterEach(() => {
 
 describe("getEmailData", () => {
   it("returns [] when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     expect(await getEmailData("query")).toEqual([]);
     expect(mockCreateEmbedding).not.toHaveBeenCalled();
   });
 
   it("calls queryVectors scoped to the current user_id and topK=10", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({ data: { vectors: [] } });
     (db.select as Mock).mockReturnValue({ from: mockFrom });
     await getEmailData("Acme contract");
@@ -113,7 +113,7 @@ describe("getEmailData", () => {
   });
 
   it("returns [] and logs when queryVectors returns an error", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       error: { message: "boom" },
     });
@@ -122,14 +122,14 @@ describe("getEmailData", () => {
   });
 
   it("returns [] when no vectors come back", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({ data: { vectors: [] } });
     expect(await getEmailData("query")).toEqual([]);
     expect(db.select).not.toHaveBeenCalled();
   });
 
   it("enriches each hit with DB row data when present, preserving rank order", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -185,7 +185,7 @@ describe("getEmailData", () => {
   });
 
   it("falls back to vector metadata when the DB row is missing", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -219,7 +219,7 @@ describe("getEmailData", () => {
   });
 
   it("skips vectors whose metadata has no outlook_id", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -236,7 +236,7 @@ describe("getEmailData", () => {
   });
 
   it("throws ValidationError when text is empty", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await expect(getEmailData("")).rejects.toThrow();
   });
 });
@@ -245,13 +245,13 @@ describe("getEmailData", () => {
 
 describe("getRecentEmails", () => {
   it("returns [] when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     expect(await getRecentEmails(5)).toEqual([]);
     expect(db.select).not.toHaveBeenCalled();
   });
 
   it("clamps limit to 25 when caller asks for more", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([]);
     await getRecentEmails(500);
@@ -259,7 +259,7 @@ describe("getRecentEmails", () => {
   });
 
   it("clamps limit to 1 when caller asks for less", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([]);
     await getRecentEmails(0);
@@ -267,14 +267,14 @@ describe("getRecentEmails", () => {
   });
 
   it("throws ValidationError when limit is not a number", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await expect(
       getRecentEmails("five" as unknown as number)
     ).rejects.toThrow();
   });
 
   it("uses bodyText when present, truncated only above 1500 chars", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {
@@ -295,7 +295,7 @@ describe("getRecentEmails", () => {
   });
 
   it("strips HTML when bodyText is null and bodyHtml is present", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {
@@ -316,7 +316,7 @@ describe("getRecentEmails", () => {
   });
 
   it("truncates body at 1500 chars and appends an ellipsis", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue({ from: mockFromChain });
     const longBody = "a".repeat(2000);
     mockLimit.mockResolvedValueOnce([
@@ -338,7 +338,7 @@ describe("getRecentEmails", () => {
   });
 
   it("returns body=null when both bodyText and bodyHtml are null", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {
@@ -359,7 +359,7 @@ describe("getRecentEmails", () => {
   });
 
   it("maps sentAt to ISO string and isSent to a boolean", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue({ from: mockFromChain });
     mockLimit.mockResolvedValueOnce([
       {

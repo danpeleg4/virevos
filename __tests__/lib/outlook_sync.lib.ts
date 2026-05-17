@@ -8,7 +8,7 @@ vi.mock("drizzle-orm", () => ({
   and: vi.fn(),
   eq: vi.fn(),
 }));
-vi.mock("@/lib/outlook_access", () => ({
+vi.mock("@/lib/outlook/outlook_access", () => ({
   getFreshOutlookAccessToken: vi.fn(),
 }));
 vi.mock("@/lib/embeddings", () => ({
@@ -16,7 +16,7 @@ vi.mock("@/lib/embeddings", () => ({
   supabaseVector: { storage: { vectors: { from: vi.fn() } } },
 }));
 
-import { parseGraphDateTime } from "@/lib/outlook_sync";
+import { parseGraphDateTime } from "@/lib/outlook/outlook_sync";
 
 describe("parseGraphDateTime", () => {
   it("parses Graph's tz-less dateTime as UTC (not local)", () => {

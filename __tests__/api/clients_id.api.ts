@@ -3,11 +3,11 @@ import { GET as getClient } from "@/app/api/clients/[id]/route";
 import { GET as getClientCases } from "@/app/api/clients/[id]/cases/route";
 import { GET as getClientEmails } from "@/app/api/clients/[id]/outlook-emails/route";
 import { GET as getClientPortal } from "@/app/api/clients/[id]/portal/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -34,13 +34,13 @@ describe("GET /api/clients/[id]", () => {
   const params = Promise.resolve({ id: "42" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await getClient(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns 400 for invalid id", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const res = await getClient(req, {
       params: Promise.resolve({ id: "not-a-number" }),
     });
@@ -48,7 +48,7 @@ describe("GET /api/clients/[id]", () => {
   });
 
   it("returns 404 when client not found", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const limit = vi.fn().mockResolvedValue([]);
     const groupBy = vi.fn(() => ({ limit }));
@@ -62,7 +62,7 @@ describe("GET /api/clients/[id]", () => {
   });
 
   it("returns client + portal=null when found with no portal", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const clientRow = {
       id: 42,
@@ -103,7 +103,7 @@ describe("GET /api/clients/[id]", () => {
   });
 
   it("returns 500 on db error", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockImplementation(() => {
       throw new Error("boom");
     });
@@ -116,13 +116,13 @@ describe("GET /api/clients/[id]/cases", () => {
   const params = Promise.resolve({ id: "5" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await getClientCases(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns cases-with-stats for the client", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const rows = [
       {
@@ -160,13 +160,13 @@ describe("GET /api/clients/[id]/outlook-emails", () => {
   const params = Promise.resolve({ id: "5" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await getClientEmails(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns emails for the client", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const emails = [
       {
@@ -200,13 +200,13 @@ describe("GET /api/clients/[id]/portal", () => {
   const params = Promise.resolve({ id: "5" });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await getClientPortal(req, { params });
     expect(res.status).toBe(401);
   });
 
   it("returns portal=null when no portal exists for the client", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const limit = vi.fn().mockResolvedValue([]);
     const where = vi.fn(() => ({ limit }));
@@ -222,7 +222,7 @@ describe("GET /api/clients/[id]/portal", () => {
   });
 
   it("returns the portal record with a portalUrl when present", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
 
     const row = {

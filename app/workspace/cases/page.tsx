@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Case } from "@/types/cases";
 import { useRouter } from "next/navigation";
-import { changeCaseStatus } from "@/lib/cases";
+import { changeCaseStatus } from "@/lib/workspace/cases";
 
 export default function CasesPage() {
   const [search] = useState("");

@@ -1,9 +1,9 @@
 import { GET } from "@/app/api/outlook/messages/[id]/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -64,13 +64,13 @@ describe("GET /api/outlook/messages/[id]", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns 401 if not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeRequest(), { params });
     expect(res.status).toBe(401);
   });
 
   it("returns 400 for non-numeric id", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     const res = await GET(makeRequest(), {
       params: Promise.resolve({ id: "abc" }),
     });
@@ -78,14 +78,14 @@ describe("GET /api/outlook/messages/[id]", () => {
   });
 
   it("returns 404 when message not found", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbEmpty();
     const res = await GET(makeRequest(), { params });
     expect(res.status).toBe(404);
   });
 
   it("returns the message when found", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbFound();
     const res = await GET(makeRequest(), { params });
     expect(res.status).toBe(200);

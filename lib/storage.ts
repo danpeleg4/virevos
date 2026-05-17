@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "./supabase";
+import { supabaseAdmin } from "./supabase/supabase";
 
 export async function uploadFile(
   bucket: string,

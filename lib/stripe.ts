@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import { db } from "@db/db";
 import { subscriptions } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { updatePlanLimits } from "@/lib/billing";
+import { updatePlanLimits } from "./workspace/billing";
 
 let _instance: Stripe | undefined;
 
@@ -123,12 +123,12 @@ export async function handleInvoicePaymentSucceeded(
   if (!customerId) return;
 
   const [existing] = await db
-    .select({ userId: subscriptions.userId })
+    .select({ userId: subscriptions.userId, plan: subscriptions.plan })
     .from(subscriptions)
     .where(eq(subscriptions.stripeCustomerId, customerId))
     .limit(1);
 
   if (existing?.userId) {
-    await updatePlanLimits(existing.userId, "monthly_reset");
+    await updatePlanLimits(existing.userId, existing.plan ?? "starter");
   }
 }

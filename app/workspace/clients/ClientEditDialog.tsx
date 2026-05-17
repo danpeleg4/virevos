@@ -20,7 +20,7 @@ import {
   SelectItem,
 } from "@/app/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateExistingClient } from "@/lib/clients";
+import { updateExistingClient } from "@/lib/workspace/clients";
 import type { clients, UpdateClientInput } from "@/types/clients";
 
 type ClientStatus = "active" | "inactive";

@@ -13,7 +13,7 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }));
 
-vi.mock("@/lib/clients", () => ({
+vi.mock("@/lib/workspace/clients", () => ({
   updateExistingClient: vi.fn(),
 }));
 

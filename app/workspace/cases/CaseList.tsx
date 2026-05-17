@@ -29,7 +29,7 @@ import {
   Target,
   ListChecks,
 } from "lucide-react";
-import { task_percentage } from "@/lib/task_percentage";
+import { task_percentage } from "@/lib/util/task_percentage";
 import { Progress } from "@/app/components/ui/progress";
 import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";

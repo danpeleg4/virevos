@@ -5,12 +5,16 @@ import {
   cancelSubscription,
   updatePaymentMethod,
   registerFreePlan,
-} from "@/lib/billing";
-import { currentUser } from "@clerk/nextjs/server";
+} from "@/lib/workspace/billing";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
+}));
+
+vi.mock("@/lib/user", () => ({
+  ensureUserRow: vi.fn(),
 }));
 
 const mockWhere = vi.fn();
@@ -23,7 +27,6 @@ const mockValues = vi.fn(() => ({
   onConflictDoNothing: mockOnConflictDoNothing,
 }));
 const mockFrom = vi.fn(() => ({ where: mockWhere }));
-const mockSelect = vi.fn(() => ({ from: mockFrom }));
 
 vi.mock("@db/db", () => ({
   db: {
@@ -67,7 +70,7 @@ vi.mock("@/lib/stripe", () => ({
 
 const mockUser = {
   id: "user_1",
-  emailAddresses: [{ emailAddress: "test@example.com" }],
+  email: "test@example.com",
 };
 
 function mockDbSelect(rows: unknown[]) {
@@ -104,12 +107,12 @@ afterEach(() => {
 
 describe("createSetupIntent", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(createSetupIntent()).rejects.toThrow("Unauthorized");
   });
 
   it("returns client_secret from Stripe SetupIntent", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([{ stripeCustomerId: "cus_existing" }]);
     mockStripeSetupIntentCreate.mockResolvedValue({
       client_secret: "seti_secret_123",
@@ -123,7 +126,7 @@ describe("createSetupIntent", () => {
   });
 
   it("creates new Stripe customer if none exists", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
     mockStripeCustomerCreate.mockResolvedValue({ id: "cus_new" });
     mockReturning.mockResolvedValue([]);
@@ -143,12 +146,12 @@ describe("createSetupIntent", () => {
 
 describe("getUserSubscription", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(getUserSubscription()).rejects.toThrow("Unauthorized");
   });
 
   it("returns starter defaults when no subscription row exists", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
 
     const result = await getUserSubscription();
@@ -158,7 +161,7 @@ describe("getUserSubscription", () => {
   });
 
   it("returns subscription data from DB when row exists", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -182,14 +185,14 @@ describe("getUserSubscription", () => {
 
 describe("changePlan", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(changePlan({ planId: "professional" })).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("throws when no active subscription", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
 
     await expect(changePlan({ planId: "professional" })).rejects.toThrow(
@@ -198,7 +201,7 @@ describe("changePlan", () => {
   });
 
   it("sets cancel_at_period_end when downgrading to starter", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -224,7 +227,7 @@ describe("changePlan", () => {
   });
 
   it("updates limits immediately when upgrading between paid plans", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     process.env.STRIPE_PRICE_BUSINESS_MONTHLY = "price_biz";
     mockDbSelect([
       {
@@ -249,7 +252,7 @@ describe("changePlan", () => {
   });
 
   it("does not update limits immediately when downgrading between paid plans", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY = "price_pro";
     mockDbSelect([
       {
@@ -278,12 +281,12 @@ describe("changePlan", () => {
 
 describe("cancelSubscription", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(cancelSubscription()).rejects.toThrow("Unauthorized");
   });
 
   it("calls stripe.subscriptions.update with cancel_at_period_end: true", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -309,12 +312,12 @@ describe("cancelSubscription", () => {
 
 describe("updatePaymentMethod", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(updatePaymentMethod("pm_123")).rejects.toThrow("Unauthorized");
   });
 
   it("throws when no stripe customer", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([]);
 
     await expect(updatePaymentMethod("pm_123")).rejects.toThrow(
@@ -323,7 +326,7 @@ describe("updatePaymentMethod", () => {
   });
 
   it("attaches PM and updates customer default", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockDbSelect([
       {
         plan: "professional",
@@ -356,13 +359,12 @@ describe("updatePaymentMethod", () => {
 
 describe("registerFreePlan", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(registerFreePlan()).rejects.toThrow("Unauthorized");
   });
 
-  it("returns existing customer id without creating new one", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
-    mockDbSelect([{ stripeCustomerId: "cus_existing" }]);
+  it("does not call Stripe at signup", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     await registerFreePlan();
     expect(mockStripeCustomerCreate).not.toHaveBeenCalled();

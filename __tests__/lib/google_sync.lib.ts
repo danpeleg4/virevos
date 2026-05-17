@@ -29,7 +29,7 @@ vi.mock("googleapis", () => {
   };
 });
 
-vi.mock("@/lib/google_access", () => ({
+vi.mock("@/lib/google/google_access", () => ({
   getFreshGoogleAccessToken: vi.fn().mockResolvedValue("mock-access-token"),
 }));
 
@@ -56,8 +56,8 @@ import {
   performIncrementalSync,
   setupWatchChannel,
   stopWatchChannel,
-} from "@/lib/google_sync";
-import { getFreshGoogleAccessToken } from "@/lib/google_access";
+} from "@/lib/google/google_sync";
+import { getFreshGoogleAccessToken } from "@/lib/google/google_access";
 
 // Builds a single mock return value for db.select() that supports both:
 //   await db.select().from(x).where(y)           (no limit, used in applyGoogleEventsToDb)

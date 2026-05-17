@@ -12,8 +12,8 @@ import {
   requireEmail,
   requireInt,
   requireString,
-} from "@/lib/validation";
-import { rateLimit } from "@/lib/rate_limit";
+} from "@/lib/util/validation";
+import { rateLimit } from "@/lib/util/rate_limit";
 
 export async function POST(
   req: NextRequest,

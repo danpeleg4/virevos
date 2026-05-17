@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { openai, MODEL } from "@/lib/ai_tools";
+import { openai, MODEL } from "@/lib/ai/ai_tools";
 import type { DocumentRequestItemAiVerdict } from "@/types/document_requests";
 
 export interface AnalyzeDocumentRequirementInput {

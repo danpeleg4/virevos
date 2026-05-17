@@ -2,7 +2,7 @@ import axios from "axios";
 import { db } from "@db/db";
 import { events, outlookEmails, outlookSyncState } from "@db/schema";
 import { and, eq } from "drizzle-orm";
-import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import {
   createEmbeddings,
   supabaseVector,

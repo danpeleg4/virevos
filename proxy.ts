@@ -1,27 +1,31 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
-const isProtectedRoute = createRouteMatcher(["/workspace(.*)"]);
-const isOnboardRoute = createRouteMatcher(["/onboard(.*)"]);
+export default async function middleware(req: NextRequest) {
+  const { supabaseResponse, user } = await updateSession(req);
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+  const { pathname } = req.nextUrl;
+
+  // Don't redirect server action calls — they POST to the page URL and must
+  // reach their handler. Without this guard, finishing OTP on /onboard would
+  // redirect the registerFreePlan action call to /workspace/dashboard.
+  const isServerAction = req.headers.has("next-action");
+  if (isServerAction) return supabaseResponse;
+
+  if (pathname.startsWith("/workspace") && !user) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  if (isOnboardRoute(req)) {
-    const { userId } = await auth();
-    if (userId) {
-      return NextResponse.redirect(new URL("/workspace/dashboard", req.url));
-    }
+  if (pathname.startsWith("/onboard") && user) {
+    return NextResponse.redirect(new URL("/workspace/dashboard", req.url));
   }
-});
+
+  return supabaseResponse;
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 };

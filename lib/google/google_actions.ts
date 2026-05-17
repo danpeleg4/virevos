@@ -1,6 +1,6 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { googleEmails, clients } from "@db/schema";
 import { and, eq } from "drizzle-orm";
@@ -10,11 +10,11 @@ import {
   buildRawEmail,
   parseEmailAddress,
   EmailAttachment,
-} from "@/lib/gmail_client";
-import { performGmailSync } from "@/lib/gmail_sync";
+} from "@/lib/google/gmail_client";
+import { performGmailSync } from "@/lib/google/gmail_sync";
 import { downloadFile } from "@/lib/storage";
-import { FILES_BUCKET } from "@/lib/supabase";
-import { sanitizeEmailHtml } from "@/lib/html_sanitizer";
+import { FILES_BUCKET } from "@/lib/supabase/supabase";
+import { sanitizeEmailHtml } from "@/lib/util/html_sanitizer";
 import {
   MAX_ATTACHMENTS,
   MAX_HTML_BODY,
@@ -27,7 +27,7 @@ import {
   requireInt,
   requireOneOf,
   requireString,
-} from "./validation";
+} from "../util/validation";
 
 const MESSAGE_ACTIONS = [
   "star",
@@ -112,13 +112,13 @@ function validateSendInput(raw: SendGmailInput): SendGmailInput {
 }
 
 export async function syncGmailInbox() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
   return await performGmailSync(user.id);
 }
 
 export async function sendGmail(raw: SendGmailInput) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const input = validateSendInput(raw);
@@ -132,11 +132,8 @@ export async function sendGmail(raw: SendGmailInput) {
   }
 
   const profileRes = await gmail.users.getProfile({ userId: "me" });
-  const fromEmail =
-    profileRes.data.emailAddress ||
-    user.emailAddresses?.[0]?.emailAddress ||
-    "";
-  const fromName = user.fullName || "";
+  const fromEmail = profileRes.data.emailAddress || user.email || "";
+  const fromName = (user.user_metadata?.name as string | undefined) ?? "";
 
   const attachments: EmailAttachment[] = [];
   if (input.attachments && input.attachments.length > 0) {
@@ -233,7 +230,7 @@ export async function sendGmail(raw: SendGmailInput) {
 }
 
 export async function updateGmailMessage(id: number, action: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");
@@ -290,7 +287,7 @@ export async function updateGmailMessage(id: number, action: string) {
 }
 
 export async function deleteGmailMessage(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");

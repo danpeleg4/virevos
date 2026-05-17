@@ -31,10 +31,10 @@ vi.mock("next/link", () => ({
   }) => <a href={href}>{children}</a>,
 }));
 
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   updateTaskStatus: vi.fn(),
 }));
-vi.mock("@/lib/task_percentage", () => ({
+vi.mock("@/lib/util/task_percentage", () => ({
   task_percentage: vi.fn(() => 50),
 }));
 

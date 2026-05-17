@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { outlookEmails } from "@db/schema";
 import { and, eq } from "drizzle-orm";
@@ -9,7 +9,7 @@ interface RouteParams {
 }
 
 export async function GET(_req: Request, { params }: RouteParams) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }

@@ -6,12 +6,12 @@ import {
   changeCaseStatus,
   updateCase,
   deleteCaseFile,
-} from "@/lib/cases";
-import { currentUser } from "@clerk/nextjs/server";
+} from "@/lib/workspace/cases";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { assertCanAddFile } from "@/lib/plan_limits";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const mockDeleteWhere = vi.fn();
@@ -40,7 +40,7 @@ vi.mock("@db/db", () => {
   return { db: dbMock };
 });
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
@@ -85,19 +85,19 @@ afterEach(() => {
 
 describe("deleteCase", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(deleteCase(1)).rejects.toThrow("No user");
   });
 
   it("calls db.delete four times (caseFiles, tasks, notes, cases) when no files exist", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValue([]);
     await deleteCase(5);
     expect(mockDeleteWhere).toHaveBeenCalledTimes(4);
   });
 
   it("deletes files from storage and decrements storage counter when files exist", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValue([
       { path: "projects/user_1/file1.pdf", size: 1000 },
       { path: "projects/user_1/file2.pdf", size: 2000 },
@@ -118,7 +118,7 @@ describe("deleteCase", () => {
   });
 
   it("does not update storage counter when case has no files", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValue([]);
     await deleteCase(5);
     expect(mockDeleteFile).not.toHaveBeenCalled();
@@ -140,14 +140,14 @@ describe("addFileMetadata", () => {
   };
 
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(
       addFileMetadata({ caseId: 1 }, makeFormData())
     ).rejects.toThrow("No user");
   });
 
   it("throws storage limit error and skips upload when assertCanAddFile rejects", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (assertCanAddFile as Mock).mockRejectedValueOnce(
       new Error("Storage limit reached")
     );
@@ -158,7 +158,7 @@ describe("addFileMetadata", () => {
   });
 
   it("throws when storage upload throws", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockUploadFile.mockRejectedValueOnce(new Error("Upload failed"));
     await expect(
       addFileMetadata({ caseId: 1 }, makeFormData())
@@ -166,7 +166,7 @@ describe("addFileMetadata", () => {
   });
 
   it("inserts metadata and returns { path, name, size } on success", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockUploadFile.mockResolvedValueOnce(undefined);
 
     const result = await addFileMetadata(
@@ -179,7 +179,7 @@ describe("addFileMetadata", () => {
   });
 
   it("cleans up the uploaded file when the DB write fails", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockUploadFile.mockResolvedValueOnce(undefined);
     // Force the insert inside the transaction to reject.
     mockValues.mockImplementationOnce(() => {
@@ -210,12 +210,12 @@ describe("createCase", () => {
   };
 
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(createCase(baseCase as never)).rejects.toThrow("Unauthorized");
   });
 
   it("inserts case (without id field) and returns it with default stats", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const dbRecord = {
       name: "My Case",
       description: "A case",
@@ -241,7 +241,7 @@ describe("createCase", () => {
 
 describe("addCaseNotes", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(addCaseNotes("Note content", 1)).rejects.toThrow("No user");
   });
 });
@@ -250,18 +250,18 @@ describe("addCaseNotes", () => {
 
 describe("updateCase", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(updateCase({ id: 1, name: "X" })).rejects.toThrow("No user");
   });
 
   it("does nothing when no fields provided", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateCase({ id: 1 });
     expect(mockSet).not.toHaveBeenCalled();
   });
 
   it("updates provided fields with correct where clause", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateCase({ id: 3, name: "New Name", priority: "high" });
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ name: "New Name", priority: "high" })
@@ -270,7 +270,7 @@ describe("updateCase", () => {
   });
 
   it("updates all optional fields when provided", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateCase({
       id: 2,
       name: "P",
@@ -293,19 +293,19 @@ describe("updateCase", () => {
 
 describe("deleteCaseFile", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(deleteCaseFile(1)).rejects.toThrow("No user");
   });
 
   it("throws when file not found", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([]);
     await expect(deleteCaseFile(99)).rejects.toThrow("File not found");
     expect(mockDeleteFile).not.toHaveBeenCalled();
   });
 
   it("deletes from storage and DB on success", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([
       { path: "cases/user_1/file.pdf", size: 100 },
     ]);
@@ -318,7 +318,7 @@ describe("deleteCaseFile", () => {
   });
 
   it("does not delete from DB if storage throws", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([
       { path: "cases/user_1/file.pdf", size: 100 },
     ]);
@@ -333,14 +333,14 @@ describe("deleteCaseFile", () => {
 
 describe("changeCaseStatus", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(
       changeCaseStatus({ id: 1 } as never, "completed")
     ).rejects.toThrow("No user");
   });
 
   it("calls db.update().set({ status: newStatus }) with correct where clause", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await changeCaseStatus({ id: 3 } as never, "completed");
     expect(mockSet).toHaveBeenCalledWith({ status: "completed" });
     expect(mockUpdateWhere).toHaveBeenCalledTimes(1);

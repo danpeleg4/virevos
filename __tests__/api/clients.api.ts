@@ -1,5 +1,5 @@
 import { GET } from "@/app/api/clients/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
 let consoleErrorSpy: MockInstance;
@@ -12,8 +12,8 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -30,7 +30,7 @@ describe("GET /api/clients", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const response = await GET();
 
@@ -41,7 +41,7 @@ describe("GET /api/clients", () => {
   });
 
   it("returns clients with project counts", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
     const mockResult = [
       {
@@ -74,7 +74,7 @@ describe("GET /api/clients", () => {
   });
 
   it("returns 500 if database throws", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockImplementation(() => {
       throw new Error("DB failure");
     });

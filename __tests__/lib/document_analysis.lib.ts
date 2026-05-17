@@ -1,8 +1,8 @@
-import { analyzeDocumentRequirement } from "@/lib/document_analysis";
+import { analyzeDocumentRequirement } from "@/lib/ai/document_analysis";
 
 // eslint-disable-next-line no-var
 var mockCreate: Mock;
-vi.mock("@/lib/ai_tools", () => {
+vi.mock("@/lib/ai/ai_tools", () => {
   mockCreate = vi.fn();
   return {
     openai: { responses: { create: mockCreate } },

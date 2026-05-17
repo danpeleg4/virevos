@@ -1,75 +1,52 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import {
-  Sparkles,
   ChevronLeft,
   Eye,
   EyeOff,
   ArrowRight,
   Info,
+  CheckCircle2,
 } from "lucide-react";
-import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import type { ClerkAPIError } from "@clerk/types";
 import Image from "next/image";
+import { createBrowserSupabase } from "@/lib/supabase/client";
 
-type Step = "login" | "forgot" | "reset";
+type Step = "login" | "forgot-sent";
 
 export default function Login() {
-  const { signIn, isLoaded, setActive } = useSignIn();
   const router = useRouter();
+  const supabase = useMemo(() => createBrowserSupabase(), []);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [showNotification, setShowNotification] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("login");
-  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
-
-  if (!isLoaded || !signIn || !setActive) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
-          <div className="h-4 w-24 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-  const getClerkErrorMessage = (err: unknown) => {
-    const e = err as { errors?: ClerkAPIError[] };
-    console.error("Clerk error:", e);
-    return e.errors?.[0]?.message ?? "Something went wrong. Please try again.";
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded) return;
     setError(null);
     setLoading(true);
 
     try {
-      const result = await signIn.create({
-        identifier: email,
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
         password,
       });
 
-      if (!result) return;
-
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        router.push("/");
+      if (signInError) {
+        setError(signInError.message);
+        return;
       }
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err));
+
+      router.push("/workspace/dashboard");
+      router.refresh();
     } finally {
       setLoading(false);
     }
@@ -86,37 +63,16 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await signIn.create({
-        strategy: "reset_password_email_code",
-        identifier: email,
-      });
-
-      setStep("reset");
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const result = await signIn?.attemptFirstFactor({
-        strategy: "reset_password_email_code",
-        code,
-        password,
-      });
-
-      if (result?.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        router.push("/");
+      const redirectTo = `${window.location.origin}/auth/reset-password`;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        { redirectTo }
+      );
+      if (resetError) {
+        setError(resetError.message);
+        return;
       }
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err));
+      setStep("forgot-sent");
     } finally {
       setLoading(false);
     }
@@ -171,10 +127,12 @@ export default function Login() {
               Back to Home
             </button>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight">
-              Welcome Back
+              {step === "forgot-sent" ? "Check your email" : "Welcome Back"}
             </h1>
             <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
-              Login to access your dashboard and manage your cases.
+              {step === "forgot-sent"
+                ? `We've sent a password reset link to ${email}. Click the link to set a new password.`
+                : "Login to access your dashboard and manage your cases."}
             </p>
           </div>
 
@@ -244,63 +202,25 @@ export default function Login() {
               </Button>
             </form>
           )}
-          {step === "reset" && (
-            <form onSubmit={handleResetPassword} className="space-y-6">
-              <div>
-                <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-                  Verification Code
-                </Label>
-                <Input
-                  placeholder="123456"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className="h-11 rounded-xl"
-                  required
-                />
+          {step === "forgot-sent" && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-3 rounded-xl border border-green-100 bg-green-50 p-4">
+                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                <p className="text-sm text-green-700 font-medium">
+                  Email sent. Follow the link inside to choose a new password.
+                </p>
               </div>
-
-              <div>
-                <Label className="text-[13px] font-bold text-gray-700 mb-2 block">
-                  New Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 rounded-xl pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
               <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white h-12 rounded-xl font-bold"
-              >
-                {loading ? "Resetting..." : "Reset Password"}
-              </Button>
-
-              <button
                 type="button"
                 onClick={() => {
                   setStep("login");
                   setError(null);
                 }}
-                className="text-sm text-gray-500 hover:underline"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-[14px] font-bold"
               >
-                Back to login
-              </button>
-            </form>
+                Back to Login
+              </Button>
+            </div>
           )}
 
           <p className="text-center text-[12px] text-gray-400 mt-8">

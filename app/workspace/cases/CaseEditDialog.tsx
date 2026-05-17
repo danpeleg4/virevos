@@ -19,7 +19,7 @@ import {
   SelectItem,
 } from "@/app/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateCase } from "@/lib/cases";
+import { updateCase } from "@/lib/workspace/cases";
 import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";
 

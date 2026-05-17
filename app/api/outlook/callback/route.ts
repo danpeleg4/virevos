@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { outlookTokens, users } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { exchangeOutlookCode } from "@/lib/outlook_access";
-import { performFullSync, setupSubscriptions } from "@/lib/outlook_sync";
+import { exchangeOutlookCode } from "@/lib/outlook/outlook_access";
+import {
+  performFullSync,
+  setupSubscriptions,
+} from "@/lib/outlook/outlook_sync";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -14,18 +17,17 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing code" }, { status: 400 });
   }
 
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Ensure user row exists
   await db
     .insert(users)
     .values({
       user_id: user.id,
-      email: user.emailAddresses[0]?.emailAddress ?? "",
-      name: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || null,
+      email: user.email ?? "",
+      name: (user.user_metadata?.name as string | undefined) ?? null,
     })
     .onConflictDoNothing({ target: users.user_id });
 

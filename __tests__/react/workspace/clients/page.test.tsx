@@ -20,7 +20,7 @@ vi.mock("axios");
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
-vi.mock("@/lib/clients", () => ({
+vi.mock("@/lib/workspace/clients", () => ({
   addAClient: vi.fn(),
   deleteClient: vi.fn(),
 }));

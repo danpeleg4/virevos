@@ -12,12 +12,7 @@ const mockUseQueryClient = vi.fn(() => ({
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (opts: {
-    mutationFn: unknown;
-    onMutate?: unknown;
-    onError?: unknown;
-    onSettled?: unknown;
-  }) => ({
+  useMutation: () => ({
     mutate: mockMutate,
     isPending: false,
   }),
@@ -25,7 +20,7 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("axios");
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   addCaseTasksAction: vi.fn(),
 }));
 

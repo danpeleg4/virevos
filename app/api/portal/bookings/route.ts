@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { portalMeetingBookings, clients } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const user = await currentUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

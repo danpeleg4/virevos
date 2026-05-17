@@ -1,11 +1,11 @@
 import { POST } from "@/app/api/chat/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
-import { openai, tools } from "@/lib/ai_tools";
+import { openai, tools } from "@/lib/ai/ai_tools";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -14,7 +14,7 @@ vi.mock("@db/db", () => ({
   },
 }));
 
-vi.mock("@/lib/ai_tools", () => ({
+vi.mock("@/lib/ai/ai_tools", () => ({
   openai: {
     responses: {
       stream: vi.fn(),
@@ -30,26 +30,26 @@ vi.mock("@/lib/plan_limits", () => ({
   assertCanUseAI: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@/lib/clients", () => ({
+vi.mock("@/lib/workspace/clients", () => ({
   addAClient: vi.fn(),
   updateExistingClient: vi.fn(),
 }));
 
-vi.mock("@/lib/meetings", () => ({
+vi.mock("@/lib/workspace/meetings", () => ({
   getPastMeetingTranscript: vi.fn(),
 }));
 
-vi.mock("@/lib/cases", () => ({
+vi.mock("@/lib/workspace/cases", () => ({
   createCase: vi.fn(),
   updateCase: vi.fn(),
 }));
 
-vi.mock("@/lib/tasks", () => ({
+vi.mock("@/lib/workspace/tasks", () => ({
   addProjectTasksAction: vi.fn(),
   updateTask: vi.fn(),
 }));
 
-vi.mock("@/lib/calendar", () => ({
+vi.mock("@/lib/workspace/calendar", () => ({
   addMeetingToCalendar: vi.fn(),
   updateEvent: vi.fn(),
 }));
@@ -104,7 +104,7 @@ describe("POST /api/chat", () => {
   }
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await POST(
       mockRequest({ messages: [{ role: "user", content: "Hi" }] })
@@ -115,7 +115,7 @@ describe("POST /api/chat", () => {
   });
 
   it("returns 401 if user has no AI credits", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     const { assertCanUseAI } = await import("@/lib/plan_limits");
     (assertCanUseAI as Mock).mockRejectedValueOnce(
       new Error("AI credit limit reached")
@@ -130,7 +130,7 @@ describe("POST /api/chat", () => {
   });
 
   it("increments AI credits and streams a response", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const updateWhere = vi.fn();
     const updateSet = vi.fn(() => ({ where: updateWhere }));
@@ -162,7 +162,7 @@ describe("POST /api/chat", () => {
   });
 
   it("uses previousResponseId from request for conversation chaining", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     const updateWhere = vi.fn();
     const updateSet = vi.fn(() => ({ where: updateWhere }));
     (db.update as Mock).mockReturnValue({ set: updateSet });
@@ -242,12 +242,13 @@ describe("POST /api/chat", () => {
   it.each(toolTestCases)(
     "executes $toolName tool and streams tool_result event",
     async ({ toolName, args, resultKind }: ToolTestCase) => {
-      (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+      (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
       const updateWhere = vi.fn();
       const updateSet = vi.fn(() => ({ where: updateWhere }));
       (db.update as Mock).mockReturnValue({ set: updateSet });
 
-      const { executeTool: mockExecuteTool } = await import("@/lib/ai_tools");
+      const { executeTool: mockExecuteTool } =
+        await import("@/lib/ai/ai_tools");
       (mockExecuteTool as Mock).mockResolvedValueOnce({
         kind: resultKind,
         message: "ok",

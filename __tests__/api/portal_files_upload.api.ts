@@ -33,7 +33,7 @@ vi.mock("@/lib/storage", () => {
   return { uploadFile: mockUploadFile, deleteFile: mockDeleteFile };
 });
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 

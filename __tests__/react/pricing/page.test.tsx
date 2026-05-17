@@ -4,14 +4,17 @@ import { render, screen } from "@testing-library/react";
 const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({ isSignedIn: false, user: null, isLoaded: true }),
-  SignOutButton: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
+vi.mock("@/app/hooks/useAuthUser", () => ({
+  useAuthUser: () => ({ data: null, isPending: false }),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: { signOut: vi.fn() },
+  }),
 }));
 
 vi.mock("next-themes", () => ({

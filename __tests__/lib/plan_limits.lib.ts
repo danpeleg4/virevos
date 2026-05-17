@@ -13,7 +13,7 @@ const AI_CREDIT_LIMITS: Record<PlanId, number> = {
 };
 
 const STORAGE_LIMIT_BYTES: Record<PlanId, number> = {
-  starter: 1 * 1024 * 1024 * 1024,
+  starter: 1024 * 1024 * 1024,
   professional: 50 * 1024 * 1024 * 1024,
   business: 250 * 1024 * 1024 * 1024,
 };
@@ -28,13 +28,13 @@ vi.mock("@db/db", () => ({
 
 const mockGetUserSubscriptionByUserId = vi.fn();
 
-vi.mock("@/lib/billing", () => ({
+vi.mock("@/lib/workspace/billing", () => ({
   getUserSubscriptionByUserId: (...args: unknown[]) =>
     mockGetUserSubscriptionByUserId(...args),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-vi.mock("@clerk/nextjs/server", () => ({ currentUser: vi.fn() }));
+vi.mock("@/lib/supabase/auth", () => ({ getCurrentUser: vi.fn() }));
 
 function mockSubscription(plan: string) {
   mockGetUserSubscriptionByUserId.mockResolvedValue({ plan });
@@ -135,7 +135,7 @@ describe("AI_CREDIT_LIMITS", () => {
 
 describe("STORAGE_LIMIT_BYTES", () => {
   it("returns 1GB for starter", () => {
-    expect(STORAGE_LIMIT_BYTES.starter).toBe(1 * 1024 * 1024 * 1024);
+    expect(STORAGE_LIMIT_BYTES.starter).toBe(1024 * 1024 * 1024);
   });
 
   it("returns 50GB for professional", () => {

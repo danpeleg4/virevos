@@ -13,7 +13,7 @@ if (typeof (globalThis as { WebSocket?: unknown }).WebSocket === "undefined") {
 
 async function main() {
   const supabase = createClient(
-    process.env.SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_API_SECRET!
   );
 

@@ -7,14 +7,14 @@ import {
   outlookEmails,
   outlookTokens,
 } from "@db/schema";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { eq } from "drizzle-orm";
-import { stopWatchChannel } from "@/lib/google_sync";
-import { removeSubscriptions } from "@/lib/outlook_sync";
-import { ValidationError } from "./validation";
+import { stopWatchChannel } from "@/lib/google/google_sync";
+import { removeSubscriptions } from "@/lib/outlook/outlook_sync";
+import { ValidationError } from "./util/validation";
 
 export async function disconnectGoogle() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   try {
@@ -32,7 +32,7 @@ export async function disconnectGoogle() {
 export async function getGoogleConnectionStatus(): Promise<{
   connected: boolean;
 }> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const rows = await db
@@ -45,7 +45,7 @@ export async function getGoogleConnectionStatus(): Promise<{
 }
 
 export async function disconnectOutlook() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   try {
@@ -63,7 +63,7 @@ export async function disconnectOutlook() {
 export async function getOutlookConnectionStatus(): Promise<{
   connected: boolean;
 }> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const rows = await db

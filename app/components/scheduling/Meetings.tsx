@@ -49,9 +49,9 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Event } from "@/types/meeting";
-import { createInstantMeeting } from "@/lib/meetings";
-import { deleteEventFromCalendar } from "@/lib/calendar";
-import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
+import { createInstantMeeting } from "@/lib/workspace/meetings";
+import { deleteEventFromCalendar } from "@/lib/workspace/calendar";
+import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 
 const ROW_HEIGHT = 48;
 

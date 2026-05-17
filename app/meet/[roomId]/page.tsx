@@ -34,8 +34,8 @@ import {
 } from "livekit-client";
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { startMeeting } from "@/lib/meetings";
-import { formatDateOnly, formatTimeOnly } from "@/lib/date_utils";
+import { startMeeting } from "@/lib/workspace/meetings";
+import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 
 export default function InMeetingView() {
   const params = useParams();

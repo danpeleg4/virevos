@@ -45,7 +45,7 @@ vi.mock("sonner", () => ({
 const mockSendOutlookEmail = vi.fn();
 const mockSendAgencyChatMessage = vi.fn();
 
-vi.mock("@/lib/outlook_actions", () => ({
+vi.mock("@/lib/outlook/outlook_actions", () => ({
   sendOutlookEmail: (...args: unknown[]) => mockSendOutlookEmail(...args),
 }));
 

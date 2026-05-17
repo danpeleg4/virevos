@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { caseFiles } from "@db/schema";
 import { db } from "@db/db";
 import { and, eq } from "drizzle-orm";
@@ -8,7 +8,7 @@ export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

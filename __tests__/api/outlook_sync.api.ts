@@ -1,9 +1,9 @@
 import { GET } from "@/app/api/outlook/sync/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -62,13 +62,13 @@ describe("GET /api/outlook/sync", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns 401 if not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeGetRequest() as Parameters<typeof GET>[0]);
     expect(res.status).toBe(401);
   });
 
   it("returns paginated email messages", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbSelect([mockEmail]);
 
     const res = await GET(makeGetRequest() as Parameters<typeof GET>[0]);
@@ -86,7 +86,7 @@ describe("GET /api/outlook/sync", () => {
   });
 
   it("sets hasMore=true when there are more results", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDbSelect(Array(51).fill(mockEmail));
 
     const res = await GET(
@@ -98,7 +98,7 @@ describe("GET /api/outlook/sync", () => {
   });
 
   it("returns 500 on db error", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     (db.select as Mock).mockImplementation(() => {
       throw new Error("db error");
     });

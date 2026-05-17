@@ -3,7 +3,7 @@ import { db } from "@db/db";
 import { scheduledEmails, outlookEmails, users, clients } from "@db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import axios from "axios";
-import { getFreshOutlookAccessToken } from "@/lib/outlook_access";
+import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 

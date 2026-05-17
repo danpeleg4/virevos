@@ -21,7 +21,7 @@ import {
   deleteTask,
   updateTaskDueDate,
   updateTaskStatus,
-} from "@/lib/tasks";
+} from "@/lib/workspace/tasks";
 import { Task, TaskDetailModalProps } from "@/types/tasks";
 
 const STATUS_CONFIG = {

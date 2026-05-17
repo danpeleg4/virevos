@@ -49,7 +49,7 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import axios from "axios";
 import { TaskDetailModal } from "@/app/components/TaskDetailModal";
-import { task_percentage } from "@/lib/task_percentage";
+import { task_percentage } from "@/lib/util/task_percentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -57,8 +57,8 @@ import {
   addCaseNotes,
   deleteCase,
   deleteCaseFile,
-} from "@/lib/cases";
-import { deleteTask, updateTaskStatus } from "@/lib/tasks";
+} from "@/lib/workspace/cases";
+import { deleteTask, updateTaskStatus } from "@/lib/workspace/tasks";
 import { Case, CaseFile, CaseNote } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { toast } from "sonner";

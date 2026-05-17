@@ -40,7 +40,7 @@ import {
   createScheduledEmail,
   deleteScheduledEmail,
 } from "@/lib/scheduled_emails";
-import { sendOutlookEmail } from "@/lib/outlook_actions";
+import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
 
 interface ScheduledMessagesProps {
   navContainer: HTMLDivElement | null;

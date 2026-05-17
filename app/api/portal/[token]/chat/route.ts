@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { clientPortalTokens, portalMessages } from "@db/schema";
 import { and, asc, eq, isNull } from "drizzle-orm";
-import { MAX_MESSAGE, MAX_SHORT } from "@/lib/validation";
-import { rateLimit } from "@/lib/rate_limit";
+import { MAX_MESSAGE, MAX_SHORT } from "@/lib/util/validation";
+import { rateLimit } from "@/lib/util/rate_limit";
 
 async function loadPortal(token: string) {
   const rows = await db

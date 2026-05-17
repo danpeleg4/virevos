@@ -1,5 +1,5 @@
 import { GET } from "@/app/api/portal-chat/[clientId]/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
@@ -13,8 +13,8 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -65,13 +65,13 @@ describe("GET /api/portal-chat/[clientId]", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await GET(makeGetRequest("10"), { params: makeParams("10") });
     expect(res.status).toBe(401);
   });
 
   it("returns 400 when clientId is not numeric", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const res = await GET(makeGetRequest("abc"), {
       params: makeParams("abc"),
     });
@@ -79,14 +79,14 @@ describe("GET /api/portal-chat/[clientId]", () => {
   });
 
   it("returns 404 when no portal exists for this client/user", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockPortalLookup([]);
     const res = await GET(makeGetRequest("10"), { params: makeParams("10") });
     expect(res.status).toBe(404);
   });
 
   it("returns messages and marks client messages read", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockPortalLookup([mockPortal]);
     const created = new Date("2026-05-01T10:00:00Z");
     mockMessagesSelect([

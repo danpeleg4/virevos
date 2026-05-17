@@ -2,22 +2,21 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockPush = vi.fn();
-const mockUseUser = vi.fn();
+const mockUseAuthUser = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
   usePathname: vi.fn(() => "/"),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => mockUseUser(),
-  SignOutButton: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-  SignInButton: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-  UserButton: () => <div data-testid="user-button" />,
+vi.mock("@/app/hooks/useAuthUser", () => ({
+  useAuthUser: () => mockUseAuthUser(),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: { signOut: vi.fn().mockResolvedValue({}) },
+  }),
 }));
 
 vi.mock("next-themes", () => ({
@@ -65,11 +64,7 @@ describe("Navigation", () => {
 
   describe("when user is not signed in", () => {
     beforeEach(() => {
-      mockUseUser.mockReturnValue({
-        isSignedIn: false,
-        user: null,
-        isLoaded: true,
-      });
+      mockUseAuthUser.mockReturnValue({ data: null, isPending: false });
       render(<Navigation />);
     });
 
@@ -92,10 +87,13 @@ describe("Navigation", () => {
 
   describe("when user is signed in", () => {
     beforeEach(() => {
-      mockUseUser.mockReturnValue({
-        isSignedIn: true,
-        user: { fullName: "Test User" },
-        isLoaded: true,
+      mockUseAuthUser.mockReturnValue({
+        data: {
+          id: "user_1",
+          email: "test@example.com",
+          user_metadata: { name: "Test User" },
+        },
+        isPending: false,
       });
       render(<Navigation />);
     });
@@ -115,23 +113,15 @@ describe("Navigation", () => {
 
   describe("mobile menu", () => {
     beforeEach(() => {
-      mockUseUser.mockReturnValue({
-        isSignedIn: false,
-        user: null,
-        isLoaded: true,
-      });
+      mockUseAuthUser.mockReturnValue({ data: null, isPending: false });
       render(<Navigation />);
     });
 
     it("opens mobile menu when hamburger button is clicked", () => {
-      // The mobile menu button renders only an icon with no accessible name
-      // Find it as the last button in the nav before menu items appear
       const buttons = screen.getAllByRole("button");
-      // The hamburger/menu toggle is the last button
       const menuButton = buttons[buttons.length - 1];
       expect(menuButton).toBeInTheDocument();
       fireEvent.click(menuButton);
-      // After opening, mobile nav items should be visible
       expect(screen.getAllByText(/pricing/i).length).toBeGreaterThan(0);
     });
   });

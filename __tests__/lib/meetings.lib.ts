@@ -2,11 +2,11 @@ import {
   createInstantMeeting,
   markActionItemAdded,
   getPastMeetingTranscript,
-} from "@/lib/meetings";
-import { currentUser } from "@clerk/nextjs/server";
+} from "@/lib/workspace/meetings";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 // var so it can be assigned inside the vi.mock factory (hoisted before const declarations)
@@ -63,14 +63,14 @@ beforeEach(() => {
 
 describe("createInstantMeeting", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(createInstantMeeting("standup")).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("inserts an event and returns { id, link } where link contains the id", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const result = await createInstantMeeting("Weekly Sync");
 
     expect(mockValues).toHaveBeenCalledWith(
@@ -89,21 +89,21 @@ describe("createInstantMeeting", () => {
 
 describe("markActionItemAdded", () => {
   it("throws when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(markActionItemAdded("evt-1", 0)).rejects.toThrow(
       "Unauthorized"
     );
   });
 
   it("returns early when event has no action_items", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([{ action_items: null }]);
     await markActionItemAdded("evt-1", 0);
     expect(mockSet).not.toHaveBeenCalled();
   });
 
   it("marks item at the given index as added: true and leaves others unchanged", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const items = [
       { text: "a", added: false },
       { text: "b", added: false },
@@ -124,13 +124,13 @@ describe("markActionItemAdded", () => {
 
 describe("getPastMeetingTranscript", () => {
   it("returns ['Unauthorized'] when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
     const result = await getPastMeetingTranscript("query");
     expect(result).toEqual(["Unauthorized"]);
   });
 
   it("returns array of chunk_text strings from Supabase vector hits", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
@@ -145,7 +145,7 @@ describe("getPastMeetingTranscript", () => {
   });
 
   it("returns empty array when no hits have chunk_text", async () => {
-    (currentUser as Mock).mockResolvedValue(mockUser);
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: { vectors: [{ metadata: {} }, { metadata: { other: "data" } }] },
     });

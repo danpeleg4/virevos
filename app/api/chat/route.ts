@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { users } from "@db/schema";
 import { db } from "@db/db";
 import { eq, sql } from "drizzle-orm";
 import OpenAI from "openai";
-import { openai, tools, executeTool, MODEL, MAX_STEPS } from "@/lib/ai_tools";
+import {
+  openai,
+  tools,
+  executeTool,
+  MODEL,
+  MAX_STEPS,
+} from "@/lib/ai/ai_tools";
 import type { ChatMessage, StreamEvent } from "@/types/ai";
 import { assertCanUseAI } from "@/lib/plan_limits";
-import { MAX_CHAT_HISTORY, MAX_HTML_BODY, MAX_SHORT } from "@/lib/validation";
-import { rateLimit } from "@/lib/rate_limit";
+import {
+  MAX_CHAT_HISTORY,
+  MAX_HTML_BODY,
+  MAX_SHORT,
+} from "@/lib/util/validation";
+import { rateLimit } from "@/lib/util/rate_limit";
 
 const SYSTEM_INSTRUCTIONS =
   "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows.";
@@ -98,7 +108,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }

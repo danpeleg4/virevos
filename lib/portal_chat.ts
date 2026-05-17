@@ -1,6 +1,6 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { clientPortalTokens, portalMessages } from "@db/schema";
 import { and, desc, eq } from "drizzle-orm";
@@ -10,7 +10,7 @@ import {
   requireInt,
   requireOneOf,
   requireString,
-} from "./validation";
+} from "./util/validation";
 
 const PORTAL_CHAT_ACTIONS = [
   "star",
@@ -35,7 +35,7 @@ async function loadPortalForUser(clientId: number, userId: string) {
 }
 
 export async function sendAgencyChatMessage(clientId: number, message: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericClientId = requireInt(clientId, "clientId");
@@ -71,7 +71,7 @@ export async function sendAgencyChatMessage(clientId: number, message: string) {
 }
 
 export async function updatePortalChat(clientId: number, action: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericClientId = requireInt(clientId, "clientId");
@@ -115,7 +115,7 @@ export async function updatePortalChat(clientId: number, action: string) {
 }
 
 export async function deletePortalChat(clientId: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericClientId = requireInt(clientId, "clientId");

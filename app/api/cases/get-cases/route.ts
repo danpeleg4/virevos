@@ -1,11 +1,11 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { cases, clients, tasks } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

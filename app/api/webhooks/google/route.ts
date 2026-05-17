@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { googleSyncState } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { performIncrementalSync } from "@/lib/google_sync";
+import { performIncrementalSync } from "@/lib/google/google_sync";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const channelToken = req.headers.get("X-Goog-Channel-Token"); // set to userId on watch

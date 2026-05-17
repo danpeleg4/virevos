@@ -21,7 +21,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("@/lib/cases", () => ({
+vi.mock("@/lib/workspace/cases", () => ({
   changeCaseStatus: vi.fn(),
   createCase: vi.fn(),
   updateCase: vi.fn(),

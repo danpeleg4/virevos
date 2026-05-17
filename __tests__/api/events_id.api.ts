@@ -1,9 +1,8 @@
 import { GET } from "@/app/api/events/[id]/route";
-import { currentUser } from "@clerk/nextjs/server";
-import { db } from "@db/db";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const { where } = vi.hoisted(() => ({ where: vi.fn() }));
@@ -33,7 +32,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("derives 'active' for a past upcoming meeting", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",
@@ -53,7 +52,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("preserves 'ended' status without re-deriving", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",
@@ -71,7 +70,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("keeps 'upcoming' for a future meeting", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",
@@ -89,7 +88,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("isHost is false when current user differs", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_2" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_2" });
     where.mockResolvedValueOnce([
       {
         id: "evt_1",

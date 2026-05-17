@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@db/db";
 import { outlookSyncState } from "@db/schema";
 import { lte } from "drizzle-orm";
-import { renewSubscriptions } from "@/lib/outlook_sync";
+import { renewSubscriptions } from "@/lib/outlook/outlook_sync";
 
 export async function GET(req: Request) {
   const authHeader = req.headers

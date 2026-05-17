@@ -1,6 +1,6 @@
 import { GET } from "@/app/api/cases/[id]/route";
 import { NextRequest } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
 beforeAll(() => {
@@ -15,8 +15,8 @@ afterAll(() => {
 // Mocks
 // ─────────────────────────────
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -50,7 +50,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET(mockRequest, {
       params: Promise.resolve({ id: "1" }),
@@ -61,7 +61,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns 400 if caseId is invalid", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET(mockRequest, {
       params: Promise.resolve({ id: "abc" }),
@@ -72,7 +72,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns 404 if case is not found", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     mockDrizzleResult([]);
 
     const res = await GET(mockRequest, {
@@ -84,7 +84,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns case data when found", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     mockDrizzleResult([
       {
@@ -109,7 +109,7 @@ describe("GET /api/cases/[id]", () => {
   });
 
   it("returns 500 on unexpected error", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     (db.select as Mock).mockImplementation(() => {
       throw new Error("DB crashed");
     });

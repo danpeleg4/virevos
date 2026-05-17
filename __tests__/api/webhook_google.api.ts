@@ -8,11 +8,11 @@ vi.mock("@db/db", () => ({
   },
 }));
 
-vi.mock("@/lib/google_sync", () => ({
+vi.mock("@/lib/google/google_sync", () => ({
   performIncrementalSync: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { performIncrementalSync } from "@/lib/google_sync";
+import { performIncrementalSync } from "@/lib/google/google_sync";
 
 function makeRequest(headers: Record<string, string>): NextRequest {
   return {

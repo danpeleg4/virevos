@@ -1,16 +1,16 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { portalMeetingBookings } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 import type { PortalMeetingBooking } from "@/types/portal";
-import { addMeetingToCalendar } from "@/lib/calendar";
+import { addMeetingToCalendar } from "@/lib/workspace/calendar";
 
 export async function getPortalBookings(
   userId: string
 ): Promise<PortalMeetingBooking[]> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id || user.id !== userId) {
     throw new Error("Unauthorized");
   }
@@ -41,7 +41,7 @@ export async function updateBookingStatus(
   bookingId: number,
   status: "confirmed" | "cancelled"
 ): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
@@ -60,7 +60,7 @@ export async function updateBookingStatus(
 export async function acceptBookingWithCalendar(
   bookingId: number
 ): Promise<void> {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
   const rows = await db

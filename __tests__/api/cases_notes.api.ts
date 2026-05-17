@@ -1,9 +1,9 @@
 import { GET } from "@/app/api/cases/[id]/notes/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@db/db", () => ({
@@ -24,7 +24,7 @@ describe("GET /api/cases/[id]/notes", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET({} as never, makeCtx("1"));
 
@@ -33,7 +33,7 @@ describe("GET /api/cases/[id]/notes", () => {
   });
 
   it("returns 400 for invalid caseId", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const res = await GET({} as never, makeCtx("abc"));
 
@@ -42,7 +42,7 @@ describe("GET /api/cases/[id]/notes", () => {
   });
 
   it("returns notes", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const rows = [
       { id: 2, content: "b" },

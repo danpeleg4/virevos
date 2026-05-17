@@ -42,7 +42,7 @@ import {
 import axios from "axios";
 import { clients, CreateClientInput } from "@/types/clients";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addAClient, deleteClient } from "@/lib/clients";
+import { addAClient, deleteClient } from "@/lib/workspace/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
 

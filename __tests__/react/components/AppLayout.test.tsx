@@ -2,17 +2,22 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockPush = vi.fn();
-const mockUseUser = vi.fn();
+const mockUseAuthUser = vi.fn();
 const mockUsePathname = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
   usePathname: () => mockUsePathname(),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => mockUseUser(),
-  UserButton: () => <div data-testid="user-button" />,
+vi.mock("@/app/hooks/useAuthUser", () => ({
+  useAuthUser: () => mockUseAuthUser(),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: { signOut: vi.fn().mockResolvedValue({}) },
+  }),
 }));
 
 vi.mock("next-themes", () => ({
@@ -51,12 +56,6 @@ vi.mock("motion/react", async () => {
   };
 });
 
-vi.mock("next/image", () => ({
-  __esModule: true,
-  default: (props: Record<string, unknown>) => <img {...props} />,
-}));
-
-// Mock AIAssistant so we don't need to worry about its complex deps
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(() => ({ data: undefined, isLoading: false })),
 }));
@@ -76,16 +75,16 @@ vi.mock("@/app/components/AIAssistant", () => ({
 import { AppLayout } from "@/app/components/AppLayout";
 
 const defaultUser = {
-  firstName: "John",
-  lastName: "Doe",
-  primaryEmailAddress: { emailAddress: "john@example.com" },
+  id: "user_1",
+  email: "john@example.com",
+  user_metadata: { name: "John Doe" },
 };
 
 describe("AppLayout", () => {
   beforeEach(() => {
     mockPush.mockClear();
     mockUsePathname.mockReturnValue("/workspace/dashboard");
-    mockUseUser.mockReturnValue({ user: defaultUser, isLoaded: true });
+    mockUseAuthUser.mockReturnValue({ data: defaultUser, isPending: false });
   });
 
   it("renders children", () => {
@@ -98,13 +97,12 @@ describe("AppLayout", () => {
   });
 
   it("shows loading spinner when user not loaded", () => {
-    mockUseUser.mockReturnValue({ user: null, isLoaded: false });
+    mockUseAuthUser.mockReturnValue({ data: null, isPending: true });
     const { container } = render(
       <AppLayout>
         <div />
       </AppLayout>
     );
-    // Loading state renders a pulsing animation container
     expect(container.firstChild).toBeInTheDocument();
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
   });
@@ -146,7 +144,6 @@ describe("AppLayout", () => {
       </AppLayout>
     );
     expect(screen.queryByTestId("ai-assistant")).not.toBeInTheDocument();
-    // Click the header AI button
     const aiButtons = screen.getAllByRole("button", { name: /ai assistant/i });
     fireEvent.click(aiButtons[0]);
     expect(screen.getByTestId("ai-assistant")).toBeInTheDocument();
@@ -158,7 +155,6 @@ describe("AppLayout", () => {
         <div />
       </AppLayout>
     );
-    // Multiple icon-only buttons exist — Dashboard nav items are always present
     expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
   });
 });

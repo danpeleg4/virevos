@@ -1,8 +1,8 @@
 import { GET } from "@/app/api/tasks/route";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: vi.fn(),
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const { where } = vi.hoisted(() => ({ where: vi.fn() }));
@@ -24,7 +24,7 @@ vi.mock("@db/db", () => ({
 
 describe("GET /tasks", () => {
   it("401 unauthenticated", async () => {
-    (currentUser as Mock).mockResolvedValue(null);
+    (getCurrentUser as Mock).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -32,7 +32,7 @@ describe("GET /tasks", () => {
   });
 
   it("returns tasks", async () => {
-    (currentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     where.mockResolvedValueOnce([
       { tasks: { id: 1 }, projectName: "Project A" },

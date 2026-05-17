@@ -2,14 +2,22 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockPush = vi.fn();
-const mockUseSignUp = vi.fn();
+const mockSignUp = vi.fn();
+const mockVerifyOtp = vi.fn();
+const mockResend = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useSignUp: () => mockUseSignUp(),
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabase: () => ({
+    auth: {
+      signUp: (...args: unknown[]) => mockSignUp(...args),
+      verifyOtp: (...args: unknown[]) => mockVerifyOtp(...args),
+      resend: (...args: unknown[]) => mockResend(...args),
+    },
+  }),
 }));
 
 vi.mock("motion/react", async () => {
@@ -44,7 +52,7 @@ vi.mock("motion/react", async () => {
   };
 });
 
-vi.mock("@/lib/billing", () => ({
+vi.mock("@/lib/workspace/billing", () => ({
   registerFreePlan: vi.fn(),
 }));
 
@@ -53,33 +61,14 @@ vi.mock("@/app/onboard/PaymentStep", () => ({
   default: () => <div data-testid="payment-step" />,
 }));
 
-const mockSignUp = {
-  create: vi.fn(),
-  prepareEmailAddressVerification: vi.fn(),
-  attemptEmailAddressVerification: vi.fn(),
-};
-const mockSetActive = vi.fn();
-
 import Onboarding from "@/app/onboard/page";
 
 describe("Onboarding Page", () => {
   beforeEach(() => {
     mockPush.mockClear();
-    mockUseSignUp.mockReturnValue({
-      signUp: mockSignUp,
-      isLoaded: true,
-      setActive: mockSetActive,
-    });
-  });
-
-  it("shows loading state when Clerk not loaded", () => {
-    mockUseSignUp.mockReturnValue({
-      signUp: null,
-      isLoaded: false,
-      setActive: null,
-    });
-    render(<Onboarding />);
-    expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
+    mockSignUp.mockReset();
+    mockVerifyOtp.mockReset();
+    mockResend.mockReset();
   });
 
   it("renders Welcome step initially", () => {
@@ -89,7 +78,6 @@ describe("Onboarding Page", () => {
 
   it("renders step indicators", () => {
     render(<Onboarding />);
-    // Steps: Welcome, Account, Plan, Personalize, Verify, Payment
     expect(screen.getByText(/welcome/i)).toBeInTheDocument();
   });
 
