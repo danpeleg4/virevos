@@ -151,6 +151,14 @@ export default function InMeetingView() {
   const isHost = !!meetingInfo.data?.isHost;
   const isUpcoming = !hasStarted && meeting?.status === "upcoming";
 
+  const checkHost = () => {
+    if (isHost) {
+      router.push("/workspace/dashboard");
+    } else {
+      router.push("/");
+    }
+  };
+
   if (meetingInfo.isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -353,7 +361,7 @@ export default function InMeetingView() {
               variant="destructive"
               onClick={() => {
                 roomRef.current?.disconnect();
-                router.push("/");
+                checkHost();
               }}
             >
               Leave Meeting
