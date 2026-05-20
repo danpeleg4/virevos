@@ -35,8 +35,7 @@ import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";
 import { CaseEditDialog } from "./CaseEditDialog";
 import { CaseCreateDialog } from "@/app/workspace/cases/CaseCreateDialog";
-
-const ROW_HEIGHT = 52;
+import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 
 const STATUS_TABS = ["all", "active", "completed"] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
@@ -106,22 +105,8 @@ export function CaseList({ cases, clients, onSelect }: CaseListProps) {
     "all" | "active" | "inactive" | "completed"
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
   const [editingCase, setEditingCase] = useState<Case | null>(null);
-  const tableRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const calculate = () => {
-      if (!tableRef.current) return;
-      const tableTop = tableRef.current.getBoundingClientRect().top;
-      const reserved = 40 + 50 + 24;
-      const available = window.innerHeight - tableTop - reserved;
-      setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
-    };
-    calculate();
-    window.addEventListener("resize", calculate);
-    return () => window.removeEventListener("resize", calculate);
-  }, []);
+  const { itemsPerPage, tableRef } = useCalcWindow();
 
   const PRIORITY_ORDER: Record<string, number> = { high: 3, medium: 2, low: 1 };
 

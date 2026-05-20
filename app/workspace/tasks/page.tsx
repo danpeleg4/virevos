@@ -31,8 +31,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateTaskStatus } from "@/lib/workspace/tasks";
 import { parseDateOnlyString } from "@/lib/util/date_utils";
 import { Task } from "@/types/tasks";
-
-const ROW_HEIGHT = 48;
+import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 
 const STATUS_TABS = ["all", "in-progress", "completed"] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
@@ -93,23 +92,8 @@ export default function Tasks() {
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
-  const tableRef = useRef<HTMLDivElement>(null);
-
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const calculate = () => {
-      if (!tableRef.current) return;
-      const tableTop = tableRef.current.getBoundingClientRect().top;
-      const reserved = 40 + 50 + 24;
-      const available = window.innerHeight - tableTop - reserved;
-      setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
-    };
-    calculate();
-    window.addEventListener("resize", calculate);
-    return () => window.removeEventListener("resize", calculate);
-  }, []);
+  const { itemsPerPage, tableRef } = useCalcWindow();
 
   const getTasks = useQuery({
     queryKey: ["allTasks"],
