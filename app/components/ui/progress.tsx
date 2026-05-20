@@ -6,10 +6,17 @@ import { cn } from "./utils";
 export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
   indicatorClassName?: string;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
-const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
-  ({ className, value = 0, indicatorClassName, ...props }, ref) => (
+function Progress({
+  className,
+  value = 0,
+  indicatorClassName,
+  ref,
+  ...props
+}: ProgressProps) {
+  return (
     <div
       ref={ref}
       className={cn(
@@ -26,8 +33,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
         style={{ transform: `translateX(-${100 - value}%)` }}
       />
     </div>
-  )
-);
-Progress.displayName = "Progress";
+  );
+}
 
 export { Progress };
