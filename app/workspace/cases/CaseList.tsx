@@ -161,10 +161,6 @@ export function CaseList({ cases, clients, onSelect }: CaseListProps) {
     completed: cases.filter((p) => p.status === "completed").length,
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, activeTab]);
-
   return (
     <div ref={tableRef} className="flex-1 min-h-0 flex flex-col">
       <Card className="overflow-hidden flex flex-col h-full">
@@ -175,7 +171,10 @@ export function CaseList({ cases, clients, onSelect }: CaseListProps) {
             {STATUS_TABS.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setCurrentPage(1);
+                }}
                 className={`cursor-pointer text-xs px-3 py-1.5 rounded-md transition-colors ${
                   activeTab === tab
                     ? "bg-card border border-border text-foreground shadow-sm font-medium"
@@ -201,7 +200,10 @@ export function CaseList({ cases, clients, onSelect }: CaseListProps) {
             <Input
               placeholder="Search cases..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-8 h-8 text-sm"
             />
           </div>
