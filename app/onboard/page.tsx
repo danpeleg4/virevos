@@ -54,7 +54,7 @@ export default function Onboarding() {
     password: "",
     companyName: "",
 
-    selectedPlan: "professional",
+    selectedPlan: "starter",
     billingCycle: "monthly",
 
     selectedIntegrations: [],
