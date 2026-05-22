@@ -27,38 +27,6 @@ vi.mock("next-themes", () => ({
   useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
 
-vi.mock("motion/react", async () => {
-  const { createElement } =
-    await vi.importActual<typeof import("react")>("react");
-  const motion = new Proxy(
-    {},
-    {
-      get: (_t, _tag: string) =>
-        function MC({
-          children,
-          initial,
-          animate,
-          exit,
-          variants,
-          transition,
-          viewport,
-          whileInView,
-          whileHover,
-          whileTap,
-          ...props
-        }: Record<string, unknown>) {
-          return createElement(_tag, props, children as React.ReactNode);
-        },
-    }
-  );
-  return {
-    motion,
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
-      <>{children}</>
-    ),
-  };
-});
-
 vi.mock("next/image", () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => <img {...props} />,

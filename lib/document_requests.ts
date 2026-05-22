@@ -15,6 +15,66 @@ import type {
   UpdateDocumentRequestPatch,
 } from "@/types/document_requests";
 
+type RequestRow = {
+  id: number;
+  approvedAt: Date | null;
+  eventTitle: string;
+  eventDateTime: Date;
+};
+
+async function getItemsByRequest(requestRows: RequestRow[]) {
+  const requestIds = requestRows.map((r) => r.id);
+  const itemRows = await db
+    .select({
+      id: documentRequestItems.id,
+      requestId: documentRequestItems.requestId,
+      name: documentRequestItems.name,
+      description: documentRequestItems.description,
+      sortOrder: documentRequestItems.sortOrder,
+      status: documentRequestItems.status,
+      uploadedFileId: documentRequestItems.uploadedFileId,
+      uploadedAt: documentRequestItems.uploadedAt,
+      aiVerdict: documentRequestItems.aiVerdict,
+      aiReasoning: documentRequestItems.aiReasoning,
+      aiAnalyzedAt: documentRequestItems.aiAnalyzedAt,
+      uploadedFileName: caseFiles.name,
+      uploadedFilePath: caseFiles.path,
+    })
+    .from(documentRequestItems)
+    .leftJoin(caseFiles, eq(documentRequestItems.uploadedFileId, caseFiles.id))
+    .where(inArray(documentRequestItems.requestId, requestIds))
+    .orderBy(asc(documentRequestItems.sortOrder));
+
+  const itemsByRequest = new Map<number, DocumentRequestItem[]>();
+  for (const row of itemRows) {
+    const list = itemsByRequest.get(row.requestId) ?? [];
+    list.push({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      sortOrder: row.sortOrder,
+      status: row.status as DocumentRequestItem["status"],
+      uploadedFileId: row.uploadedFileId,
+      uploadedAt: row.uploadedAt?.toISOString() ?? null,
+      aiVerdict: (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
+      aiReasoning: row.aiReasoning ?? null,
+      aiAnalyzedAt: row.aiAnalyzedAt?.toISOString() ?? null,
+      uploadedFile:
+        row.uploadedFileId != null &&
+        row.uploadedFileName &&
+        row.uploadedFilePath
+          ? {
+              id: row.uploadedFileId,
+              name: row.uploadedFileName,
+              path: row.uploadedFilePath,
+            }
+          : null,
+    });
+    itemsByRequest.set(row.requestId, list);
+  }
+  return itemsByRequest;
+}
+
 export async function listPendingDocumentRequests(): Promise<
   PendingDocRequest[]
 > {
@@ -227,56 +287,7 @@ export async function listFulfilledRequestsForAgency(): Promise<
     .orderBy(desc(meetingDocumentRequests.approvedAt));
 
   if (requestRows.length === 0) return [];
-
-  const requestIds = requestRows.map((r) => r.id);
-  const itemRows = await db
-    .select({
-      id: documentRequestItems.id,
-      requestId: documentRequestItems.requestId,
-      name: documentRequestItems.name,
-      description: documentRequestItems.description,
-      sortOrder: documentRequestItems.sortOrder,
-      status: documentRequestItems.status,
-      uploadedFileId: documentRequestItems.uploadedFileId,
-      uploadedAt: documentRequestItems.uploadedAt,
-      aiVerdict: documentRequestItems.aiVerdict,
-      aiReasoning: documentRequestItems.aiReasoning,
-      aiAnalyzedAt: documentRequestItems.aiAnalyzedAt,
-      uploadedFileName: caseFiles.name,
-      uploadedFilePath: caseFiles.path,
-    })
-    .from(documentRequestItems)
-    .leftJoin(caseFiles, eq(documentRequestItems.uploadedFileId, caseFiles.id))
-    .where(inArray(documentRequestItems.requestId, requestIds))
-    .orderBy(asc(documentRequestItems.sortOrder));
-
-  const itemsByRequest = new Map<number, DocumentRequestItem[]>();
-  for (const row of itemRows) {
-    const list = itemsByRequest.get(row.requestId) ?? [];
-    list.push({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      sortOrder: row.sortOrder,
-      status: row.status as DocumentRequestItem["status"],
-      uploadedFileId: row.uploadedFileId,
-      uploadedAt: row.uploadedAt?.toISOString() ?? null,
-      aiVerdict: (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
-      aiReasoning: row.aiReasoning ?? null,
-      aiAnalyzedAt: row.aiAnalyzedAt?.toISOString() ?? null,
-      uploadedFile:
-        row.uploadedFileId != null &&
-        row.uploadedFileName &&
-        row.uploadedFilePath
-          ? {
-              id: row.uploadedFileId,
-              name: row.uploadedFileName,
-              path: row.uploadedFilePath,
-            }
-          : null,
-    });
-    itemsByRequest.set(row.requestId, list);
-  }
+  const itemsByRequest = await getItemsByRequest(requestRows);
 
   return requestRows
     .map((r) => ({
@@ -317,58 +328,8 @@ export async function listApprovedRequestsForClient(clientId: number): Promise<
       )
     )
     .orderBy(desc(meetingDocumentRequests.approvedAt));
-
   if (requestRows.length === 0) return [];
-
-  const requestIds = requestRows.map((r) => r.id);
-  const itemRows = await db
-    .select({
-      id: documentRequestItems.id,
-      requestId: documentRequestItems.requestId,
-      name: documentRequestItems.name,
-      description: documentRequestItems.description,
-      sortOrder: documentRequestItems.sortOrder,
-      status: documentRequestItems.status,
-      uploadedFileId: documentRequestItems.uploadedFileId,
-      uploadedAt: documentRequestItems.uploadedAt,
-      aiVerdict: documentRequestItems.aiVerdict,
-      aiReasoning: documentRequestItems.aiReasoning,
-      aiAnalyzedAt: documentRequestItems.aiAnalyzedAt,
-      uploadedFileName: caseFiles.name,
-      uploadedFilePath: caseFiles.path,
-    })
-    .from(documentRequestItems)
-    .leftJoin(caseFiles, eq(documentRequestItems.uploadedFileId, caseFiles.id))
-    .where(inArray(documentRequestItems.requestId, requestIds))
-    .orderBy(asc(documentRequestItems.sortOrder));
-
-  const itemsByRequest = new Map<number, DocumentRequestItem[]>();
-  for (const row of itemRows) {
-    const list = itemsByRequest.get(row.requestId) ?? [];
-    list.push({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      sortOrder: row.sortOrder,
-      status: row.status as DocumentRequestItem["status"],
-      uploadedFileId: row.uploadedFileId,
-      uploadedAt: row.uploadedAt?.toISOString() ?? null,
-      aiVerdict: (row.aiVerdict as DocumentRequestItem["aiVerdict"]) ?? null,
-      aiReasoning: row.aiReasoning ?? null,
-      aiAnalyzedAt: row.aiAnalyzedAt?.toISOString() ?? null,
-      uploadedFile:
-        row.uploadedFileId != null &&
-        row.uploadedFileName &&
-        row.uploadedFilePath
-          ? {
-              id: row.uploadedFileId,
-              name: row.uploadedFileName,
-              path: row.uploadedFilePath,
-            }
-          : null,
-    });
-    itemsByRequest.set(row.requestId, list);
-  }
+  const itemsByRequest = await getItemsByRequest(requestRows);
 
   return requestRows.map((r) => ({
     id: r.id,

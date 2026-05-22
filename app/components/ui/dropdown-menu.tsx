@@ -12,6 +12,7 @@ import {
   useStableId,
   focusOnPointerMove,
   blurOnPointerLeave,
+  composeRefs,
 } from "./_internal";
 import { Slot } from "./_slot";
 
@@ -21,8 +22,8 @@ type Align = "start" | "center" | "end";
 interface DropdownContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
-  triggerRef: React.MutableRefObject<HTMLElement | null>;
-  contentRef: React.MutableRefObject<HTMLDivElement | null>;
+  triggerRef: React.RefObject<HTMLElement | null>;
+  contentRef: React.RefObject<HTMLDivElement | null>;
   contentId: string;
 }
 
@@ -81,19 +82,21 @@ function DropdownMenuPortal({ children }: { children?: React.ReactNode }) {
 
 interface DropdownMenuTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-const DropdownMenuTrigger = React.forwardRef<
-  HTMLButtonElement,
-  DropdownMenuTriggerProps
->(function DropdownMenuTrigger({ asChild, onClick, onKeyDown, ...props }, ref) {
+function DropdownMenuTrigger({
+  asChild,
+  onClick,
+  onKeyDown,
+  ref,
+  ...props
+}: DropdownMenuTriggerProps) {
   const { open, setOpen, triggerRef, contentId } = useDropdown();
-  const setRefs = (node: HTMLButtonElement | null) => {
-    triggerRef.current = node;
-    if (typeof ref === "function") ref(node);
-    else if (ref)
-      (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
-  };
+  const setRefs = composeRefs<HTMLButtonElement>(
+    triggerRef as React.RefObject<HTMLButtonElement | null>,
+    ref
+  );
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e);
     if (!e.defaultPrevented) setOpen(!open);
@@ -121,13 +124,14 @@ const DropdownMenuTrigger = React.forwardRef<
       {...props}
     />
   );
-});
+}
 
 interface DropdownMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {
   side?: Side;
   align?: Align;
   sideOffset?: number;
   alignOffset?: number;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 function getMenuItems(content: HTMLElement): HTMLElement[] {
@@ -138,21 +142,16 @@ function getMenuItems(content: HTMLElement): HTMLElement[] {
   );
 }
 
-const DropdownMenuContent = React.forwardRef<
-  HTMLDivElement,
-  DropdownMenuContentProps
->(function DropdownMenuContent(
-  {
-    className,
-    side = "bottom",
-    align = "start",
-    sideOffset = 4,
-    alignOffset = 0,
-    onKeyDown,
-    ...props
-  },
-  ref
-) {
+function DropdownMenuContent({
+  className,
+  side = "bottom",
+  align = "start",
+  sideOffset = 4,
+  alignOffset = 0,
+  onKeyDown,
+  ref,
+  ...props
+}: DropdownMenuContentProps) {
   const { open, setOpen, triggerRef, contentRef, contentId } = useDropdown();
   const [floatingNode, setFloatingNode] = React.useState<HTMLDivElement | null>(
     null
@@ -166,14 +165,8 @@ const DropdownMenuContent = React.forwardRef<
     sideOffset,
     alignOffset,
   });
-  const setRefs = React.useCallback(
-    (node: HTMLDivElement | null) => {
-      setFloatingNode(node);
-      contentRef.current = node;
-      if (typeof ref === "function") ref(node);
-      else if (ref)
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-    },
+  const setRefs = React.useMemo(
+    () => composeRefs<HTMLDivElement>(setFloatingNode, contentRef, ref),
     [ref, contentRef]
   );
 
@@ -249,7 +242,7 @@ const DropdownMenuContent = React.forwardRef<
       />
     </DropdownMenuPortal>
   );
-});
+}
 
 function DropdownMenuGroup(props: React.HTMLAttributes<HTMLDivElement>) {
   return <div role="group" data-slot="dropdown-menu-group" {...props} />;

@@ -190,6 +190,33 @@ describe("Dialog", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByText("Title")).not.toBeInTheDocument();
   });
+
+  it("forwards ref to the trigger button (React 19 ref-as-prop)", () => {
+    const ref = React.createRef<HTMLButtonElement>();
+    render(
+      <Dialog>
+        <DialogTrigger ref={ref}>Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Title</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    );
+    expect(ref.current).toBeInstanceOf(HTMLButtonElement);
+    expect(ref.current?.textContent).toBe("Open");
+  });
+
+  it("supports a function ref on the trigger", () => {
+    let captured: HTMLButtonElement | null = null;
+    render(
+      <Dialog>
+        <DialogTrigger ref={(node) => { captured = node; }}>Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Title</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    );
+    expect(captured).toBeInstanceOf(HTMLButtonElement);
+  });
 });
 
 describe("AlertDialog", () => {

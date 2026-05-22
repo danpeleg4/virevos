@@ -234,25 +234,3 @@ export async function performGmailSync(
 
   return { synced, errors };
 }
-
-export async function syncSingleMessage(
-  userId: string,
-  gmailId: string
-): Promise<void> {
-  const gmail = await getGmailClient(userId);
-  if (!gmail) return;
-
-  const userClients = await db
-    .select({ id: clients.id, email: clients.email })
-    .from(clients)
-    .where(eq(clients.userId, userId));
-
-  const clientsMap = new Map<string, number>();
-  for (const c of userClients) {
-    if (c.email) {
-      clientsMap.set(c.email.toLowerCase(), c.id);
-    }
-  }
-
-  await processMessage(gmail, gmailId, userId, clientsMap);
-}

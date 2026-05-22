@@ -104,10 +104,7 @@ export function AttachmentDialog({
 
   const appFiles = appFilesData ?? [];
 
-  const handleFileInputChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = Array.from(e.target.files || []);
+  const readFiles = async (files: File[]) => {
     if (files.length === 0) return;
 
     setIsReading(true);
@@ -130,36 +127,19 @@ export function AttachmentDialog({
     } finally {
       setIsReading(false);
     }
+  };
 
+  const handleFileInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    await readFiles(Array.from(e.target.files || []));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
-
-    setIsReading(true);
-    try {
-      for (const file of files) {
-        const buffer = await file.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString("base64");
-        const attachedFile: AttachedFile = {
-          id: `local-${Date.now()}-${file.name}`,
-          name: file.name,
-          size: formatFileSize(file.size),
-          type: getFileType(file.type, file.name),
-          data: base64,
-          mimeType: file.type || "application/octet-stream",
-        };
-        setSelectedFiles((prev) => [...prev, attachedFile]);
-      }
-    } catch {
-      toast.error("Failed to read file");
-    } finally {
-      setIsReading(false);
-    }
+    await readFiles(Array.from(e.dataTransfer.files));
   };
 
   const handleSelectAppFile = (file: AppFile) => {

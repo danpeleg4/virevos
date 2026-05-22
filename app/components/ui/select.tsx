@@ -12,6 +12,7 @@ import {
   useStableId,
   focusOnPointerMove,
   blurOnPointerLeave,
+  composeRefs,
 } from "./_internal";
 
 interface SelectContextValue {
@@ -19,8 +20,8 @@ interface SelectContextValue {
   setOpen: (open: boolean) => void;
   value: string | undefined;
   setValue: (v: string) => void;
-  triggerRef: React.MutableRefObject<HTMLButtonElement | null>;
-  contentRef: React.MutableRefObject<HTMLDivElement | null>;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
+  contentRef: React.RefObject<HTMLDivElement | null>;
   contentId: string;
   triggerId: string;
   disabled?: boolean;
@@ -164,68 +165,66 @@ function SelectValue({ placeholder, className, ...props }: SelectValueProps) {
 
 interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "default";
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
-  function SelectTrigger(
-    { className, size = "default", children, onClick, onKeyDown, ...props },
-    ref
-  ) {
-    const { open, setOpen, value, contentId, triggerId, disabled, triggerRef } =
-      useSelect();
-    const setRefs = (node: HTMLButtonElement | null) => {
-      triggerRef.current = node;
-      if (typeof ref === "function") ref(node);
-      else if (ref)
-        (ref as React.MutableRefObject<HTMLButtonElement | null>).current =
-          node;
-    };
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      onClick?.(e);
-      if (!e.defaultPrevented) setOpen(!open);
-    };
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-      onKeyDown?.(e);
-      if (e.defaultPrevented) return;
-      if (
-        e.key === "ArrowDown" ||
-        e.key === "ArrowUp" ||
-        e.key === "Enter" ||
-        e.key === " "
-      ) {
-        e.preventDefault();
-        setOpen(true);
-      }
-    };
-    const hasValue = value !== undefined && value !== "";
-    return (
-      <button
-        ref={setRefs}
-        id={triggerId}
-        type="button"
-        role="combobox"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={contentId}
-        disabled={disabled}
-        data-state={open ? "open" : "closed"}
-        data-placeholder={!hasValue ? "" : undefined}
-        data-slot="select-trigger"
-        data-size={size}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        className={cn(
-          "border-input cursor-pointer data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-          className
-        )}
-        {...props}
-      >
-        {children}
-        <ChevronDownIcon className="size-4 opacity-50" />
-      </button>
-    );
-  }
-);
+function SelectTrigger({
+  className,
+  size = "default",
+  children,
+  onClick,
+  onKeyDown,
+  ref,
+  ...props
+}: SelectTriggerProps) {
+  const { open, setOpen, value, contentId, triggerId, disabled, triggerRef } =
+    useSelect();
+  const setRefs = composeRefs<HTMLButtonElement>(triggerRef, ref);
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(e);
+    if (!e.defaultPrevented) setOpen(!open);
+  };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    onKeyDown?.(e);
+    if (e.defaultPrevented) return;
+    if (
+      e.key === "ArrowDown" ||
+      e.key === "ArrowUp" ||
+      e.key === "Enter" ||
+      e.key === " "
+    ) {
+      e.preventDefault();
+      setOpen(true);
+    }
+  };
+  const hasValue = value !== undefined && value !== "";
+  return (
+    <button
+      ref={setRefs}
+      id={triggerId}
+      type="button"
+      role="combobox"
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      aria-controls={contentId}
+      disabled={disabled}
+      data-state={open ? "open" : "closed"}
+      data-placeholder={!hasValue ? "" : undefined}
+      data-slot="select-trigger"
+      data-size={size}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        "border-input cursor-pointer data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronDownIcon className="size-4 opacity-50" />
+    </button>
+  );
+}
 
 function getOptionElements(content: HTMLElement): HTMLElement[] {
   return Array.from(
@@ -237,132 +236,129 @@ function getOptionElements(content: HTMLElement): HTMLElement[] {
 
 interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement> {
   position?: "popper" | "item-aligned";
+  ref?: React.Ref<HTMLDivElement>;
 }
 
-const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
-  function SelectContent(
-    { className, children, position = "popper", onKeyDown, ...props },
-    ref
-  ) {
-    const {
-      open,
-      setOpen,
-      value,
-      triggerRef,
-      contentRef,
-      contentId,
-      triggerId,
-    } = useSelect();
-    const [floatingNode, setFloatingNode] =
-      React.useState<HTMLDivElement | null>(null);
-    const { position: pos } = useFloating({
-      open,
-      triggerRef,
-      floatingNode,
-      side: "bottom",
-      align: "start",
-      sideOffset: 4,
-      matchTriggerWidth: true,
-    });
-    const setRefs = React.useCallback(
-      (node: HTMLDivElement | null) => {
-        setFloatingNode(node);
-        contentRef.current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref)
-          (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      },
-      [ref, contentRef]
-    );
+function SelectContent({
+  className,
+  children,
+  position = "popper",
+  onKeyDown,
+  ref,
+  ...props
+}: SelectContentProps) {
+  const {
+    open,
+    setOpen,
+    value,
+    triggerRef,
+    contentRef,
+    contentId,
+    triggerId,
+  } = useSelect();
+  const [floatingNode, setFloatingNode] =
+    React.useState<HTMLDivElement | null>(null);
+  const { position: pos } = useFloating({
+    open,
+    triggerRef,
+    floatingNode,
+    side: "bottom",
+    align: "start",
+    sideOffset: 4,
+    matchTriggerWidth: true,
+  });
+  const setRefs = React.useMemo(
+    () => composeRefs<HTMLDivElement>(setFloatingNode, contentRef, ref),
+    [ref, contentRef]
+  );
 
-    useEscape(open, () => {
+  useEscape(open, () => {
+    setOpen(false);
+    triggerRef.current?.focus?.();
+  });
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (contentRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
       setOpen(false);
-      triggerRef.current?.focus?.();
-    });
-
-    React.useEffect(() => {
-      if (!open) return;
-      const handler = (e: PointerEvent) => {
-        const target = e.target as Node;
-        if (contentRef.current?.contains(target)) return;
-        if (triggerRef.current?.contains(target)) return;
-        setOpen(false);
-      };
-      document.addEventListener("pointerdown", handler);
-      return () => document.removeEventListener("pointerdown", handler);
-    }, [open, contentRef, triggerRef, setOpen]);
-
-    React.useEffect(() => {
-      if (!open || !contentRef.current) return;
-      const root = contentRef.current;
-      const options = getOptionElements(root);
-      const selected = options.find(
-        (el) => el.getAttribute("data-value") === value
-      );
-      (selected ?? options[0])?.focus();
-    }, [open, value, contentRef]);
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(e);
-      if (e.defaultPrevented) return;
-      const root = contentRef.current;
-      if (!root) return;
-      const options = getOptionElements(root);
-      if (options.length === 0) return;
-      const active = document.activeElement as HTMLElement | null;
-      const i = active ? options.indexOf(active) : -1;
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        options[(i + 1 + options.length) % options.length]?.focus();
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        options[(i - 1 + options.length) % options.length]?.focus();
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        options[0]?.focus();
-      } else if (e.key === "End") {
-        e.preventDefault();
-        options[options.length - 1]?.focus();
-      } else if (e.key === "Tab") {
-        e.preventDefault();
-      }
     };
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
+  }, [open, contentRef, triggerRef, setOpen]);
 
-    if (typeof document === "undefined") return null;
-
-    return createPortal(
-      <div
-        ref={setRefs}
-        id={contentId}
-        role="listbox"
-        aria-labelledby={triggerId}
-        tabIndex={-1}
-        data-slot="select-content"
-        data-state={open ? "open" : "closed"}
-        data-side={pos?.side ?? "bottom"}
-        data-align={pos?.align ?? "start"}
-        style={
-          open
-            ? (pos?.style ?? { position: "fixed", visibility: "hidden" })
-            : { position: "fixed", visibility: "hidden", pointerEvents: "none" }
-        }
-        onKeyDown={handleKeyDown}
-        className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
-          position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-          className
-        )}
-        {...props}
-      >
-        <div data-slot="select-viewport" className="p-1">
-          {children}
-        </div>
-      </div>,
-      document.body
+  React.useEffect(() => {
+    if (!open || !contentRef.current) return;
+    const root = contentRef.current;
+    const options = getOptionElements(root);
+    const selected = options.find(
+      (el) => el.getAttribute("data-value") === value
     );
-  }
-);
+    (selected ?? options[0])?.focus();
+  }, [open, value, contentRef]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(e);
+    if (e.defaultPrevented) return;
+    const root = contentRef.current;
+    if (!root) return;
+    const options = getOptionElements(root);
+    if (options.length === 0) return;
+    const active = document.activeElement as HTMLElement | null;
+    const i = active ? options.indexOf(active) : -1;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      options[(i + 1 + options.length) % options.length]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      options[(i - 1 + options.length) % options.length]?.focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      options[0]?.focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      options[options.length - 1]?.focus();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+    }
+  };
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      ref={setRefs}
+      id={contentId}
+      role="listbox"
+      aria-labelledby={triggerId}
+      tabIndex={-1}
+      data-slot="select-content"
+      data-state={open ? "open" : "closed"}
+      data-side={pos?.side ?? "bottom"}
+      data-align={pos?.align ?? "start"}
+      style={
+        open
+          ? (pos?.style ?? { position: "fixed", visibility: "hidden" })
+          : { position: "fixed", visibility: "hidden", pointerEvents: "none" }
+      }
+      onKeyDown={handleKeyDown}
+      className={cn(
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
+        position === "popper" &&
+          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        className
+      )}
+      {...props}
+    >
+      <div data-slot="select-viewport" className="p-1">
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 function SelectLabel({
   className,

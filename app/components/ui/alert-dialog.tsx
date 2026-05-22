@@ -11,13 +11,14 @@ import {
   useScrollLock,
   useEscape,
   useStableId,
+  composeRefs,
 } from "./_internal";
 import { Slot } from "./_slot";
 
 interface AlertDialogContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
-  triggerRef: React.MutableRefObject<HTMLElement | null>;
+  triggerRef: React.RefObject<HTMLElement | null>;
   contentId: string;
   titleId: string;
   descriptionId: string;
@@ -75,19 +76,20 @@ function AlertDialog({
 
 interface AlertDialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-const AlertDialogTrigger = React.forwardRef<
-  HTMLButtonElement,
-  AlertDialogTriggerProps
->(function AlertDialogTrigger({ asChild, onClick, ...props }, ref) {
+function AlertDialogTrigger({
+  asChild,
+  onClick,
+  ref,
+  ...props
+}: AlertDialogTriggerProps) {
   const { open, setOpen, triggerRef, contentId } = useAlertDialog();
-  const setRefs = (node: HTMLButtonElement | null) => {
-    triggerRef.current = node;
-    if (typeof ref === "function") ref(node);
-    else if (ref)
-      (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
-  };
+  const setRefs = composeRefs<HTMLButtonElement>(
+    triggerRef as React.RefObject<HTMLButtonElement | null>,
+    ref
+  );
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e);
     if (!e.defaultPrevented) setOpen(!open);
@@ -106,7 +108,7 @@ const AlertDialogTrigger = React.forwardRef<
       {...props}
     />
   );
-});
+}
 
 function AlertDialogPortal({ children }: { children?: React.ReactNode }) {
   if (typeof document === "undefined") return null;
@@ -131,19 +133,20 @@ function AlertDialogOverlay({
   );
 }
 
-const AlertDialogContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(function AlertDialogContent({ className, children, ...props }, ref) {
+interface AlertDialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+function AlertDialogContent({
+  className,
+  children,
+  ref,
+  ...props
+}: AlertDialogContentProps) {
   const { open, setOpen, contentId, titleId, descriptionId, triggerRef } =
     useAlertDialog();
   const localRef = React.useRef<HTMLDivElement | null>(null);
-  const setRefs = (node: HTMLDivElement | null) => {
-    localRef.current = node;
-    if (typeof ref === "function") ref(node);
-    else if (ref)
-      (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-  };
+  const setRefs = composeRefs<HTMLDivElement>(localRef, ref);
 
   useFocusTrap(localRef, open);
   useScrollLock(open);
@@ -177,7 +180,7 @@ const AlertDialogContent = React.forwardRef<
       </div>
     </AlertDialogPortal>
   );
-});
+}
 
 function AlertDialogHeader({
   className,
@@ -238,12 +241,16 @@ function AlertDialogDescription({
   );
 }
 
-interface AlertDialogActionProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+interface AlertDialogActionProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  ref?: React.Ref<HTMLButtonElement>;
+}
 
-const AlertDialogAction = React.forwardRef<
-  HTMLButtonElement,
-  AlertDialogActionProps
->(function AlertDialogAction({ className, onClick, ...props }, ref) {
+function AlertDialogAction({
+  className,
+  onClick,
+  ref,
+  ...props
+}: AlertDialogActionProps) {
   const { setOpen, triggerRef } = useAlertDialog();
   return (
     <button
@@ -260,14 +267,18 @@ const AlertDialogAction = React.forwardRef<
       {...props}
     />
   );
-});
+}
 
-interface AlertDialogCancelProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+interface AlertDialogCancelProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  ref?: React.Ref<HTMLButtonElement>;
+}
 
-const AlertDialogCancel = React.forwardRef<
-  HTMLButtonElement,
-  AlertDialogCancelProps
->(function AlertDialogCancel({ className, onClick, ...props }, ref) {
+function AlertDialogCancel({
+  className,
+  onClick,
+  ref,
+  ...props
+}: AlertDialogCancelProps) {
   const { setOpen, triggerRef } = useAlertDialog();
   return (
     <button
@@ -284,7 +295,7 @@ const AlertDialogCancel = React.forwardRef<
       {...props}
     />
   );
-});
+}
 
 export {
   AlertDialog,

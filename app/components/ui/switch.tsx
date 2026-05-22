@@ -15,22 +15,21 @@ interface SwitchProps extends Omit<
   required?: boolean;
   name?: string;
   value?: string;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
-  {
-    className,
-    checked,
-    defaultChecked,
-    onCheckedChange,
-    disabled,
-    required,
-    name,
-    value = "on",
-    ...props
-  },
-  ref
-) {
+function Switch({
+  className,
+  checked,
+  defaultChecked,
+  onCheckedChange,
+  disabled,
+  required,
+  name,
+  value = "on",
+  ref,
+  ...props
+}: SwitchProps) {
   const [state, setState] = useControllableState<boolean>({
     value: checked,
     defaultValue: defaultChecked ?? false,
@@ -88,6 +87,6 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
       )}
     </>
   );
-});
+}
 
 export { Switch };

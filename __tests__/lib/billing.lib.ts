@@ -1,6 +1,5 @@
 import {
   createSetupIntent,
-  getUserSubscription,
   changePlan,
   cancelSubscription,
   updatePaymentMethod,
@@ -139,45 +138,6 @@ describe("createSetupIntent", () => {
       expect.objectContaining({ email: "test@example.com" })
     );
     expect(result).toBe("seti_secret");
-  });
-});
-
-// ─── getUserSubscription ──────────────────────────────────────────────────
-
-describe("getUserSubscription", () => {
-  it("throws when unauthenticated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(getUserSubscription()).rejects.toThrow("Unauthorized");
-  });
-
-  it("returns starter defaults when no subscription row exists", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockDbSelect([]);
-
-    const result = await getUserSubscription();
-    expect(result.plan).toBe("starter");
-    expect(result.status).toBe("active");
-    expect(result.stripeCustomerId).toBeNull();
-  });
-
-  it("returns subscription data from DB when row exists", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockDbSelect([
-      {
-        plan: "professional",
-        status: "active",
-        stripeCustomerId: "cus_123",
-        stripeSubscriptionId: "sub_123",
-        stripePriceId: "price_123",
-        currentPeriodEnd: new Date("2026-04-01"),
-        cancelAtPeriodEnd: false,
-      },
-    ]);
-
-    const result = await getUserSubscription();
-    expect(result.plan).toBe("professional");
-    expect(result.stripeCustomerId).toBe("cus_123");
-    expect(result.stripeSubscriptionId).toBe("sub_123");
   });
 });
 

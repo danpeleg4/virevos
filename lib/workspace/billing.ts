@@ -98,45 +98,11 @@ export async function registerFreePlan(): Promise<void> {
   await ensureUserRow();
 }
 
-export async function getUserSubscription(): Promise<UserSubscription> {
-  const user = await getCurrentUser();
-  if (!user?.id) throw new Error("Unauthorized");
-
-  const rows = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, user.id))
-    .limit(1);
-
-  if (rows.length === 0) {
-    return {
-      plan: "starter",
-      status: "active",
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      stripePriceId: null,
-      currentPeriodEnd: null,
-      cancelAtPeriodEnd: false,
-    };
-  }
-
-  const row = rows[0];
-  return {
-    plan: row.plan as PlanId,
-    status: row.status as SubscriptionStatus,
-    stripeCustomerId: row.stripeCustomerId,
-    stripeSubscriptionId: row.stripeSubscriptionId ?? null,
-    stripePriceId: row.stripePriceId ?? null,
-    currentPeriodEnd: row.currentPeriodEnd ?? null,
-    cancelAtPeriodEnd: row.cancelAtPeriodEnd,
-  };
-}
-
 export async function getBillingOverview(): Promise<BillingOverview> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const subscription = await getUserSubscription();
+  const subscription = await getUserSubscriptionByUserId(user.id);
 
   const [userRow] = await db
     .select({ ai_credits: users.ai_credits, storage: users.storage })
@@ -217,7 +183,7 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscription();
+  const sub = await getUserSubscriptionByUserId(user.id);
 
   // Downgrade to starter: cancel at period end — limits deferred until subscription.deleted fires
   if (input.planId === "starter") {
@@ -280,7 +246,7 @@ export async function cancelSubscription(): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscription();
+  const sub = await getUserSubscriptionByUserId(user.id);
   if (!sub.stripeSubscriptionId) throw new Error("No active subscription");
 
   await stripe.subscriptions.update(sub.stripeSubscriptionId, {
@@ -292,7 +258,7 @@ export async function resubscribe(): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscription();
+  const sub = await getUserSubscriptionByUserId(user.id);
   if (!sub.stripeSubscriptionId)
     throw new Error("No subscription to reactivate");
 
@@ -305,7 +271,7 @@ export async function updatePaymentMethod(pmId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscription();
+  const sub = await getUserSubscriptionByUserId(user.id);
   if (!sub.stripeCustomerId) throw new Error("No Stripe customer");
 
   await stripe.paymentMethods.attach(pmId, { customer: sub.stripeCustomerId });
