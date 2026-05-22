@@ -8,7 +8,7 @@ import { cn } from "./utils";
 import {
   useControllableState,
   useFloating,
-  useEscape,
+  useDismissableLayer,
   useStableId,
   focusOnPointerMove,
   blurOnPointerLeave,
@@ -272,22 +272,16 @@ function SelectContent({
     [ref, contentRef]
   );
 
-  useEscape(open, () => {
-    setOpen(false);
-    triggerRef.current?.focus?.();
-  });
-
-  React.useEffect(() => {
-    if (!open) return;
-    const handler = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (contentRef.current?.contains(target)) return;
-      if (triggerRef.current?.contains(target)) return;
+  useDismissableLayer({
+    open,
+    triggerRef,
+    content: contentRef,
+    onEscapeKeyDown: () => {
       setOpen(false);
-    };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, [open, contentRef, triggerRef, setOpen]);
+      triggerRef.current?.focus?.();
+    },
+    onPointerDownOutside: () => setOpen(false),
+  });
 
   React.useEffect(() => {
     if (!open || !contentRef.current) return;

@@ -289,6 +289,50 @@ export function useEscape(active: boolean, onEscape: () => void) {
   }, [active, onEscape]);
 }
 
+type DismissableContent =
+  | HTMLElement
+  | null
+  | React.RefObject<HTMLElement | null>;
+
+export function useDismissableLayer({
+  open,
+  triggerRef,
+  content,
+  onEscapeKeyDown,
+  onPointerDownOutside,
+}: {
+  open: boolean;
+  triggerRef: React.RefObject<HTMLElement | null>;
+  content: DismissableContent;
+  onEscapeKeyDown?: (e: KeyboardEvent) => void;
+  onPointerDownOutside?: (e: PointerEvent) => void;
+}) {
+  React.useEffect(() => {
+    if (!open) return;
+    const resolveContent = () =>
+      content && typeof content === "object" && "current" in content
+        ? content.current
+        : content;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      onEscapeKeyDown?.(e);
+    };
+    const onPointer = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (resolveContent()?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
+      onPointerDownOutside?.(e);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
+    };
+  }, [open, content, triggerRef, onEscapeKeyDown, onPointerDownOutside]);
+}
+
 // Mouse hover should drive focus on menu/listbox items so that `focus:` styles
 // double as the hover highlight.
 export function focusOnPointerMove(

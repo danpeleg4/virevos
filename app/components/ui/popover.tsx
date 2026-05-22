@@ -7,7 +7,7 @@ import { cn } from "./utils";
 import {
   useControllableState,
   useFloating,
-  useEscape,
+  useDismissableLayer,
   useStableId,
   composeRefs,
 } from "./_internal";
@@ -133,26 +133,19 @@ function PopoverContent({
     [ref]
   );
 
-  useEscape(open, () => {
-    const fakeEvent = new KeyboardEvent("keydown", { key: "Escape" });
-    onEscapeKeyDown?.(fakeEvent);
-    if (!fakeEvent.defaultPrevented) {
-      setOpen(false);
-      triggerRef.current?.focus?.();
-    }
+  useDismissableLayer({
+    open,
+    triggerRef,
+    content: floatingNode,
+    onEscapeKeyDown: (e) => {
+      onEscapeKeyDown?.(e);
+      if (!e.defaultPrevented) {
+        setOpen(false);
+        triggerRef.current?.focus?.();
+      }
+    },
+    onPointerDownOutside: () => setOpen(false),
   });
-
-  React.useEffect(() => {
-    if (!open) return;
-    const handler = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (floatingNode?.contains(target)) return;
-      if (triggerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, [open, floatingNode, triggerRef, setOpen]);
 
   if (!open || typeof document === "undefined") return null;
 

@@ -6,6 +6,7 @@ import {
   updateDocumentRequest,
 } from "@/lib/document_requests";
 import { getCurrentUser } from "@/lib/supabase/auth";
+import { buildSelectChain } from "../_helpers/drizzle";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -55,11 +56,7 @@ describe("listPendingDocumentRequests", () => {
 
   it("returns empty array when no pending requests exist", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const orderBy = vi.fn().mockResolvedValue([]);
-    const where = vi.fn(() => ({ orderBy }));
-    const innerJoin = vi.fn(() => ({ where }));
-    const from = vi.fn(() => ({ innerJoin }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([]));
 
     const result = await listPendingDocumentRequests();
     expect(result).toEqual([]);
@@ -88,18 +85,9 @@ describe("listPendingDocumentRequests", () => {
       uploadedAt: null,
     };
 
-    const orderBy1 = vi.fn().mockResolvedValue([requestRow]);
-    const where1 = vi.fn(() => ({ orderBy: orderBy1 }));
-    const innerJoin = vi.fn(() => ({ where: where1 }));
-    const from1 = vi.fn(() => ({ innerJoin }));
-
-    const orderBy2 = vi.fn().mockResolvedValue([itemRow]);
-    const where2 = vi.fn(() => ({ orderBy: orderBy2 }));
-    const from2 = vi.fn(() => ({ where: where2 }));
-
     (db.select as Mock)
-      .mockReturnValueOnce({ from: from1 })
-      .mockReturnValueOnce({ from: from2 });
+      .mockReturnValueOnce(buildSelectChain([requestRow]))
+      .mockReturnValueOnce(buildSelectChain([itemRow]));
 
     const result = await listPendingDocumentRequests();
 
@@ -134,10 +122,7 @@ describe("updateDocumentRequest", () => {
 
   it("throws when the request is not owned by the user", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const limit = vi.fn().mockResolvedValue([]);
-    const where = vi.fn(() => ({ limit }));
-    const from = vi.fn(() => ({ where }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([]));
 
     await expect(updateDocumentRequest(1, { clientId: 5 })).rejects.toThrow(
       "Document request not found"
@@ -146,10 +131,7 @@ describe("updateDocumentRequest", () => {
 
   it("runs a transaction that updates clientId and diffs items", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const limit = vi.fn().mockResolvedValue([{ id: 1 }]);
-    const where = vi.fn(() => ({ limit }));
-    const from = vi.fn(() => ({ where }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([{ id: 1 }]));
 
     const txUpdateWhere = vi.fn().mockResolvedValue(undefined);
     const txUpdateSet = vi.fn(() => ({ where: txUpdateWhere }));
@@ -198,10 +180,7 @@ describe("approveDocumentRequest", () => {
 
   it("throws when the request is not found", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const limit = vi.fn().mockResolvedValue([]);
-    const where = vi.fn(() => ({ limit }));
-    const from = vi.fn(() => ({ where }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([]));
 
     await expect(approveDocumentRequest(1)).rejects.toThrow(
       "Document request not found"
@@ -210,10 +189,7 @@ describe("approveDocumentRequest", () => {
 
   it("throws when clientId is null", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const limit = vi.fn().mockResolvedValue([{ clientId: null }]);
-    const where = vi.fn(() => ({ limit }));
-    const from = vi.fn(() => ({ where }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([{ clientId: null }]));
 
     await expect(approveDocumentRequest(1)).rejects.toThrow(
       "Client must be selected before approval"
@@ -222,10 +198,7 @@ describe("approveDocumentRequest", () => {
 
   it("sets status to approved with approvedAt when clientId is set", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const limit = vi.fn().mockResolvedValue([{ clientId: 42 }]);
-    const where = vi.fn(() => ({ limit }));
-    const from = vi.fn(() => ({ where }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([{ clientId: 42 }]));
 
     await approveDocumentRequest(1);
 
@@ -249,10 +222,7 @@ describe("declineDocumentRequest", () => {
 
   it("sets status to declined for an owned request", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const limit = vi.fn().mockResolvedValue([{ id: 1 }]);
-    const where = vi.fn(() => ({ limit }));
-    const from = vi.fn(() => ({ where }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([{ id: 1 }]));
 
     await declineDocumentRequest(1);
 
@@ -264,11 +234,7 @@ describe("declineDocumentRequest", () => {
 
 describe("listApprovedRequestsForClient", () => {
   it("returns empty when no approved requests exist", async () => {
-    const orderBy = vi.fn().mockResolvedValue([]);
-    const where = vi.fn(() => ({ orderBy }));
-    const innerJoin = vi.fn(() => ({ where }));
-    const from = vi.fn(() => ({ innerJoin }));
-    (db.select as Mock).mockReturnValue({ from });
+    (db.select as Mock).mockReturnValue(buildSelectChain([]));
 
     const result = await listApprovedRequestsForClient(5);
     expect(result).toEqual([]);
@@ -294,19 +260,9 @@ describe("listApprovedRequestsForClient", () => {
       uploadedFilePath: "documents/u/req-1/passport.pdf",
     };
 
-    const orderBy1 = vi.fn().mockResolvedValue([requestRow]);
-    const where1 = vi.fn(() => ({ orderBy: orderBy1 }));
-    const innerJoin = vi.fn(() => ({ where: where1 }));
-    const from1 = vi.fn(() => ({ innerJoin }));
-
-    const orderBy2 = vi.fn().mockResolvedValue([itemRow]);
-    const where2 = vi.fn(() => ({ orderBy: orderBy2 }));
-    const leftJoin = vi.fn(() => ({ where: where2 }));
-    const from2 = vi.fn(() => ({ leftJoin }));
-
     (db.select as Mock)
-      .mockReturnValueOnce({ from: from1 })
-      .mockReturnValueOnce({ from: from2 });
+      .mockReturnValueOnce(buildSelectChain([requestRow]))
+      .mockReturnValueOnce(buildSelectChain([itemRow]));
 
     const result = await listApprovedRequestsForClient(7);
 
