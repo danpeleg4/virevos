@@ -13,7 +13,9 @@ vi.mock("@/lib/outlook/outlook_access", () => ({
 }));
 vi.mock("@/lib/embeddings", () => ({
   createEmbeddings: vi.fn(),
-  supabaseVector: { storage: { vectors: { from: vi.fn() } } },
+}));
+vi.mock("@/lib/supabase/supabase", () => ({
+  supabaseAdmin: { storage: { vectors: { from: vi.fn() } } },
 }));
 
 import { parseGraphDateTime } from "@/lib/outlook/outlook_sync";

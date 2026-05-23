@@ -5,10 +5,10 @@ import { and, eq } from "drizzle-orm";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import {
   createEmbeddings,
-  supabaseVector,
   EMAILS_BUCKET,
   EMAILS_INDEX,
 } from "@/lib/embeddings";
+import { supabaseAdmin } from "@/lib/supabase/supabase";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -51,7 +51,7 @@ async function indexEmailVectors(
   }>
 ): Promise<void> {
   if (rows.length === 0) return;
-  const index = supabaseVector.storage.vectors
+  const index = supabaseAdmin.storage.vectors
     .from(EMAILS_BUCKET)
     .index(EMAILS_INDEX);
 

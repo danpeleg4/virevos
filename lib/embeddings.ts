@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { openai } from "./ai/ai_tools";
 
 export const EMBEDDING_MODEL = "text-embedding-3-large";
@@ -8,11 +7,6 @@ export const TRANSCRIPT_BUCKET = "recording";
 export const TRANSCRIPT_INDEX = "transcription";
 export const EMAILS_BUCKET = "emails";
 export const EMAILS_INDEX = "emails";
-
-export const supabaseVector = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_API_SECRET!
-);
 
 export async function createEmbedding(text: string): Promise<number[]> {
   const res = await openai.embeddings.create({
