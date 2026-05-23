@@ -23,10 +23,10 @@ vi.mock("motion/react", async () => {
           return React.createElement(
             _tag,
             props,
-            children as ReactTypes.ReactNode,
+            children as ReactTypes.ReactNode
           );
         },
-    },
+    }
   );
   return {
     motion,

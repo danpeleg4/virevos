@@ -247,17 +247,11 @@ function SelectContent({
   ref,
   ...props
 }: SelectContentProps) {
-  const {
-    open,
-    setOpen,
-    value,
-    triggerRef,
-    contentRef,
-    contentId,
-    triggerId,
-  } = useSelect();
-  const [floatingNode, setFloatingNode] =
-    React.useState<HTMLDivElement | null>(null);
+  const { open, setOpen, value, triggerRef, contentRef, contentId, triggerId } =
+    useSelect();
+  const [floatingNode, setFloatingNode] = React.useState<HTMLDivElement | null>(
+    null
+  );
   const { position: pos } = useFloating({
     open,
     triggerRef,

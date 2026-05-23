@@ -117,8 +117,9 @@ function PopoverContent({
   ...props
 }: PopoverContentProps) {
   const { open, setOpen, triggerRef, contentId } = usePopover();
-  const [floatingNode, setFloatingNode] =
-    React.useState<HTMLDivElement | null>(null);
+  const [floatingNode, setFloatingNode] = React.useState<HTMLDivElement | null>(
+    null
+  );
   const { position } = useFloating({
     open,
     triggerRef,

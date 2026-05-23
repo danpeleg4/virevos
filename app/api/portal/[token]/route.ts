@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import {
   clientPortalTokens,
@@ -10,7 +10,10 @@ import {
 import { and, eq, gte } from "drizzle-orm";
 import { listApprovedRequestsForClient } from "@/lib/document_requests";
 
-export async function GET({ params }: { params: Promise<{ token: string }> }) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
+) {
   try {
     const { token } = await params;
 
