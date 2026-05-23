@@ -24,6 +24,7 @@ import type { clients } from "@/types/clients";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCase } from "@/lib/workspace/cases";
 import { Case } from "@/types/cases";
+import { toast } from "sonner";
 
 export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -44,9 +45,15 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   });
 
   const submit = async () => {
+    const trimmedName = caseName.trim();
+    if (!trimmedName) {
+      toast.error("Case name is required");
+      return;
+    }
+
     createNewCase.mutate({
       id: 1,
-      name: caseName,
+      name: trimmedName,
       clientId: client ? Number(client) : null,
       priority,
       dueDate: dueDate || null,
@@ -83,7 +90,13 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
                 className="mt-2"
                 value={caseName}
                 onChange={(e) => setCaseName(e.target.value)}
+                aria-invalid={!caseName.trim()}
               />
+              {!caseName.trim() && (
+                <p className="text-xs text-destructive mt-1">
+                  Case name is required
+                </p>
+              )}
             </div>
 
             <div>
@@ -142,7 +155,11 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
               >
                 Cancel
               </Button>
-              <Button className="cursor-pointer" onClick={submit}>
+              <Button
+                className="cursor-pointer"
+                onClick={submit}
+                disabled={!caseName.trim()}
+              >
                 Create Case
               </Button>
             </div>

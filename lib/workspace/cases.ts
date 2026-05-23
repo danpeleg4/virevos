@@ -8,6 +8,7 @@ import { AddFileMetadataInput, Case } from "@/types/cases";
 import { uploadFile, deleteFile } from "../storage";
 import { FILES_BUCKET } from "../supabase/supabase";
 import { assertCanAddCase, assertCanAddFile } from "../plan_limits";
+import { MAX_NAME, requireString } from "../util/validation";
 
 export async function deleteCase(caseId: number) {
   const user = await getCurrentUser();
@@ -105,11 +106,13 @@ export async function createCase(aCase: Case) {
 
   await assertCanAddCase(user.id);
 
+  const name = requireString(aCase.name, "name", MAX_NAME);
+
   // Insert case into DB
   const [inserted] = await db
     .insert(cases)
     .values({
-      name: aCase.name,
+      name,
       userId: user.id,
       clientId: aCase.clientId ?? undefined,
       status: aCase.status ?? "active",

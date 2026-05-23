@@ -214,6 +214,22 @@ describe("createCase", () => {
     await expect(createCase(baseCase as never)).rejects.toThrow("Unauthorized");
   });
 
+  it("throws when name is an empty string", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    await expect(
+      createCase({ ...baseCase, name: "" } as never)
+    ).rejects.toThrow("name is required");
+    expect(mockValues).not.toHaveBeenCalled();
+  });
+
+  it("throws when name is whitespace only", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    await expect(
+      createCase({ ...baseCase, name: "   " } as never)
+    ).rejects.toThrow("name is required");
+    expect(mockValues).not.toHaveBeenCalled();
+  });
+
   it("inserts case (without id field) and returns it with default stats", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const dbRecord = {
@@ -234,6 +250,17 @@ describe("createCase", () => {
       completedTasks: 0,
       percentage: 0,
     });
+  });
+
+  it("trims surrounding whitespace from the name before inserting", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    mockReturning.mockResolvedValueOnce([{ name: "My Case" }]);
+
+    await createCase({ ...baseCase, name: "  My Case  " } as never);
+
+    expect(mockValues).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "My Case" })
+    );
   });
 });
 

@@ -12,6 +12,11 @@ vi.mock("@/lib/workspace/cases", () => ({
   createCase: vi.fn(),
 }));
 
+const mockToastError = vi.fn();
+vi.mock("sonner", () => ({
+  toast: { error: (msg: string) => mockToastError(msg) },
+}));
+
 const mockClients = [
   {
     id: 1,
@@ -31,6 +36,7 @@ import { CaseCreateDialog } from "@/app/workspace/cases/CaseCreateDialog";
 describe("CaseCreateDialog", () => {
   beforeEach(() => {
     mockMutate.mockClear();
+    mockToastError.mockClear();
   });
 
   it("renders 'New Case' trigger button", () => {
@@ -61,5 +67,36 @@ describe("CaseCreateDialog", () => {
     expect(mockMutate).toHaveBeenCalledWith(
       expect.objectContaining({ name: "New Campaign", status: "active" })
     );
+  });
+
+  it("disables the Create Case button and shows a message when name is empty", () => {
+    render(<CaseCreateDialog clients={mockClients} />);
+    fireEvent.click(screen.getByRole("button", { name: /new case/i }));
+    expect(screen.getByRole("button", { name: /create case/i })).toBeDisabled();
+    expect(screen.getByText(/case name is required/i)).toBeInTheDocument();
+  });
+
+  it("enables the Create Case button once a name is entered", () => {
+    render(<CaseCreateDialog clients={mockClients} />);
+    fireEvent.click(screen.getByRole("button", { name: /new case/i }));
+    const nameInput = screen.getByPlaceholderText(/website redesign/i);
+    fireEvent.change(nameInput, { target: { value: "New Campaign" } });
+    expect(screen.getByRole("button", { name: /create case/i })).toBeEnabled();
+    expect(
+      screen.queryByText(/case name is required/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not mutate when name is only whitespace", () => {
+    render(<CaseCreateDialog clients={mockClients} />);
+    fireEvent.click(screen.getByRole("button", { name: /new case/i }));
+    const nameInput = screen.getByPlaceholderText(/website redesign/i);
+    fireEvent.change(nameInput, { target: { value: "New Campaign" } });
+    fireEvent.change(nameInput, { target: { value: "   " } });
+    // The disabled button blocks submission; the inline message explains why.
+    expect(screen.getByRole("button", { name: /create case/i })).toBeDisabled();
+    expect(screen.getByText(/case name is required/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /create case/i }));
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 });
