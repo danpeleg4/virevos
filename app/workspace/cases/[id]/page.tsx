@@ -863,7 +863,7 @@ export function CaseDetailView({
                       </div>
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                      {file.size}
+                      {(Number(file.size) / (1024 * 1024)).toFixed(2) + "MB"}
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
