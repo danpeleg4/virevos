@@ -27,11 +27,6 @@ vi.mock("next-themes", () => ({
   useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
 
-vi.mock("next/image", () => ({
-  __esModule: true,
-  default: (props: Record<string, unknown>) => <img {...props} />,
-}));
-
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(() => ({ data: undefined, isLoading: false })),
 }));

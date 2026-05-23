@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { cn } from "./utils";
+import Image, { type ImageProps } from "next/image";
 
 type ImageStatus = "idle" | "loading" | "loaded" | "error";
 
@@ -33,13 +34,16 @@ function Avatar({
   );
 }
 
-interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface AvatarImageProps extends Omit<ImageProps, "src" | "alt"> {
+  src?: string;
+  alt?: string;
   onLoadingStatusChange?: (status: ImageStatus) => void;
 }
 
 function AvatarImage({
   className,
   src,
+  alt = "avatar",
   onLoad,
   onError,
   onLoadingStatusChange,
@@ -76,16 +80,18 @@ function AvatarImage({
     };
   }, [srcString, setStatus, onLoadingStatusChange]);
 
-  if (status !== "loaded") return null;
+  if (status !== "loaded" || !srcString) return null;
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-    <img
+    <Image
+      alt={alt}
       data-slot="avatar-image"
       src={srcString}
+      fill
+      sizes="40px"
       onLoad={onLoad}
       onError={onError}
-      className={cn("aspect-square size-full", className)}
+      className={cn("aspect-square size-full object-cover", className)}
       {...props}
     />
   );

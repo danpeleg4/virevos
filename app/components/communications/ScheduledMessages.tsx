@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -65,17 +65,12 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [formDate, setFormDate] = useState("");
   const [formTime, setFormTime] = useState("09:00");
 
-  useEffect(() => {
-    checkConnection();
-    fetchScheduledEmails();
-  }, []);
-
   const checkOutlookConnection = async () => {
     const { data } = await axios.get("/api/integrations/outlook");
     return data.connected;
   };
 
-  const checkConnection = async () => {
+  const checkConnection = useCallback(async () => {
     try {
       const { data } = await axios.get("/api/integrations/google");
       const outlookData = await checkOutlookConnection();
@@ -83,9 +78,9 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     } catch {
       setIsConnected(false);
     }
-  };
+  }, []);
 
-  const fetchScheduledEmails = async () => {
+  const fetchScheduledEmails = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data } = await axios.get("/api/scheduled-emails");
@@ -95,7 +90,12 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkConnection();
+    fetchScheduledEmails();
+  }, [checkConnection, fetchScheduledEmails]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
