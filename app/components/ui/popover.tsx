@@ -7,7 +7,7 @@ import { cn } from "./utils";
 import {
   useControllableState,
   useFloating,
-  useEscape,
+  useDismissableLayer,
   useStableId,
   composeRefs,
 } from "./_internal";
@@ -117,8 +117,9 @@ function PopoverContent({
   ...props
 }: PopoverContentProps) {
   const { open, setOpen, triggerRef, contentId } = usePopover();
-  const [floatingNode, setFloatingNode] =
-    React.useState<HTMLDivElement | null>(null);
+  const [floatingNode, setFloatingNode] = React.useState<HTMLDivElement | null>(
+    null
+  );
   const { position } = useFloating({
     open,
     triggerRef,
@@ -133,26 +134,19 @@ function PopoverContent({
     [ref]
   );
 
-  useEscape(open, () => {
-    const fakeEvent = new KeyboardEvent("keydown", { key: "Escape" });
-    onEscapeKeyDown?.(fakeEvent);
-    if (!fakeEvent.defaultPrevented) {
-      setOpen(false);
-      triggerRef.current?.focus?.();
-    }
+  useDismissableLayer({
+    open,
+    triggerRef,
+    content: floatingNode,
+    onEscapeKeyDown: (e) => {
+      onEscapeKeyDown?.(e);
+      if (!e.defaultPrevented) {
+        setOpen(false);
+        triggerRef.current?.focus?.();
+      }
+    },
+    onPointerDownOutside: () => setOpen(false),
   });
-
-  React.useEffect(() => {
-    if (!open) return;
-    const handler = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (floatingNode?.contains(target)) return;
-      if (triggerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, [open, floatingNode, triggerRef, setOpen]);
 
   if (!open || typeof document === "undefined") return null;
 
@@ -167,7 +161,7 @@ function PopoverContent({
       data-align={position?.align ?? align}
       style={position?.style ?? { position: "fixed", visibility: "hidden" }}
       className={cn(
-        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 shadow-md outline-hidden",
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[60] w-72 rounded-md border p-4 shadow-md outline-hidden",
         className
       )}
       {...props}

@@ -209,7 +209,13 @@ describe("Dialog", () => {
     let captured: HTMLButtonElement | null = null;
     render(
       <Dialog>
-        <DialogTrigger ref={(node) => { captured = node; }}>Open</DialogTrigger>
+        <DialogTrigger
+          ref={(node) => {
+            captured = node;
+          }}
+        >
+          Open
+        </DialogTrigger>
         <DialogContent>
           <DialogTitle>Title</DialogTitle>
         </DialogContent>

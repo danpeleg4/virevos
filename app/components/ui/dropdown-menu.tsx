@@ -8,7 +8,7 @@ import { cn } from "./utils";
 import {
   useControllableState,
   useFloating,
-  useEscape,
+  useDismissableLayer,
   useStableId,
   focusOnPointerMove,
   blurOnPointerLeave,
@@ -170,22 +170,16 @@ function DropdownMenuContent({
     [ref, contentRef]
   );
 
-  useEscape(open, () => {
-    setOpen(false);
-    triggerRef.current?.focus?.();
-  });
-
-  React.useEffect(() => {
-    if (!open) return;
-    const handler = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (contentRef.current?.contains(target)) return;
-      if (triggerRef.current?.contains(target)) return;
+  useDismissableLayer({
+    open,
+    triggerRef,
+    content: contentRef,
+    onEscapeKeyDown: () => {
       setOpen(false);
-    };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, [open, contentRef, triggerRef, setOpen]);
+      triggerRef.current?.focus?.();
+    },
+    onPointerDownOutside: () => setOpen(false),
+  });
 
   React.useEffect(() => {
     if (!open || !contentRef.current) return;
@@ -235,7 +229,7 @@ function DropdownMenuContent({
         style={position?.style ?? { position: "fixed", visibility: "hidden" }}
         onKeyDown={handleKeyDown}
         className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[60] min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
           className
         )}
         {...props}

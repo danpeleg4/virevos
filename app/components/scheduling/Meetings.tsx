@@ -52,6 +52,7 @@ import { Event } from "@/types/meeting";
 import { createInstantMeeting } from "@/lib/workspace/meetings";
 import { deleteEventFromCalendar } from "@/lib/workspace/calendar";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
+import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 
 const ROW_HEIGHT = 48;
 
@@ -101,23 +102,10 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
   const [meetingToDelete, setMeetingToDelete] = useState<Event | null>(null);
   const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
-  const tableRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const calculate = () => {
-      if (!tableRef.current) return;
-      const tableTop = tableRef.current.getBoundingClientRect().top;
-      const reserved = 40 + 50 + 24;
-      const available = window.innerHeight - tableTop - reserved;
-      setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
-    };
-    calculate();
-    window.addEventListener("resize", calculate);
-    return () => window.removeEventListener("resize", calculate);
-  }, []);
+  const { itemsPerPage, tableRef } = useCalcWindow();
 
   const meetings = useQuery({
     queryKey: ["meetings"],

@@ -40,6 +40,7 @@ import axios from "axios";
 import type { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 import { Separator } from "../ui/separator";
+import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 
 const ROW_HEIGHT = 52;
 
@@ -56,25 +57,12 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
   const [transcriptData, setTranscriptData] = useState<TranscribedChunk[]>([]);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [showFullTranscript, setShowFullTranscript] = useState(false);
-  const tableRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const calculate = () => {
-      if (!tableRef.current) return;
-      const tableTop = tableRef.current.getBoundingClientRect().top;
-      const reserved = 40 + 50 + 24;
-      const available = window.innerHeight - tableTop - reserved;
-      setItemsPerPage(Math.max(1, Math.floor(available / ROW_HEIGHT)));
-    };
-    calculate();
-    window.addEventListener("resize", calculate);
-    return () => window.removeEventListener("resize", calculate);
-  }, []);
+  const { itemsPerPage, tableRef } = useCalcWindow();
 
   const meetings = useQuery({
     queryKey: ["meetings"],

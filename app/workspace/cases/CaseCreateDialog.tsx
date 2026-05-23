@@ -30,7 +30,7 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const [caseName, setCaseName] = useState("");
   const [client, setClient] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState("");
-  const [priority, setPriority] = useState("");
+  const [priority, setPriority] = useState("medium");
 
   const queryClient = useQueryClient();
 
@@ -111,18 +111,8 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
             </div>
 
             <div>
-              <Label>Due Date</Label>
-              <Input
-                type="date"
-                className="mt-2"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
-            </div>
-
-            <div>
               <Label>Priority</Label>
-              <Select onValueChange={setPriority}>
+              <Select value={priority} onValueChange={setPriority}>
                 <SelectTrigger className="mt-2 cursor-pointer">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
@@ -132,6 +122,16 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
                   <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label>Due Date</Label>
+              <Input
+                type="date"
+                className="mt-2"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">

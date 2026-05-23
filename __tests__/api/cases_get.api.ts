@@ -1,6 +1,7 @@
 import { GET } from "@/app/api/cases/get-cases/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
+import { buildSelectChain } from "../_helpers/drizzle";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -11,33 +12,6 @@ vi.mock("@db/db", () => ({
     select: vi.fn(),
   },
 }));
-
-type ChainableQuery = {
-  from: Mock;
-  leftJoin: Mock;
-  innerJoin: Mock;
-  where: Mock;
-  groupBy: Mock;
-  orderBy: Mock;
-  then: (
-    onFulfilled: (rows: unknown[]) => unknown,
-    onRejected?: (err: unknown) => unknown
-  ) => Promise<unknown>;
-};
-
-const buildChain = (rows: unknown[]): ChainableQuery => {
-  const chain = {} as ChainableQuery;
-  const passthrough = vi.fn(() => chain);
-  chain.from = passthrough;
-  chain.leftJoin = passthrough;
-  chain.innerJoin = passthrough;
-  chain.where = passthrough;
-  chain.groupBy = passthrough;
-  chain.orderBy = passthrough;
-  chain.then = (onFulfilled, onRejected) =>
-    Promise.resolve(rows).then(onFulfilled, onRejected);
-  return chain;
-};
 
 describe("GET /api/cases/get-cases", () => {
   beforeEach(() => {
@@ -91,8 +65,8 @@ describe("GET /api/cases/get-cases", () => {
     ];
 
     (db.select as Mock)
-      .mockReturnValueOnce(buildChain(caseRows))
-      .mockReturnValueOnce(buildChain(clientRows));
+      .mockReturnValueOnce(buildSelectChain(caseRows))
+      .mockReturnValueOnce(buildSelectChain(clientRows));
 
     const res = await GET();
     expect(res.status).toBe(200);
@@ -119,8 +93,8 @@ describe("GET /api/cases/get-cases", () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     (db.select as Mock)
-      .mockReturnValueOnce(buildChain([]))
-      .mockReturnValueOnce(buildChain([]));
+      .mockReturnValueOnce(buildSelectChain([]))
+      .mockReturnValueOnce(buildSelectChain([]));
 
     const res = await GET();
     expect(res.status).toBe(200);
@@ -134,7 +108,7 @@ describe("GET /api/cases/get-cases", () => {
 
     (db.select as Mock)
       .mockReturnValueOnce(
-        buildChain([
+        buildSelectChain([
           {
             id: 7,
             name: "Done",
@@ -150,7 +124,7 @@ describe("GET /api/cases/get-cases", () => {
           },
         ])
       )
-      .mockReturnValueOnce(buildChain([]));
+      .mockReturnValueOnce(buildSelectChain([]));
 
     const res = await GET();
     const json = await res.json();

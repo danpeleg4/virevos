@@ -11,7 +11,7 @@ import { and, eq, gte } from "drizzle-orm";
 import { listApprovedRequestsForClient } from "@/lib/document_requests";
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {

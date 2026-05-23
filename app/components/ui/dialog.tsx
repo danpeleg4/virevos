@@ -80,7 +80,12 @@ interface DialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   ref?: React.Ref<HTMLButtonElement>;
 }
 
-function DialogTrigger({ asChild, onClick, ref, ...props }: DialogTriggerProps) {
+function DialogTrigger({
+  asChild,
+  onClick,
+  ref,
+  ...props
+}: DialogTriggerProps) {
   const { open, setOpen, triggerRef, contentId } = useDialog();
   const setRefs = composeRefs<HTMLButtonElement>(
     triggerRef as React.RefObject<HTMLButtonElement | null>,
