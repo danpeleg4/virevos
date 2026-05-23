@@ -66,6 +66,8 @@ export const cases = pgTable(
     userId: varchar("user_id")
       .notNull()
       .references(() => users.user_id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("cases_user_id_idx").on(t.userId),
@@ -86,7 +88,8 @@ export const caseFiles = pgTable(
     path: text("path").notNull(),
     size: integer("size").notNull(),
     mimeType: text("mime_type"),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("case_files_case_id_idx").on(t.caseId),
@@ -180,6 +183,7 @@ export const events = pgTable(
     userId: varchar("user_id")
       .notNull()
       .references(() => users.user_id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("events_user_id_date_time_idx").on(t.userId, t.dateTime),
