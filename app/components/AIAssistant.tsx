@@ -48,7 +48,6 @@ import type { PortalMeetingBooking } from "@/types/portal";
 import type {
   PendingDocRequest,
   DocumentRequestItemInput,
-  FulfilledDocRequest,
 } from "@/types/document_requests";
 import {
   acceptBookingWithCalendar,
@@ -88,8 +87,8 @@ export function AIAssistant({
 
   const acceptMutation = useMutation({
     mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
       toast.success("Meeting confirmed and added to calendar");
     },
     onError: () => toast.error("Failed to confirm meeting"),
@@ -98,8 +97,8 @@ export function AIAssistant({
   const denyMutation = useMutation({
     mutationFn: (bookingId: number) =>
       updateBookingStatus(bookingId, "cancelled"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
       toast.success("Meeting request declined");
     },
     onError: () => toast.error("Failed to decline meeting"),
@@ -224,7 +223,7 @@ export function AIAssistant({
                 ) {
                   const data = event.result as CreateCaseToolResult;
                   if (data.kind === "case_created") {
-                    queryClient.invalidateQueries({ queryKey: ["cases"] });
+                    void queryClient.invalidateQueries({ queryKey: ["cases"] });
                   }
                 } else if (
                   event.type === "tool_result" &&
@@ -232,7 +231,9 @@ export function AIAssistant({
                 ) {
                   const data = event.result as UpdateClientToolResult;
                   if (data.kind === "client_updated") {
-                    queryClient.invalidateQueries({ queryKey: ["clients"] });
+                    void queryClient.invalidateQueries({
+                      queryKey: ["clients"],
+                    });
                   }
                 } else if (
                   event.type === "tool_result" &&
@@ -240,7 +241,7 @@ export function AIAssistant({
                 ) {
                   const data = event.result as UpdateCaseToolResult;
                   if (data.kind === "case_updated") {
-                    queryClient.invalidateQueries({ queryKey: ["cases"] });
+                    void queryClient.invalidateQueries({ queryKey: ["cases"] });
                   }
                 } else if (
                   event.type === "tool_result" &&
@@ -248,7 +249,7 @@ export function AIAssistant({
                 ) {
                   const data = event.result as CreateTaskToolResult;
                   if (data.kind === "task_created") {
-                    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                    void queryClient.invalidateQueries({ queryKey: ["tasks"] });
                   }
                 } else if (
                   event.type === "tool_result" &&
@@ -256,7 +257,7 @@ export function AIAssistant({
                 ) {
                   const data = event.result as UpdateTaskToolResult;
                   if (data.kind === "task_updated") {
-                    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                    void queryClient.invalidateQueries({ queryKey: ["tasks"] });
                   }
                 } else if (
                   event.type === "tool_result" &&
@@ -264,7 +265,9 @@ export function AIAssistant({
                 ) {
                   const data = event.result as CreateEventToolResult;
                   if (data.kind === "event_created") {
-                    queryClient.invalidateQueries({ queryKey: ["events"] });
+                    void queryClient.invalidateQueries({
+                      queryKey: ["events"],
+                    });
                   }
                 } else if (
                   event.type === "tool_result" &&
@@ -272,7 +275,9 @@ export function AIAssistant({
                 ) {
                   const data = event.result as UpdateEventToolResult;
                   if (data.kind === "event_updated") {
-                    queryClient.invalidateQueries({ queryKey: ["events"] });
+                    void queryClient.invalidateQueries({
+                      queryKey: ["events"],
+                    });
                   }
                 } else if (event.type === "done") {
                   if (event.response_id) {
@@ -703,8 +708,8 @@ function DocRequestCard({
     }) => {
       await updateDocumentRequest(request.id, patch);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["documentRequests", "pending"],
       });
       setDirty(false);
@@ -717,8 +722,8 @@ function DocRequestCard({
     mutationFn: async () => {
       await approveDocumentRequest(request.id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["documentRequests", "pending"],
       });
       toast.success("Document request sent to client");
@@ -731,8 +736,8 @@ function DocRequestCard({
     mutationFn: async () => {
       await declineDocumentRequest(request.id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["documentRequests", "pending"],
       });
       toast.success("Document request declined");
@@ -944,69 +949,6 @@ function DocRequestCard({
           )}
           Decline
         </Button>
-      </div>
-    </div>
-  );
-}
-
-function FulfilledDocRequestCard({
-  request,
-}: {
-  request: FulfilledDocRequest;
-}) {
-  return (
-    <div className="px-4 py-3 space-y-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs font-semibold text-foreground">
-          {request.eventTitle}
-        </p>
-        {request.approvedAt && (
-          <p className="text-[10px] text-muted-foreground">
-            sent {new Date(request.approvedAt).toLocaleDateString()}
-          </p>
-        )}
-      </div>
-      <div className="space-y-1.5">
-        {request.items.map((item) => {
-          if (item.status === "pending") return null;
-          const isMeets = item.aiVerdict === "meets";
-          const isFail = item.aiVerdict === "does_not_meet";
-          return (
-            <div
-              key={item.id}
-              className="rounded-md border border-border px-2.5 py-2 text-xs"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-foreground truncate">
-                  {item.name}
-                </span>
-                <span
-                  className={
-                    isMeets
-                      ? "text-[10px] uppercase tracking-wide text-green-700 dark:text-green-400"
-                      : isFail
-                        ? "text-[10px] uppercase tracking-wide text-red-600 dark:text-red-400"
-                        : "text-[10px] uppercase tracking-wide text-muted-foreground"
-                  }
-                >
-                  {item.aiVerdict ?? item.status}
-                </span>
-              </div>
-              {item.aiReasoning && (
-                <p className="mt-1 text-muted-foreground">{item.aiReasoning}</p>
-              )}
-              {item.uploadedFile && (
-                <a
-                  href={`/api/files/${item.uploadedFile.id}/download`}
-                  className="mt-1 inline-block text-blue-600 dark:text-blue-400 underline"
-                  download={item.uploadedFile.name}
-                >
-                  {item.uploadedFile.name}
-                </a>
-              )}
-            </div>
-          );
-        })}
       </div>
     </div>
   );

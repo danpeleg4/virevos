@@ -11,7 +11,6 @@ import {
   requireString,
 } from "@/lib/util/validation";
 import { rateLimit } from "@/lib/util/rate_limit";
-import { getCurrentUser } from "@/lib/supabase/auth";
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, {

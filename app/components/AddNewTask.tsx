@@ -82,9 +82,11 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
       queryClient.setQueryData(["caseTasks", caseId], context?.prevCaseTasks);
       queryClient.setQueryData(["allTasks"], context?.prevAllTasks);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["caseTasks", caseId] });
-      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["caseTasks", caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
+      ]);
     },
   });
 

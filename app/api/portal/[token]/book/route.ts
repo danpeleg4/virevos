@@ -30,26 +30,11 @@ export async function POST(
     const { token } = await params;
     const body: BookingInput = await req.json();
 
-    let clientName: string;
-    let clientEmail: string;
-    let parsedDate: Date;
-    let duration: number;
-    let notes: string | undefined;
-    try {
-      clientName = requireString(body.clientName, "clientName", MAX_NAME);
-      clientEmail = requireEmail(body.clientEmail, "clientEmail");
-      parsedDate = requireDateString(body.dateTime, "dateTime");
-      duration = requireInt(body.duration, "duration");
-      notes = optionalString(body.notes, "notes", MAX_NOTES);
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        return NextResponse.json(
-          { error: err.message },
-          { status: err.status }
-        );
-      }
-      throw err;
-    }
+    const clientName = requireString(body.clientName, "clientName", MAX_NAME);
+    const clientEmail = requireEmail(body.clientEmail, "clientEmail");
+    const parsedDate = requireDateString(body.dateTime, "dateTime");
+    const duration = requireInt(body.duration, "duration");
+    const notes = optionalString(body.notes, "notes", MAX_NOTES);
 
     const tokenRows = await db
       .select()
@@ -95,6 +80,9 @@ export async function POST(
 
     return NextResponse.json({ success: true, bookingId: booking.id });
   } catch (err) {
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error("[api/portal/[token]/book POST]", err);
     return NextResponse.json(
       { error: "Internal server error" },

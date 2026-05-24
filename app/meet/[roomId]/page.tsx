@@ -382,6 +382,11 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
   useEffect(() => {
     if (!containerRef.current || !audioRef.current) return;
 
+    // Capture the current ref nodes so cleanup uses the same elements that
+    // were mounted when the effect ran (refs may change before cleanup).
+    const container = containerRef.current;
+    const audio = audioRef.current;
+
     const attachTrack = (track: RemoteTrack | Track) => {
       if (track.kind === "audio" && participant.isLocal) {
         return;
@@ -451,8 +456,8 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
         ParticipantEvent.LocalTrackUnpublished,
         handleLocalTrackUnpublished
       );
-      if (containerRef.current) containerRef.current.innerHTML = "";
-      if (audioRef.current) audioRef.current.innerHTML = "";
+      container.innerHTML = "";
+      audio.innerHTML = "";
     };
   }, [participant]);
 

@@ -5,12 +5,8 @@ import { outlookEmails } from "@db/schema";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { MAX_MESSAGE, requireInt, requireString } from "./util/validation";
-import {
-  EMAILS_BUCKET,
-  EMAILS_INDEX,
-  createEmbedding,
-  supabaseVector,
-} from "./embeddings";
+import { EMAILS_BUCKET, EMAILS_INDEX, createEmbedding } from "./embeddings";
+import { supabaseAdmin } from "@/lib/supabase/supabase";
 
 interface EmailSearchHit {
   outlookId: string;
@@ -53,7 +49,7 @@ export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
   const validText = requireString(text, "text", MAX_MESSAGE);
   const queryEmbedding = await createEmbedding(validText);
 
-  const index = supabaseVector.storage.vectors
+  const index = supabaseAdmin.storage.vectors
     .from(EMAILS_BUCKET)
     .index(EMAILS_INDEX);
 

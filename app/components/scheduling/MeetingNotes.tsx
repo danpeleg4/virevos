@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -41,8 +41,6 @@ import type { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 import { Separator } from "../ui/separator";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
-
-const ROW_HEIGHT = 52;
 
 export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,8 +98,8 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
         setTranscriptLoading(false);
       }
     };
-    fn();
-  }, [detailsOpen, selectedNote?.hasTranscript]);
+    void fn();
+  }, [detailsOpen, selectedNote?.id, selectedNote?.hasTranscript]);
 
   const filteredNotes = (
     meetings?.data?.filter((note) => {
@@ -167,7 +165,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
       });
       await markActionItemAdded(selectedNote!.id, index);
       setAddedItems((prev) => new Set(prev).add(index));
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      await queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {
       setAddingItems((prev) => {
         const s = new Set(prev);
@@ -192,7 +190,9 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
 
   const handleCopySummary = () => {
     if (selectedNote?.ai_summary) {
-      navigator.clipboard.writeText(selectedNote.ai_summary);
+      void navigator.clipboard
+        .writeText(selectedNote.ai_summary)
+        .catch(() => {});
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

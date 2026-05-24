@@ -159,8 +159,8 @@ export default function ClientDetailPage({
     mutationFn: async (clientId: number) => {
       await deleteClient({ id: clientId });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Client deleted");
       router.push("/workspace/clients");
     },
@@ -455,7 +455,7 @@ export default function ClientDetailPage({
           onOpenChange={(open) => {
             setEditOpen(open);
             if (!open) {
-              queryClient.invalidateQueries({ queryKey: ["client", id] });
+              void queryClient.invalidateQueries({ queryKey: ["client", id] });
             }
           }}
         />

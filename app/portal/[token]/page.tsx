@@ -157,8 +157,8 @@ export default function PortalPage() {
       if (ctx?.previous) queryClient.setQueryData(chatQueryKey, ctx.previous);
       toast.error("Failed to send message");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: chatQueryKey });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: chatQueryKey });
     },
   });
 
@@ -190,13 +190,17 @@ export default function PortalPage() {
   const [uploadingItemId, setUploadingItemId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (token) fetchPortalData();
+    // Re-fetch portal data when the token changes; fetchPortalData reads only
+    // the token and stable setState, so it is intentionally not a dependency.
+    if (token) void fetchPortalData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(() => {
     if (selectedDate && selectedDuration) {
-      fetchSlots(selectedDate, selectedDuration);
+      void fetchSlots(selectedDate, selectedDuration);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, selectedDuration]);
 
   const fetchPortalData = async () => {
@@ -1044,7 +1048,7 @@ export default function PortalPage() {
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) handleFileUpload(file);
+                          if (file) void handleFileUpload(file);
                           e.target.value = "";
                         }}
                       />
@@ -1081,7 +1085,7 @@ export default function PortalPage() {
                           e.preventDefault();
                           setIsDraggingFile(false);
                           const file = e.dataTransfer.files?.[0];
-                          if (file) handleFileUpload(file);
+                          if (file) void handleFileUpload(file);
                         }}
                         onClick={() =>
                           document.getElementById("portalFileInput")?.click()
@@ -1308,7 +1312,7 @@ export default function PortalPage() {
                                       onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                          handleDocumentItemUpload(
+                                          void handleDocumentItemUpload(
                                             item.id,
                                             file
                                           );

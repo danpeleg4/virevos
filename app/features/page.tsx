@@ -11,14 +11,10 @@ import {
   CheckCircle2,
   ArrowRight,
   Sparkles,
-  MessageSquare,
   FileText,
   Bell,
-  Lock,
-  Globe,
   Brain,
   Mic,
-  TrendingUp,
   Clock,
   Target,
 } from "lucide-react";
@@ -211,39 +207,6 @@ const spotlights = [
           "Automate follow-ups, reminders, and status updates across your pipeline",
       },
     ],
-  },
-];
-
-const additionalFeatures = [
-  {
-    icon: Globe,
-    title: "Google Calendar",
-    description: "Real-time two-way sync with push notifications",
-  },
-  {
-    icon: Lock,
-    title: "Secure by default",
-    description: "Clerk-powered auth with SSO and 2FA support",
-  },
-  {
-    icon: MessageSquare,
-    title: "Unified inbox",
-    description: "All client communications in one place",
-  },
-  {
-    icon: TrendingUp,
-    title: "Revenue tracking",
-    description: "Monitor earnings and business growth over time",
-  },
-  {
-    icon: FileText,
-    title: "Project archives",
-    description: "Full history of every project and client interaction",
-  },
-  {
-    icon: Users,
-    title: "Client portal",
-    description: "Shareable project views for your clients",
   },
 ];
 

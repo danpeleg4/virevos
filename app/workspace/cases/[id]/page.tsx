@@ -225,8 +225,8 @@ export function CaseDetailView({
 
   const addFile = useMutation({
     mutationFn: handleUpload,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
     },
   });
 
@@ -240,10 +240,12 @@ export function CaseDetailView({
     }) => {
       await addCaseNotes(newNote, caseId);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setNewNote("");
       setNoteDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["caseNotes", aCase.id] });
+      await queryClient.invalidateQueries({
+        queryKey: ["caseNotes", aCase.id],
+      });
     },
   });
 
@@ -251,8 +253,8 @@ export function CaseDetailView({
     mutationFn: async (taskId: number) => {
       await deleteTask(taskId);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["caseTasks", aCase.id],
       });
     },
@@ -260,10 +262,10 @@ export function CaseDetailView({
 
   const deleteSomeCase = useMutation({
     mutationFn: async (caseId: number) => {
-      deleteCase(caseId);
+      await deleteCase(caseId);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cases"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cases"] });
       onBackAction();
     },
   });
@@ -318,13 +320,13 @@ export function CaseDetailView({
     onError: (_err, _fileId, context) => {
       queryClient.setQueryData(["files", aCase.id], context?.previousFiles);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
     },
   });
 
   const onBackFunction = async () => {
-    queryClient.invalidateQueries({ queryKey: ["cases"] });
+    await queryClient.invalidateQueries({ queryKey: ["cases"] });
     onBackAction();
   };
 

@@ -54,8 +54,6 @@ import { deleteEventFromCalendar } from "@/lib/workspace/calendar";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 
-const ROW_HEIGHT = 48;
-
 function StatusBadge({ status }: { status: string | undefined }) {
   if (status === "active") {
     return (
@@ -144,7 +142,7 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   });
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(meetingLink);
+    void navigator.clipboard.writeText(meetingLink).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -538,7 +536,9 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
                       variant="ghost"
                       className="shrink-0"
                       onClick={() => {
-                        navigator.clipboard.writeText(detailsMeeting.link!);
+                        void navigator.clipboard
+                          .writeText(detailsMeeting.link!)
+                          .catch(() => {});
                         setDetailsCopied(true);
                         setTimeout(() => setDetailsCopied(false), 2000);
                       }}
@@ -721,7 +721,7 @@ function TranscriptionView({
         setLoading(false);
       }
     };
-    fetchRecording();
+    void fetchRecording();
   }, [meeting.id]);
 
   // Track state from the primary (first) video

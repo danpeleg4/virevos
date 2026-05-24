@@ -38,7 +38,7 @@ import {
   Plus,
   X,
   FileText,
-  Image,
+  Image as ImageIcon,
   File,
   Link2,
   CheckIcon,
@@ -242,7 +242,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
+        void fetchNextPage();
       }
     },
     [hasNextPage, isFetchingNextPage, fetchNextPage]
@@ -257,7 +257,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   }, [handleObserver]);
 
   useEffect(() => {
-    checkConnection();
+    // Run the connection check once on mount; checkConnection only writes
+    // stable setState, so it intentionally has no reactive dependencies.
+    void checkConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkOutlookConnection = async () => {
@@ -1272,7 +1275,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           {file.type === "document" ? (
                             <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
                           ) : file.type === "image" ? (
-                            <Image className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                            <ImageIcon className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
                           ) : file.url?.startsWith("http") && !file.path ? (
                             <Link2 className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
                           ) : (

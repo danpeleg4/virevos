@@ -16,8 +16,8 @@ import {
   TRANSCRIPT_BUCKET,
   TRANSCRIPT_INDEX,
   createEmbedding,
-  supabaseVector,
 } from "../embeddings";
+import { supabaseAdmin } from "@/lib/supabase/supabase";
 
 export async function startMeeting(meetingId: string) {
   const user = await getCurrentUser();
@@ -82,7 +82,7 @@ export async function getPastMeetingTranscript(text: string) {
 
   const queryEmbedding = await createEmbedding(validText);
 
-  const index = supabaseVector.storage.vectors
+  const index = supabaseAdmin.storage.vectors
     .from(TRANSCRIPT_BUCKET)
     .index(TRANSCRIPT_INDEX);
 

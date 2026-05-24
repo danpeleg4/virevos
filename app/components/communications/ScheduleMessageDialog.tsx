@@ -217,7 +217,7 @@ export function ScheduleMessageDialog({
                     className="h-20 flex-col space-y-2"
                     onClick={() => {
                       const now = new Date();
-                      let newDate = new Date();
+                      const newDate = new Date();
 
                       switch (option.value) {
                         case "1h":

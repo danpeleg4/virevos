@@ -3,8 +3,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 // Radix Select doesn't drive cleanly in jsdom (pointer events). Swap it for a
 // native <select> so the Duration field can be exercised in tests.
-vi.mock("@/app/components/ui/select", () => {
-  const ReactMod = require("react");
+vi.mock("@/app/components/ui/select", async () => {
+  const ReactMod = await vi.importActual<typeof import("react")>("react");
   const SelectCtx = ReactMod.createContext({});
   return {
     Select: ({

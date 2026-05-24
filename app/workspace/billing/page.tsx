@@ -149,8 +149,8 @@ function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
 
   const mutation = useMutation({
     mutationFn: (pmId: string) => updatePaymentMethod(pmId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["billing"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["billing"] });
       onSuccess();
     },
   });
@@ -240,23 +240,23 @@ export default function Billing() {
 
   const changePlanMutation = useMutation({
     mutationFn: (planId: PlanId) => changePlan({ planId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["billing"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["billing"] });
       setChangePlanOpen(false);
     },
   });
 
   const cancelMutation = useMutation({
     mutationFn: cancelSubscription,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["billing"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["billing"] });
     },
   });
 
   const resubscribeMutation = useMutation({
     mutationFn: resubscribe,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["billing"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["billing"] });
     },
   });
 

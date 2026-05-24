@@ -110,8 +110,8 @@ export function computeFloatingPosition({
       resolvedSide = "right";
   }
 
-  let top = 0;
-  let left = 0;
+  let top: number;
+  let left: number;
   const width = matchTriggerWidth ? trigger.width : undefined;
 
   if (resolvedSide === "bottom" || resolvedSide === "top") {

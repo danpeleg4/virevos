@@ -47,8 +47,8 @@ export function VideoMeetingPreferences() {
     mutationFn: async () => {
       await changeRecordingStatus();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["recordingStatus"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["recordingStatus"] });
     },
   });
 
@@ -144,8 +144,8 @@ export function IntegrationSettings() {
         await disconnectOutlook();
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["integrations"] });
     },
   });
 

@@ -18,7 +18,7 @@ import {
   Upload,
   File,
   FileText,
-  Image,
+  Image as ImageIcon,
   X,
   Cloud,
   Folder,
@@ -179,7 +179,7 @@ export function AttachmentDialog({
       case "document":
         return <FileText className="h-8 w-8 text-blue-500" />;
       case "image":
-        return <Image className="h-8 w-8 text-green-500" />;
+        return <ImageIcon className="h-8 w-8 text-green-500" />;
       default:
         return <File className="h-8 w-8 text-muted-foreground" />;
     }

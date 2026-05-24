@@ -164,7 +164,7 @@ export async function POST(
       })
       .returning();
 
-    let analysis: DocumentAnalysisResult | null = null;
+    let analysis: DocumentAnalysisResult | null;
     try {
       await assertCanUseAI(userId);
       analysis = await analyzeDocumentRequirement({

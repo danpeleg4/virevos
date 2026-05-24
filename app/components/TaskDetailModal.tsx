@@ -98,9 +98,11 @@ export function TaskDetailModal({
       queryClient.setQueryData(queryKey, context?.previousProjectTasks);
       queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
+      ]);
       onOpenChange(false);
     },
   });
@@ -128,9 +130,11 @@ export function TaskDetailModal({
       queryClient.setQueryData(queryKey, context?.previousProjectTasks);
       queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
+      ]);
     },
   });
 
@@ -162,9 +166,11 @@ export function TaskDetailModal({
       queryClient.setQueryData(queryKey, context?.previousProjectTasks);
       queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
+      ]);
     },
   });
 
@@ -196,9 +202,11 @@ export function TaskDetailModal({
       queryClient.setQueryData(queryKey, context?.previousProjectTasks);
       queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
+      ]);
     },
   });
 

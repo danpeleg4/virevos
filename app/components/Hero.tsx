@@ -1,12 +1,9 @@
 "use client";
 
-import { Button } from "./ui/button";
 import { motion } from "motion/react";
-import { ArrowRight, Play, CheckCircle2, Sparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 
 export function Hero() {
-  const router = useRouter();
   return (
     <section className="relative bg-white overflow-hidden">
       {/* Subtle gradient background */}

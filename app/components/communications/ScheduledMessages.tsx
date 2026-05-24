@@ -93,8 +93,8 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   }, []);
 
   useEffect(() => {
-    checkConnection();
-    fetchScheduledEmails();
+    void checkConnection();
+    void fetchScheduledEmails();
   }, [checkConnection, fetchScheduledEmails]);
 
   const getStatusBadge = (status: string) => {

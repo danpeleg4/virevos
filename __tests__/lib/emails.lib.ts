@@ -35,13 +35,18 @@ var mockCreateEmbedding: Mock;
 /* eslint-enable no-var */
 
 vi.mock("@/lib/embeddings", () => {
-  mockQueryVectors = vi.fn();
   mockCreateEmbedding = vi.fn().mockResolvedValue([0.1, 0.2, 0.3]);
   return {
     EMAILS_BUCKET: "emails",
     EMAILS_INDEX: "emails",
     createEmbedding: mockCreateEmbedding,
-    supabaseVector: {
+  };
+});
+
+vi.mock("@/lib/supabase/supabase", () => {
+  mockQueryVectors = vi.fn();
+  return {
+    supabaseAdmin: {
       storage: {
         vectors: {
           from: () => ({ index: () => ({ queryVectors: mockQueryVectors }) }),
