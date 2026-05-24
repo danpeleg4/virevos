@@ -121,8 +121,8 @@ export default function Clients() {
     mutationFn: async ({ id }: { id: number }) => {
       await deleteClient({ id });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
   });
 
@@ -209,7 +209,7 @@ export default function Clients() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      return queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
   });
 

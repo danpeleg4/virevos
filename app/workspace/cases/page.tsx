@@ -32,8 +32,8 @@ export default function CasesPage() {
     }) => {
       await changeCaseStatus(aCase, newStatus);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cases"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cases"] });
     },
   });
 
@@ -46,12 +46,15 @@ export default function CasesPage() {
         p.stats.totalTasks > 0 && p.stats.completedTasks === p.stats.totalTasks;
       if (isCompleted && p.status !== "completed") {
         completedMutation.mutate({ aCase: p, newStatus: "completed" });
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
+        void queryClient.invalidateQueries({ queryKey: ["clients"] });
       } else if (!isCompleted && p.status === "completed") {
         completedMutation.mutate({ aCase: p, newStatus: "active" });
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
+        void queryClient.invalidateQueries({ queryKey: ["clients"] });
       }
     });
+    // Reconcile completed status only when the loaded cases change; the
+    // mutation and queryClient handles are stable for this purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [casesQuery.data]);
 
   // Map for display only

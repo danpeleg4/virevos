@@ -39,8 +39,8 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
     mutationFn: async (aCase: Case) => {
       await createCase(aCase);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cases"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cases"] });
     },
   });
 

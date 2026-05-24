@@ -33,7 +33,6 @@ vi.mock("@/lib/workspace/billing", () => ({
     mockGetUserSubscriptionByUserId(...args),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 vi.mock("@/lib/supabase/auth", () => ({ getCurrentUser: vi.fn() }));
 
 function mockSubscription(plan: string) {

@@ -47,7 +47,7 @@ const mockSelect = vi.fn(() => ({ from: mockSelectFrom }));
 vi.mock("@db/db", () => ({
   db: {
     insert: vi.fn(() => ({ values: mockValues })),
-    select: (...args: any[]) => mockSelect.apply(null, args),
+    select: (...args: unknown[]) => mockSelect(...args),
     update: vi.fn(() => ({ set: mockSet })),
   },
 }));

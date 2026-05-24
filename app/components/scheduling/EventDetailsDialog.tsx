@@ -76,7 +76,7 @@ export function EventDetailsDialog({
       });
       await markActionItemAdded(event.id, index);
       setAddedItems((prev) => new Set(prev).add(index));
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      await queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {
       setAddingItems((prev) => {
         const s = new Set(prev);
@@ -110,8 +110,8 @@ export function EventDetailsDialog({
         setTranscriptLoading(false);
       }
     };
-    fn();
-  }, [event.id, open]);
+    void fn();
+  }, [event.id, event.hasTranscript, open]);
 
   const allAdded =
     (event.action_items?.length ?? 0) > 0 &&
@@ -128,7 +128,7 @@ export function EventDetailsDialog({
 
   function handleCopySummary() {
     if (!event.ai_summary) return;
-    navigator.clipboard.writeText(event.ai_summary);
+    void navigator.clipboard.writeText(event.ai_summary).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }

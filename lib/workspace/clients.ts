@@ -22,7 +22,7 @@ const CLIENT_STATUSES = ["active", "inactive"] as const;
 export async function addAClient(body: CreateClientInput) {
   try {
     const user = await getCurrentUser();
-    if (!user?.id) throw new ValidationError("Unauthorized", 401);
+    if (!user?.id) return { message: "Unauthorized" };
 
     await assertCanAddClient(user.id);
 

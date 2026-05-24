@@ -1,8 +1,7 @@
 import { openai } from "./ai/ai_tools";
 
-export const EMBEDDING_MODEL = "text-embedding-3-large";
 export const EMBEDDING_DIMENSION = 3072;
-
+export const EMBEDDING_MODEL = "text-embedding-3-large";
 export const TRANSCRIPT_BUCKET = "recording";
 export const TRANSCRIPT_INDEX = "transcription";
 export const EMAILS_BUCKET = "emails";

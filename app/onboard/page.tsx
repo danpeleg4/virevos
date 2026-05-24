@@ -659,7 +659,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
     document.getElementById(`code-${focusIndex}`)?.focus();
 
     if (digits.length === 6) {
-      verifyEmail(digits);
+      void verifyEmail(digits);
     }
   };
 

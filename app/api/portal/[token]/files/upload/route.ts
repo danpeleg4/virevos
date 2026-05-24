@@ -172,7 +172,11 @@ export async function POST(
       } catch (cleanupErr) {
         console.error("Orphan file cleanup failed:", cleanupErr);
       }
-      throw dbErr;
+      console.error("[api/portal/[token]/files/upload POST]", dbErr);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(

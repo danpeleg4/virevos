@@ -174,7 +174,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
       await queryClient.invalidateQueries({
         queryKey: ["clientPortal", clientId],
       });
-      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
       toast.success("Portal settings saved");
     } catch (err: unknown) {
       const message =
@@ -206,8 +206,8 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
 
   const confirmBooking = useMutation({
     mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
       toast.success("Booking confirmed and added to calendar");
     },
     onError: () => toast.error("Failed to confirm booking"),
@@ -216,8 +216,8 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
   const cancelBooking = useMutation({
     mutationFn: (bookingId: number) =>
       updateBookingStatus(bookingId, "cancelled"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
       toast.success("Booking cancelled");
     },
     onError: () => toast.error("Failed to cancel booking"),
@@ -310,7 +310,9 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      navigator.clipboard.writeText(portalUrl);
+                      void navigator.clipboard
+                        .writeText(portalUrl)
+                        .catch(() => {});
                       toast.success("URL copied to clipboard");
                     }}
                   >

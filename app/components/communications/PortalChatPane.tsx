@@ -73,12 +73,14 @@ export function PortalChatPane({
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous);
       toast.error("Failed to send message");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-      // Refresh the conversation list so unread/last-message updates
-      queryClient.invalidateQueries({
-        queryKey: ["portal-chat-conversations"],
-      });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        // Refresh the conversation list so unread/last-message updates
+        queryClient.invalidateQueries({
+          queryKey: ["portal-chat-conversations"],
+        }),
+      ]);
     },
   });
 
@@ -90,7 +92,7 @@ export function PortalChatPane({
   // conversation list so the agency-side unread badge clears immediately.
   useEffect(() => {
     if (data) {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["portal-chat-conversations"],
       });
     }
