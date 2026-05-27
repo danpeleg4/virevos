@@ -32,6 +32,12 @@ import { AIAssistant } from "./AIAssistant";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuthUser } from "@/app/hooks/useAuthUser";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { getAvatarUrl } from "@/lib/user";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/app/components/ui/avatar";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
@@ -76,6 +82,11 @@ function SidebarContent({
   onSignOut,
   onClose,
 }: SidebarContentProps) {
+  const { data: avatarData } = useQuery({
+    queryKey: ["avatarUrl"],
+    queryFn: getAvatarUrl,
+  });
+  const avatarUrl = avatarData?.url ?? undefined;
   return (
     <>
       {/* Brand */}
@@ -171,7 +182,10 @@ function SidebarContent({
 
         <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-sm font-semibold text-foreground">
-            {initials}
+            <Avatar className="size-8 text-lg">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt="Your avatar" />}
+              <AvatarFallback>{initials || "U"}</AvatarFallback>
+            </Avatar>
           </div>
           <div className="flex-1 min-w-0">
             <p className="truncate text-sm font-medium text-sidebar-foreground">

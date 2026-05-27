@@ -43,6 +43,13 @@
       "when": 1779550822325,
       "tag": "0005_remarkable_brother_voodoo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779842514279,
+      "tag": "0006_right_lilith",
+      "breakpoints": true
     }
   ]
 }

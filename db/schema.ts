@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   user_id: varchar("user_id").notNull().unique(),
   name: text("name"),
   email: text("email").notNull(),
+  avatarPath: text("avatar_path"),
   ai_credits: integer("ai_credits").notNull().default(0),
   storage: bigint("storage", { mode: "number" }).notNull().default(0),
   recordingStatus: boolean("recordingStatus").notNull().default(true),
