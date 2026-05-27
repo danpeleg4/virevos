@@ -275,4 +275,109 @@ describe("POST /api/chat", () => {
       expect(events.at(-1)).toMatchObject({ type: "done" });
     }
   );
+
+  it("streams a form_request and pauses without executing a tool when requestUserInput is called", async () => {
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
+    const updateWhere = vi.fn();
+    const updateSet = vi.fn(() => ({ where: updateWhere }));
+    (db.update as Mock).mockReturnValue({ set: updateSet });
+
+    const { executeTool: mockExecuteTool } = await import("@/lib/ai/ai_tools");
+
+    (openai.responses.stream as Mock).mockReturnValueOnce(
+      createToolCallStreamMock("requestUserInput", {
+        title: "Set up your new case",
+        fields: [
+          {
+            name: "caseName",
+            label: "Case name",
+            type: "text",
+            required: true,
+            options: [],
+            placeholder: null,
+          },
+        ],
+      })
+    );
+
+    const res = await POST(
+      mockRequest({ messages: [{ role: "user", content: "make a case" }] })
+    );
+    expect(res.status).toBe(200);
+
+    const events = (await res.text())
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+
+    const formEvent = events.find((e) => e.type === "form_request");
+    expect(formEvent).toBeTruthy();
+    expect(formEvent.form).toMatchObject({
+      callId: "call_1",
+      title: "Set up your new case",
+    });
+    expect(formEvent.form.fields[0]).toMatchObject({
+      name: "caseName",
+      label: "Case name",
+    });
+    // The pending call is NOT executed, and the loop pauses (single stream call).
+    expect(mockExecuteTool).not.toHaveBeenCalled();
+    expect(openai.responses.stream).toHaveBeenCalledTimes(1);
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+  });
+
+  it("resumes a pending tool call by feeding form answers back as function_call_output", async () => {
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
+    const updateWhere = vi.fn();
+    const updateSet = vi.fn(() => ({ where: updateWhere }));
+    (db.update as Mock).mockReturnValue({ set: updateSet });
+
+    (openai.responses.stream as Mock).mockReturnValue(
+      createTextStreamMock("Created!", "resp_3")
+    );
+
+    const res = await POST({
+      json: vi.fn().mockResolvedValue({
+        messages: [],
+        previousResponseId: "resp_1",
+        formResponse: { callId: "call_1", values: { caseName: "Smith H-1B" } },
+      }),
+    } as unknown as NextRequest);
+
+    expect(res.status).toBe(200);
+    expect(openai.responses.stream).toHaveBeenCalledWith(
+      expect.objectContaining({
+        previous_response_id: "resp_1",
+        input: expect.arrayContaining([
+          expect.objectContaining({
+            type: "function_call_output",
+            call_id: "call_1",
+            output: JSON.stringify({ caseName: "Smith H-1B" }),
+          }),
+        ]),
+      })
+    );
+
+    const events = (await res.text())
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+    expect(events.at(-1)).toMatchObject({
+      type: "done",
+      response_id: "resp_3",
+    });
+  });
+
+  it("rejects a form submission that has no previousResponseId", async () => {
+    const res = await POST({
+      json: vi.fn().mockResolvedValue({
+        messages: [],
+        formResponse: { callId: "call_1", values: { caseName: "X" } },
+      }),
+    } as unknown as NextRequest);
+
+    expect(res.status).toBe(400);
+  });
 });

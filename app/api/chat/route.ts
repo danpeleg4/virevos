@@ -11,7 +11,12 @@ import {
   MODEL,
   MAX_STEPS,
 } from "@/lib/ai/ai_tools";
-import type { ChatMessage, StreamEvent } from "@/types/ai";
+import type {
+  ChatMessage,
+  StreamEvent,
+  AIFormRequest,
+  AIFormField,
+} from "@/types/ai";
 import { assertCanUseAI } from "@/lib/plan_limits";
 import {
   MAX_CHAT_HISTORY,
@@ -21,7 +26,15 @@ import {
 import { rateLimit } from "@/lib/util/rate_limit";
 
 const SYSTEM_INSTRUCTIONS =
-  "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows.";
+  "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows. " +
+  "When you need additional structured details from the user before performing an action (for example creating a case, client, task, or event) and the user has not already provided them, call the requestUserInput tool to collect them with a form rather than listing the questions in plain text. requestUserInput must be the only tool call in that turn; wait for the user's submitted answers before proceeding.";
+
+interface FormResponseInput {
+  callId: string;
+  values: Record<string, string>;
+}
+
+const MAX_FORM_FIELDS = 50;
 
 const VALID_ROLES = new Set(["user", "assistant", "system"]);
 
@@ -29,9 +42,44 @@ function encodeEvent(event: StreamEvent, encoder: TextEncoder): Uint8Array {
   return encoder.encode(JSON.stringify(event) + "\n");
 }
 
+function validateFormResponse(raw: unknown): FormResponseInput {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("formResponse must be an object");
+  }
+  const fr = raw as { callId?: unknown; values?: unknown };
+  if (typeof fr.callId !== "string" || fr.callId.length === 0) {
+    throw new Error("formResponse.callId must be a non-empty string");
+  }
+  if (fr.callId.length > MAX_SHORT) {
+    throw new Error(`formResponse.callId exceeds max length of ${MAX_SHORT}`);
+  }
+  if (!fr.values || typeof fr.values !== "object" || Array.isArray(fr.values)) {
+    throw new Error("formResponse.values must be an object");
+  }
+  const entries = Object.entries(fr.values);
+  if (entries.length > MAX_FORM_FIELDS) {
+    throw new Error(`formResponse.values exceeds ${MAX_FORM_FIELDS} fields`);
+  }
+  const values: Record<string, string> = {};
+  for (const [key, value] of entries) {
+    if (key.length > MAX_SHORT) {
+      throw new Error("formResponse field key too long");
+    }
+    if (typeof value !== "string") {
+      throw new Error("formResponse field values must be strings");
+    }
+    if (value.length > MAX_HTML_BODY) {
+      throw new Error("formResponse field value too long");
+    }
+    values[key] = value;
+  }
+  return { callId: fr.callId, values };
+}
+
 function validateChatPayload(raw: unknown): {
   messages: ChatMessage[];
   previousResponseId?: string;
+  formResponse?: FormResponseInput;
 } {
   if (!raw || typeof raw !== "object") {
     throw new Error("Invalid request body");
@@ -39,12 +87,19 @@ function validateChatPayload(raw: unknown): {
   const body = raw as {
     messages?: unknown;
     previousResponseId?: unknown;
+    formResponse?: unknown;
   };
+
+  const formResponse =
+    body.formResponse !== undefined && body.formResponse !== null
+      ? validateFormResponse(body.formResponse)
+      : undefined;
 
   if (!Array.isArray(body.messages)) {
     throw new Error("messages must be an array");
   }
-  if (body.messages.length === 0) {
+  // A form submission resumes a pending tool call and carries no new message.
+  if (body.messages.length === 0 && !formResponse) {
     throw new Error("messages cannot be empty");
   }
   if (body.messages.length > MAX_CHAT_HISTORY) {
@@ -84,7 +139,11 @@ function validateChatPayload(raw: unknown): {
     previousResponseId = body.previousResponseId;
   }
 
-  return { messages, previousResponseId };
+  if (formResponse && !previousResponseId) {
+    throw new Error("previousResponseId is required when submitting a form");
+  }
+
+  return { messages, previousResponseId, formResponse };
 }
 
 export async function POST(req: NextRequest) {
@@ -97,10 +156,12 @@ export async function POST(req: NextRequest) {
 
   let messages: ChatMessage[];
   let previousResponseId: string | undefined;
+  let formResponse: FormResponseInput | undefined;
   try {
     const parsed = validateChatPayload(await req.json());
     messages = parsed.messages;
     previousResponseId = parsed.previousResponseId;
+    formResponse = parsed.formResponse;
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Invalid request" },
@@ -134,9 +195,18 @@ export async function POST(req: NextRequest) {
       let finalResponseId: string | undefined;
 
       try {
-        const initialInput: OpenAI.Responses.ResponseInputItem[] = messages.map(
-          (m) => ({ role: m.role, content: m.content })
-        );
+        // A form submission resumes the model's pending requestUserInput call
+        // by feeding the answers back as that call's output. Otherwise we send
+        // the chat messages as normal.
+        const initialInput: OpenAI.Responses.ResponseInputItem[] = formResponse
+          ? [
+              {
+                type: "function_call_output",
+                call_id: formResponse.callId,
+                output: JSON.stringify(formResponse.values),
+              },
+            ]
+          : messages.map((m) => ({ role: m.role, content: m.content }));
 
         const currentInput: OpenAI.Responses.ResponseInputItem[] = initialInput;
         let currentResponseId: string | undefined = previousResponseId;
@@ -167,6 +237,33 @@ export async function POST(req: NextRequest) {
           );
 
           if (toolCalls.length === 0) break;
+
+          // If the model wants more context, stream the form spec and pause the
+          // agent loop. The pending call is resumed on the next request once the
+          // user submits the form (see initialInput / formResponse above).
+          const inputCall = toolCalls.find(
+            (c) => c.name === "requestUserInput"
+          );
+          if (inputCall) {
+            let form: AIFormRequest;
+            try {
+              const parsed = JSON.parse(inputCall.arguments) as {
+                title?: unknown;
+                fields?: unknown;
+              };
+              form = {
+                callId: inputCall.call_id,
+                title: typeof parsed.title === "string" ? parsed.title : "",
+                fields: Array.isArray(parsed.fields)
+                  ? (parsed.fields as AIFormField[])
+                  : [],
+              };
+            } catch {
+              form = { callId: inputCall.call_id, title: "", fields: [] };
+            }
+            send({ type: "form_request", id: inputCall.call_id, form });
+            break;
+          }
 
           const toolResults: OpenAI.Responses.ResponseInputItem[] = [];
           for (const call of toolCalls) {

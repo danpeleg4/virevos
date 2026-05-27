@@ -1,15 +1,44 @@
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
+export type FormFieldType = "text" | "textarea" | "date" | "select";
+
+export interface AIFormField {
+  name: string;
+  label: string;
+  type: FormFieldType;
+  required: boolean;
+  options: string[];
+  placeholder: string | null;
+}
+
+export interface AIFormRequest {
+  callId: string;
+  title: string;
+  fields: AIFormField[];
+}
+
 export type StreamEvent =
   | { type: "text_delta"; delta: string }
   | { type: "tool_result"; id: string; name: string; result: unknown }
+  | { type: "form_request"; id: string; form: AIFormRequest }
   | { type: "done"; response_id?: string }
   | { type: "error"; message: string };
+
+export type AIActionTone = "client" | "case" | "task" | "calendar";
+
+export interface AIAction {
+  id: string;
+  tone: AIActionTone;
+  label: string;
+}
 
 export interface AIMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  actions?: AIAction[];
+  form?: AIFormRequest;
+  formSubmitted?: boolean;
 }
 
 export type AddClientToolResult = {

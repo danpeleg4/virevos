@@ -20,6 +20,70 @@ export const MAX_STEPS = 5;
 export const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
+    name: "requestUserInput",
+    description:
+      "Collect structured details from the user via an inline form instead of asking in plain text. Call this — and ONLY this, as the sole tool call in the turn — when you need more information to complete an action (e.g. creating a case, client, task, or event) and the user has not already provided it. After the user submits the form you will receive their answers and can proceed.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description:
+            "Short heading shown above the form, e.g. 'Set up your new case'.",
+        },
+        fields: {
+          type: "array",
+          description: "The fields to collect from the user.",
+          items: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description: "Machine key for the field, e.g. 'caseName'.",
+              },
+              label: {
+                type: "string",
+                description: "Human-readable label shown to the user.",
+              },
+              type: {
+                type: "string",
+                enum: ["text", "textarea", "date", "select"],
+                description: "The kind of input to render.",
+              },
+              required: {
+                type: "boolean",
+                description: "Whether the user must fill this field in.",
+              },
+              options: {
+                type: "array",
+                items: { type: "string" },
+                description:
+                  "Choices for a 'select' field; pass an empty array for other types.",
+              },
+              placeholder: {
+                type: ["string", "null"],
+                description: "Optional placeholder or hint text.",
+              },
+            },
+            required: [
+              "name",
+              "label",
+              "type",
+              "required",
+              "options",
+              "placeholder",
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["title", "fields"],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: "function",
     name: "addClient",
     description: "Create a new client",
     parameters: {

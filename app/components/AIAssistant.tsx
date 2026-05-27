@@ -28,13 +28,20 @@ import {
   FileText,
   Plus,
   Trash2,
+  UserPlus,
+  FolderKanban,
+  ListChecks,
+  CalendarClock,
+  type LucideIcon,
 } from "lucide-react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { clients } from "@/types/clients";
 import type {
   AIMessage,
+  AIActionTone,
   AddClientToolResult,
+  ChatMessage,
   StreamEvent,
   CreateCaseToolResult,
   UpdateClientToolResult,
@@ -44,6 +51,9 @@ import type {
   CreateEventToolResult,
   UpdateEventToolResult,
 } from "@/types/ai";
+import { toolResultToAction } from "@/lib/util/ai_actions";
+import { formatFormSubmission } from "@/lib/util/ai_form";
+import { InlineForm } from "./AIInlineForm";
 import type { PortalMeetingBooking } from "@/types/portal";
 import type {
   PendingDocRequest,
@@ -60,6 +70,12 @@ import {
 } from "@/lib/document_requests";
 import { toast } from "sonner";
 
+interface ChatRequestBody {
+  messages?: ChatMessage[];
+  previousResponseId?: string;
+  formResponse?: { callId: string; values: Record<string, string> };
+}
+
 type BookingWithClient = PortalMeetingBooking & {
   clientDisplayName: string | null;
 };
@@ -68,6 +84,56 @@ interface AIAssistantProps {
   isOpen: boolean;
   onClose: () => void;
   pendingBookings: BookingWithClient[];
+}
+
+const SUGGESTED_PROMPTS = [
+  "Set up a new case",
+  "What's due this week?",
+  "Draft a welcome email",
+  "Add a new client",
+];
+
+const ACTION_TONES: Record<
+  AIActionTone,
+  { icon: LucideIcon; bg: string; fg: string }
+> = {
+  client: {
+    icon: UserPlus,
+    bg: "bg-blue-50 dark:bg-blue-950/50",
+    fg: "text-blue-600 dark:text-blue-400",
+  },
+  case: {
+    icon: FolderKanban,
+    bg: "bg-violet-50 dark:bg-violet-950/50",
+    fg: "text-violet-600 dark:text-violet-400",
+  },
+  task: {
+    icon: ListChecks,
+    bg: "bg-emerald-50 dark:bg-emerald-950/50",
+    fg: "text-emerald-600 dark:text-emerald-400",
+  },
+  calendar: {
+    icon: CalendarClock,
+    bg: "bg-amber-50 dark:bg-amber-950/50",
+    fg: "text-amber-600 dark:text-amber-400",
+  },
+};
+
+function TypingDots() {
+  return (
+    <span
+      className="flex items-center gap-1 py-1"
+      aria-label="Assistant is typing"
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="h-2 w-2 rounded-full bg-muted-foreground/50 animate-bounce"
+          style={{ animationDelay: `${i * 0.15}s` }}
+        />
+      ))}
+    </span>
+  );
 }
 
 export function AIAssistant({
@@ -138,171 +204,179 @@ export function AIAssistant({
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || status === "streaming") return;
-
-    const userMessage: AIMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: text,
-    };
-
-    const assistantId = `assistant-${Date.now() + 1}`;
-
-    const updatedMessages = [...messages, userMessage];
-    setMessages([
-      ...updatedMessages,
-      { id: assistantId, role: "assistant", content: "" },
-    ]);
+  const streamAssistant = async (
+    body: ChatRequestBody,
+    assistantId: string
+  ) => {
     setStatus("streaming");
-
     abortRef.current = new AbortController();
 
     try {
       let lastProcessedLength = 0;
       let buffer = "";
 
-      await axios.post(
-        "/api/chat",
-        {
-          messages: [{ role: userMessage.role, content: userMessage.content }],
-          ...(previousResponseIdRef.current && {
-            previousResponseId: previousResponseIdRef.current,
-          }),
-        },
-        {
-          signal: abortRef.current.signal,
-          responseType: "text",
-          onDownloadProgress: (progressEvent) => {
-            const text = (progressEvent.event.target as XMLHttpRequest)
-              .responseText;
-            const newText = text.slice(lastProcessedLength);
-            lastProcessedLength = text.length;
+      await axios.post("/api/chat", body, {
+        signal: abortRef.current.signal,
+        responseType: "text",
+        onDownloadProgress: (progressEvent) => {
+          const text = (progressEvent.event.target as XMLHttpRequest)
+            .responseText;
+          const newText = text.slice(lastProcessedLength);
+          lastProcessedLength = text.length;
 
-            buffer += newText;
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
+          buffer += newText;
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
 
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              try {
-                const event: StreamEvent = JSON.parse(line);
-                if (event.type === "text_delta") {
-                  setMessages((prev) =>
-                    prev.map((m) =>
-                      m.id === assistantId
-                        ? { ...m, content: m.content + event.delta }
-                        : m
-                    )
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const event: StreamEvent = JSON.parse(line);
+              if (event.type === "text_delta") {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId
+                      ? { ...m, content: m.content + event.delta }
+                      : m
+                  )
+                );
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "addClient"
+              ) {
+                const data = event.result as AddClientToolResult;
+                if (data.kind === "clients_updated") {
+                  const newClient = data.client;
+                  queryClient.setQueryData<clients[]>(
+                    ["clients"],
+                    (old = []) => [
+                      ...old,
+                      {
+                        ...newClient,
+                        status: "active",
+                        totalCases: 0,
+                        activeCases: 0,
+                        completedCases: 0,
+                        avatar: newClient.name[0],
+                      },
+                    ]
                   );
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "addClient"
-                ) {
-                  const data = event.result as AddClientToolResult;
-                  if (data.kind === "clients_updated") {
-                    const newClient = data.client;
-                    queryClient.setQueryData<clients[]>(
-                      ["clients"],
-                      (old = []) => [
-                        ...old,
-                        {
-                          ...newClient,
-                          status: "active",
-                          totalCases: 0,
-                          activeCases: 0,
-                          completedCases: 0,
-                          avatar: newClient.name[0],
-                        },
-                      ]
-                    );
-                  }
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "createCase"
-                ) {
-                  const data = event.result as CreateCaseToolResult;
-                  if (data.kind === "case_created") {
-                    void queryClient.invalidateQueries({ queryKey: ["cases"] });
-                  }
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "updateClient"
-                ) {
-                  const data = event.result as UpdateClientToolResult;
-                  if (data.kind === "client_updated") {
-                    void queryClient.invalidateQueries({
-                      queryKey: ["clients"],
-                    });
-                  }
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "updateCase"
-                ) {
-                  const data = event.result as UpdateCaseToolResult;
-                  if (data.kind === "case_updated") {
-                    void queryClient.invalidateQueries({ queryKey: ["cases"] });
-                  }
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "createTask"
-                ) {
-                  const data = event.result as CreateTaskToolResult;
-                  if (data.kind === "task_created") {
-                    void queryClient.invalidateQueries({ queryKey: ["tasks"] });
-                  }
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "updateTask"
-                ) {
-                  const data = event.result as UpdateTaskToolResult;
-                  if (data.kind === "task_updated") {
-                    void queryClient.invalidateQueries({ queryKey: ["tasks"] });
-                  }
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "createEvent"
-                ) {
-                  const data = event.result as CreateEventToolResult;
-                  if (data.kind === "event_created") {
-                    void queryClient.invalidateQueries({
-                      queryKey: ["events"],
-                    });
-                  }
-                } else if (
-                  event.type === "tool_result" &&
-                  event.name === "updateEvent"
-                ) {
-                  const data = event.result as UpdateEventToolResult;
-                  if (data.kind === "event_updated") {
-                    void queryClient.invalidateQueries({
-                      queryKey: ["events"],
-                    });
-                  }
-                } else if (event.type === "done") {
-                  if (event.response_id) {
-                    previousResponseIdRef.current = event.response_id;
-                  }
-                } else if (event.type === "error") {
+                }
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "createCase"
+              ) {
+                const data = event.result as CreateCaseToolResult;
+                if (data.kind === "case_created") {
+                  void queryClient.invalidateQueries({ queryKey: ["cases"] });
+                }
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "updateClient"
+              ) {
+                const data = event.result as UpdateClientToolResult;
+                if (data.kind === "client_updated") {
+                  void queryClient.invalidateQueries({
+                    queryKey: ["clients"],
+                  });
+                }
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "updateCase"
+              ) {
+                const data = event.result as UpdateCaseToolResult;
+                if (data.kind === "case_updated") {
+                  void queryClient.invalidateQueries({ queryKey: ["cases"] });
+                }
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "createTask"
+              ) {
+                const data = event.result as CreateTaskToolResult;
+                if (data.kind === "task_created") {
+                  void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                }
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "updateTask"
+              ) {
+                const data = event.result as UpdateTaskToolResult;
+                if (data.kind === "task_updated") {
+                  void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                }
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "createEvent"
+              ) {
+                const data = event.result as CreateEventToolResult;
+                if (data.kind === "event_created") {
+                  void queryClient.invalidateQueries({
+                    queryKey: ["events"],
+                  });
+                }
+              } else if (
+                event.type === "tool_result" &&
+                event.name === "updateEvent"
+              ) {
+                const data = event.result as UpdateEventToolResult;
+                if (data.kind === "event_updated") {
+                  void queryClient.invalidateQueries({
+                    queryKey: ["events"],
+                  });
+                }
+              } else if (event.type === "form_request") {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId ? { ...m, form: event.form } : m
+                  )
+                );
+              } else if (event.type === "done") {
+                if (event.response_id) {
+                  previousResponseIdRef.current = event.response_id;
+                }
+              } else if (event.type === "error") {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId
+                      ? {
+                          ...m,
+                          content:
+                            "Sorry, something went wrong. Please try again.",
+                        }
+                      : m
+                  )
+                );
+              }
+
+              // Surface any tool call as an inline action card so the user
+              // can watch the assistant work.
+              if (event.type === "tool_result") {
+                const action = toolResultToAction(event.name, event.result);
+                if (action) {
                   setMessages((prev) =>
                     prev.map((m) =>
                       m.id === assistantId
                         ? {
                             ...m,
-                            content:
-                              "Sorry, something went wrong. Please try again.",
+                            actions: [
+                              ...(m.actions ?? []),
+                              {
+                                id: `${assistantId}-act-${m.actions?.length ?? 0}`,
+                                ...action,
+                              },
+                            ],
                           }
                         : m
                     )
                   );
                 }
-              } catch {
-                // ignore parse errors for malformed lines
               }
+            } catch {
+              // ignore parse errors for malformed lines
             }
-          },
-        }
-      );
+          }
+        },
+      });
     } catch (err) {
       if (axios.isAxiosError(err) && err.code === "ERR_CANCELED") {
         // aborted — no error message needed
@@ -322,6 +396,73 @@ export function AIAssistant({
       setStatus("idle");
       abortRef.current = null;
     }
+  };
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || status === "streaming") return;
+
+    const userMessage: AIMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: text,
+    };
+    const assistantId = `assistant-${Date.now() + 1}`;
+
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { id: assistantId, role: "assistant", content: "" },
+    ]);
+
+    await streamAssistant(
+      {
+        messages: [{ role: userMessage.role, content: userMessage.content }],
+        ...(previousResponseIdRef.current && {
+          previousResponseId: previousResponseIdRef.current,
+        }),
+      },
+      assistantId
+    );
+  };
+
+  const submitForm = async (
+    messageId: string,
+    callId: string,
+    values: Record<string, string>
+  ) => {
+    if (status === "streaming") return;
+
+    const formMessage = messages.find((m) => m.id === messageId);
+    const summary = formMessage?.form
+      ? formatFormSubmission(formMessage.form.fields, values)
+      : Object.entries(values)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("\n");
+
+    const userMessage: AIMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: summary,
+    };
+    const assistantId = `assistant-${Date.now() + 1}`;
+
+    setMessages((prev) => [
+      ...prev.map((m) =>
+        m.id === messageId ? { ...m, formSubmitted: true } : m
+      ),
+      userMessage,
+      { id: assistantId, role: "assistant", content: "" },
+    ]);
+
+    await streamAssistant(
+      {
+        formResponse: { callId, values },
+        ...(previousResponseIdRef.current && {
+          previousResponseId: previousResponseIdRef.current,
+        }),
+      },
+      assistantId
+    );
   };
 
   const handleSend = async () => {
@@ -612,6 +753,29 @@ export function AIAssistant({
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-muted/50">
+            {messages.length === 0 && (
+              <div className="space-y-4">
+                <div className="flex justify-start">
+                  <div className="bg-card border border-border rounded-lg px-4 py-3 text-sm text-foreground">
+                    👋 Hi! I&apos;m your Virevos assistant. Ask me to set up a
+                    case, draft an email, or tell you what&apos;s due.
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {SUGGESTED_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendMessage(prompt)}
+                      disabled={status === "streaming"}
+                      className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-blue-400 hover:text-blue-600 disabled:opacity-50"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {messages.map((message, msgIndex) => (
               <motion.div
                 key={message.id}
@@ -634,10 +798,49 @@ export function AIAssistant({
                       <div className="text-sm text-foreground break-words overflow-hidden">
                         {message.content ? (
                           <ReactMarkdown>{message.content}</ReactMarkdown>
-                        ) : (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (message.actions && message.actions.length > 0) ||
+                          message.form ? null : (
+                          <TypingDots />
                         )}
                       </div>
+
+                      {message.actions && message.actions.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {message.actions.map((action) => {
+                            const tone = ACTION_TONES[action.tone];
+                            const Icon = tone.icon;
+                            return (
+                              <motion.div
+                                key={action.id}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="flex items-center gap-2.5"
+                              >
+                                <span
+                                  className={`flex shrink-0 items-center justify-center rounded-lg p-2 ${tone.bg}`}
+                                >
+                                  <Icon className={`h-4 w-4 ${tone.fg}`} />
+                                </span>
+                                <span className="flex-1 text-sm text-foreground">
+                                  {action.label}
+                                </span>
+                                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {message.form && (
+                        <InlineForm
+                          form={message.form}
+                          submitted={message.formSubmitted}
+                          disabled={status === "streaming"}
+                          onSubmit={(values) =>
+                            submitForm(message.id, message.form!.callId, values)
+                          }
+                        />
+                      )}
                     </div>
                   )}
                 </div>
