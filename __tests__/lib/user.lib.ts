@@ -3,12 +3,20 @@ import {
   ensureUserRow,
   uploadAvatar,
   getAvatarUrl,
+  getUserProfile,
+  updateProfile,
 } from "@/lib/user";
 import { getCurrentUser } from "@/lib/supabase/auth";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { uploadFile, getSignedUrl, deleteFile } from "@/lib/storage";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
+}));
+
+const mockUpdateUser = vi.fn();
+vi.mock("@/lib/supabase/server", () => ({
+  createServerSupabase: vi.fn(),
 }));
 
 vi.mock("@/lib/storage", () => ({
@@ -55,6 +63,10 @@ beforeEach(() => {
     onConflictDoNothing: mockOnConflictDoNothing,
   });
   mockInsert.mockReturnValue({ values: mockInsertValues });
+  mockUpdateUser.mockResolvedValue({ data: {}, error: null });
+  (createServerSupabase as Mock).mockResolvedValue({
+    auth: { updateUser: mockUpdateUser },
+  });
 });
 
 afterEach(() => {
@@ -267,6 +279,154 @@ describe("getAvatarUrl", () => {
       "users",
       "user_1/avatar-123.png",
       60 * 60
+    );
+  });
+});
+
+// ─── getUserProfile ───────────────────────────────────────────────────────
+
+describe("getUserProfile", () => {
+  const EMPTY = {
+    name: "",
+    email: "",
+    jobTitle: "",
+    company: "",
+    bio: "",
+    timezone: "America/New_York",
+  };
+
+  it("returns empty fields when unauthenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    await expect(getUserProfile()).resolves.toEqual(EMPTY);
+  });
+
+  it("returns all stored profile fields", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    mockSelectWhere.mockResolvedValueOnce([
+      {
+        name: "Jane Doe",
+        email: "jane@example.com",
+        jobTitle: "Attorney",
+        company: "Virevos LLC",
+        bio: "Hello",
+        timezone: "Europe/London",
+      },
+    ]);
+    await expect(getUserProfile()).resolves.toEqual({
+      name: "Jane Doe",
+      email: "jane@example.com",
+      jobTitle: "Attorney",
+      company: "Virevos LLC",
+      bio: "Hello",
+      timezone: "Europe/London",
+    });
+  });
+
+  it("normalizes nulls and falls back to auth metadata/email", async () => {
+    (getCurrentUser as Mock).mockResolvedValue({
+      id: "user_1",
+      email: "auth@example.com",
+      user_metadata: { name: "Auth Name" },
+    });
+    mockSelectWhere.mockResolvedValueOnce([
+      {
+        name: null,
+        email: null,
+        jobTitle: null,
+        company: null,
+        bio: null,
+        timezone: null,
+      },
+    ]);
+    await expect(getUserProfile()).resolves.toEqual({
+      name: "Auth Name",
+      email: "auth@example.com",
+      jobTitle: "",
+      company: "",
+      bio: "",
+      timezone: "America/New_York",
+    });
+  });
+});
+
+// ─── updateProfile ────────────────────────────────────────────────────────
+
+describe("updateProfile", () => {
+  it("throws when unauthenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    await expect(updateProfile({ name: "Jane" })).rejects.toThrow("No user");
+  });
+
+  it("rejects an empty name", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    await expect(updateProfile({ name: "   " })).rejects.toThrow(
+      "name is required"
+    );
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid timezone", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    await expect(
+      updateProfile({ name: "Jane", timezone: "Mars/Olympus" })
+    ).rejects.toThrow("timezone must be one of");
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  it("trims, persists all fields, and mirrors the name to auth metadata", async () => {
+    (getCurrentUser as Mock).mockResolvedValue({
+      id: "user_1",
+      email: "jane@example.com",
+    });
+
+    const result = await updateProfile({
+      name: "  Jane Doe  ",
+      jobTitle: "Attorney",
+      company: "Virevos LLC",
+      bio: "Hi there",
+      timezone: "Europe/London",
+    });
+
+    expect(mockSet).toHaveBeenCalledWith({
+      name: "Jane Doe",
+      jobTitle: "Attorney",
+      company: "Virevos LLC",
+      bio: "Hi there",
+      timezone: "Europe/London",
+    });
+    expect(mockUpdateUser).toHaveBeenCalledWith({ data: { name: "Jane Doe" } });
+    expect(result).toEqual({
+      name: "Jane Doe",
+      email: "jane@example.com",
+      jobTitle: "Attorney",
+      company: "Virevos LLC",
+      bio: "Hi there",
+      timezone: "Europe/London",
+    });
+  });
+
+  it("stores nulls for omitted optional fields", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+
+    await updateProfile({ name: "Jane Doe" });
+
+    expect(mockSet).toHaveBeenCalledWith({
+      name: "Jane Doe",
+      jobTitle: null,
+      company: null,
+      bio: null,
+      timezone: null,
+    });
+  });
+
+  it("throws when the auth metadata update fails", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    mockUpdateUser.mockResolvedValueOnce({
+      data: {},
+      error: { message: "auth boom" },
+    });
+    await expect(updateProfile({ name: "Jane Doe" })).rejects.toThrow(
+      "Failed to update profile: auth boom"
     );
   });
 });

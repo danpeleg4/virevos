@@ -1,11 +1,27 @@
 "use server";
 
 import { getCurrentUser } from "./supabase/auth";
+import { createServerSupabase } from "./supabase/server";
 import { db } from "@db/db";
 import { users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { uploadFile, getSignedUrl, deleteFile } from "./storage";
-import { ValidationError } from "./util/validation";
+import {
+  ValidationError,
+  requireString,
+  optionalString,
+  requireOneOf,
+  MAX_NAME,
+  MAX_SHORT,
+} from "./util/validation";
+import {
+  PROFILE_TIMEZONES,
+  DEFAULT_TIMEZONE,
+  type UserProfile,
+  type UpdateProfileInput,
+} from "./user_profile";
+
+const MAX_BIO = 280;
 
 const AVATAR_BUCKET = "users";
 const ALLOWED_AVATAR_TYPES = [
@@ -116,6 +132,80 @@ export async function getAvatarUrl(): Promise<{ url: string | null }> {
 
   const url = await getSignedUrl(AVATAR_BUCKET, row.avatarPath, AVATAR_URL_TTL);
   return { url };
+}
+
+/** Returns the current user's editable profile fields. */
+export async function getUserProfile(): Promise<UserProfile> {
+  const user = await getCurrentUser();
+  const empty: UserProfile = {
+    name: "",
+    email: "",
+    jobTitle: "",
+    company: "",
+    bio: "",
+    timezone: DEFAULT_TIMEZONE,
+  };
+  if (!user?.id) return empty;
+
+  const [row] = await db
+    .select({
+      name: users.name,
+      email: users.email,
+      jobTitle: users.jobTitle,
+      company: users.company,
+      bio: users.bio,
+      timezone: users.timezone,
+    })
+    .from(users)
+    .where(eq(users.user_id, user.id));
+
+  return {
+    name: row?.name ?? (user.user_metadata?.name as string | undefined) ?? "",
+    email: row?.email ?? user.email ?? "",
+    jobTitle: row?.jobTitle ?? "",
+    company: row?.company ?? "",
+    bio: row?.bio ?? "",
+    timezone: row?.timezone ?? DEFAULT_TIMEZONE,
+  };
+}
+
+/**
+ * Updates the current user's profile. Writes all fields to the `users` table
+ * and mirrors the display name into Supabase auth metadata so it shows
+ * everywhere the authenticated user is read (e.g. the app header).
+ */
+export async function updateProfile(
+  input: UpdateProfileInput
+): Promise<UserProfile> {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new Error("No user");
+
+  const name = requireString(input.name, "name", MAX_NAME);
+  const jobTitle =
+    optionalString(input.jobTitle, "jobTitle", MAX_SHORT) ?? null;
+  const company = optionalString(input.company, "company", MAX_SHORT) ?? null;
+  const bio = optionalString(input.bio, "bio", MAX_BIO) ?? null;
+  const timezone = input.timezone
+    ? requireOneOf(input.timezone, "timezone", PROFILE_TIMEZONES)
+    : null;
+
+  await db
+    .update(users)
+    .set({ name, jobTitle, company, bio, timezone })
+    .where(eq(users.user_id, user.id));
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.auth.updateUser({ data: { name } });
+  if (error) throw new Error(`Failed to update profile: ${error.message}`);
+
+  return {
+    name,
+    email: user.email ?? "",
+    jobTitle: jobTitle ?? "",
+    company: company ?? "",
+    bio: bio ?? "",
+    timezone: timezone ?? DEFAULT_TIMEZONE,
+  };
 }
 
 export async function ensureUserRow() {

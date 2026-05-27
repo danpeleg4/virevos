@@ -3,21 +3,27 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockUseQuery = vi.fn();
 const mockMutate = vi.fn();
-const mockSetQueryData = vi.fn();
 
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useQuery: (opts: { queryKey: string[] }) => mockUseQuery(opts),
   useMutation: (opts: { mutationFn: unknown }) => ({
     mutate: mockMutate,
     isPending: false,
     ...opts,
   }),
-  useQueryClient: () => ({ setQueryData: mockSetQueryData }),
+  useQueryClient: () => ({
+    cancelQueries: vi.fn().mockResolvedValue(undefined),
+    getQueryData: vi.fn(),
+    setQueryData: vi.fn(),
+    invalidateQueries: vi.fn(),
+  }),
 }));
 
 vi.mock("@/lib/user", () => ({
   getAvatarUrl: vi.fn(),
   uploadAvatar: vi.fn(),
+  getUserProfile: vi.fn(),
+  updateProfile: vi.fn(),
 }));
 
 vi.mock("next-themes", () => ({
@@ -32,8 +38,31 @@ vi.mock("@/app/components/scheduling/IntegrationSettings", () => ({
 
 import Settings from "@/app/workspace/settings/page";
 
+// Returns query data keyed by queryKey so the profile and avatar queries can
+// resolve to their own shapes.
+function mockQueriesByKey(
+  overrides: Record<string, unknown> = {}
+): (opts: { queryKey: string[] }) => { data: unknown } {
+  return ({ queryKey }) => {
+    const key = queryKey[0];
+    if (key in overrides) return { data: overrides[key] };
+    if (key === "userProfile")
+      return {
+        data: {
+          name: "John Doe",
+          email: "john@example.com",
+          jobTitle: "",
+          company: "",
+          bio: "",
+          timezone: "America/New_York",
+        },
+      };
+    return { data: { url: null } }; // avatarUrl
+  };
+}
+
 beforeEach(() => {
-  mockUseQuery.mockReturnValue({ data: { url: null } });
+  mockUseQuery.mockImplementation(mockQueriesByKey());
   mockMutate.mockClear();
 });
 
@@ -108,11 +137,47 @@ describe("Settings Page", () => {
     expect(screen.getByTestId("integration-settings")).toBeInTheDocument();
   });
 
+  it("seeds the full name field from the loaded profile", () => {
+    render(<Settings />);
+    const input = screen.getByLabelText(/full name/i) as HTMLInputElement;
+    expect(input.value).toBe("John Doe");
+  });
+
   it("updates the full name field on input", () => {
     render(<Settings />);
     const input = screen.getByLabelText(/full name/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "Jane Doe" } });
     expect(input.value).toBe("Jane Doe");
+  });
+
+  it("saves the edited profile via the mutation", () => {
+    render(<Settings />);
+    fireEvent.change(screen.getByLabelText(/full name/i), {
+      target: { value: "Jane Doe" },
+    });
+    fireEvent.change(screen.getByLabelText(/job title/i), {
+      target: { value: "Attorney" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    expect(mockMutate).toHaveBeenCalledWith({
+      name: "Jane Doe",
+      jobTitle: "Attorney",
+      company: "",
+      bio: "",
+      timezone: "America/New_York",
+    });
+  });
+
+  it("disables Save when the name is unchanged", () => {
+    render(<Settings />);
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
+  });
+
+  it("disables Save when the name is emptied", () => {
+    render(<Settings />);
+    const input = screen.getByLabelText(/full name/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "   " } });
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
   });
 
   it("uploads a selected avatar image via the mutation", () => {
@@ -137,7 +202,9 @@ describe("Settings Page", () => {
   });
 
   it("renders the avatar image when a URL is available", () => {
-    mockUseQuery.mockReturnValue({ data: { url: "https://cdn/avatar.png" } });
+    mockUseQuery.mockImplementation(
+      mockQueriesByKey({ avatarUrl: { url: "https://cdn/avatar.png" } })
+    );
     render(<Settings />);
     // AvatarImage only renders once the underlying image reports "loaded",
     // but the file input and upload control should always be present.

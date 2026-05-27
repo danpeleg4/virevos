@@ -3,7 +3,17 @@
 import { useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAvatarUrl, uploadAvatar } from "@/lib/user";
+import {
+  getAvatarUrl,
+  uploadAvatar,
+  getUserProfile,
+  updateProfile,
+} from "@/lib/user";
+import {
+  DEFAULT_TIMEZONE,
+  type UserProfile,
+  type UpdateProfileInput,
+} from "@/lib/user_profile";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
@@ -101,13 +111,14 @@ const ACCEPTED_AVATAR_TYPES = [
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB
 
 function ProfileTab() {
-  const [fullName, setFullName] = useState("John Doe");
-  const [email] = useState("example@gmail.com");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [bio, setBio] = useState("");
-  const [timezone, setTimezone] = useState("America/New_York");
+  const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -117,6 +128,94 @@ function ProfileTab() {
     queryFn: getAvatarUrl,
   });
   const avatarUrl = avatarData?.url ?? undefined;
+
+  const { data: profile } = useQuery<UserProfile>({
+    queryKey: ["userProfile"],
+    queryFn: getUserProfile,
+  });
+
+  // Seed the editable fields from the loaded profile, re-seeding only when the
+  // server values themselves change (e.g. after a save refetch). This
+  // render-time adjustment pattern avoids clobbering in-progress edits and
+  // sidesteps the "setState in effect" cascade. The signature is compared by
+  // value so it's resilient to the query returning a fresh object each render.
+  // See react.dev "You Might Not Need an Effect".
+  const [seededSig, setSeededSig] = useState<string>();
+  const signature = profile
+    ? JSON.stringify([
+        profile.name,
+        profile.email,
+        profile.jobTitle,
+        profile.company,
+        profile.bio,
+        profile.timezone,
+      ])
+    : undefined;
+  if (signature !== undefined && signature !== seededSig && profile) {
+    setSeededSig(signature);
+    setFullName(profile.name);
+    setEmail(profile.email);
+    setJobTitle(profile.jobTitle);
+    setCompany(profile.company);
+    setBio(profile.bio);
+    setTimezone(profile.timezone);
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: (input: UpdateProfileInput) => updateProfile(input),
+    onMutate: async (input) => {
+      setSaveError(null);
+      await queryClient.cancelQueries({ queryKey: ["userProfile"] });
+      const previous = queryClient.getQueryData<UserProfile>(["userProfile"]);
+      queryClient.setQueryData<UserProfile>(["userProfile"], (old) => {
+        const base: UserProfile = old ?? {
+          name: "",
+          email,
+          jobTitle: "",
+          company: "",
+          bio: "",
+          timezone,
+        };
+        return {
+          ...base,
+          name: input.name,
+          jobTitle: input.jobTitle ?? base.jobTitle,
+          company: input.company ?? base.company,
+          bio: input.bio ?? base.bio,
+          timezone: input.timezone ?? base.timezone,
+        };
+      });
+      return { previous };
+    },
+    onError: (error: Error, _input, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["userProfile"], context.previous);
+      }
+      setSaveError(error.message || "Couldn't save. Please try again.");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      queryClient.invalidateQueries({ queryKey: ["auth-user"] });
+    },
+  });
+
+  const trimmedName = fullName.trim();
+  const isDirty =
+    trimmedName !== (profile?.name ?? "") ||
+    jobTitle !== (profile?.jobTitle ?? "") ||
+    company !== (profile?.company ?? "") ||
+    bio !== (profile?.bio ?? "") ||
+    timezone !== (profile?.timezone ?? DEFAULT_TIMEZONE);
+  const canSave = !saveMutation.isPending && trimmedName.length > 0 && isDirty;
+
+  const handleSave = () =>
+    saveMutation.mutate({
+      name: trimmedName,
+      jobTitle,
+      company,
+      bio,
+      timezone,
+    });
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -216,13 +315,6 @@ function ProfileTab() {
             placeholder="Your name"
           />
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email address</Label>
-          <Input id="email" type="email" value={email} disabled />
-          <p className="text-xs text-muted-foreground">
-            Your email is managed by your sign-in provider.
-          </p>
-        </div>
         <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
           <div className="grid gap-2">
             <Label htmlFor="jobTitle">Job title</Label>
@@ -278,9 +370,13 @@ function ProfileTab() {
         </div>
       </div>
 
-      <div className="flex justify-end pt-2">
-        <Button disabled size="sm">
-          Save
+      <div className="flex flex-col items-end gap-2 pt-2">
+        {saveError && <p className="text-xs text-destructive">{saveError}</p>}
+        <Button onClick={handleSave} disabled={!canSave} size="sm">
+          {saveMutation.isPending && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+          {saveMutation.isPending ? "Saving…" : "Save"}
         </Button>
       </div>
     </CardContent>
@@ -338,24 +434,6 @@ function NotificationsTab() {
       </div>
 
       <Separator />
-
-      <div>
-        <SectionLabel>Quiet hours</SectionLabel>
-        <ToggleRow
-          label="Enable quiet hours"
-          description="Pause non-urgent notifications during set hours"
-        />
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 sm:gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="quietFrom">From</Label>
-            <Input id="quietFrom" type="time" defaultValue="22:00" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="quietTo">To</Label>
-            <Input id="quietTo" type="time" defaultValue="07:00" />
-          </div>
-        </div>
-      </div>
 
       <div className="flex justify-end pt-2">
         <Button disabled size="sm">
