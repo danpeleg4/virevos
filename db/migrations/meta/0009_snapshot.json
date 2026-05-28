@@ -1,6 +1,6 @@
 {
-  "id": "1e6f35bb-86b8-4948-ac01-1eb770c750bf",
-  "prevId": "9268c28f-2674-46ca-a80c-7d617b885a26",
+  "id": "034c4b93-3f1a-4f32-a9e6-9ccf22dc63e4",
+  "prevId": "1e6f35bb-86b8-4948-ac01-1eb770c750bf",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3092,6 +3092,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "weekly_summary": {
+          "name": "weekly_summary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "credits_reset_at": {
           "name": "credits_reset_at",

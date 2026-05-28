@@ -24,6 +24,8 @@ vi.mock("@/lib/user", () => ({
   uploadAvatar: vi.fn(),
   getUserProfile: vi.fn(),
   updateProfile: vi.fn(),
+  getWeeklySummaryPreference: vi.fn(),
+  updateWeeklySummaryPreference: vi.fn(),
 }));
 
 vi.mock("next-themes", () => ({
@@ -116,7 +118,7 @@ describe("Settings Page", () => {
   it("switches to Notifications tab when clicked", () => {
     render(<Settings />);
     fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
-    expect(screen.getByText(/desktop notifications/i)).toBeInTheDocument();
+    expect(screen.getByText(/weekly summary/i)).toBeInTheDocument();
   });
 
   it("switches to Preferences tab when clicked", () => {

@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   ai_credits: integer("ai_credits").notNull().default(0),
   storage: bigint("storage", { mode: "number" }).notNull().default(0),
   recordingStatus: boolean("recordingStatus").notNull().default(true),
+  weeklySummary: boolean("weekly_summary").notNull().default(false),
   creditsResetAt: timestamp("credits_reset_at"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }).enableRLS();

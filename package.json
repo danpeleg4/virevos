@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "format": "npx prettier --write .",
     "test-vector": "node scripts/test-vector-upload.ts",
-    "test-vector-create": "node scripts/test-vector-create.ts"
+    "test-vector-create": "node scripts/test-vector-create.ts",
+    "test-weekly-summary": "node scripts/test-weekly-summary-cron.ts"
   },
   "overrides": {
     "esbuild": "^0.27.0",
@@ -44,6 +45,7 @@
     "react-day-picker": "^9.11.1",
     "react-dom": "^19.2.1",
     "react-markdown": "^10.1.0",
+    "resend": "^6.12.4",
     "sonner": "^2.0.7",
     "stripe": "^20.4.1",
     "tailwind-merge": "^3.4.0",

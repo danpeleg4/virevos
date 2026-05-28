@@ -8,6 +8,8 @@ import {
   uploadAvatar,
   getUserProfile,
   updateProfile,
+  getWeeklySummaryPreference,
+  updateWeeklySummaryPreference,
 } from "@/lib/user";
 import {
   DEFAULT_TIMEZONE,
@@ -81,12 +83,24 @@ function ToggleRow({
   label,
   description,
   defaultChecked = false,
+  checked,
+  onCheckedChange,
+  disabled = false,
 }: {
   label: string;
   description: string;
   defaultChecked?: boolean;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  disabled?: boolean;
 }) {
-  const [checked, setChecked] = useState(defaultChecked);
+  const [internal, setInternal] = useState(defaultChecked);
+  const isControlled = checked !== undefined;
+  const value = isControlled ? checked : internal;
+  const handleChange = (next: boolean) => {
+    if (!isControlled) setInternal(next);
+    onCheckedChange?.(next);
+  };
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
@@ -94,8 +108,9 @@ function ToggleRow({
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       <Switch
-        checked={checked}
-        onCheckedChange={setChecked}
+        checked={value}
+        onCheckedChange={handleChange}
+        disabled={disabled}
         className="shrink-0"
       />
     </div>
@@ -384,6 +399,34 @@ function ProfileTab() {
 }
 
 function NotificationsTab() {
+  const queryClient = useQueryClient();
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const { data: weeklySummary } = useQuery({
+    queryKey: ["weeklySummary"],
+    queryFn: getWeeklySummaryPreference,
+  });
+
+  const weeklySummaryMutation = useMutation({
+    mutationFn: (enabled: boolean) => updateWeeklySummaryPreference(enabled),
+    onMutate: async (enabled) => {
+      setSaveError(null);
+      await queryClient.cancelQueries({ queryKey: ["weeklySummary"] });
+      const previous = queryClient.getQueryData<boolean>(["weeklySummary"]);
+      queryClient.setQueryData<boolean>(["weeklySummary"], enabled);
+      return { previous };
+    },
+    onError: (error: Error, _enabled, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["weeklySummary"], context.previous);
+      }
+      setSaveError(error.message || "Couldn't save. Please try again.");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["weeklySummary"] });
+    },
+  });
+
   return (
     <CardContent className="pt-6 space-y-6 max-w-2xl">
       <div>
@@ -392,6 +435,9 @@ function NotificationsTab() {
           <ToggleRow
             label="Weekly summary"
             description="Get a weekly email with your productivity summary"
+            checked={!!weeklySummary}
+            onCheckedChange={(next) => weeklySummaryMutation.mutate(next)}
+            disabled={weeklySummaryMutation.isPending}
           />
           <ToggleRow
             label="Task reminders"
@@ -408,14 +454,9 @@ function NotificationsTab() {
             description="News about features and improvements"
           />
         </div>
-      </div>
-
-      <Separator />
-
-      <div className="flex justify-end pt-2">
-        <Button disabled size="sm">
-          Save
-        </Button>
+        {saveError && (
+          <p className="text-xs text-destructive mt-3">{saveError}</p>
+        )}
       </div>
     </CardContent>
   );
