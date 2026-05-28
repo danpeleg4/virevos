@@ -412,29 +412,6 @@ function NotificationsTab() {
 
       <Separator />
 
-      <div>
-        <SectionLabel>Push</SectionLabel>
-        <div className="space-y-4">
-          <ToggleRow
-            label="Desktop notifications"
-            description="Show notifications on your desktop"
-            defaultChecked
-          />
-          <ToggleRow
-            label="Mobile notifications"
-            description="Receive push notifications on mobile devices"
-            defaultChecked
-          />
-          <ToggleRow
-            label="Mentions"
-            description="Notify me when I'm mentioned in a comment"
-            defaultChecked
-          />
-        </div>
-      </div>
-
-      <Separator />
-
       <div className="flex justify-end pt-2">
         <Button disabled size="sm">
           Save
@@ -739,7 +716,7 @@ export default function Settings() {
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
-                className={`cursor-pointer inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors ${
+                className={`cursor-pointer inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === tab.value
                     ? "border-foreground text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground"
