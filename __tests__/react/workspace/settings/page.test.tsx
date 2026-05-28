@@ -26,6 +26,8 @@ vi.mock("@/lib/user", () => ({
   updateProfile: vi.fn(),
   getWeeklySummaryPreference: vi.fn(),
   updateWeeklySummaryPreference: vi.fn(),
+  getProductUpdatesPreference: vi.fn(),
+  updateProductUpdatesPreference: vi.fn(),
 }));
 
 vi.mock("next-themes", () => ({
@@ -39,6 +41,10 @@ vi.mock("@/app/components/scheduling/IntegrationSettings", () => ({
 }));
 
 import Settings from "@/app/workspace/settings/page";
+import {
+  getProductUpdatesPreference,
+  updateProductUpdatesPreference,
+} from "@/lib/user";
 
 // Returns query data keyed by queryKey so the profile and avatar queries can
 // resolve to their own shapes.
@@ -88,13 +94,6 @@ describe("Settings Page", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Preferences tab", () => {
-    render(<Settings />);
-    expect(
-      screen.getByRole("button", { name: /preferences/i })
-    ).toBeInTheDocument();
-  });
-
   it("renders Security tab", () => {
     render(<Settings />);
     expect(
@@ -119,12 +118,6 @@ describe("Settings Page", () => {
     render(<Settings />);
     fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
     expect(screen.getByText(/weekly summary/i)).toBeInTheDocument();
-  });
-
-  it("switches to Preferences tab when clicked", () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByRole("button", { name: /preferences/i }));
-    expect(screen.getByText(/dark mode/i)).toBeInTheDocument();
   });
 
   it("switches to Security tab when clicked", () => {

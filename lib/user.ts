@@ -78,7 +78,7 @@ export async function getWeeklySummaryPreference(): Promise<boolean> {
     .from(users)
     .where(eq(users.user_id, user.id));
 
-  return row?.weeklySummary;
+  return !!row?.weeklySummary;
 }
 
 export async function updateWeeklySummaryPreference(
