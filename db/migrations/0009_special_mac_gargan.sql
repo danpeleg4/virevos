@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "weekly_summary" boolean DEFAULT false NOT NULL;

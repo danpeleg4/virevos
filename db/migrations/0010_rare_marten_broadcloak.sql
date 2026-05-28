@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "product_updates" boolean DEFAULT false NOT NULL;

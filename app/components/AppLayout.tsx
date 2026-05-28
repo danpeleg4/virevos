@@ -5,9 +5,12 @@ import { motion, AnimatePresence } from "motion/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import Image from "next/image";
+import Link from "next/link";
 
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { cn } from "./ui/utils";
 import type { PortalMeetingBooking } from "@/types/portal";
 
 import {
@@ -27,9 +30,14 @@ import {
 
 import { AIAssistant } from "./AIAssistant";
 import { ThemeToggle } from "./ThemeToggle";
-import Link from "next/link";
 import { useAuthUser } from "@/app/hooks/useAuthUser";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { getAvatarUrl } from "@/lib/user";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/app/components/ui/avatar";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/workspace/dashboard" },
@@ -49,6 +57,156 @@ interface AppLayoutProps {
 type BookingWithClient = PortalMeetingBooking & {
   clientDisplayName: string | null;
 };
+
+interface SidebarContentProps {
+  currentPath: string;
+  pendingCount: number;
+  fullName: string;
+  initials: string;
+  email?: string;
+  onNavigateHome: () => void;
+  onToggleAi: () => void;
+  onSignOut: () => void;
+  /** Provided only on the mobile drawer — renders the close button and closes on navigation. */
+  onClose?: () => void;
+}
+
+function SidebarContent({
+  currentPath,
+  pendingCount,
+  fullName,
+  initials,
+  email,
+  onNavigateHome,
+  onToggleAi,
+  onSignOut,
+  onClose,
+}: SidebarContentProps) {
+  const { data: avatarData } = useQuery({
+    queryKey: ["avatarUrl"],
+    queryFn: getAvatarUrl,
+  });
+  const avatarUrl = avatarData?.url ?? undefined;
+  return (
+    <>
+      {/* Brand */}
+      <div className="flex h-16 items-center justify-between gap-2 border-b border-sidebar-border px-5 shrink-0">
+        <button
+          type="button"
+          onClick={onNavigateHome}
+          className="flex items-center gap-2.5 cursor-pointer"
+        >
+          <Image
+            src="/virevos.svg"
+            alt="Virevos"
+            width={26}
+            height={26}
+            className="dark:invert"
+            priority
+          />
+          <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">
+            Virevos
+          </span>
+        </button>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <p className="px-3 mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+          Menu
+        </p>
+        <ul className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = currentPath === item.path;
+            return (
+              <li key={item.path}>
+                <Link
+                  href={item.path}
+                  onClick={onClose}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                  )}
+                >
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+                  )}
+                  <item.icon
+                    className={cn(
+                      "h-[18px] w-[18px] shrink-0 transition-colors",
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground group-hover:text-sidebar-foreground"
+                    )}
+                  />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Footer */}
+      <div className="mt-auto space-y-3 border-t border-sidebar-border p-3 shrink-0">
+        <Button
+          variant="outline"
+          className="w-full justify-start cursor-pointer"
+          onClick={onToggleAi}
+        >
+          <Sparkles className="h-4 w-4 text-purple-500" />
+          AI Assistant
+          {pendingCount > 0 ? (
+            <Badge className="ml-auto border-red-200 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300">
+              {pendingCount}
+            </Badge>
+          ) : (
+            <Badge className="ml-auto border-purple-200 bg-purple-100 text-purple-700 dark:border-purple-900 dark:bg-purple-950/40 dark:text-purple-300">
+              New
+            </Badge>
+          )}
+        </Button>
+
+        <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-sm font-semibold text-foreground">
+            <Avatar className="size-8 text-lg">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt="Your avatar" />}
+              <AvatarFallback>{initials || "U"}</AvatarFallback>
+            </Avatar>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="truncate text-sm font-medium text-sidebar-foreground">
+              {fullName}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onSignOut}
+            aria-label="Sign out"
+            className="shrink-0 cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -91,8 +249,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
     );
 
-  const navigate = (path: string) => router.push(path);
-
   const fullName = (user?.user_metadata?.name as string | undefined) ?? "";
   const initials =
     fullName
@@ -106,84 +262,17 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="h-screen flex bg-background overflow-hidden">
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-card border-r border-border">
-        <div className="p-6 border-b border-border">
-          <h1
-            className="text-2xl text-foreground cursor-pointer flex items-center gap-2"
-            onClick={() => router.push("/")}
-          >
-            Virevos
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Workspace Starter
-          </p>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive = currentPath === item.path;
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-foreground/10 text-foreground font-medium"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t border-border">
-          <Button
-            style={{ cursor: "pointer" }}
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => setAiOpen(!aiOpen)}
-          >
-            <span className="relative mr-2">
-              <Sparkles className="h-4 w-4" />
-            </span>
-            AI Assistant
-            {pendingCount > 0 ? (
-              <Badge className="ml-auto bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800">
-                {pendingCount}
-              </Badge>
-            ) : (
-              <Badge className="ml-auto bg-purple-100 text-purple-700">
-                New
-              </Badge>
-            )}
-          </Button>
-        </div>
-
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-semibold text-foreground">
-              {initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground truncate">{fullName}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user?.email}
-              </p>
-            </div>
-            <Button
-              style={{ cursor: "pointer" }}
-              variant="ghost"
-              size="icon"
-              onClick={handleSignOut}
-              aria-label="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
+        <SidebarContent
+          currentPath={currentPath}
+          pendingCount={pendingCount}
+          fullName={fullName}
+          initials={initials}
+          email={user?.email}
+          onNavigateHome={() => router.push("/")}
+          onToggleAi={() => setAiOpen(!aiOpen)}
+          onSignOut={handleSignOut}
+        />
       </aside>
 
       <AnimatePresence>
@@ -202,96 +291,25 @@ export function AppLayout({ children }: AppLayoutProps) {
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 lg:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar border-r border-sidebar-border lg:hidden"
             >
-              <div className="p-6 border-b border-border flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl text-foreground">Virevos</h1>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Workspace Starter
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-
-              <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-                {navItems.map((item) => {
-                  const isActive = currentPath === item.path;
-
-                  return (
-                    <button
-                      key={item.path}
-                      onClick={() => {
-                        navigate(item.path);
-                        setSidebarOpen(false);
-                      }}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                        isActive
-                          ? "bg-foreground/10 text-foreground font-medium"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-
-              <div className="p-4 border-t border-border">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => {
-                    setAiOpen(!aiOpen);
-                    setSidebarOpen(false);
-                  }}
-                >
-                  <span className="relative mr-2">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
-                  AI Assistant
-                  {pendingCount > 0 ? (
-                    <Badge className="ml-auto bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800">
-                      {pendingCount}
-                    </Badge>
-                  ) : (
-                    <Badge className="ml-auto bg-purple-100 text-purple-700">
-                      New
-                    </Badge>
-                  )}
-                </Button>
-              </div>
-
-              <div className="p-4 border-t border-border">
-                <div className="flex items-center space-x-3">
-                  <div className="h-9 w-9 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-semibold text-foreground">
-                    {initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">
-                      {fullName}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {user?.email}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleSignOut}
-                    aria-label="Sign out"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <SidebarContent
+                currentPath={currentPath}
+                pendingCount={pendingCount}
+                fullName={fullName}
+                initials={initials}
+                email={user?.email}
+                onNavigateHome={() => {
+                  router.push("/");
+                  setSidebarOpen(false);
+                }}
+                onToggleAi={() => {
+                  setAiOpen(!aiOpen);
+                  setSidebarOpen(false);
+                }}
+                onSignOut={handleSignOut}
+                onClose={() => setSidebarOpen(false)}
+              />
             </motion.aside>
           </>
         )}

@@ -19,11 +19,18 @@ export const users = pgTable("users", {
   user_id: varchar("user_id").notNull().unique(),
   name: text("name"),
   email: text("email").notNull(),
+  avatarPath: text("avatar_path"),
+  jobTitle: text("job_title"),
+  company: text("company"),
+  bio: text("bio"),
+  timezone: text("timezone"),
   ai_credits: integer("ai_credits").notNull().default(0),
   storage: bigint("storage", { mode: "number" }).notNull().default(0),
   recordingStatus: boolean("recordingStatus").notNull().default(true),
+  weeklySummary: boolean("weekly_summary").notNull().default(false),
+  productUpdates: boolean("product_updates").notNull().default(false),
   creditsResetAt: timestamp("credits_reset_at"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }).enableRLS();
 
 // CLIENTS
@@ -41,7 +48,7 @@ export const clients = pgTable(
       .notNull()
       .references(() => users.user_id, { onDelete: "cascade" }),
 
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
   (t) => [index("clients_user_id_idx").on(t.userId)]
@@ -335,7 +342,7 @@ export const outlookEmails = pgTable(
     userId: varchar("user_id")
       .notNull()
       .references(() => users.user_id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("outlook_emails_user_id_idx").on(t.userId),
@@ -403,7 +410,7 @@ export const googleEmails = pgTable(
     userId: varchar("user_id")
       .notNull()
       .references(() => users.user_id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("emails_user_id_idx").on(t.userId),
@@ -459,7 +466,7 @@ export const scheduledEmails = pgTable(
     userId: varchar("user_id")
       .notNull()
       .references(() => users.user_id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("scheduled_emails_user_id_idx").on(t.userId),
@@ -512,7 +519,7 @@ export const clientPortalTokens = pgTable(
     userId: varchar("user_id")
       .notNull()
       .references(() => users.user_id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("client_portal_tokens_user_id_idx").on(t.userId),
@@ -544,7 +551,7 @@ export const portalMeetingBookings = pgTable(
     eventId: text("event_id").references(() => events.id, {
       onDelete: "set null",
     }),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     index("portal_meeting_bookings_user_id_idx").on(t.userId),
@@ -570,7 +577,9 @@ export const portalMessages = pgTable(
     senderType: text("sender_type").notNull(), // "client" | "agency"
     body: text("body").notNull(),
     readAt: timestamp("read_at"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
     index("portal_messages_portal_id_idx").on(t.portalId),
@@ -592,8 +601,8 @@ export const subscriptions = pgTable("subscriptions", {
   status: text("status").notNull().default("active"),
   currentPeriodEnd: timestamp("current_period_end"),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 }).enableRLS();
 
 // RELATIONS

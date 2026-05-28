@@ -23,6 +23,10 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
+vi.mock("@/lib/user", () => ({
+  getAvatarUrl: vi.fn(),
+}));
+
 vi.mock("next-themes", () => ({
   useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
