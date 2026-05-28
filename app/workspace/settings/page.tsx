@@ -10,6 +10,8 @@ import {
   updateProfile,
   getWeeklySummaryPreference,
   updateWeeklySummaryPreference,
+  getProductUpdatesPreference,
+  updateProductUpdatesPreference,
 } from "@/lib/user";
 import {
   DEFAULT_TIMEZONE,
@@ -406,6 +408,11 @@ function NotificationsTab() {
     queryFn: getWeeklySummaryPreference,
   });
 
+  const { data: productUpdates } = useQuery({
+    queryKey: ["productUpdates"],
+    queryFn: getProductUpdatesPreference,
+  });
+
   const weeklySummaryMutation = useMutation({
     mutationFn: (enabled: boolean) => updateWeeklySummaryPreference(enabled),
     onMutate: async (enabled) => {
@@ -426,6 +433,26 @@ function NotificationsTab() {
     },
   });
 
+  const productUpdatesMutation = useMutation({
+    mutationFn: (enabled: boolean) => updateProductUpdatesPreference(enabled),
+    onMutate: async (enabled) => {
+      setSaveError(null);
+      await queryClient.cancelQueries({ queryKey: ["productUpdates"] });
+      const previous = queryClient.getQueryData<boolean>(["productUpdates"]);
+      queryClient.setQueryData<boolean>(["productUpdates"], enabled);
+      return { previous };
+    },
+    onError: (error: Error, _enabled, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["productUpdates"], context.previous);
+      }
+      setSaveError(error.message || "Couldn't save. Please try again.");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["productUpdates"] });
+    },
+  });
+
   return (
     <CardContent className="pt-6 space-y-6 max-w-2xl">
       <div>
@@ -439,18 +466,11 @@ function NotificationsTab() {
             disabled={weeklySummaryMutation.isPending}
           />
           <ToggleRow
-            label="Task reminders"
-            description="Email me before tasks are due"
-            defaultChecked
-          />
-          <ToggleRow
-            label="Meeting recaps"
-            description="Send a summary email after each recorded meeting"
-            defaultChecked
-          />
-          <ToggleRow
             label="Product updates"
             description="News about features and improvements"
+            checked={!!productUpdates}
+            onCheckedChange={(next) => productUpdatesMutation.mutate(next)}
+            disabled={productUpdatesMutation.isPending}
           />
         </div>
         {saveError && (

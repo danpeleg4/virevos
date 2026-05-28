@@ -40,6 +40,35 @@ const AVATAR_EXTENSIONS: Record<(typeof ALLOWED_AVATAR_TYPES)[number], string> =
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB
 const AVATAR_URL_TTL = 60 * 60; // signed URL valid for 1 hour
 
+export async function getProductUpdatesPreference() {
+  const user = await getCurrentUser();
+  if (!user?.id) return false;
+
+  const [row] = await db
+    .select({
+      productUpdates: users.productUpdates,
+    })
+    .from(users)
+    .where(eq(users.user_id, user.id));
+
+  return row.productUpdates;
+}
+
+export async function updateProductUpdatesPreference(enabled: boolean) {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new Error("No user");
+  if (typeof enabled !== "boolean") {
+    throw new ValidationError("enabled must be a boolean");
+  }
+
+  await db
+    .update(users)
+    .set({ productUpdates: enabled })
+    .where(eq(users.user_id, user.id));
+
+  return { enabled };
+}
+
 export async function getWeeklySummaryPreference(): Promise<boolean> {
   const user = await getCurrentUser();
   if (!user?.id) return false;
@@ -49,7 +78,7 @@ export async function getWeeklySummaryPreference(): Promise<boolean> {
     .from(users)
     .where(eq(users.user_id, user.id));
 
-  return !!row?.weeklySummary;
+  return row?.weeklySummary;
 }
 
 export async function updateWeeklySummaryPreference(

@@ -71,6 +71,13 @@
       "when": 1779992703389,
       "tag": "0009_special_mac_gargan",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780005901010,
+      "tag": "0010_rare_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }
