@@ -15,20 +15,12 @@ export async function GET(req: Request) {
   }
 
   try {
-    console.log("[cron/weekly-summary] starting");
     const targets = await listUsersWithWeeklySummary();
-    console.log(`[cron/weekly-summary] ${targets.length} opted-in users`);
-
     const results = await Promise.allSettled(
       targets.map(async (t) => {
         const started = Date.now();
-        console.log(`[cron/weekly-summary] → ${t.userId} start`);
         try {
           const res = await sendWeeklySummary(t.userId);
-          console.log(
-            `[cron/weekly-summary] ← ${t.userId} done in ${Date.now() - started}ms`,
-            res
-          );
           return res;
         } catch (err) {
           console.error(
@@ -51,10 +43,6 @@ export async function GET(req: Request) {
       if (r.value.skipped) skipped += 1;
       else sent += 1;
     }
-
-    console.log(
-      `[cron/weekly-summary] done — total=${targets.length} sent=${sent} skipped=${skipped} failed=${failed}`
-    );
     return NextResponse.json({
       total: targets.length,
       sent,

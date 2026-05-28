@@ -445,39 +445,17 @@ export async function sendWeeklySummary(
   if (!user) return { skipped: "user_not_found" };
   if (!user.weeklySummary) return { skipped: "preference_off" };
   if (!user.email) return { skipped: "no_email" };
-
-  console.log(`[weekly_summary] ${userId}: gathering week data…`);
-  const tGather = Date.now();
   const data = await gatherWeekData(userId);
-  console.log(
-    `[weekly_summary] ${userId}: gathered in ${Date.now() - tGather}ms (tasks=${data.tasksCreated} meetings=${data.meetingsHeld})`
-  );
-
-  console.log(`[weekly_summary] ${userId}: generating HTML via ${MODEL}…`);
-  const tAi = Date.now();
   const html = await generateSummaryHtml(user.name ?? "", data);
-  console.log(
-    `[weekly_summary] ${userId}: HTML ready in ${Date.now() - tAi}ms (${html.length} chars)`
-  );
-
-  console.log(
-    `[weekly_summary] ${userId}: sending via Resend to ${user.email}…`
-  );
-  const tSend = Date.now();
   const { id } = await sendEmail({
     to: user.email,
     subject: "Your weekly productivity summary",
     html,
   });
-  console.log(
-    `[weekly_summary] ${userId}: Resend ok in ${Date.now() - tSend}ms (id=${id})`
-  );
-
   await db
     .update(users)
     .set({ ai_credits: sql`${users.ai_credits} + 1` })
     .where(eq(users.user_id, userId));
-
   return { emailId: id };
 }
 

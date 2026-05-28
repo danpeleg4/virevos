@@ -16,8 +16,6 @@ if (!secret) {
 const TIMEOUT_MS = Number(process.env.WEEKLY_SUMMARY_TIMEOUT_MS ?? 300_000);
 
 async function main() {
-  console.log(`GET ${url}  (timeout ${TIMEOUT_MS}ms)`);
-  console.log("Watch your dev-server logs for [cron/weekly-summary] lines.");
   const startedAt = Date.now();
 
   const controller = new AbortController();
