@@ -64,7 +64,6 @@ import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSett
 const TABS = [
   { value: "profile", label: "Profile", icon: User },
   { value: "notifications", label: "Notifications", icon: Bell },
-  { value: "preferences", label: "Preferences", icon: Palette },
   { value: "security", label: "Security", icon: Shield },
   { value: "integrations", label: "Integrations", icon: Plug },
 ] as const;
@@ -462,120 +461,6 @@ function NotificationsTab() {
   );
 }
 
-function PreferencesTab() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const [language, setLanguage] = useState("en");
-  const [dateFormat, setDateFormat] = useState("mm-dd-yyyy");
-  const [weekStart, setWeekStart] = useState("sunday");
-  const [landingPage, setLandingPage] = useState("dashboard");
-
-  return (
-    <CardContent className="pt-6 space-y-6 max-w-2xl">
-      <div>
-        <SectionLabel>Appearance</SectionLabel>
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">Dark mode</p>
-            <p className="text-sm text-muted-foreground">
-              Use dark theme across the app
-            </p>
-          </div>
-          <Switch
-            checked={isDark}
-            onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-            className="shrink-0"
-          />
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-4">
-        <SectionLabel>Localization</SectionLabel>
-        <div className="grid gap-2">
-          <Label htmlFor="language">Language</Label>
-          <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger id="language">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Español</SelectItem>
-              <SelectItem value="fr">Français</SelectItem>
-              <SelectItem value="de">Deutsch</SelectItem>
-              <SelectItem value="he">עברית</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="dateFormat">Date format</Label>
-            <Select value={dateFormat} onValueChange={setDateFormat}>
-              <SelectTrigger id="dateFormat">
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mm-dd-yyyy">MM/DD/YYYY</SelectItem>
-                <SelectItem value="dd-mm-yyyy">DD/MM/YYYY</SelectItem>
-                <SelectItem value="yyyy-mm-dd">YYYY-MM-DD</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="weekStart">Week starts on</Label>
-            <Select value={weekStart} onValueChange={setWeekStart}>
-              <SelectTrigger id="weekStart">
-                <SelectValue placeholder="Select day" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sunday">Sunday</SelectItem>
-                <SelectItem value="monday">Monday</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-4">
-        <SectionLabel>Workspace</SectionLabel>
-        <div className="grid gap-2">
-          <Label htmlFor="landingPage">Default landing page</Label>
-          <Select value={landingPage} onValueChange={setLandingPage}>
-            <SelectTrigger id="landingPage">
-              <SelectValue placeholder="Select a page" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="dashboard">Dashboard</SelectItem>
-              <SelectItem value="tasks">Tasks</SelectItem>
-              <SelectItem value="calendar">Calendar</SelectItem>
-              <SelectItem value="clients">Clients</SelectItem>
-              <SelectItem value="cases">Cases</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <ToggleRow
-          label="Compact mode"
-          description="Reduce spacing to fit more on screen"
-        />
-        <ToggleRow
-          label="AI suggestions"
-          description="Show AI-powered next action suggestions"
-          defaultChecked
-        />
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <Button disabled size="sm">
-          Save
-        </Button>
-      </div>
-    </CardContent>
-  );
-}
-
 function SecurityTab() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -648,6 +533,7 @@ function SecurityTab() {
       <div>
         <SectionLabel>Two-factor authentication</SectionLabel>
         <ToggleRow
+          disabled
           label="Authenticator app"
           description="Require a verification code from an authenticator app at sign-in"
         />
@@ -711,7 +597,12 @@ function SecurityTab() {
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="shrink-0">
+              <Button
+                disabled
+                variant="destructive"
+                size="sm"
+                className="shrink-0"
+              >
                 <Trash2 className="h-4 w-4" />
                 Delete
               </Button>
@@ -773,7 +664,6 @@ export default function Settings() {
         {/* Tab content */}
         {activeTab === "profile" && <ProfileTab />}
         {activeTab === "notifications" && <NotificationsTab />}
-        {activeTab === "preferences" && <PreferencesTab />}
         {activeTab === "security" && <SecurityTab />}
         {activeTab === "integrations" && <IntegrationSettings />}
       </Card>
