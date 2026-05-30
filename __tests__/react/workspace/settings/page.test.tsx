@@ -41,10 +41,6 @@ vi.mock("@/app/components/scheduling/IntegrationSettings", () => ({
 }));
 
 import Settings from "@/app/workspace/settings/page";
-import {
-  getProductUpdatesPreference,
-  updateProductUpdatesPreference,
-} from "@/lib/user";
 
 // Returns query data keyed by queryKey so the profile and avatar queries can
 // resolve to their own shapes.

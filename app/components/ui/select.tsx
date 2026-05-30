@@ -76,7 +76,7 @@ function Select<T extends string = string>({
   const contentId = useStableId("select-content");
   const triggerId = useStableId("select-trigger");
 
-  const labels = React.useMemo(() => {
+  const labels = (() => {
     const map = new Map<string, React.ReactNode>();
     const walk = (node: React.ReactNode) => {
       React.Children.forEach(node, (child) => {
@@ -94,32 +94,20 @@ function Select<T extends string = string>({
     };
     walk(children);
     return map;
-  }, [children]);
+  })();
 
-  const ctxValue = React.useMemo<SelectContextValue>(
-    () => ({
-      open: !!isOpen,
-      setOpen: (v) => setOpenState(v),
-      value: currentValue,
-      setValue: (v) => setValueState(v as T),
-      triggerRef,
-      contentRef,
-      contentId,
-      triggerId,
-      disabled,
-      labels,
-    }),
-    [
-      isOpen,
-      currentValue,
-      contentId,
-      triggerId,
-      disabled,
-      labels,
-      setOpenState,
-      setValueState,
-    ]
-  );
+  const ctxValue: SelectContextValue = {
+    open: !!isOpen,
+    setOpen: (v) => setOpenState(v),
+    value: currentValue,
+    setValue: (v) => setValueState(v as T),
+    triggerRef,
+    contentRef,
+    contentId,
+    triggerId,
+    disabled,
+    labels,
+  };
 
   return (
     <SelectContext.Provider value={ctxValue}>
@@ -261,6 +249,8 @@ function SelectContent({
     sideOffset: 4,
     matchTriggerWidth: true,
   });
+  // Kept memoized: a merged ref callback must keep a stable identity, or React
+  // detaches/reattaches the ref every render.
   const setRefs = React.useMemo(
     () => composeRefs<HTMLDivElement>(setFloatingNode, contentRef, ref),
     [ref, contentRef]

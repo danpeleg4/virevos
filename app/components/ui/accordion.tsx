@@ -72,23 +72,20 @@ function Accordion(props: AccordionProps) {
     onChange: props.onValueChange as (v: string | string[]) => void,
   });
 
-  const toggle = React.useCallback(
-    (itemValue: string) => {
-      if (type === "single") {
-        const current = value as string | undefined;
-        const next =
-          current === itemValue ? (collapsible ? "" : current) : itemValue;
-        setValue(next ?? "");
-      } else {
-        const current = (value as string[]) ?? [];
-        const next = current.includes(itemValue)
-          ? current.filter((v) => v !== itemValue)
-          : [...current, itemValue];
-        setValue(next);
-      }
-    },
-    [type, collapsible, value, setValue]
-  );
+  const toggle = (itemValue: string) => {
+    if (type === "single") {
+      const current = value as string | undefined;
+      const next =
+        current === itemValue ? (collapsible ? "" : current) : itemValue;
+      setValue(next ?? "");
+    } else {
+      const current = (value as string[]) ?? [];
+      const next = current.includes(itemValue)
+        ? current.filter((v) => v !== itemValue)
+        : [...current, itemValue];
+      setValue(next);
+    }
+  };
 
   return (
     <AccordionContext.Provider

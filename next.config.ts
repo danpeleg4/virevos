@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 const nextConfig: NextConfig = {
+  reactCompiler: true,
   experimental: {
     serverActions: {
       bodySizeLimit: "5mb",
