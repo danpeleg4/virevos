@@ -1,5 +1,6 @@
 import {
   changeRecordingStatus,
+  changePassword,
   ensureUserRow,
   uploadAvatar,
   getAvatarUrl,
@@ -17,6 +18,7 @@ vi.mock("@/lib/supabase/auth", () => ({
 }));
 
 const mockUpdateUser = vi.fn();
+const mockSignInWithPassword = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabase: vi.fn(),
 }));
@@ -66,8 +68,12 @@ beforeEach(() => {
   });
   mockInsert.mockReturnValue({ values: mockInsertValues });
   mockUpdateUser.mockResolvedValue({ data: {}, error: null });
+  mockSignInWithPassword.mockResolvedValue({ data: {}, error: null });
   (createServerSupabase as Mock).mockResolvedValue({
-    auth: { updateUser: mockUpdateUser },
+    auth: {
+      updateUser: mockUpdateUser,
+      signInWithPassword: mockSignInWithPassword,
+    },
   });
 });
 
@@ -101,6 +107,80 @@ describe("changeRecordingStatus", () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockRejectedValueOnce(new Error("DB error"));
     await changeRecordingStatus(); // should not throw
+  });
+});
+
+// ─── changePassword ───────────────────────────────────────────────────────
+
+describe("changePassword", () => {
+  const authedUser = { id: "user_1", email: "jane@example.com" };
+
+  it("throws when unauthenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    await expect(
+      changePassword({ currentPassword: "oldpass12", newPassword: "newpass12" })
+    ).rejects.toThrow("No user");
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("throws when the account has no email", async () => {
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
+    await expect(
+      changePassword({ currentPassword: "oldpass12", newPassword: "newpass12" })
+    ).rejects.toThrow("Account has no email address");
+  });
+
+  it("rejects a new password shorter than 8 characters", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(authedUser);
+    await expect(
+      changePassword({ currentPassword: "oldpass12", newPassword: "short" })
+    ).rejects.toThrow("newPassword must be at least 8 characters");
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the new password equals the current one", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(authedUser);
+    await expect(
+      changePassword({ currentPassword: "samepass1", newPassword: "samepass1" })
+    ).rejects.toThrow("must be different from the current password");
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the current password is incorrect", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(authedUser);
+    mockSignInWithPassword.mockResolvedValueOnce({
+      data: {},
+      error: { message: "Invalid login credentials" },
+    });
+    await expect(
+      changePassword({ currentPassword: "wrongpass", newPassword: "newpass12" })
+    ).rejects.toThrow("Current password is incorrect");
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
+  it("verifies the current password then updates to the new one", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(authedUser);
+    await expect(
+      changePassword({ currentPassword: "oldpass12", newPassword: "newpass12" })
+    ).resolves.toEqual({ success: true });
+
+    expect(mockSignInWithPassword).toHaveBeenCalledWith({
+      email: "jane@example.com",
+      password: "oldpass12",
+    });
+    expect(mockUpdateUser).toHaveBeenCalledWith({ password: "newpass12" });
+  });
+
+  it("throws when the password update fails", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(authedUser);
+    mockUpdateUser.mockResolvedValueOnce({
+      data: {},
+      error: { message: "update boom" },
+    });
+    await expect(
+      changePassword({ currentPassword: "oldpass12", newPassword: "newpass12" })
+    ).rejects.toThrow("Failed to update password: update boom");
   });
 });
 

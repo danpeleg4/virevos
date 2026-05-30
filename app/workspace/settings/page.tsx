@@ -12,6 +12,7 @@ import {
   updateWeeklySummaryPreference,
   getProductUpdatesPreference,
   updateProductUpdatesPreference,
+  changePassword,
 } from "@/lib/user";
 import {
   DEFAULT_TIMEZONE,
@@ -485,6 +486,44 @@ function SecurityTab() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const MIN_PASSWORD_LENGTH = 8;
+
+  const changePasswordMutation = useMutation({
+    mutationFn: changePassword,
+    onMutate: () => setPasswordError(null),
+    onSuccess: () => {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (error: Error) => {
+      setPasswordError(error.message || "Couldn't update password.");
+    },
+  });
+
+  const passwordsMatch = newPassword === confirmPassword;
+  const canUpdatePassword =
+    !changePasswordMutation.isPending &&
+    currentPassword.length > 0 &&
+    newPassword.length >= MIN_PASSWORD_LENGTH &&
+    passwordsMatch;
+
+  const handleUpdatePassword = () => {
+    setPasswordError(null);
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setPasswordError(
+        `New password must be at least ${MIN_PASSWORD_LENGTH} characters.`
+      );
+      return;
+    }
+    if (!passwordsMatch) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
 
   const sessions = [
     {
@@ -541,9 +580,22 @@ function SecurityTab() {
             />
           </div>
         </div>
-        <div className="flex justify-end">
-          <Button disabled size="sm">
-            Update password
+        <div className="flex flex-col items-end gap-2">
+          {passwordError && (
+            <p className="text-xs text-destructive">{passwordError}</p>
+          )}
+          {changePasswordMutation.isSuccess && (
+            <p className="text-xs text-green-600">Password updated.</p>
+          )}
+          <Button
+            onClick={handleUpdatePassword}
+            disabled={!canUpdatePassword}
+            size="sm"
+          >
+            {changePasswordMutation.isPending && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
+            {changePasswordMutation.isPending ? "Updating…" : "Update password"}
           </Button>
         </div>
       </div>

@@ -22,6 +22,7 @@ vi.mock("@tanstack/react-query", () => ({
 vi.mock("@/lib/user", () => ({
   getAvatarUrl: vi.fn(),
   uploadAvatar: vi.fn(),
+  changePassword: vi.fn(),
   getUserProfile: vi.fn(),
   updateProfile: vi.fn(),
   getWeeklySummaryPreference: vi.fn(),

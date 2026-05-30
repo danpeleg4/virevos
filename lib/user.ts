@@ -19,9 +19,12 @@ import {
   DEFAULT_TIMEZONE,
   type UserProfile,
   type UpdateProfileInput,
+  type ChangePasswordInput,
 } from "./user_profile";
 
 const MAX_BIO = 280;
+const MIN_PASSWORD = 8;
+const MAX_PASSWORD = 200;
 
 const AVATAR_BUCKET = "users";
 const ALLOWED_AVATAR_TYPES = [
@@ -264,6 +267,62 @@ export async function updateProfile(
     bio: bio ?? "",
     timezone: timezone ?? DEFAULT_TIMEZONE,
   };
+}
+
+/**
+ * Changes the current user's password. The caller must supply their current
+ * password, which is re-verified against Supabase auth before the new password
+ * is set — this prevents a hijacked but unprivileged session from silently
+ * locking out the real owner.
+ */
+export async function changePassword(
+  input: ChangePasswordInput
+): Promise<{ success: true }> {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new Error("No user");
+  if (!user.email) throw new Error("Account has no email address");
+
+  const currentPassword = requireString(
+    input.currentPassword,
+    "currentPassword",
+    MAX_PASSWORD
+  );
+  const newPassword = requireString(
+    input.newPassword,
+    "newPassword",
+    MAX_PASSWORD
+  );
+
+  if (newPassword.length < MIN_PASSWORD) {
+    throw new ValidationError(
+      `newPassword must be at least ${MIN_PASSWORD} characters`
+    );
+  }
+  if (newPassword === currentPassword) {
+    throw new ValidationError(
+      "newPassword must be different from the current password"
+    );
+  }
+
+  const supabase = await createServerSupabase();
+
+  // Re-authenticate to confirm the supplied current password is correct.
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (verifyError) {
+    throw new ValidationError("Current password is incorrect");
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+  if (updateError) {
+    throw new Error(`Failed to update password: ${updateError.message}`);
+  }
+
+  return { success: true };
 }
 
 export async function ensureUserRow() {
