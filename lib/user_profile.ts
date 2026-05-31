@@ -29,3 +29,8 @@ export interface UpdateProfileInput {
   bio?: string;
   timezone?: string;
 }
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}

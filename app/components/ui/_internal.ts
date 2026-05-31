@@ -18,13 +18,10 @@ export function useControllableState<T>({
   const isControlled = value !== undefined;
   const current = isControlled ? value : internal;
 
-  const set = React.useCallback(
-    (next: T) => {
-      if (!isControlled) setInternal(next);
-      onChange?.(next);
-    },
-    [isControlled, onChange]
-  );
+  const set = (next: T) => {
+    if (!isControlled) setInternal(next);
+    onChange?.(next);
+  };
 
   return [current, set];
 }
@@ -169,6 +166,8 @@ export function useFloating({
 }) {
   const [position, setPosition] = React.useState<FloatingPosition | null>(null);
 
+  // Kept memoized: this is a layout-effect dependency and a scroll/resize
+  // listener, so its identity must stay stable across renders.
   const update = React.useCallback(() => {
     const t = triggerRef.current;
     if (!t || !floatingNode) return;

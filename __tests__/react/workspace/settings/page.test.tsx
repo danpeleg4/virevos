@@ -22,6 +22,7 @@ vi.mock("@tanstack/react-query", () => ({
 vi.mock("@/lib/user", () => ({
   getAvatarUrl: vi.fn(),
   uploadAvatar: vi.fn(),
+  changePassword: vi.fn(),
   getUserProfile: vi.fn(),
   updateProfile: vi.fn(),
   getWeeklySummaryPreference: vi.fn(),
@@ -41,10 +42,6 @@ vi.mock("@/app/components/scheduling/IntegrationSettings", () => ({
 }));
 
 import Settings from "@/app/workspace/settings/page";
-import {
-  getProductUpdatesPreference,
-  updateProductUpdatesPreference,
-} from "@/lib/user";
 
 // Returns query data keyed by queryKey so the profile and avatar queries can
 // resolve to their own shapes.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -70,7 +70,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     return data.connected;
   };
 
-  const checkConnection = useCallback(async () => {
+  const checkConnection = async () => {
     try {
       const { data } = await axios.get("/api/integrations/google");
       const outlookData = await checkOutlookConnection();
@@ -78,9 +78,9 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     } catch {
       setIsConnected(false);
     }
-  }, []);
+  };
 
-  const fetchScheduledEmails = useCallback(async () => {
+  const fetchScheduledEmails = async () => {
     setIsLoading(true);
     try {
       const { data } = await axios.get("/api/scheduled-emails");
@@ -90,12 +90,15 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
+    // Run once on mount; both helpers only read constants and write stable
+    // setState, so they intentionally have no reactive dependencies.
     void checkConnection();
     void fetchScheduledEmails();
-  }, [checkConnection, fetchScheduledEmails]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

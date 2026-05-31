@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useInfiniteQuery,
   useQuery,
@@ -148,10 +148,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  const emailsQueryKey = useMemo(
-    () => ["emails", debouncedSearch, filterStatus] as const,
-    [debouncedSearch, filterStatus]
-  );
+  const emailsQueryKey = ["emails", debouncedSearch, filterStatus] as const;
 
   const {
     data,
@@ -190,7 +187,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     refetchInterval: 5000,
   });
 
-  const portalChatRows: InboxMessage[] = useMemo(() => {
+  const portalChatRows: InboxMessage[] = (() => {
     const convos = portalChatsData?.conversations ?? [];
     const rows = convos
       .filter((c) => c.lastMessage !== null)
@@ -227,34 +224,26 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     if (filterStatus === "starred") return visible.filter((r) => r.starred);
     if (filterStatus === "sent") return [];
     return visible;
-  }, [portalChatsData, filterStatus]);
+  })();
 
-  const allMessages = useMemo(() => {
-    const emails = data?.pages.flatMap((p) => p.messages) ?? [];
-    const merged = [...portalChatRows, ...emails];
-    return merged.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-  }, [data, portalChatRows]);
-
-  // Intersection observer to load next page when sentinel is visible
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-        void fetchNextPage();
-      }
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage]
+  const emails = data?.pages.flatMap((p) => p.messages) ?? [];
+  const allMessages = [...portalChatRows, ...emails].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
+  // Intersection observer to load next page when sentinel is visible
   useEffect(() => {
-    const observer = new IntersectionObserver(handleObserver, {
-      threshold: 0.1,
-    });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
     if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [handleObserver]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {
     // Run the connection check once on mount; checkConnection only writes
@@ -278,45 +267,42 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
   };
 
-  const updateMessageInCache = useCallback(
-    (id: string, updater: (msg: InboxMessage) => InboxMessage) => {
-      queryClient.setQueryData<{ pages: EmailsPage[]; pageParams: unknown[] }>(
-        emailsQueryKey,
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              messages: page.messages.map((msg) =>
-                msg.id === id ? updater(msg) : msg
-              ),
-            })),
-          };
-        }
-      );
-    },
-    [queryClient, emailsQueryKey]
-  );
+  const updateMessageInCache = (
+    id: string,
+    updater: (msg: InboxMessage) => InboxMessage
+  ) => {
+    queryClient.setQueryData<{ pages: EmailsPage[]; pageParams: unknown[] }>(
+      emailsQueryKey,
+      (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            messages: page.messages.map((msg) =>
+              msg.id === id ? updater(msg) : msg
+            ),
+          })),
+        };
+      }
+    );
+  };
 
-  const removeMessageFromCache = useCallback(
-    (id: string) => {
-      queryClient.setQueryData<{ pages: EmailsPage[]; pageParams: unknown[] }>(
-        emailsQueryKey,
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              messages: page.messages.filter((msg) => msg.id !== id),
-            })),
-          };
-        }
-      );
-    },
-    [queryClient, emailsQueryKey]
-  );
+  const removeMessageFromCache = (id: string) => {
+    queryClient.setQueryData<{ pages: EmailsPage[]; pageParams: unknown[] }>(
+      emailsQueryKey,
+      (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            messages: page.messages.filter((msg) => msg.id !== id),
+          })),
+        };
+      }
+    );
+  };
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -335,25 +321,22 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     return filterType === "all" || msg.type === filterType;
   });
 
-  const updateChatConvoInCache = useCallback(
-    (
-      clientId: number,
-      updater: (c: PortalChatConversation) => PortalChatConversation
-    ) => {
-      queryClient.setQueryData<{ conversations: PortalChatConversation[] }>(
-        ["portal-chat-conversations"],
-        (old) => {
-          if (!old) return old;
-          return {
-            conversations: old.conversations.map((c) =>
-              c.clientId === clientId ? updater(c) : c
-            ),
-          };
-        }
-      );
-    },
-    [queryClient]
-  );
+  const updateChatConvoInCache = (
+    clientId: number,
+    updater: (c: PortalChatConversation) => PortalChatConversation
+  ) => {
+    queryClient.setQueryData<{ conversations: PortalChatConversation[] }>(
+      ["portal-chat-conversations"],
+      (old) => {
+        if (!old) return old;
+        return {
+          conversations: old.conversations.map((c) =>
+            c.clientId === clientId ? updater(c) : c
+          ),
+        };
+      }
+    );
+  };
 
   const applyAction = async (id: string, action: string) => {
     if (id.startsWith("portal-chat-")) {

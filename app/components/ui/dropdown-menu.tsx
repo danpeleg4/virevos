@@ -165,6 +165,8 @@ function DropdownMenuContent({
     sideOffset,
     alignOffset,
   });
+  // Kept memoized: a merged ref callback must keep a stable identity, or React
+  // detaches/reattaches the ref every render.
   const setRefs = React.useMemo(
     () => composeRefs<HTMLDivElement>(setFloatingNode, contentRef, ref),
     [ref, contentRef]
