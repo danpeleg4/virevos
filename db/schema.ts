@@ -23,7 +23,6 @@ export const users = pgTable("users", {
   jobTitle: text("job_title"),
   company: text("company"),
   bio: text("bio"),
-  timezone: text("timezone"),
   ai_credits: integer("ai_credits").notNull().default(0),
   storage: bigint("storage", { mode: "number" }).notNull().default(0),
   recordingStatus: boolean("recordingStatus").notNull().default(true),

@@ -78,6 +78,13 @@
       "when": 1780005901010,
       "tag": "0010_rare_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1780193551999,
+      "tag": "0011_slow_pride",
+      "breakpoints": true
     }
   ]
 }

@@ -26,42 +26,12 @@ import { Separator } from "../../components/ui/separator";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Badge } from "../../components/ui/badge";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "../../components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../../components/ui/alert-dialog";
-import {
-  Bell,
-  Palette,
-  Plug,
-  User,
-  Shield,
-  Monitor,
-  Smartphone,
-  Trash2,
-  Upload,
-  Loader2,
-} from "lucide-react";
+import { Bell, Plug, User, Shield, Upload, Loader2 } from "lucide-react";
 import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSettings";
 
 const TABS = [
@@ -133,7 +103,6 @@ function ProfileTab() {
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [bio, setBio] = useState("");
-  const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -165,7 +134,6 @@ function ProfileTab() {
         profile.jobTitle,
         profile.company,
         profile.bio,
-        profile.timezone,
       ])
     : undefined;
   if (signature !== undefined && signature !== seededSig && profile) {
@@ -175,7 +143,6 @@ function ProfileTab() {
     setJobTitle(profile.jobTitle);
     setCompany(profile.company);
     setBio(profile.bio);
-    setTimezone(profile.timezone);
   }
 
   const saveMutation = useMutation({
@@ -191,7 +158,6 @@ function ProfileTab() {
           jobTitle: "",
           company: "",
           bio: "",
-          timezone,
         };
         return {
           ...base,
@@ -199,7 +165,6 @@ function ProfileTab() {
           jobTitle: input.jobTitle ?? base.jobTitle,
           company: input.company ?? base.company,
           bio: input.bio ?? base.bio,
-          timezone: input.timezone ?? base.timezone,
         };
       });
       return { previous };
@@ -221,8 +186,7 @@ function ProfileTab() {
     trimmedName !== (profile?.name ?? "") ||
     jobTitle !== (profile?.jobTitle ?? "") ||
     company !== (profile?.company ?? "") ||
-    bio !== (profile?.bio ?? "") ||
-    timezone !== (profile?.timezone ?? DEFAULT_TIMEZONE);
+    bio !== (profile?.bio ?? "");
   const canSave = !saveMutation.isPending && trimmedName.length > 0 && isDirty;
 
   const handleSave = () =>
@@ -231,7 +195,6 @@ function ProfileTab() {
       jobTitle,
       company,
       bio,
-      timezone,
     });
 
   const uploadMutation = useMutation({
@@ -364,26 +327,6 @@ function ProfileTab() {
           <p className="text-xs text-muted-foreground">
             {bio.length}/280 characters
           </p>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="timezone">Timezone</Label>
-          <Select value={timezone} onValueChange={setTimezone}>
-            <SelectTrigger id="timezone">
-              <SelectValue placeholder="Select timezone" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="America/New_York">
-                Eastern Time (ET)
-              </SelectItem>
-              <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-              <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-              <SelectItem value="America/Los_Angeles">
-                Pacific Time (PT)
-              </SelectItem>
-              <SelectItem value="Europe/London">London (GMT)</SelectItem>
-              <SelectItem value="Asia/Jerusalem">Jerusalem (IST)</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
