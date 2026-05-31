@@ -204,7 +204,6 @@ export async function getUserProfile(): Promise<UserProfile> {
     jobTitle: "",
     company: "",
     bio: "",
-    timezone: DEFAULT_TIMEZONE,
   };
   if (!user?.id) return empty;
 
@@ -215,7 +214,6 @@ export async function getUserProfile(): Promise<UserProfile> {
       jobTitle: users.jobTitle,
       company: users.company,
       bio: users.bio,
-      timezone: users.timezone,
     })
     .from(users)
     .where(eq(users.user_id, user.id));
@@ -226,7 +224,6 @@ export async function getUserProfile(): Promise<UserProfile> {
     jobTitle: row?.jobTitle ?? "",
     company: row?.company ?? "",
     bio: row?.bio ?? "",
-    timezone: row?.timezone ?? DEFAULT_TIMEZONE,
   };
 }
 
@@ -246,13 +243,10 @@ export async function updateProfile(
     optionalString(input.jobTitle, "jobTitle", MAX_SHORT) ?? null;
   const company = optionalString(input.company, "company", MAX_SHORT) ?? null;
   const bio = optionalString(input.bio, "bio", MAX_BIO) ?? null;
-  const timezone = input.timezone
-    ? requireOneOf(input.timezone, "timezone", PROFILE_TIMEZONES)
-    : null;
 
   await db
     .update(users)
-    .set({ name, jobTitle, company, bio, timezone })
+    .set({ name, jobTitle, company, bio })
     .where(eq(users.user_id, user.id));
 
   const supabase = await createServerSupabase();
@@ -265,7 +259,6 @@ export async function updateProfile(
     jobTitle: jobTitle ?? "",
     company: company ?? "",
     bio: bio ?? "",
-    timezone: timezone ?? DEFAULT_TIMEZONE,
   };
 }
 

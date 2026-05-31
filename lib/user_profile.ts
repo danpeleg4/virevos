@@ -19,7 +19,6 @@ export interface UserProfile {
   jobTitle: string;
   company: string;
   bio: string;
-  timezone: string;
 }
 
 export interface UpdateProfileInput {
