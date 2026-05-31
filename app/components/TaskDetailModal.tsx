@@ -33,10 +33,6 @@ const STATUS_CONFIG = {
     label: "In Progress",
     className: "bg-blue-100 text-blue-700 border-blue-200",
   },
-  todo: {
-    label: "To Do",
-    className: "bg-muted text-muted-foreground border-border",
-  },
 } as const;
 
 const PRIORITY_CONFIG = {
@@ -243,7 +239,8 @@ export function TaskDetailModal({
   }
 
   const statusConfig =
-    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.todo;
+    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ??
+    STATUS_CONFIG["in-progress"];
   const priorityConfig =
     PRIORITY_CONFIG[priority as keyof typeof PRIORITY_CONFIG];
 
@@ -322,7 +319,6 @@ export function TaskDetailModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
                   <SelectItem value="in-progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>

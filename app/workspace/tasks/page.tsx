@@ -465,11 +465,13 @@ export default function Tasks() {
       </div>
 
       {/* Task Detail Modal */}
-      <TaskDetailModal
-        task={selectedTask!}
-        open={taskDetailOpen}
-        onOpenChange={setTaskDetailOpen}
-      />
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          open={taskDetailOpen}
+          onOpenChange={setTaskDetailOpen}
+        />
+      )}
     </div>
   );
 }

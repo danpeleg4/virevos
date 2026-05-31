@@ -525,25 +525,6 @@ function SecurityTab() {
     changePasswordMutation.mutate({ currentPassword, newPassword });
   };
 
-  const sessions = [
-    {
-      id: "current",
-      device: "MacBook Pro · Chrome",
-      location: "New York, US",
-      lastActive: "Active now",
-      icon: Monitor,
-      current: true,
-    },
-    {
-      id: "iphone",
-      device: "iPhone 15 · Safari",
-      location: "New York, US",
-      lastActive: "2 hours ago",
-      icon: Smartphone,
-      current: false,
-    },
-  ];
-
   return (
     <CardContent className="pt-6 space-y-6 max-w-2xl">
       <div className="space-y-4">
@@ -597,102 +578,6 @@ function SecurityTab() {
             )}
             {changePasswordMutation.isPending ? "Updating…" : "Update password"}
           </Button>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div>
-        <SectionLabel>Two-factor authentication</SectionLabel>
-        <ToggleRow
-          disabled
-          label="Authenticator app"
-          description="Require a verification code from an authenticator app at sign-in"
-        />
-      </div>
-
-      <Separator />
-
-      <div>
-        <SectionLabel>Active sessions</SectionLabel>
-        <div className="space-y-3">
-          {sessions.map((session) => {
-            const Icon = session.icon;
-            return (
-              <div
-                key={session.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border p-3"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="rounded-md bg-muted p-2">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {session.device}
-                      </p>
-                      {session.current && (
-                        <Badge className="bg-green-100 text-green-700">
-                          Current
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {session.location} · {session.lastActive}
-                    </p>
-                  </div>
-                </div>
-                {!session.current && (
-                  <Button variant="outline" size="sm" disabled>
-                    Revoke
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <Separator />
-
-      <div>
-        <SectionLabel>Danger zone</SectionLabel>
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-destructive/30 p-4">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">
-              Delete account
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Permanently remove your account and all associated data.
-            </p>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                disabled
-                variant="destructive"
-                size="sm"
-                className="shrink-0"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete
-                  your account and remove all of your data from our servers.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction disabled>Delete account</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </div>
     </CardContent>
