@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -41,17 +41,15 @@ import {
   deleteScheduledEmail,
 } from "@/lib/scheduled_emails";
 import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface ScheduledMessagesProps {
   navContainer: HTMLDivElement | null;
 }
 
 export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
-  const [messages, setMessages] = useState<ScheduledEmail[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "sent" | "failed"
@@ -65,40 +63,32 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [formDate, setFormDate] = useState("");
   const [formTime, setFormTime] = useState("09:00");
 
-  const checkOutlookConnection = async () => {
-    const { data } = await axios.get("/api/integrations/outlook");
-    return data.connected;
-  };
+  const queryClient = useQueryClient();
 
-  const checkConnection = async () => {
-    try {
-      const { data } = await axios.get("/api/integrations/google");
-      const outlookData = await checkOutlookConnection();
-      setIsConnected(data.connected === true || outlookData);
-    } catch {
-      setIsConnected(false);
-    }
-  };
+  const { data: connected } = useQuery({
+    queryKey: ["email-connection"],
+    queryFn: async () => {
+      const res = await axios.get("/api/integrations/outlook");
+      return res.data.connected;
+    },
+  });
 
-  const fetchScheduledEmails = async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await axios.get("/api/scheduled-emails");
-      setMessages(data.scheduledEmails || []);
-    } catch (err) {
-      console.error("Failed to fetch scheduled emails:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: messages, isPending: isPending } = useQuery<ScheduledEmail[]>({
+    queryKey: ["scheduled-emails"],
+    queryFn: async () => {
+      const res = await axios.get("/api/scheduled-emails");
+      return res.data.scheduledEmails || [];
+    },
+  });
 
-  useEffect(() => {
-    // Run once on mount; both helpers only read constants and write stable
-    // setState, so they intentionally have no reactive dependencies.
-    void checkConnection();
-    void fetchScheduledEmails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const deleteScheduledEmailMessage = useMutation({
+    mutationFn: async (id: number) => {
+      await deleteScheduledEmail(id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+    },
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -132,16 +122,6 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     }
   };
 
-  const deleteMessage = async (id: number) => {
-    try {
-      await deleteScheduledEmail(id);
-      setMessages((prev) => prev.filter((m) => m.id !== id));
-      toast.success("Scheduled message cancelled");
-    } catch {
-      toast.error("Failed to cancel message");
-    }
-  };
-
   const sendNow = async (msg: ScheduledEmail) => {
     try {
       await sendOutlookEmail({
@@ -152,7 +132,6 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         bodyText: msg.bodyText ?? undefined,
       });
       await deleteScheduledEmail(msg.id);
-      setMessages((prev) => prev.filter((m) => m.id !== msg.id));
       toast.success("Message sent successfully");
     } catch {
       toast.error("Failed to send message");
@@ -187,7 +166,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         setFormBody("");
         setFormDate("");
         setFormTime("09:00");
-        await fetchScheduledEmails();
+        //await fetchScheduledEmails();
       }
     } catch {
       toast.error("Failed to schedule message");
@@ -196,7 +175,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     }
   };
 
-  const filteredMessages = messages.filter((msg) => {
+  const filteredMessages = messages?.filter((msg) => {
     const matchesSearch =
       searchQuery === "" ||
       msg.toEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -207,7 +186,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     return matchesSearch && matchesStatus;
   });
 
-  if (isConnected === false) {
+  if (connected === false) {
     return (
       <div className="py-24 text-center">
         <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
@@ -373,24 +352,24 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     <div className="overflow-y-auto h-full p-4 sm:p-6">
       {navContainer && createPortal(navActions, navContainer)}
 
-      {isLoading ? (
+      {isPending ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : filteredMessages.length === 0 ? (
+      ) : filteredMessages?.length === 0 ? (
         <div className="py-24 text-center">
           <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">
-            {messages.length === 0
+            {messages?.length === 0
               ? "No scheduled messages"
               : "No messages match your filters"}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            {messages.length === 0
+            {messages?.length === 0
               ? "Schedule messages to be sent at the perfect time"
               : "Try adjusting your search or filter"}
           </p>
-          {messages.length === 0 && (
+          {messages?.length === 0 && (
             <Button className="mt-4" onClick={() => setIsCreating(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Schedule Your First Message
@@ -399,7 +378,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredMessages.map((message, index) => (
+          {filteredMessages?.map((message, index) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 10 }}
@@ -476,7 +455,9 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => deleteMessage(message.id)}
+                        onClick={() =>
+                          deleteScheduledEmailMessage.mutate(message.id)
+                        }
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
