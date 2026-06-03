@@ -156,7 +156,6 @@ describe("Settings Page", () => {
       jobTitle: "Attorney",
       company: "",
       bio: "",
-      timezone: "America/New_York",
     });
   });
 
