@@ -8,13 +8,9 @@ import {
   Bot,
   BarChart3,
   Sparkles,
-  ArrowRight,
   CheckCircle2,
-  Play,
   Video,
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
 
 const features = [
   {
@@ -92,8 +88,6 @@ const features = [
 ];
 
 export default function Features() {
-  const router = useRouter();
-
   return (
     <section className="relative bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

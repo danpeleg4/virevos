@@ -39,8 +39,8 @@ const mockUpdate = vi.fn(() => ({ set: mockSet }));
 
 vi.mock("@db/db", () => ({
   db: {
-    select: (...args: never[]) => mockSelect.apply(null, args),
-    update: (...args: never[]) => mockUpdate.apply(null, args),
+    select: (...args: never[]) => mockSelect(...args),
+    update: (...args: never[]) => mockUpdate(...args),
   },
 }));
 

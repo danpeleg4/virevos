@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import unusedImports from "eslint-plugin-unused-imports";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -8,16 +9,24 @@ const eslintConfig = defineConfig([
   {
     settings: {
       next: {
-        rootDir: "web/",
+        rootDir: "/",
       },
     },
+    plugins: {
+      "unused-imports": unusedImports,
+    },
     rules: {
-      "@next/next/no-html-link-for-pages": ["error", "web/app"],
-      "@typescript-eslint/no-unused-vars": [
+      "@next/next/no-html-link-for-pages": ["error", "app"],
+      // Disable the base rule so it doesn't double-report alongside unused-imports.
+      "@typescript-eslint/no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
         "warn",
         {
-          argsIgnorePattern: "^_",
+          vars: "all",
           varsIgnorePattern: "^_",
+          args: "after-used",
+          argsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
           ignoreRestSiblings: true,
         },
@@ -27,10 +36,10 @@ const eslintConfig = defineConfig([
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
-    "web/.next/**",
-    "web/out/**",
-    "web/build/**",
-    "web/next-env.d.ts",
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
     "**/node_modules/**",
   ]),
 ]);

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useTheme } from "next-themes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getAvatarUrl,
@@ -15,7 +14,6 @@ import {
   changePassword,
 } from "@/lib/user";
 import {
-  DEFAULT_TIMEZONE,
   type UserProfile,
   type UpdateProfileInput,
 } from "@/lib/user_profile";
