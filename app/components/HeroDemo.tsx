@@ -343,7 +343,7 @@ export function HeroDemo() {
               key={s.id}
               type="button"
               onClick={() => selectScenario(s.id)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                 s.id === activeId
                   ? "border-blue-600 bg-blue-600 text-white"
                   : "border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:text-blue-700"
