@@ -20,14 +20,10 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("@/lib/user", () => ({
-  getAvatarUrl: vi.fn(),
   uploadAvatar: vi.fn(),
   changePassword: vi.fn(),
-  getUserProfile: vi.fn(),
   updateProfile: vi.fn(),
-  getWeeklySummaryPreference: vi.fn(),
   updateWeeklySummaryPreference: vi.fn(),
-  getProductUpdatesPreference: vi.fn(),
   updateProductUpdatesPreference: vi.fn(),
 }));
 
@@ -156,7 +152,6 @@ describe("Settings Page", () => {
       jobTitle: "Attorney",
       company: "",
       bio: "",
-      timezone: "America/New_York",
     });
   });
 

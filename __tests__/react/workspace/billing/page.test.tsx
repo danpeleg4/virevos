@@ -28,7 +28,6 @@ vi.mock("@/lib/workspace/billing", () => ({
   cancelSubscription: vi.fn(),
   resubscribe: vi.fn(),
   updatePaymentMethod: vi.fn(),
-  createSetupIntent: vi.fn(),
 }));
 
 const mockBillingData = {

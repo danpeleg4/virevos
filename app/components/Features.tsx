@@ -8,13 +8,9 @@ import {
   Bot,
   BarChart3,
   Sparkles,
-  ArrowRight,
   CheckCircle2,
-  Play,
   Video,
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
 
 const features = [
   {
@@ -92,8 +88,6 @@ const features = [
 ];
 
 export default function Features() {
-  const router = useRouter();
-
   return (
     <section className="relative bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -182,24 +176,7 @@ export default function Features() {
           viewport={{ once: true }}
           className="mt-20 text-center"
         >
-          <div className="inline-flex flex-col sm:flex-row items-center gap-4">
-            <Button
-              size="lg"
-              onClick={() => router.push("#")}
-              className="bg-gray-900 hover:bg-gray-800 py-6 text-lg text-white px-8 rounded-xl"
-            >
-              Explore all features
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg rounded-xl group"
-            >
-              <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-              Watch demo
-            </Button>
-          </div>
+          <div className="inline-flex flex-col sm:flex-row items-center gap-4"></div>
         </motion.div>
       </div>
     </section>

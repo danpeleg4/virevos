@@ -278,7 +278,7 @@ export default function Tasks() {
                       setSortDir(dir);
                       setCurrentPage(1);
                     }}
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between cursor-pointer"
                   >
                     {label}
                     {sortField === field && sortDir === dir && (
@@ -313,7 +313,7 @@ export default function Tasks() {
                       setPriorityFilter(value);
                       setCurrentPage(1);
                     }}
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between cursor-pointer"
                   >
                     {label}
                     {priorityFilter === value && (

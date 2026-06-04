@@ -374,7 +374,6 @@ describe("getUserProfile", () => {
     jobTitle: "",
     company: "",
     bio: "",
-    timezone: "America/New_York",
   };
 
   it("returns empty fields when unauthenticated", async () => {
@@ -391,7 +390,6 @@ describe("getUserProfile", () => {
         jobTitle: "Attorney",
         company: "Virevos LLC",
         bio: "Hello",
-        timezone: "Europe/London",
       },
     ]);
     await expect(getUserProfile()).resolves.toEqual({
@@ -400,7 +398,6 @@ describe("getUserProfile", () => {
       jobTitle: "Attorney",
       company: "Virevos LLC",
       bio: "Hello",
-      timezone: "Europe/London",
     });
   });
 
@@ -417,7 +414,6 @@ describe("getUserProfile", () => {
         jobTitle: null,
         company: null,
         bio: null,
-        timezone: null,
       },
     ]);
     await expect(getUserProfile()).resolves.toEqual({
@@ -426,7 +422,6 @@ describe("getUserProfile", () => {
       jobTitle: "",
       company: "",
       bio: "",
-      timezone: "America/New_York",
     });
   });
 });
@@ -447,14 +442,6 @@ describe("updateProfile", () => {
     expect(mockSet).not.toHaveBeenCalled();
   });
 
-  it("rejects an invalid timezone", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    await expect(
-      updateProfile({ name: "Jane", timezone: "Mars/Olympus" })
-    ).rejects.toThrow("timezone must be one of");
-    expect(mockSet).not.toHaveBeenCalled();
-  });
-
   it("trims, persists all fields, and mirrors the name to auth metadata", async () => {
     (getCurrentUser as Mock).mockResolvedValue({
       id: "user_1",
@@ -466,7 +453,6 @@ describe("updateProfile", () => {
       jobTitle: "Attorney",
       company: "Virevos LLC",
       bio: "Hi there",
-      timezone: "Europe/London",
     });
 
     expect(mockSet).toHaveBeenCalledWith({
@@ -474,7 +460,6 @@ describe("updateProfile", () => {
       jobTitle: "Attorney",
       company: "Virevos LLC",
       bio: "Hi there",
-      timezone: "Europe/London",
     });
     expect(mockUpdateUser).toHaveBeenCalledWith({ data: { name: "Jane Doe" } });
     expect(result).toEqual({
@@ -483,7 +468,6 @@ describe("updateProfile", () => {
       jobTitle: "Attorney",
       company: "Virevos LLC",
       bio: "Hi there",
-      timezone: "Europe/London",
     });
   });
 
@@ -497,7 +481,6 @@ describe("updateProfile", () => {
       jobTitle: null,
       company: null,
       bio: null,
-      timezone: null,
     });
   });
 

@@ -32,7 +32,6 @@ import { AIAssistant } from "./AIAssistant";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuthUser } from "@/app/hooks/useAuthUser";
 import { createBrowserSupabase } from "@/lib/supabase/client";
-import { getAvatarUrl } from "@/lib/user";
 import {
   Avatar,
   AvatarFallback,
@@ -82,9 +81,9 @@ function SidebarContent({
   onSignOut,
   onClose,
 }: SidebarContentProps) {
-  const { data: avatarData } = useQuery({
+  const { data: avatarData } = useQuery<{ url: string | null }>({
     queryKey: ["avatarUrl"],
-    queryFn: getAvatarUrl,
+    queryFn: () => axios.get("/api/user/avatar").then((r) => r.data),
   });
   const avatarUrl = avatarData?.url ?? undefined;
   return (

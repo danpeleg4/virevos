@@ -10,13 +10,10 @@ import {
   ValidationError,
   requireString,
   optionalString,
-  requireOneOf,
   MAX_NAME,
   MAX_SHORT,
 } from "./util/validation";
 import {
-  PROFILE_TIMEZONES,
-  DEFAULT_TIMEZONE,
   type UserProfile,
   type UpdateProfileInput,
   type ChangePasswordInput,

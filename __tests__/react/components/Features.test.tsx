@@ -35,16 +35,4 @@ describe("Features", () => {
   it("renders 'AI Consultations' feature", () => {
     expect(screen.getByText(/ai consultations/i)).toBeInTheDocument();
   });
-
-  it("renders 'Explore all features' CTA", () => {
-    expect(
-      screen.getByRole("button", { name: /explore all features/i })
-    ).toBeInTheDocument();
-  });
-
-  it("renders 'Watch demo' CTA", () => {
-    expect(
-      screen.getByRole("button", { name: /watch demo/i })
-    ).toBeInTheDocument();
-  });
 });

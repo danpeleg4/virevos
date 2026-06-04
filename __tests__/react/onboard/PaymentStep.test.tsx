@@ -32,7 +32,6 @@ vi.mock("@/lib/workspace/billing", () => ({
   registerFreePlan: vi.fn(),
   changePlan: vi.fn(),
   cancelSubscription: vi.fn(),
-  createSetupIntent: vi.fn(),
 }));
 
 import PaymentStep from "@/app/onboard/PaymentStep";

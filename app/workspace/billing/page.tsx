@@ -58,7 +58,6 @@ import {
   cancelSubscription,
   resubscribe,
   updatePaymentMethod,
-  createSetupIntent,
 } from "@/lib/workspace/billing";
 
 const stripePromise = loadStripe(
@@ -233,7 +232,8 @@ export default function Billing() {
 
   const { data: setupSecret } = useQuery<string>({
     queryKey: ["setup-intent-billing"],
-    queryFn: createSetupIntent,
+    queryFn: () =>
+      axios.get("/api/billing/setup-intent").then((r) => r.data.clientSecret),
     enabled: paymentMethodOpen,
     staleTime: Infinity,
   });

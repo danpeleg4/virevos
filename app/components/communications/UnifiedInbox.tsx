@@ -112,7 +112,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [replyText, setReplyText] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<AttachedFile[]>(
     []
@@ -130,6 +129,14 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     size: number;
     contentType: string;
   }
+
+  const { data: connected } = useQuery({
+    queryKey: ["email-connection"],
+    queryFn: async () => {
+      const res = await axios.get("/api/integrations/outlook");
+      return res.data.connected;
+    },
+  });
 
   const { data: attachmentsData } = useQuery<OutlookAttachmentMeta[]>({
     queryKey: ["outlook-attachments", selectedMessage?.id],
@@ -244,28 +251,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  useEffect(() => {
-    // Run the connection check once on mount; checkConnection only writes
-    // stable setState, so it intentionally has no reactive dependencies.
-    void checkConnection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const checkOutlookConnection = async () => {
-    const { data } = await axios.get("/api/integrations/outlook");
-    return data.connected;
-  };
-
-  const checkConnection = async () => {
-    try {
-      const { data } = await axios.get("/api/integrations/google");
-      const outlookData = await checkOutlookConnection();
-      setIsConnected(data.connected === true || outlookData);
-    } catch {
-      setIsConnected(false);
-    }
-  };
 
   const updateMessageInCache = (
     id: string,
@@ -529,7 +514,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
   };
 
-  if (isConnected === false) {
+  if (connected === false) {
     return (
       <div className="py-24 text-center">
         <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
