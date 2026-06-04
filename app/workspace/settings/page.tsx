@@ -1,15 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  getAvatarUrl,
   uploadAvatar,
-  getUserProfile,
   updateProfile,
-  getWeeklySummaryPreference,
   updateWeeklySummaryPreference,
-  getProductUpdatesPreference,
   updateProductUpdatesPreference,
   changePassword,
 } from "@/lib/user";
@@ -107,15 +104,15 @@ function ProfileTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const { data: avatarData } = useQuery({
+  const { data: avatarData } = useQuery<{ url: string | null }>({
     queryKey: ["avatarUrl"],
-    queryFn: getAvatarUrl,
+    queryFn: () => axios.get("/api/user/avatar").then((r) => r.data),
   });
   const avatarUrl = avatarData?.url ?? undefined;
 
   const { data: profile } = useQuery<UserProfile>({
     queryKey: ["userProfile"],
-    queryFn: getUserProfile,
+    queryFn: () => axios.get("/api/user/profile").then((r) => r.data),
   });
 
   // Seed the editable fields from the loaded profile, re-seeding only when the
@@ -345,14 +342,14 @@ function NotificationsTab() {
   const queryClient = useQueryClient();
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const { data: weeklySummary } = useQuery({
+  const { data: weeklySummary } = useQuery<boolean>({
     queryKey: ["weeklySummary"],
-    queryFn: getWeeklySummaryPreference,
+    queryFn: () => axios.get("/api/user/weekly-summary").then((r) => r.data),
   });
 
-  const { data: productUpdates } = useQuery({
+  const { data: productUpdates } = useQuery<boolean>({
     queryKey: ["productUpdates"],
-    queryFn: getProductUpdatesPreference,
+    queryFn: () => axios.get("/api/user/product-updates").then((r) => r.data),
   });
 
   const weeklySummaryMutation = useMutation({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -13,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "../components/ui/button";
 import { Shield, Info } from "lucide-react";
 import type { PaymentStepProps } from "@/types/onboard";
-import { createSetupIntent, createSubscription } from "@/lib/workspace/billing";
+import { createSubscription } from "@/lib/workspace/billing";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -110,9 +111,10 @@ export default function PaymentStep({ formData }: PaymentStepProps) {
     data: clientSecret,
     isLoading,
     isError,
-  } = useQuery({
+  } = useQuery<string>({
     queryKey: ["setup-intent"],
-    queryFn: createSetupIntent,
+    queryFn: () =>
+      axios.get("/api/billing/setup-intent").then((r) => r.data.clientSecret),
     staleTime: Infinity,
   });
 
