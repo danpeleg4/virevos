@@ -300,7 +300,7 @@ export default function Dashboard() {
                       checked={task.status === "completed"}
                       onCheckedChange={(checked) =>
                         changeTaskStatus.mutate({
-                          status: checked ? "completed" : "todo",
+                          status: checked ? "completed" : "in-progress",
                           taskId: task.id,
                         })
                       }
