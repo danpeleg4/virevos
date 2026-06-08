@@ -12,46 +12,6 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-/* eslint-disable no-var */
-var mockEventsInsert: Mock;
-var mockEventsDelete: Mock;
-var mockSetCredentials: Mock;
-var mockCalendar: Mock;
-var mockEventsPatch: Mock;
-/* eslint-enable no-var */
-
-vi.mock("googleapis", () => {
-  mockEventsInsert = vi.fn();
-  mockEventsDelete = vi.fn();
-  mockEventsPatch = vi.fn();
-  mockSetCredentials = vi.fn();
-  mockCalendar = vi.fn(() => ({
-    events: {
-      insert: mockEventsInsert,
-      delete: mockEventsDelete,
-      patch: mockEventsPatch,
-    },
-  }));
-  return {
-    google: {
-      auth: {
-        OAuth2: vi.fn(function () {
-          return { setCredentials: mockSetCredentials };
-        }),
-      },
-      // eslint-disable-next-line prefer-spread
-      calendar: (...args: never[]) => mockCalendar.apply(null, args),
-    },
-  };
-});
-
-const mockGetFreshGoogleAccessToken = vi.fn();
-vi.mock("@/lib/google/google_access", () => ({
-  getFreshGoogleAccessToken: (...args: never[]) =>
-    // eslint-disable-next-line prefer-spread
-    mockGetFreshGoogleAccessToken.apply(null, args),
-}));
-
 const mockGetFreshOutlookAccessToken = vi.fn();
 vi.mock("@/lib/outlook/outlook_access", () => ({
   getFreshOutlookAccessToken: (...args: never[]) =>
@@ -112,7 +72,6 @@ const mockMeeting: Event = {
   hasTranscript: false,
   autoRescheduled: false,
   conflictReason: null,
-  googleEventId: null,
 };
 
 let consoleErrorSpy: MockInstance;
@@ -128,7 +87,6 @@ beforeEach(() => {
   mockValues.mockReturnValue({ returning: mockReturning });
   mockReturning.mockResolvedValue([]);
   mockGetFreshOutlookAccessToken.mockResolvedValue(null);
-  mockEventsDelete.mockResolvedValue({});
   mockUpdateWhere.mockResolvedValue(undefined);
   mockUpdateSet.mockReturnValue({ where: mockUpdateWhere });
   mockAxiosPatch.mockResolvedValue({ data: {} });
@@ -156,32 +114,6 @@ describe("addMeetingToCalendar", () => {
     await expect(addMeetingToCalendar(mockMeeting)).rejects.toThrow(
       "User not found in database"
     );
-  });
-
-  it("inserts event and returns it when there is no Google token (skips Google Calendar)", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([{ user_id: "user_1" }]);
-    const inserted = { id: "meet-id", title: "Test Meeting" };
-    mockReturning.mockResolvedValueOnce([inserted]);
-
-    const result = await addMeetingToCalendar(mockMeeting);
-
-    expect(mockEventsInsert).not.toHaveBeenCalled();
-    expect(result).toEqual(inserted);
-  });
-
-  it("creates a Google Calendar event when a token is available and stores the returned googleEventId", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([{ user_id: "user_1" }]);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-    mockEventsInsert.mockResolvedValueOnce({ data: { id: "gcal-event-id" } });
-    const inserted = { id: "meet-id", googleEventId: "gcal-event-id" };
-    mockReturning.mockResolvedValueOnce([inserted]);
-
-    const result = await addMeetingToCalendar(mockMeeting);
-
-    expect(mockEventsInsert).toHaveBeenCalledTimes(1);
-    expect(result).toEqual(inserted);
   });
 
   it("inserts event to DB when isMeeting is true (activation handled by cron)", async () => {
@@ -231,46 +163,6 @@ describe("deleteEventFromCalendar", () => {
     const result = await deleteEventFromCalendar("event-1");
     expect(result).toEqual({ success: false, error: "Meeting not found" });
   });
-
-  it("deletes from Google Calendar when a token is available", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([
-      { id: "event-1", googleEventId: "gcal-id" },
-    ]);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-
-    await deleteEventFromCalendar("event-1");
-
-    expect(mockEventsDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ calendarId: "primary" })
-    );
-  });
-
-  it("continues and deletes from DB even if Google Calendar delete throws", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([
-      { id: "event-1", googleEventId: null },
-    ]);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-    mockEventsDelete.mockRejectedValueOnce(new Error("Google error"));
-
-    const result = await deleteEventFromCalendar("event-1");
-
-    expect(mockDeleteWhere).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ success: true });
-  });
-
-  it("returns { success: true } after deleting from DB", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([
-      { id: "event-1", googleEventId: null },
-    ]);
-
-    const result = await deleteEventFromCalendar("event-1");
-
-    expect(mockDeleteWhere).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ success: true });
-  });
 });
 
 // ─── updateEvent ──────────────────────────────────────────────────────────
@@ -305,30 +197,6 @@ describe("updateEvent", () => {
       expect.objectContaining({ dateTime: new Date("2026-06-01T10:00:00Z") })
     );
   });
-
-  it("patches Google Calendar when token is available and dateTime is updated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-    mockSelectLimit.mockResolvedValueOnce([
-      { id: "event-1", googleEventId: "gcal-id" },
-    ]);
-    mockEventsPatch.mockResolvedValueOnce({});
-
-    await updateEvent({ id: "event-1", dateTime: "2026-06-01T10:00:00Z" });
-
-    expect(mockEventsPatch).toHaveBeenCalledWith(
-      expect.objectContaining({ calendarId: "primary", eventId: "gcal-id" })
-    );
-  });
-
-  it("does not call Google Calendar patch when dateTime is not updated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-
-    await updateEvent({ id: "event-1", title: "New Title" });
-
-    expect(mockEventsPatch).not.toHaveBeenCalled();
-  });
 });
 
 // ─── updateEventDateTime ──────────────────────────────────────────────────
@@ -357,7 +225,6 @@ describe("updateEventDateTime", () => {
       {
         id: "event-1",
         duration: 60,
-        googleEventId: null,
         outlookEventId: null,
       },
     ]);
@@ -368,77 +235,12 @@ describe("updateEventDateTime", () => {
     expect(mockUpdateWhere).toHaveBeenCalledTimes(1);
   });
 
-  it("patches Google with start AND end (preserving duration) when token + googleEventId exist", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([
-      {
-        id: "event-1",
-        duration: 45,
-        googleEventId: "gcal-id",
-        outlookEventId: null,
-      },
-    ]);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-
-    await updateEventDateTime("event-1", newDateTime);
-
-    const expectedEnd = new Date(newDateTime.getTime() + 45 * 60_000);
-    expect(mockEventsPatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        calendarId: "primary",
-        eventId: "gcal-id",
-        requestBody: expect.objectContaining({
-          start: expect.objectContaining({
-            dateTime: newDateTime.toISOString(),
-          }),
-          end: expect.objectContaining({
-            dateTime: expectedEnd.toISOString(),
-          }),
-        }),
-      })
-    );
-  });
-
-  it("skips Google patch when no Google token", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([
-      {
-        id: "event-1",
-        duration: 60,
-        googleEventId: "gcal-id",
-        outlookEventId: null,
-      },
-    ]);
-
-    await updateEventDateTime("event-1", newDateTime);
-
-    expect(mockEventsPatch).not.toHaveBeenCalled();
-  });
-
-  it("skips Google patch when there is no googleEventId on the row", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([
-      {
-        id: "event-1",
-        duration: 60,
-        googleEventId: null,
-        outlookEventId: null,
-      },
-    ]);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-
-    await updateEventDateTime("event-1", newDateTime);
-
-    expect(mockEventsPatch).not.toHaveBeenCalled();
-  });
-
   it("patches Outlook with start AND end (preserving duration) when token + outlookEventId exist", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectLimit.mockResolvedValueOnce([
       {
         id: "event-1",
         duration: 30,
-        googleEventId: null,
         outlookEventId: "outlook-id",
       },
     ]);
@@ -471,7 +273,6 @@ describe("updateEventDateTime", () => {
       {
         id: "event-1",
         duration: 60,
-        googleEventId: null,
         outlookEventId: "outlook-id",
       },
     ]);
@@ -487,7 +288,6 @@ describe("updateEventDateTime", () => {
       {
         id: "event-1",
         duration: 60,
-        googleEventId: null,
         outlookEventId: null,
       },
     ]);
@@ -504,7 +304,6 @@ describe("updateEventDateTime", () => {
       {
         id: "event-1",
         duration: 60,
-        googleEventId: null,
         outlookEventId: "outlook-id",
       },
     ]);
@@ -514,24 +313,6 @@ describe("updateEventDateTime", () => {
     const result = await updateEventDateTime("event-1", newDateTime);
 
     expect(mockUpdateSet).toHaveBeenCalledWith({ dateTime: newDateTime });
-    expect(result).toEqual({ success: true });
-  });
-
-  it("still returns success when Google patch fails", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([
-      {
-        id: "event-1",
-        duration: 60,
-        googleEventId: "gcal-id",
-        outlookEventId: null,
-      },
-    ]);
-    mockGetFreshGoogleAccessToken.mockResolvedValueOnce("google-token");
-    mockEventsPatch.mockRejectedValueOnce(new Error("Google 500"));
-
-    const result = await updateEventDateTime("event-1", newDateTime);
-
     expect(result).toEqual({ success: true });
   });
 });

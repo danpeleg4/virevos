@@ -111,17 +111,10 @@ export function IntegrationSettings() {
   const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
     queryKey: ["integrations"],
     queryFn: async () => {
-      const [googleCheck, outlookCheck] = await Promise.all([
-        axios.get("/api/integrations/google"),
-        axios.get("/api/integrations/outlook"),
-      ]);
-
-      const googleCalendarConnected = googleCheck.data.connected;
+      const outlookCheck = await axios.get("/api/integrations/outlook");
       const outlookConnected = outlookCheck.data.connected;
 
       return INITIAL_INTEGRATIONS.map((int) => {
-        if (int.id === "google")
-          return { ...int, connected: googleCalendarConnected };
         if (int.id === "outlook")
           return { ...int, connected: outlookConnected };
         return int;
