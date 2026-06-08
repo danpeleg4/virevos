@@ -66,10 +66,10 @@ describe("GET /api/cron/credit-reset", () => {
 
     expect(mockSet).toHaveBeenCalledTimes(1);
     const setArg = (mockSet.mock.calls[0] as unknown[])[0] as {
-      ai_credits: number;
+      aiCredits: number;
       creditsResetAt: Date;
     };
-    expect(setArg.ai_credits).toBe(0);
+    expect(setArg.aiCredits).toBe(0);
     const resetMs = setArg.creditsResetAt.getTime();
     const thirtyDays = 30 * 24 * 60 * 60 * 1000;
     expect(resetMs).toBeGreaterThanOrEqual(before + thirtyDays);

@@ -61,7 +61,7 @@ async function sendScheduledEmail(scheduledEmailId: number): Promise<void> {
   const userRows = await db
     .select({ name: users.name })
     .from(users)
-    .where(eq(users.user_id, userId))
+    .where(eq(users.userId, userId))
     .limit(1);
   const fromName = userRows[0]?.name || "";
 

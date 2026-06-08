@@ -92,8 +92,8 @@ describe("GET /api/outlook/callback", () => {
     expect(insertValuesMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user_1",
-        access_token: "access_123",
-        refresh_token: "refresh_123",
+        accessToken: "access_123",
+        refreshToken: "refresh_123",
         connected: true,
       })
     );
@@ -118,7 +118,7 @@ describe("GET /api/outlook/callback", () => {
         where: () => ({
           limit: () =>
             Promise.resolve([
-              { refresh_token: "old_refresh", connected: false },
+              { refreshToken: "old_refresh", connected: false },
             ]),
         }),
       }),
@@ -132,8 +132,8 @@ describe("GET /api/outlook/callback", () => {
     expect(db.update).toHaveBeenCalled();
     expect(setMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        access_token: "access_new",
-        refresh_token: "old_refresh",
+        accessToken: "access_new",
+        refreshToken: "old_refresh",
         connected: true,
       })
     );

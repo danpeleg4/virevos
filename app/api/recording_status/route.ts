@@ -13,7 +13,7 @@ export async function GET() {
   const [recordingStatus] = await db
     .select()
     .from(users)
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
   return NextResponse.json({
     recording_status: recordingStatus.recordingStatus,
   });

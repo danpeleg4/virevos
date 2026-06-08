@@ -1,6 +1,6 @@
 {
-  "id": "1ef299a2-ebbc-43c5-a794-838df33167c6",
-  "prevId": "9461d591-7dc7-4056-9c0d-3c1e15ad6492",
+  "id": "2e9f344e-864c-4faf-9848-d950fb5feeb4",
+  "prevId": "1ef299a2-ebbc-43c5-a794-838df33167c6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -63,7 +63,14 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
@@ -303,6 +310,20 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -1011,6 +1032,13 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {

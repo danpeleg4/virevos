@@ -1,6 +1,6 @@
 {
-  "id": "9461d591-7dc7-4056-9c0d-3c1e15ad6492",
-  "prevId": "aa889f4c-eb49-45ba-8729-fe448c97ffe4",
+  "id": "1ef299a2-ebbc-43c5-a794-838df33167c6",
+  "prevId": "9461d591-7dc7-4056-9c0d-3c1e15ad6492",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -991,6 +991,12 @@
         "outlook_event_id": {
           "name": "outlook_event_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recording_size": {
+          "name": "recording_size",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },

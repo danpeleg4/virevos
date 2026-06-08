@@ -1,6 +1,6 @@
 {
-  "id": "f4b6872b-6349-4a74-b2d5-5283ce744fd7",
-  "prevId": "80dbcb73-1bfb-4356-a853-041ce8886e55",
+  "id": "9abb0af5-db91-4bdf-ae0f-9a9d4d2b29e6",
+  "prevId": "f4b6872b-6349-4a74-b2d5-5283ce744fd7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -113,8 +113,12 @@
           "name": "case_files_case_id_cases_id_fk",
           "tableFrom": "case_files",
           "tableTo": "cases",
-          "columnsFrom": ["case_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "case_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -122,8 +126,12 @@
           "name": "case_files_user_id_users_user_id_fk",
           "tableFrom": "case_files",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -225,8 +233,12 @@
           "name": "case_notes_user_id_users_user_id_fk",
           "tableFrom": "case_notes",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -234,8 +246,12 @@
           "name": "case_notes_case_id_cases_id_fk",
           "tableFrom": "case_notes",
           "tableTo": "cases",
-          "columnsFrom": ["case_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "case_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -363,8 +379,12 @@
           "name": "cases_client_id_clients_id_fk",
           "tableFrom": "cases",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -372,8 +392,12 @@
           "name": "cases_user_id_users_user_id_fk",
           "tableFrom": "cases",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -502,8 +526,12 @@
           "name": "client_portal_tokens_client_id_clients_id_fk",
           "tableFrom": "client_portal_tokens",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -511,8 +539,12 @@
           "name": "client_portal_tokens_user_id_users_user_id_fk",
           "tableFrom": "client_portal_tokens",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -522,7 +554,9 @@
         "client_portal_tokens_token_unique": {
           "name": "client_portal_tokens_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -624,8 +658,12 @@
           "name": "clients_user_id_users_user_id_fk",
           "tableFrom": "clients",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -742,8 +780,12 @@
           "name": "document_request_items_request_id_meeting_document_requests_id_fk",
           "tableFrom": "document_request_items",
           "tableTo": "meeting_document_requests",
-          "columnsFrom": ["request_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -751,8 +793,12 @@
           "name": "document_request_items_uploaded_file_id_case_files_id_fk",
           "tableFrom": "document_request_items",
           "tableTo": "case_files",
-          "columnsFrom": ["uploaded_file_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "uploaded_file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -808,12 +854,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "gmail_attachment_id": {
-          "name": "gmail_attachment_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "supabase_path": {
           "name": "supabase_path",
           "type": "text",
@@ -860,12 +900,16 @@
         }
       },
       "foreignKeys": {
-        "email_attachments_email_id_emails_id_fk": {
-          "name": "email_attachments_email_id_emails_id_fk",
+        "email_attachments_email_id_outlook_emails_id_fk": {
+          "name": "email_attachments_email_id_outlook_emails_id_fk",
           "tableFrom": "email_attachments",
-          "tableTo": "emails",
-          "columnsFrom": ["email_id"],
-          "columnsTo": ["id"],
+          "tableTo": "outlook_emails",
+          "columnsFrom": [
+            "email_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -873,8 +917,12 @@
           "name": "email_attachments_user_id_users_user_id_fk",
           "tableFrom": "email_attachments",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1003,12 +1051,6 @@
           "notNull": false,
           "default": "'app'"
         },
-        "google_event_id": {
-          "name": "google_event_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "outlook_event_id": {
           "name": "outlook_event_id",
           "type": "text",
@@ -1063,21 +1105,6 @@
           "method": "btree",
           "with": {}
         },
-        "events_google_event_id_idx": {
-          "name": "events_google_event_id_idx",
-          "columns": [
-            {
-              "expression": "google_event_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "events_outlook_event_id_idx": {
           "name": "events_outlook_event_id_idx",
           "columns": [
@@ -1114,8 +1141,12 @@
           "name": "events_client_id_clients_id_fk",
           "tableFrom": "events",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1123,404 +1154,12 @@
           "name": "events_user_id_users_user_id_fk",
           "tableFrom": "events",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": true
-    },
-    "public.emails": {
-      "name": "emails",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "emails_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "gmail_id": {
-          "name": "gmail_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "thread_id": {
-          "name": "thread_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "subject": {
-          "name": "subject",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'(no subject)'"
-        },
-        "snippet": {
-          "name": "snippet",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "from_email": {
-          "name": "from_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "from_name": {
-          "name": "from_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "to_emails": {
-          "name": "to_emails",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'"
-        },
-        "cc_emails": {
-          "name": "cc_emails",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'"
-        },
-        "body_html": {
-          "name": "body_html",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "body_text": {
-          "name": "body_text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "label_ids": {
-          "name": "label_ids",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'"
-        },
-        "is_read": {
-          "name": "is_read",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "is_starred": {
-          "name": "is_starred",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "is_archived": {
-          "name": "is_archived",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "is_sent": {
-          "name": "is_sent",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "sent_at": {
-          "name": "sent_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "client_id": {
-          "name": "client_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "emails_user_id_idx": {
-          "name": "emails_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+          "columnsFrom": [
+            "user_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "emails_gmail_id_idx": {
-          "name": "emails_gmail_id_idx",
-          "columns": [
-            {
-              "expression": "gmail_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+          "columnsTo": [
+            "user_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "emails_thread_id_idx": {
-          "name": "emails_thread_id_idx",
-          "columns": [
-            {
-              "expression": "thread_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "emails_client_id_idx": {
-          "name": "emails_client_id_idx",
-          "columns": [
-            {
-              "expression": "client_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "emails_client_id_clients_id_fk": {
-          "name": "emails_client_id_clients_id_fk",
-          "tableFrom": "emails",
-          "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "emails_user_id_users_user_id_fk": {
-          "name": "emails_user_id_users_user_id_fk",
-          "tableFrom": "emails",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": true
-    },
-    "public.google_sync_state": {
-      "name": "google_sync_state",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "google_sync_state_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "channel_id": {
-          "name": "channel_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "resource_id": {
-          "name": "resource_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sync_token": {
-          "name": "sync_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "channel_expiration": {
-          "name": "channel_expiration",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "google_sync_state_user_id_users_user_id_fk": {
-          "name": "google_sync_state_user_id_users_user_id_fk",
-          "tableFrom": "google_sync_state",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "google_sync_state_user_id_unique": {
-          "name": "google_sync_state_user_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["user_id"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": true
-    },
-    "public.google_tokens": {
-      "name": "google_tokens",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "google_tokens_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "access_token": {
-          "name": "access_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "refresh_token": {
-          "name": "refresh_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expires_in": {
-          "name": "expires_in",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "connected": {
-          "name": "connected",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "google_tokens_user_id_idx": {
-          "name": "google_tokens_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "google_tokens_user_id_users_user_id_fk": {
-          "name": "google_tokens_user_id_users_user_id_fk",
-          "tableFrom": "google_tokens",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1577,8 +1216,12 @@
           "name": "meeting_attendees_meeting_id_events_id_fk",
           "tableFrom": "meeting_attendees",
           "tableTo": "events",
-          "columnsFrom": ["meeting_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "meeting_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1588,7 +1231,10 @@
         "meeting_attendees_meeting_id_name_unique": {
           "name": "meeting_attendees_meeting_id_name_unique",
           "nullsNotDistinct": false,
-          "columns": ["meeting_id", "name"]
+          "columns": [
+            "meeting_id",
+            "name"
+          ]
         }
       },
       "policies": {},
@@ -1698,8 +1344,12 @@
           "name": "meeting_document_requests_event_id_events_id_fk",
           "tableFrom": "meeting_document_requests",
           "tableTo": "events",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1707,8 +1357,12 @@
           "name": "meeting_document_requests_client_id_clients_id_fk",
           "tableFrom": "meeting_document_requests",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1716,8 +1370,12 @@
           "name": "meeting_document_requests_user_id_users_user_id_fk",
           "tableFrom": "meeting_document_requests",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1797,8 +1455,12 @@
           "name": "meeting_transcripts_meeting_id_events_id_fk",
           "tableFrom": "meeting_transcripts",
           "tableTo": "events",
-          "columnsFrom": ["meeting_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "meeting_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2021,8 +1683,12 @@
           "name": "outlook_emails_client_id_clients_id_fk",
           "tableFrom": "outlook_emails",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2030,8 +1696,12 @@
           "name": "outlook_emails_user_id_users_user_id_fk",
           "tableFrom": "outlook_emails",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2118,8 +1788,12 @@
           "name": "outlook_sync_state_user_id_users_user_id_fk",
           "tableFrom": "outlook_sync_state",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2129,7 +1803,9 @@
         "outlook_sync_state_user_id_unique": {
           "name": "outlook_sync_state_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["user_id"]
+          "columns": [
+            "user_id"
+          ]
         }
       },
       "policies": {},
@@ -2211,8 +1887,12 @@
           "name": "outlook_tokens_user_id_users_user_id_fk",
           "tableFrom": "outlook_tokens",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2371,8 +2051,12 @@
           "name": "portal_meeting_bookings_portal_id_client_portal_tokens_id_fk",
           "tableFrom": "portal_meeting_bookings",
           "tableTo": "client_portal_tokens",
-          "columnsFrom": ["portal_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "portal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2380,8 +2064,12 @@
           "name": "portal_meeting_bookings_client_id_clients_id_fk",
           "tableFrom": "portal_meeting_bookings",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2389,8 +2077,12 @@
           "name": "portal_meeting_bookings_user_id_users_user_id_fk",
           "tableFrom": "portal_meeting_bookings",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2398,8 +2090,12 @@
           "name": "portal_meeting_bookings_event_id_events_id_fk",
           "tableFrom": "portal_meeting_bookings",
           "tableTo": "events",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2512,8 +2208,12 @@
           "name": "portal_messages_portal_id_client_portal_tokens_id_fk",
           "tableFrom": "portal_messages",
           "tableTo": "client_portal_tokens",
-          "columnsFrom": ["portal_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "portal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2521,8 +2221,12 @@
           "name": "portal_messages_client_id_clients_id_fk",
           "tableFrom": "portal_messages",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2530,8 +2234,12 @@
           "name": "portal_messages_user_id_users_user_id_fk",
           "tableFrom": "portal_messages",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2619,12 +2327,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
-        },
-        "aws_schedule_name": {
-          "name": "aws_schedule_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "sent_at": {
           "name": "sent_at",
@@ -2716,8 +2418,12 @@
           "name": "scheduled_emails_client_id_clients_id_fk",
           "tableFrom": "scheduled_emails",
           "tableTo": "clients",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2725,8 +2431,12 @@
           "name": "scheduled_emails_user_id_users_user_id_fk",
           "tableFrom": "scheduled_emails",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2830,8 +2540,12 @@
           "name": "subscriptions_user_id_users_user_id_fk",
           "tableFrom": "subscriptions",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2841,17 +2555,23 @@
         "subscriptions_user_id_unique": {
           "name": "subscriptions_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["user_id"]
+          "columns": [
+            "user_id"
+          ]
         },
         "subscriptions_stripe_customer_id_unique": {
           "name": "subscriptions_stripe_customer_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["stripe_customer_id"]
+          "columns": [
+            "stripe_customer_id"
+          ]
         },
         "subscriptions_stripe_subscription_id_unique": {
           "name": "subscriptions_stripe_subscription_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["stripe_subscription_id"]
+          "columns": [
+            "stripe_subscription_id"
+          ]
         }
       },
       "policies": {},
@@ -2982,8 +2702,12 @@
           "name": "tasks_user_id_users_user_id_fk",
           "tableFrom": "tasks",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["user_id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2991,8 +2715,12 @@
           "name": "tasks_case_id_cases_id_fk",
           "tableFrom": "tasks",
           "tableTo": "cases",
-          "columnsFrom": ["case_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "case_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3122,7 +2850,9 @@
         "users_user_id_unique": {
           "name": "users_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["user_id"]
+          "columns": [
+            "user_id"
+          ]
         }
       },
       "policies": {},

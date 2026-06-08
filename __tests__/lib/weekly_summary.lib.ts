@@ -206,7 +206,7 @@ describe("sendWeeklySummary", () => {
       })
     );
     expect(mockSet).toHaveBeenCalledWith(
-      expect.objectContaining({ ai_credits: expect.anything() })
+      expect.objectContaining({ aiCredits: expect.anything() })
     );
   });
 

@@ -257,7 +257,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
       })
     );
     expect(updateSet).toHaveBeenCalledWith(
-      expect.objectContaining({ ai_credits: expect.anything() })
+      expect.objectContaining({ aiCredits: expect.anything() })
     );
   });
 
@@ -271,7 +271,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
 
     expect(updateSet).toHaveBeenCalledWith(
-      expect.objectContaining({ ai_credits: expect.anything() })
+      expect.objectContaining({ aiCredits: expect.anything() })
     );
   });
 

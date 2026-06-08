@@ -34,7 +34,7 @@ export async function deleteCase(caseId: number) {
       await tx
         .update(users)
         .set({ storage: sql`${users.storage} - ${totalSize}` })
-        .where(eq(users.user_id, user.id));
+        .where(eq(users.userId, user.id));
     }
 
     await tx
@@ -81,7 +81,7 @@ export async function addFileMetadata(
       await tx
         .update(users)
         .set({ storage: sql`${users.storage} + ${file.size}` })
-        .where(eq(users.user_id, user.id));
+        .where(eq(users.userId, user.id));
     });
   } catch (err) {
     console.error("Drizzle insert failed:", err);
@@ -198,6 +198,6 @@ export async function deleteCaseFile(fileId: number) {
     await tx
       .update(users)
       .set({ storage: sql`${users.storage} - ${file.size}` })
-      .where(eq(users.user_id, user.id));
+      .where(eq(users.userId, user.id));
   });
 }

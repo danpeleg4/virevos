@@ -9,27 +9,10 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { changeRecordingStatus } from "@/lib/user";
-import { disconnectGoogle, disconnectOutlook } from "@/lib/integrations";
+import { disconnectOutlook } from "@/lib/integrations";
 import type { ComponentType, SVGProps } from "react";
 import type { Integration } from "@/types/integrations";
 import { Separator } from "@/app/components/ui/separator";
-
-const INITIAL_INTEGRATIONS: Integration[] = [
-  {
-    id: "outlook",
-    name: "Microsoft Outlook",
-    description: "Sync with Outlook Calendar",
-    icon: "/outlook.svg",
-    connected: false,
-    syncStatus: "not-connected",
-    features: [
-      "Two-way calendar sync",
-      "Teams meeting integration",
-      "Email notifications",
-      "Contact sync",
-    ],
-  },
-];
 
 export function VideoMeetingPreferences() {
   const queryClient = useQueryClient();
@@ -104,30 +87,13 @@ export function VideoMeetingPreferences() {
   );
 }
 
-export function IntegrationSettings() {
+export function IntegrationSettings({
+  integrations,
+}: {
+  integrations: Integration[];
+}) {
   const queryClient = useQueryClient();
   const router = useRouter();
-
-  const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
-    queryKey: ["integrations"],
-    queryFn: async () => {
-      const [googleCheck, outlookCheck] = await Promise.all([
-        axios.get("/api/integrations/google"),
-        axios.get("/api/integrations/outlook"),
-      ]);
-
-      const googleCalendarConnected = googleCheck.data.connected;
-      const outlookConnected = outlookCheck.data.connected;
-
-      return INITIAL_INTEGRATIONS.map((int) => {
-        if (int.id === "google")
-          return { ...int, connected: googleCalendarConnected };
-        if (int.id === "outlook")
-          return { ...int, connected: outlookConnected };
-        return int;
-      });
-    },
-  });
 
   const mutation = useMutation({
     mutationFn: async ({
@@ -137,9 +103,6 @@ export function IntegrationSettings() {
       id: string;
       action: "disconnect" | "connect";
     }) => {
-      if (id === "google" && action === "disconnect") {
-        await disconnectGoogle();
-      }
       if (id === "outlook" && action === "disconnect") {
         await disconnectOutlook();
       }
@@ -151,15 +114,6 @@ export function IntegrationSettings() {
 
   const toggleConnection = (id: string) => {
     const integration = integrations.find((i) => i.id === id);
-    if (id === "google" && integration && !integration.connected) {
-      router.push("/api/google");
-      return;
-    }
-
-    if (id === "google" && integration && integration.connected) {
-      mutation.mutate({ id: "google", action: "disconnect" });
-      return;
-    }
 
     if (id === "outlook" && integration && !integration.connected) {
       router.push("/api/outlook");

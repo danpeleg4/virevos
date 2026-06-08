@@ -1,6 +1,6 @@
 {
-  "id": "6918a9c8-dc14-4073-a022-9aa09644c093",
-  "prevId": "2e9f344e-864c-4faf-9848-d950fb5feeb4",
+  "id": "9268c28f-2674-46ca-a80c-7d617b885a26",
+  "prevId": "6918a9c8-dc14-4073-a022-9aa09644c093",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3044,6 +3044,30 @@
         },
         "avatar_path": {
           "name": "avatar_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "job_title": {
+          "name": "job_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company": {
+          "name": "company",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timezone": {
+          "name": "timezone",
           "type": "text",
           "primaryKey": false,
           "notNull": false

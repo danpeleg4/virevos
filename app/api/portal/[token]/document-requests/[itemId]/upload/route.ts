@@ -181,8 +181,8 @@ export async function POST(
     if (analysis && analysis.verdict !== "skipped") {
       await db
         .update(users)
-        .set({ ai_credits: sql`${users.ai_credits} + 1` })
-        .where(eq(users.user_id, userId));
+        .set({ aiCredits: sql`${users.aiCredits} + 1` })
+        .where(eq(users.userId, userId));
     }
 
     const finalStatus =

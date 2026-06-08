@@ -56,7 +56,7 @@ export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
   const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
     topK: 10,
-    filter: { user_id: user.id },
+    filter: { userId: user.id },
     returnMetadata: true,
   });
 

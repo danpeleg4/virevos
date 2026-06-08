@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const [meeting] = await db
       .select({ userId: events.userId, recordingStatus: users.recordingStatus })
       .from(events)
-      .innerJoin(users, eq(events.userId, users.user_id))
+      .innerJoin(users, eq(events.userId, users.userId))
       .where(eq(events.id, roomName));
 
     try {
@@ -207,9 +207,9 @@ export async function POST(req: NextRequest) {
       await db
         .update(events)
         .set({
-          ai_summary: analysis.summary,
+          aiSummary: analysis.summary,
           key_points: analysis.key_points,
-          action_items: analysis.action_items,
+          actionItems: analysis.action_items,
           tags: analysis.tags,
           hasTranscript: true,
           hasNotes: true,
@@ -252,8 +252,8 @@ export async function POST(req: NextRequest) {
 
     await db
       .update(users)
-      .set({ ai_credits: sql`${users.ai_credits} + 1` })
-      .where(eq(users.user_id, eventUser.userId));
+      .set({ aiCredits: sql`${users.aiCredits} + 1` })
+      .where(eq(users.userId, eventUser.userId));
   }
 
   if (event.event === "egress_ended") {
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
         await tx
           .update(users)
           .set({ storage: sql`${users.storage} + ${totalSize}` })
-          .where(eq(users.user_id, credited[0].userId));
+          .where(eq(users.userId, credited[0].userId));
       });
     }
 

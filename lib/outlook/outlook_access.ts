@@ -71,15 +71,15 @@ export async function getFreshOutlookAccessToken(
   const tokenData = rows[0];
   const now = Date.now();
 
-  if (tokenData.expires_in > now + 30000) {
-    return tokenData.access_token;
+  if (tokenData.expiresIn > now + 30000) {
+    return tokenData.accessToken;
   }
 
   try {
     const params = new URLSearchParams({
       client_id: process.env.OUTLOOK_CLIENT_ID!,
       client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
-      refresh_token: tokenData.refresh_token,
+      refresh_token: tokenData.refreshToken,
       grant_type: "refresh_token",
       scope: OUTLOOK_SCOPES,
     });
@@ -98,8 +98,8 @@ export async function getFreshOutlookAccessToken(
     await db
       .update(outlookTokens)
       .set({
-        access_token,
-        expires_in: expires_at,
+        accessToken: access_token,
+        expiresIn: expires_at,
         connected: true,
         ...(refresh_token ? { refresh_token } : {}),
       })

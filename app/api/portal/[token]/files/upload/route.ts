@@ -162,7 +162,7 @@ export async function POST(
         await tx
           .update(users)
           .set({ storage: sql`${users.storage} + ${file.size}` })
-          .where(eq(users.user_id, userId));
+          .where(eq(users.userId, userId));
         return row;
       });
     } catch (dbErr) {

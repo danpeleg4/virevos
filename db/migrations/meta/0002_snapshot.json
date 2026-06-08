@@ -1,6 +1,6 @@
 {
-  "id": "6918a9c8-dc14-4073-a022-9aa09644c093",
-  "prevId": "2e9f344e-864c-4faf-9848-d950fb5feeb4",
+  "id": "9461d591-7dc7-4056-9c0d-3c1e15ad6492",
+  "prevId": "aa889f4c-eb49-45ba-8729-fe448c97ffe4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -63,14 +63,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
@@ -310,20 +303,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
         }
       },
       "indexes": {
@@ -1015,12 +994,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "recording_size": {
-          "name": "recording_size",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
         "client_id": {
           "name": "client_id",
           "type": "integer",
@@ -1032,13 +1005,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
         }
       },
       "indexes": {
@@ -3041,12 +3007,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "avatar_path": {
-          "name": "avatar_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "ai_credits": {
           "name": "ai_credits",

@@ -57,19 +57,19 @@ export async function markActionItemAdded(eventId: string, itemIndex: number) {
   const idx = requireInt(itemIndex, "itemIndex");
 
   const [event] = await db
-    .select({ action_items: events.action_items })
+    .select({ actionItems: events.actionItems })
     .from(events)
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
 
-  if (!event?.action_items) return;
+  if (!event?.actionItems) return;
 
-  const updated = event.action_items.map((item, i) =>
+  const updated = event.actionItems.map((item, i) =>
     i === idx ? { ...item, added: true } : item
   );
 
   await db
     .update(events)
-    .set({ action_items: updated })
+    .set({ actionItems: updated })
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
 }
 
@@ -89,7 +89,7 @@ export async function getPastMeetingTranscript(text: string) {
   const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
     topK: 10,
-    filter: { user_id: user.id },
+    filter: { userId: user.id },
     returnMetadata: true,
   });
 
