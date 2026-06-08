@@ -127,9 +127,7 @@ beforeEach(() => {
   mockDeleteWhere.mockResolvedValue(undefined);
   mockValues.mockReturnValue({ returning: mockReturning });
   mockReturning.mockResolvedValue([]);
-  mockGetFreshGoogleAccessToken.mockResolvedValue(null);
   mockGetFreshOutlookAccessToken.mockResolvedValue(null);
-  mockEventsInsert.mockResolvedValue({ data: { id: "google-event-id" } });
   mockEventsDelete.mockResolvedValue({});
   mockUpdateWhere.mockResolvedValue(undefined);
   mockUpdateSet.mockReturnValue({ where: mockUpdateWhere });

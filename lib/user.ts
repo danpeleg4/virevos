@@ -49,7 +49,7 @@ export async function getProductUpdatesPreference() {
       productUpdates: users.productUpdates,
     })
     .from(users)
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   return row.productUpdates;
 }
@@ -64,7 +64,7 @@ export async function updateProductUpdatesPreference(enabled: boolean) {
   await db
     .update(users)
     .set({ productUpdates: enabled })
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   return { enabled };
 }
@@ -76,7 +76,7 @@ export async function getWeeklySummaryPreference(): Promise<boolean> {
   const [row] = await db
     .select({ weeklySummary: users.weeklySummary })
     .from(users)
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   return !!row?.weeklySummary;
 }
@@ -93,7 +93,7 @@ export async function updateWeeklySummaryPreference(
   await db
     .update(users)
     .set({ weeklySummary: enabled })
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   return { enabled };
 }
@@ -106,14 +106,14 @@ export async function changeRecordingStatus() {
     const [userData] = await db
       .select()
       .from(users)
-      .where(eq(users.user_id, user.id));
+      .where(eq(users.userId, user.id));
     const recordingStatus = userData.recordingStatus;
     await db
       .update(users)
       .set({
         recordingStatus: !recordingStatus,
       })
-      .where(eq(users.user_id, user.id));
+      .where(eq(users.userId, user.id));
   } catch (err) {
     console.error(err);
   }
@@ -151,7 +151,7 @@ export async function uploadAvatar(
   const [existing] = await db
     .select({ avatarPath: users.avatarPath })
     .from(users)
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   const buffer = Buffer.from(await file.arrayBuffer());
   // A unique filename per upload sidesteps any CDN caching of a reused path.
@@ -161,7 +161,7 @@ export async function uploadAvatar(
   await db
     .update(users)
     .set({ avatarPath: path })
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   if (existing?.avatarPath && existing.avatarPath !== path) {
     try {
@@ -184,7 +184,7 @@ export async function getAvatarUrl(): Promise<{ url: string | null }> {
   const [row] = await db
     .select({ avatarPath: users.avatarPath })
     .from(users)
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   if (!row?.avatarPath) return { url: null };
 
@@ -213,7 +213,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       bio: users.bio,
     })
     .from(users)
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   return {
     name: row?.name ?? (user.user_metadata?.name as string | undefined) ?? "",
@@ -244,7 +244,7 @@ export async function updateProfile(
   await db
     .update(users)
     .set({ name, jobTitle, company, bio })
-    .where(eq(users.user_id, user.id));
+    .where(eq(users.userId, user.id));
 
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.updateUser({ data: { name } });
@@ -324,6 +324,6 @@ export async function ensureUserRow() {
 
   await db
     .insert(users)
-    .values({ user_id: user.id, email, name })
-    .onConflictDoNothing({ target: users.user_id });
+    .values({ userId: user.id, email, name })
+    .onConflictDoNothing({ target: users.userId });
 }

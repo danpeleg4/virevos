@@ -105,9 +105,9 @@ export async function getBillingOverview(): Promise<BillingOverview> {
   const subscription = await getUserSubscriptionByUserId(user.id);
 
   const [userRow] = await db
-    .select({ ai_credits: users.ai_credits, storage: users.storage })
+    .select({ ai_credits: users.aiCredits, storage: users.storage })
     .from(users)
-    .where(eq(users.user_id, user.id))
+    .where(eq(users.userId, user.id))
     .limit(1);
 
   const aiCredits = userRow?.ai_credits ?? 0;
@@ -173,10 +173,7 @@ export async function updatePlanLimits(
   userId: string,
   _planId: string
 ): Promise<void> {
-  await db
-    .update(users)
-    .set({ ai_credits: 0 })
-    .where(eq(users.user_id, userId));
+  await db.update(users).set({ aiCredits: 0 }).where(eq(users.userId, userId));
 }
 
 export async function changePlan(input: ChangePlanInput): Promise<void> {
@@ -290,9 +287,9 @@ export async function getUserSubscriptionByUserId(
   userId: string
 ): Promise<UserSubscription> {
   const [userRow] = await db
-    .select({ id: users.user_id })
+    .select({ id: users.userId })
     .from(users)
-    .where(eq(users.user_id, userId))
+    .where(eq(users.userId, userId))
     .limit(1);
 
   if (!userRow) {

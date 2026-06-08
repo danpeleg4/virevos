@@ -1,6 +1,6 @@
 {
-  "id": "2e9f344e-864c-4faf-9848-d950fb5feeb4",
-  "prevId": "1ef299a2-ebbc-43c5-a794-838df33167c6",
+  "id": "6918a9c8-dc14-4073-a022-9aa09644c093",
+  "prevId": "2e9f344e-864c-4faf-9848-d950fb5feeb4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3041,6 +3041,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "avatar_path": {
+          "name": "avatar_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "ai_credits": {
           "name": "ai_credits",

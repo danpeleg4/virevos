@@ -10,10 +10,7 @@ import {
   updateProductUpdatesPreference,
   changePassword,
 } from "@/lib/user";
-import {
-  type UserProfile,
-  type UpdateProfileInput,
-} from "@/lib/user_profile";
+import { type UserProfile, type UpdateProfileInput } from "@/lib/user_profile";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";

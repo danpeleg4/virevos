@@ -9,7 +9,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { changeRecordingStatus } from "@/lib/user";
-import { disconnectGoogle, disconnectOutlook } from "@/lib/integrations";
+import { disconnectOutlook } from "@/lib/integrations";
 import type { ComponentType, SVGProps } from "react";
 import type { Integration } from "@/types/integrations";
 import { Separator } from "@/app/components/ui/separator";
@@ -137,9 +137,6 @@ export function IntegrationSettings() {
       id: string;
       action: "disconnect" | "connect";
     }) => {
-      if (id === "google" && action === "disconnect") {
-        await disconnectGoogle();
-      }
       if (id === "outlook" && action === "disconnect") {
         await disconnectOutlook();
       }

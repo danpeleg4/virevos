@@ -19,71 +19,64 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1778374433106,
-      "tag": "0002_doc_request_ai_analysis",
+      "when": 1778374975450,
+      "tag": "0002_dark_penance",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
-      "when": 1778374975450,
-      "tag": "0003_dark_penance",
+      "when": 1778613799261,
+      "tag": "0003_daily_stark_industries",
       "breakpoints": true
     },
     {
       "idx": 4,
       "version": "7",
-      "when": 1778613799261,
-      "tag": "0004_daily_stark_industries",
+      "when": 1779550822325,
+      "tag": "0004_remarkable_brother_voodoo",
       "breakpoints": true
     },
     {
       "idx": 5,
       "version": "7",
-      "when": 1779550822325,
-      "tag": "0005_remarkable_brother_voodoo",
+      "when": 1779842514279,
+      "tag": "0005_right_lilith",
       "breakpoints": true
     },
     {
       "idx": 6,
       "version": "7",
-      "when": 1779842514279,
-      "tag": "0006_right_lilith",
+      "when": 1779922339889,
+      "tag": "0006_slow_patch",
       "breakpoints": true
     },
     {
       "idx": 7,
       "version": "7",
-      "when": 1779922339889,
-      "tag": "0007_slow_patch",
+      "when": 1779991697774,
+      "tag": "0007_overjoyed_vertigo",
       "breakpoints": true
     },
     {
       "idx": 8,
       "version": "7",
-      "when": 1779991697774,
-      "tag": "0008_overjoyed_vertigo",
+      "when": 1779992703389,
+      "tag": "0008_special_mac_gargan",
       "breakpoints": true
     },
     {
       "idx": 9,
       "version": "7",
-      "when": 1779992703389,
-      "tag": "0009_special_mac_gargan",
+      "when": 1780005901010,
+      "tag": "0009_rare_marten_broadcloak",
       "breakpoints": true
     },
     {
       "idx": 10,
       "version": "7",
-      "when": 1780005901010,
-      "tag": "0010_rare_marten_broadcloak",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
       "when": 1780193551999,
-      "tag": "0011_slow_pride",
+      "tag": "0010_slow_pride",
       "breakpoints": true
     }
   ]

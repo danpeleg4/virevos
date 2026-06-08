@@ -182,8 +182,8 @@ export async function POST(req: NextRequest) {
 
   await db
     .update(users)
-    .set({ ai_credits: sql`${users.ai_credits} + 1` })
-    .where(eq(users.user_id, user.id));
+    .set({ aiCredits: sql`${users.aiCredits} + 1` })
+    .where(eq(users.userId, user.id));
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({

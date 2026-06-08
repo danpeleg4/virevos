@@ -73,9 +73,9 @@ export async function assertCanUseAI(userId: string): Promise<void> {
   const limit = AI_CREDIT_LIMITS[plan];
 
   const [userRow] = await db
-    .select({ ai_credits: users.ai_credits })
+    .select({ ai_credits: users.aiCredits })
     .from(users)
-    .where(eq(users.user_id, userId));
+    .where(eq(users.userId, userId));
 
   if (!userRow || userRow.ai_credits >= limit) {
     throw new Error(
@@ -94,7 +94,7 @@ export async function assertCanAddFile(
   const [userRow] = await db
     .select({ storage: users.storage })
     .from(users)
-    .where(eq(users.user_id, userId));
+    .where(eq(users.userId, userId));
 
   const currentStorage = userRow?.storage ?? 0;
   if (currentStorage + fileSize > limitBytes) {

@@ -100,7 +100,7 @@ describe("markActionItemAdded", () => {
     );
   });
 
-  it("returns early when event has no action_items", async () => {
+  it("returns early when event has no actionItems", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectWhere.mockResolvedValueOnce([{ action_items: null }]);
     await markActionItemAdded("evt-1", 0);
@@ -113,11 +113,11 @@ describe("markActionItemAdded", () => {
       { text: "a", added: false },
       { text: "b", added: false },
     ];
-    mockSelectWhere.mockResolvedValueOnce([{ action_items: items }]);
+    mockSelectWhere.mockResolvedValueOnce([{ actionItems: items }]);
     await markActionItemAdded("evt-1", 1);
 
     expect(mockSet).toHaveBeenCalledWith({
-      action_items: [
+      actionItems: [
         { text: "a", added: false },
         { text: "b", added: true },
       ],

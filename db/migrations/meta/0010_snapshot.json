@@ -1,6 +1,6 @@
 {
-  "id": "80dbcb73-1bfb-4356-a853-041ce8886e55",
-  "prevId": "034c4b93-3f1a-4f32-a9e6-9ccf22dc63e4",
+  "id": "f4b6872b-6349-4a74-b2d5-5283ce744fd7",
+  "prevId": "80dbcb73-1bfb-4356-a853-041ce8886e55",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3062,12 +3062,6 @@
         },
         "bio": {
           "name": "bio",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "timezone": {
-          "name": "timezone",
           "type": "text",
           "primaryKey": false,
           "notNull": false

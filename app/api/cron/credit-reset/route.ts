@@ -18,9 +18,9 @@ export async function GET(req: Request) {
 
     const result = await db
       .update(users)
-      .set({ ai_credits: 0, creditsResetAt: nextReset })
+      .set({ aiCredits: 0, creditsResetAt: nextReset })
       .where(or(isNull(users.creditsResetAt), lte(users.creditsResetAt, now)))
-      .returning({ id: users.user_id });
+      .returning({ id: users.userId });
 
     return NextResponse.json({ reset: result.length });
   } catch (err) {

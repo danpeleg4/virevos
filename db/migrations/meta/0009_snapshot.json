@@ -1,6 +1,6 @@
 {
-  "id": "034c4b93-3f1a-4f32-a9e6-9ccf22dc63e4",
-  "prevId": "1e6f35bb-86b8-4948-ac01-1eb770c750bf",
+  "id": "80dbcb73-1bfb-4356-a853-041ce8886e55",
+  "prevId": "034c4b93-3f1a-4f32-a9e6-9ccf22dc63e4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3095,6 +3095,13 @@
         },
         "weekly_summary": {
           "name": "weekly_summary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "product_updates": {
+          "name": "product_updates",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

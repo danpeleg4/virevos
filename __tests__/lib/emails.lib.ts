@@ -103,7 +103,7 @@ describe("getEmailData", () => {
     expect(mockCreateEmbedding).not.toHaveBeenCalled();
   });
 
-  it("calls queryVectors scoped to the current user_id and topK=10", async () => {
+  it("calls queryVectors scoped to the current userId and topK=10", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({ data: { vectors: [] } });
     (db.select as Mock).mockReturnValue({ from: mockFrom });
@@ -112,7 +112,7 @@ describe("getEmailData", () => {
     expect(mockQueryVectors).toHaveBeenCalledWith({
       queryVector: { float32: [0.1, 0.2, 0.3] },
       topK: 10,
-      filter: { user_id: "user_1" },
+      filter: { userId: "user_1" },
       returnMetadata: true,
     });
   });

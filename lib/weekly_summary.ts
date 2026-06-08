@@ -7,7 +7,6 @@ import {
   caseFiles,
   tasks,
   events,
-  googleEmails,
   outlookEmails,
   scheduledEmails,
   portalMessages,
@@ -147,7 +146,6 @@ export async function gatherWeekData(userId: string): Promise<WeeklyData> {
     caseFileRows,
     taskRows,
     eventRows,
-    googleEmailRows,
     outlookEmailRows,
     scheduledRows,
     portalMsgRows,
@@ -204,24 +202,11 @@ export async function gatherWeekData(userId: string): Promise<WeeklyData> {
         id: events.id,
         title: events.title,
         dateTime: events.dateTime,
-        aiSummary: events.ai_summary,
+        aiSummary: events.aiSummary,
         isMeeting: events.isMeeting,
       })
       .from(events)
       .where(and(eq(events.userId, userId), gte(events.createdAt, rangeStart))),
-    db
-      .select({
-        id: googleEmails.id,
-        isSent: googleEmails.isSent,
-        createdAt: googleEmails.createdAt,
-      })
-      .from(googleEmails)
-      .where(
-        and(
-          eq(googleEmails.userId, userId),
-          gte(googleEmails.createdAt, rangeStart)
-        )
-      ),
     db
       .select({
         id: outlookEmails.id,
@@ -334,12 +319,8 @@ export async function gatherWeekData(userId: string): Promise<WeeklyData> {
     tasksCreated: taskRows.length,
     tasksCompleted: completedTaskRows.length,
     meetingsHeld: eventRows.filter((e) => e.isMeeting).length,
-    emailsSent:
-      googleEmailRows.filter((e) => e.isSent).length +
-      outlookEmailRows.filter((e) => e.isSent).length,
-    emailsReceived:
-      googleEmailRows.filter((e) => !e.isSent).length +
-      outlookEmailRows.filter((e) => !e.isSent).length,
+    emailsSent: outlookEmailRows.filter((e) => e.isSent).length,
+    emailsReceived: outlookEmailRows.filter((e) => !e.isSent).length,
     scheduledEmailsSent: sentScheduled,
     portalMessages: portalMsgRows.length,
     portalBookings: portalBookingRows.length,
@@ -440,7 +421,7 @@ export async function sendWeeklySummary(
       weeklySummary: users.weeklySummary,
     })
     .from(users)
-    .where(eq(users.user_id, userId));
+    .where(eq(users.userId, userId));
 
   if (!user) return { skipped: "user_not_found" };
   if (!user.weeklySummary) return { skipped: "preference_off" };
@@ -454,8 +435,8 @@ export async function sendWeeklySummary(
   });
   await db
     .update(users)
-    .set({ ai_credits: sql`${users.ai_credits} + 1` })
-    .where(eq(users.user_id, userId));
+    .set({ aiCredits: sql`${users.aiCredits} + 1` })
+    .where(eq(users.userId, userId));
   return { emailId: id };
 }
 
@@ -463,7 +444,7 @@ export async function listUsersWithWeeklySummary(): Promise<
   Array<{ userId: string }>
 > {
   const rows = await db
-    .select({ userId: users.user_id })
+    .select({ userId: users.userId })
     .from(users)
     .where(eq(users.weeklySummary, true));
   return rows;

@@ -25,11 +25,11 @@ export async function GET(req: Request) {
   await db
     .insert(users)
     .values({
-      user_id: user.id,
+      userId: user.id,
       email: user.email ?? "",
       name: (user.user_metadata?.name as string | undefined) ?? null,
     })
-    .onConflictDoNothing({ target: users.user_id });
+    .onConflictDoNothing({ target: users.userId });
 
   const { access_token, refresh_token, expires_at } =
     await exchangeOutlookCode(code);
@@ -44,18 +44,18 @@ export async function GET(req: Request) {
     await db
       .update(outlookTokens)
       .set({
-        access_token,
-        refresh_token: refresh_token || existingToken[0].refresh_token,
-        expires_in: expires_at,
+        accessToken: access_token,
+        refreshToken: refresh_token || existingToken[0].refreshToken,
+        expiresIn: expires_at,
         connected: true,
       })
       .where(eq(outlookTokens.userId, user.id));
   } else {
     await db.insert(outlookTokens).values({
       userId: user.id,
-      access_token,
-      refresh_token,
-      expires_in: expires_at,
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      expiresIn: expires_at,
       connected: true,
     });
   }

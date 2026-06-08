@@ -203,7 +203,7 @@ describe("ensureUserRow", () => {
     await ensureUserRow();
 
     expect(mockInsertValues).toHaveBeenCalledWith({
-      user_id: "user_1",
+      userId: "user_1",
       email: "test@example.com",
       name: "Test User",
     });
@@ -216,7 +216,7 @@ describe("ensureUserRow", () => {
     await ensureUserRow();
 
     expect(mockInsertValues).toHaveBeenCalledWith({
-      user_id: "user_1",
+      userId: "user_1",
       email: "",
       name: "",
     });
