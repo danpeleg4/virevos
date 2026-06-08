@@ -113,6 +113,28 @@ describe("Settings Page", () => {
     expect(screen.getByText(/weekly summary/i)).toBeInTheDocument();
   });
 
+  it("reflects prefetched notification preferences in the toggles", () => {
+    mockUseQuery.mockImplementation(
+      mockQueriesByKey({ weeklySummary: true, productUpdates: false })
+    );
+    render(<Settings />);
+    fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
+    const [weekly, product] = screen.getAllByRole("switch");
+    expect(weekly).toBeChecked();
+    expect(product).not.toBeChecked();
+  });
+
+  it("saves a notification preference via the mutation", () => {
+    mockUseQuery.mockImplementation(
+      mockQueriesByKey({ weeklySummary: false, productUpdates: false })
+    );
+    render(<Settings />);
+    fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
+    const [weekly] = screen.getAllByRole("switch");
+    fireEvent.click(weekly);
+    expect(mockMutate).toHaveBeenCalledWith(true);
+  });
+
   it("switches to Security tab when clicked", () => {
     render(<Settings />);
     fireEvent.click(screen.getByRole("button", { name: /security/i }));

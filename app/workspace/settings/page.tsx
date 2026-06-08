@@ -336,19 +336,15 @@ function ProfileTab() {
   );
 }
 
-function NotificationsTab() {
+function NotificationsTab({
+  weeklySummary,
+  productUpdates,
+}: {
+  weeklySummary?: boolean;
+  productUpdates?: boolean;
+}) {
   const queryClient = useQueryClient();
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  const { data: weeklySummary } = useQuery<boolean>({
-    queryKey: ["weeklySummary"],
-    queryFn: () => axios.get("/api/user/weekly-summary").then((r) => r.data),
-  });
-
-  const { data: productUpdates } = useQuery<boolean>({
-    queryKey: ["productUpdates"],
-    queryFn: () => axios.get("/api/user/product-updates").then((r) => r.data),
-  });
 
   const weeklySummaryMutation = useMutation({
     mutationFn: (enabled: boolean) => updateWeeklySummaryPreference(enabled),
@@ -553,6 +549,16 @@ export default function Settings() {
     },
   });
 
+  const { data: weeklySummary } = useQuery<boolean>({
+    queryKey: ["weeklySummary"],
+    queryFn: () => axios.get("/api/user/weekly-summary").then((r) => r.data),
+  });
+
+  const { data: productUpdates } = useQuery<boolean>({
+    queryKey: ["productUpdates"],
+    queryFn: () => axios.get("/api/user/product-updates").then((r) => r.data),
+  });
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
@@ -586,7 +592,12 @@ export default function Settings() {
 
         {/* Tab content */}
         {activeTab === "profile" && <ProfileTab />}
-        {activeTab === "notifications" && <NotificationsTab />}
+        {activeTab === "notifications" && (
+          <NotificationsTab
+            weeklySummary={weeklySummary}
+            productUpdates={productUpdates}
+          />
+        )}
         {activeTab === "security" && <SecurityTab />}
         {activeTab === "integrations" && (
           <IntegrationSettings integrations={integrations} />
