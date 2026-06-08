@@ -25,6 +25,7 @@ import {
 } from "../../components/ui/avatar";
 import { Bell, Plug, User, Shield, Upload, Loader2 } from "lucide-react";
 import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSettings";
+import type { Integration } from "@/types/integrations";
 
 const TABS = [
   { value: "profile", label: "Profile", icon: User },
@@ -521,6 +522,36 @@ function SecurityTab() {
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<TabValue>("profile");
+  const INITIAL_INTEGRATIONS: Integration[] = [
+    {
+      id: "outlook",
+      name: "Microsoft Outlook",
+      description: "Sync with Outlook Calendar",
+      icon: "/outlook.svg",
+      connected: false,
+      syncStatus: "not-connected",
+      features: [
+        "Two-way calendar sync",
+        "Teams meeting integration",
+        "Email notifications",
+        "Contact sync",
+      ],
+    },
+  ];
+
+  const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
+    queryKey: ["integrations"],
+    queryFn: async () => {
+      const outlookCheck = await axios.get("/api/integrations/outlook");
+      const outlookConnected = outlookCheck.data.connected;
+
+      return INITIAL_INTEGRATIONS.map((int) => {
+        if (int.id === "outlook")
+          return { ...int, connected: outlookConnected };
+        return int;
+      });
+    },
+  });
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -557,7 +588,9 @@ export default function Settings() {
         {activeTab === "profile" && <ProfileTab />}
         {activeTab === "notifications" && <NotificationsTab />}
         {activeTab === "security" && <SecurityTab />}
-        {activeTab === "integrations" && <IntegrationSettings />}
+        {activeTab === "integrations" && (
+          <IntegrationSettings integrations={integrations} />
+        )}
       </Card>
     </div>
   );
