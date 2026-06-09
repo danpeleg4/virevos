@@ -3,7 +3,7 @@
 import { db } from "@db/db";
 import { events } from "@db/schema";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import {
   MAX_MESSAGE,
   MAX_SHORT,
@@ -18,6 +18,7 @@ import {
   createEmbedding,
 } from "../embeddings";
 import { supabaseAdmin } from "@/lib/supabase/supabase";
+import { id } from "react-day-picker/locale";
 
 export async function startMeeting(meetingId: string) {
   const user = await getCurrentUser();
@@ -86,10 +87,20 @@ export async function getPastMeetingTranscript(text: string) {
     .from(TRANSCRIPT_BUCKET)
     .index(TRANSCRIPT_INDEX);
 
+  // Get the latest meeting of user from DB
+  const [latestEvent] = await db
+    .select()
+    .from(events)
+    .where(and(eq(events.userId, user.id), eq(events.isMeeting, true)))
+    .orderBy(desc(events.createdAt))
+    .limit(1);
+
+  if (!latestEvent) return [];
+
   const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
     topK: 10,
-    filter: { userId: user.id },
+    filter: { userId: user.id, room: latestEvent.id },
     returnMetadata: true,
   });
 

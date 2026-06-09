@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "npx prettier --write .",
-    "test-vector": "node scripts/test-vector-upload.ts",
+    "test-semantic-search": "node scripts/test-semantic-search.ts",
+    "test-vector-upload": "node scripts/test-vector-upload.ts",
     "test-vector-create": "node scripts/test-vector-create.ts",
     "test-weekly-summary": "node scripts/test-weekly-summary-cron.ts"
   },
