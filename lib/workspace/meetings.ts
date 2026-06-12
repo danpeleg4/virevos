@@ -18,7 +18,6 @@ import {
   createEmbedding,
 } from "../embeddings";
 import { supabaseAdmin } from "@/lib/supabase/supabase";
-import { id } from "react-day-picker/locale";
 
 export async function startMeeting(meetingId: string) {
   const user = await getCurrentUser();

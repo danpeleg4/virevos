@@ -2,6 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { config } from "dotenv";
 
+/**
+ * Need to put a user_id as command line argument
+ *
+ */
+
 config({ path: ".env.local" });
 
 if (typeof (globalThis as { WebSocket?: unknown }).WebSocket === "undefined") {

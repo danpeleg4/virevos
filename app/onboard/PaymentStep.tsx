@@ -21,8 +21,8 @@ const stripePromise = loadStripe(
 );
 
 const planLabels: Record<string, { name: string; price: string }> = {
-  professional: { name: "Professional", price: "$29.00" },
-  business: { name: "Business", price: "$79.00" },
+  professional: { name: "Professional", price: "$79.00" },
+  business: { name: "Business", price: "$129.00" },
 };
 
 function CheckoutForm({ planId }: { planId: string }) {
@@ -120,7 +120,7 @@ export default function PaymentStep({ formData }: PaymentStepProps) {
 
   const planInfo = planLabels[formData.selectedPlan ?? ""] ?? {
     name: "Professional",
-    price: "$29.00",
+    price: "$79.00",
   };
 
   return (
