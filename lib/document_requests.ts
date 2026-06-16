@@ -75,9 +75,9 @@ async function getItemsByRequest(requestRows: RequestRow[]) {
   return itemsByRequest;
 }
 
-export async function listPendingDocumentRequests(): Promise<
-  PendingDocRequest[]
-> {
+export async function listPendingDocumentRequests(
+  userId: string
+): Promise<PendingDocRequest[]> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
@@ -95,7 +95,7 @@ export async function listPendingDocumentRequests(): Promise<
     .innerJoin(events, eq(meetingDocumentRequests.eventId, events.id))
     .where(
       and(
-        eq(meetingDocumentRequests.userId, user.id),
+        eq(meetingDocumentRequests.userId, userId),
         eq(meetingDocumentRequests.status, "pending_approval")
       )
     )
