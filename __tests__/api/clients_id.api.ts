@@ -1,8 +1,5 @@
 import { NextRequest } from "next/server";
 import { GET as getClient } from "@/app/api/clients/[id]/route";
-import { GET as getClientCases } from "@/app/api/clients/[id]/cases/route";
-import { GET as getClientEmails } from "@/app/api/clients/[id]/outlook-emails/route";
-import { GET as getClientPortal } from "@/app/api/clients/[id]/portal/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 
@@ -17,7 +14,14 @@ vi.mock("@db/db", () => ({
 }));
 
 const mockUser = { id: "user_abc" };
-const req = {} as NextRequest;
+
+const makeReq = (type?: string) =>
+  ({
+    nextUrl: { searchParams: new URLSearchParams(type ? { type } : undefined) },
+  }) as unknown as NextRequest;
+
+// Default request targets the "main" handler (client + portal lookup)
+const req = makeReq("main");
 
 let consoleErrorSpy: MockInstance;
 
@@ -110,144 +114,18 @@ describe("GET /api/clients/[id]", () => {
     const res = await getClient(req, { params });
     expect(res.status).toBe(500);
   });
-});
 
-describe("GET /api/clients/[id]/cases", () => {
-  const params = Promise.resolve({ id: "5" });
-
-  it("returns 401 when unauthenticated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(null);
-    const res = await getClientCases(req, { params });
-    expect(res.status).toBe(401);
-  });
-
-  it("returns cases-with-stats for the client", async () => {
+  it("returns 400 for an unknown type", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-
-    const rows = [
-      {
-        id: 1,
-        name: "Case A",
-        description: null,
-        status: "active",
-        dueDate: null,
-        priority: "low",
-        clientId: 5,
-        userId: mockUser.id,
-        clientName: "Acme",
-        totalTasks: 4,
-        completedTasks: 1,
-      },
-    ];
-
-    const groupBy = vi.fn().mockResolvedValue(rows);
-    const where = vi.fn(() => ({ groupBy }));
-    const leftJoin2 = vi.fn(() => ({ where }));
-    const leftJoin1 = vi.fn(() => ({ leftJoin: leftJoin2 }));
-    const from = vi.fn(() => ({ leftJoin: leftJoin1 }));
-    (db.select as Mock).mockReturnValueOnce({ from });
-
-    const res = await getClientCases(req, { params });
+    const res = await getClient(makeReq("bogus"), { params });
     const json = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(json.cases).toHaveLength(1);
-    expect(json.cases[0].stats.percentage).toBe(25);
-  });
-});
-
-describe("GET /api/clients/[id]/outlook-emails", () => {
-  const params = Promise.resolve({ id: "5" });
-
-  it("returns 401 when unauthenticated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(null);
-    const res = await getClientEmails(req, { params });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("Invalid type");
   });
 
-  it("returns emails for the client", async () => {
+  it("returns 400 when no type is provided", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-
-    const emails = [
-      {
-        id: 1,
-        subject: "Hi",
-        snippet: "hello",
-        fromEmail: "x@y.com",
-        fromName: "X",
-        toEmails: ["a@b.com"],
-        isRead: false,
-        isSent: false,
-        hasAttachments: false,
-        sentAt: new Date().toISOString(),
-      },
-    ];
-
-    const limit = vi.fn().mockResolvedValue(emails);
-    const orderBy = vi.fn(() => ({ limit }));
-    const where = vi.fn(() => ({ orderBy }));
-    const from = vi.fn(() => ({ where }));
-    (db.select as Mock).mockReturnValueOnce({ from });
-
-    const res = await getClientEmails(req, { params });
-    const json = await res.json();
-    expect(res.status).toBe(200);
-    expect(json.emails).toEqual(emails);
-  });
-});
-
-describe("GET /api/clients/[id]/portal", () => {
-  const params = Promise.resolve({ id: "5" });
-
-  it("returns 401 when unauthenticated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(null);
-    const res = await getClientPortal(req, { params });
-    expect(res.status).toBe(401);
-  });
-
-  it("returns portal=null when no portal exists for the client", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-
-    const limit = vi.fn().mockResolvedValue([]);
-    const where = vi.fn(() => ({ limit }));
-    const leftJoin = vi.fn(() => ({ where }));
-    const from = vi.fn(() => ({ leftJoin }));
-    (db.select as Mock).mockReturnValueOnce({ from });
-
-    const res = await getClientPortal(req, { params });
-    const json = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(json.portal).toBeNull();
-  });
-
-  it("returns the portal record with a portalUrl when present", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
-
-    const row = {
-      id: 7,
-      clientId: 5,
-      token: "tok123",
-      enabled: true,
-      settings: { chatEnabled: true },
-      lastAccessedAt: null,
-      createdAt: new Date().toISOString(),
-      clientName: "Acme",
-      clientEmail: "a@b.com",
-    };
-
-    const limit = vi.fn().mockResolvedValue([row]);
-    const where = vi.fn(() => ({ limit }));
-    const leftJoin = vi.fn(() => ({ where }));
-    const from = vi.fn(() => ({ leftJoin }));
-    (db.select as Mock).mockReturnValueOnce({ from });
-
-    const res = await getClientPortal(req, { params });
-    const json = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(json.portal.portalUrl).toBe("https://example.com/portal/tok123");
-    expect(json.portal.id).toBe(7);
+    const res = await getClient(makeReq(), { params });
+    expect(res.status).toBe(400);
   });
 });

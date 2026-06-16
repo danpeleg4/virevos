@@ -40,6 +40,8 @@ vi.mock("@/lib/supabase/supabase", () => {
 const mockUpdateWhere = vi.fn();
 const mockSet = vi.fn(() => ({ where: mockUpdateWhere }));
 const mockValues = vi.fn();
+const mockLimit = vi.fn();
+const mockOrderBy = vi.fn(() => ({ limit: mockLimit }));
 const mockSelectWhere = vi.fn();
 const mockSelectFrom = vi.fn(() => ({ where: mockSelectWhere }));
 const mockSelect = vi.fn(() => ({ from: mockSelectFrom }));
@@ -59,7 +61,9 @@ beforeEach(() => {
   mockUpdateWhere.mockResolvedValue(undefined);
   mockSet.mockReturnValue({ where: mockUpdateWhere });
   mockValues.mockResolvedValue(undefined);
-  mockSelectWhere.mockResolvedValue([]);
+  mockLimit.mockResolvedValue([{ id: "evt-latest" }]);
+  mockOrderBy.mockReturnValue({ limit: mockLimit });
+  mockSelectWhere.mockReturnValue({ orderBy: mockOrderBy });
   mockSelectFrom.mockReturnValue({ where: mockSelectWhere });
   mockSelect.mockReturnValue({ from: mockSelectFrom });
 });

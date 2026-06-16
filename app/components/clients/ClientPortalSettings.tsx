@@ -131,7 +131,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
     queryKey: ["clientPortal", clientId],
     queryFn: async () => {
       const { data } = await axios.get<{ portal: PortalRecord | null }>(
-        `/api/clients/${clientId}/portal`
+        `/api/clients/${clientId}?type=portal`
       );
       return data.portal;
     },
