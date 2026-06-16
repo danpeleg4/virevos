@@ -48,15 +48,6 @@ export interface PortalDocumentRequest {
   items: DocumentRequestItem[];
 }
 
-export interface FulfilledDocRequest {
-  id: number;
-  eventTitle: string;
-  eventDateTime: string;
-  clientId: number | null;
-  approvedAt: string | null;
-  items: DocumentRequestItem[];
-}
-
 export interface DocumentRequestItemInput {
   id?: number;
   name: string;

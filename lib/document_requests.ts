@@ -255,54 +255,6 @@ export async function declineDocumentRequest(requestId: number): Promise<void> {
     .where(eq(meetingDocumentRequests.id, requestId));
 }
 
-export async function listFulfilledRequestsForAgency(): Promise<
-  Array<{
-    id: number;
-    eventTitle: string;
-    eventDateTime: string;
-    clientId: number | null;
-    approvedAt: string | null;
-    items: DocumentRequestItem[];
-  }>
-> {
-  const user = await getCurrentUser();
-  if (!user?.id) throw new Error("Unauthorized");
-
-  const requestRows = await db
-    .select({
-      id: meetingDocumentRequests.id,
-      clientId: meetingDocumentRequests.clientId,
-      approvedAt: meetingDocumentRequests.approvedAt,
-      eventTitle: events.title,
-      eventDateTime: events.dateTime,
-    })
-    .from(meetingDocumentRequests)
-    .innerJoin(events, eq(meetingDocumentRequests.eventId, events.id))
-    .where(
-      and(
-        eq(meetingDocumentRequests.userId, user.id),
-        eq(meetingDocumentRequests.status, "approved")
-      )
-    )
-    .orderBy(desc(meetingDocumentRequests.approvedAt));
-
-  if (requestRows.length === 0) return [];
-  const itemsByRequest = await getItemsByRequest(requestRows);
-
-  return requestRows
-    .map((r) => ({
-      id: r.id,
-      eventTitle: r.eventTitle,
-      eventDateTime: r.eventDateTime.toISOString(),
-      clientId: r.clientId,
-      approvedAt: r.approvedAt?.toISOString() ?? null,
-      items: itemsByRequest.get(r.id) ?? [],
-    }))
-    .filter((r) =>
-      r.items.some((it) => it.status === "uploaded" || it.status === "rejected")
-    );
-}
-
 export async function listApprovedRequestsForClient(clientId: number): Promise<
   Array<{
     id: number;
