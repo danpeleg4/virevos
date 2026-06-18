@@ -1,5 +1,6 @@
 import {
   acceptBookingWithCalendar,
+  createPortalBooking,
   getPortalBookings,
   updateBookingStatus,
 } from "@/lib/portal_bookings";
@@ -9,12 +10,17 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => ({ get: () => null })),
+}));
+
 const mockWhere = vi.fn();
 const mockSet = vi.fn(() => ({ where: mockWhere }));
 
 vi.mock("@db/db", () => ({
   db: {
     select: vi.fn(),
+    insert: vi.fn(),
     update: vi.fn(() => ({ set: mockSet })),
   },
 }));
@@ -207,5 +213,127 @@ describe("acceptBookingWithCalendar", () => {
 
     expect(mockSet).toHaveBeenCalledTimes(1);
     expect(mockSet).toHaveBeenCalledWith({ status: "confirmed" });
+  });
+});
+
+// ─── createPortalBooking ─────────────────────────────────────────────────────
+
+describe("createPortalBooking", () => {
+  const mockPortal = {
+    id: 1,
+    clientId: 10,
+    userId: "user_1",
+    token: "test-token",
+    enabled: true,
+    settings: {
+      meetingSchedulingEnabled: true,
+      availability: {
+        meetingDurations: [30, 60],
+        bufferMinutes: 15,
+      },
+    },
+  };
+
+  const validInput = {
+    clientName: "Alice",
+    clientEmail: "alice@example.com",
+    dateTime: "2026-06-01T10:00:00.000Z",
+    duration: 30,
+    notes: "Discuss Q3 roadmap",
+  };
+
+  function mockTokenLookup(rows: unknown[]) {
+    const limit = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    (db.select as Mock).mockReturnValue({ from });
+  }
+
+  it("throws when clientName is missing", async () => {
+    await expect(
+      createPortalBooking("test-token", { ...validInput, clientName: "" })
+    ).rejects.toThrow(/clientName/);
+  });
+
+  it("throws when clientEmail is invalid", async () => {
+    await expect(
+      createPortalBooking("test-token", {
+        ...validInput,
+        clientEmail: "not-an-email",
+      })
+    ).rejects.toThrow(/clientEmail.*valid email/);
+  });
+
+  it("throws Portal not found when token is unknown", async () => {
+    mockTokenLookup([]);
+    await expect(
+      createPortalBooking("unknown-token", validInput)
+    ).rejects.toThrow("Portal not found");
+  });
+
+  it("throws Portal not found when portal is disabled", async () => {
+    mockTokenLookup([{ ...mockPortal, enabled: false }]);
+    await expect(
+      createPortalBooking("test-token", validInput)
+    ).rejects.toThrow("Portal not found");
+  });
+
+  it("throws Scheduling not enabled when meetingSchedulingEnabled is false", async () => {
+    mockTokenLookup([
+      {
+        ...mockPortal,
+        settings: { ...mockPortal.settings, meetingSchedulingEnabled: false },
+      },
+    ]);
+    await expect(
+      createPortalBooking("test-token", validInput)
+    ).rejects.toThrow("Scheduling not enabled");
+  });
+
+  it("throws Invalid duration when duration is not allowed", async () => {
+    mockTokenLookup([mockPortal]);
+    await expect(
+      createPortalBooking("test-token", { ...validInput, duration: 45 })
+    ).rejects.toThrow("Invalid duration");
+  });
+
+  it("inserts a pending booking and returns its id", async () => {
+    mockTokenLookup([mockPortal]);
+
+    const returning = vi.fn().mockResolvedValue([{ id: 42 }]);
+    const values = vi.fn(() => ({ returning }));
+    (db.insert as Mock).mockReturnValue({ values });
+
+    const result = await createPortalBooking("test-token", validInput);
+
+    expect(result).toEqual({ success: true, bookingId: 42 });
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        portalId: mockPortal.id,
+        clientId: mockPortal.clientId,
+        userId: mockPortal.userId,
+        clientName: "Alice",
+        clientEmail: "alice@example.com",
+        duration: 30,
+        status: "pending",
+        notes: "Discuss Q3 roadmap",
+      })
+    );
+  });
+
+  it("stores notes as null when omitted", async () => {
+    mockTokenLookup([mockPortal]);
+
+    const returning = vi.fn().mockResolvedValue([{ id: 7 }]);
+    const values = vi.fn(() => ({ returning }));
+    (db.insert as Mock).mockReturnValue({ values });
+
+    const { notes: _notes, ...withoutNotes } = validInput;
+    void _notes;
+    await createPortalBooking("test-token", withoutNotes);
+
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({ notes: null })
+    );
   });
 });

@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import type { PortalData, PortalChatMessage, TimeSlot } from "@/types/portal";
 import type { DocumentRequestItem } from "@/types/document_requests";
 import { parseDateOnlyString } from "@/lib/util/date_utils";
+import { createPortalBooking } from "@/lib/portal_bookings";
 import axios from "axios";
 
 function formatFileSize(bytes: number): string {
@@ -174,7 +175,6 @@ export default function PortalPage() {
     clientEmail: "",
     notes: "",
   });
-  const [isBooking, setIsBooking] = useState(false);
 
   // File upload state
   const [localFiles, setLocalFiles] = useState<PortalData["files"]>([]);
@@ -206,7 +206,7 @@ export default function PortalPage() {
   const fetchPortalData = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`/api/portal/${token}`);
+      const res = await axios.get(`/api/portal/${token}?type=main`);
       const portalData = res.data;
       setData(portalData);
       setLocalFiles(portalData.files || []);
@@ -264,32 +264,32 @@ export default function PortalPage() {
     }
   }, [localMessages.length, activeTab]);
 
-  const handleBookMeeting = async () => {
+  const bookMeeting = useMutation({
+    mutationFn: (slot: string) =>
+      createPortalBooking(token, {
+        clientName: bookingForm.clientName,
+        clientEmail: bookingForm.clientEmail,
+        dateTime: slot,
+        duration: selectedDuration,
+        notes: bookingForm.notes || undefined,
+      }),
+    onSuccess: () => {
+      setBookingStep("confirmed");
+    },
+    onError: () => {
+      toast.error("Failed to book meeting");
+    },
+  });
+  const isBooking = bookMeeting.isPending;
+
+  const handleBookMeeting = () => {
     if (
       !selectedSlot ||
       !bookingForm.clientName.trim() ||
       !bookingForm.clientEmail.trim()
     )
       return;
-    setIsBooking(true);
-    try {
-      const res = await axios.post(`/api/portal/${token}/book`, {
-        clientName: bookingForm.clientName,
-        clientEmail: bookingForm.clientEmail,
-        dateTime: selectedSlot,
-        duration: selectedDuration,
-        notes: bookingForm.notes || undefined,
-      });
-      if (res.status === 200) {
-        setBookingStep("confirmed");
-      } else {
-        toast.error("Failed to book meeting");
-      }
-    } catch {
-      toast.error("Failed to book meeting");
-    } finally {
-      setIsBooking(false);
-    }
+    bookMeeting.mutate(selectedSlot);
   };
 
   const handleFileUpload = async (file: File) => {
