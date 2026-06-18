@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@db/db";
 import { clientPortalTokens, portalMessages } from "@db/schema";
 import { and, asc, eq, isNull } from "drizzle-orm";
-import { MAX_MESSAGE, MAX_SHORT } from "@/lib/util/validation";
-import { rateLimit } from "@/lib/util/rate_limit";
 
 async function loadPortal(token: string) {
   const rows = await db
@@ -64,82 +62,6 @@ export async function GET(
     });
   } catch (err) {
     console.error("[api/portal/[token]/chat GET]", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-) {
-  const limited = rateLimit(req, {
-    keyPrefix: "portal-chat",
-    windowMs: 60_000,
-    max: 30,
-  });
-  if (limited) return limited;
-
-  try {
-    const { token } = await params;
-    if (typeof token !== "string" || token.length > MAX_SHORT) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 400 });
-    }
-    const body = await req.json();
-    const message =
-      typeof body?.message === "string" ? body.message.trim() : "";
-
-    if (!message) {
-      return NextResponse.json(
-        { error: "Message is required" },
-        { status: 400 }
-      );
-    }
-    if (message.length > MAX_MESSAGE) {
-      return NextResponse.json(
-        { error: `Message exceeds max length of ${MAX_MESSAGE}` },
-        { status: 400 }
-      );
-    }
-
-    const portal = await loadPortal(token);
-    if (!portal) {
-      return NextResponse.json(
-        { error: "Portal not found or disabled" },
-        { status: 404 }
-      );
-    }
-
-    const [inserted] = await db
-      .insert(portalMessages)
-      .values({
-        portalId: portal.id,
-        clientId: portal.clientId,
-        userId: portal.userId,
-        senderType: "client",
-        body: message,
-      })
-      .returning({
-        id: portalMessages.id,
-        senderType: portalMessages.senderType,
-        body: portalMessages.body,
-        readAt: portalMessages.readAt,
-        createdAt: portalMessages.createdAt,
-      });
-
-    return NextResponse.json({
-      message: {
-        id: inserted.id,
-        senderType: inserted.senderType,
-        body: inserted.body,
-        readAt: inserted.readAt ? inserted.readAt.toISOString() : null,
-        createdAt: inserted.createdAt.toISOString(),
-      },
-    });
-  } catch (err) {
-    console.error("[api/portal/[token]/chat POST]", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

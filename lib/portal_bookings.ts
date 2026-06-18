@@ -58,8 +58,8 @@ export async function createPortalBooking(
     throw new ValidationError("Scheduling not enabled", 403);
   }
 
-  const allowedDurations =
-    portalRecord.settings.availability?.meetingDurations ?? [30];
+  const allowedDurations = portalRecord.settings.availability
+    ?.meetingDurations ?? [30];
   if (!allowedDurations.includes(duration)) {
     throw new ValidationError("Invalid duration", 400);
   }

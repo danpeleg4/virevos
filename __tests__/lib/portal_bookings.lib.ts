@@ -273,9 +273,9 @@ describe("createPortalBooking", () => {
 
   it("throws Portal not found when portal is disabled", async () => {
     mockTokenLookup([{ ...mockPortal, enabled: false }]);
-    await expect(
-      createPortalBooking("test-token", validInput)
-    ).rejects.toThrow("Portal not found");
+    await expect(createPortalBooking("test-token", validInput)).rejects.toThrow(
+      "Portal not found"
+    );
   });
 
   it("throws Scheduling not enabled when meetingSchedulingEnabled is false", async () => {
@@ -285,9 +285,9 @@ describe("createPortalBooking", () => {
         settings: { ...mockPortal.settings, meetingSchedulingEnabled: false },
       },
     ]);
-    await expect(
-      createPortalBooking("test-token", validInput)
-    ).rejects.toThrow("Scheduling not enabled");
+    await expect(createPortalBooking("test-token", validInput)).rejects.toThrow(
+      "Scheduling not enabled"
+    );
   });
 
   it("throws Invalid duration when duration is not allowed", async () => {

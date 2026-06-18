@@ -6,7 +6,6 @@ export const MAX_PHONE = 50;
 export const MAX_NOTES = 10_000;
 export const MAX_MESSAGE = 5_000;
 export const MAX_HTML_BODY = 200_000;
-export const MAX_ATTACHMENT_BASE64 = 30_000_000;
 export const MAX_ATTACHMENTS = 25;
 export const MAX_CHAT_HISTORY = 50;
 export const MAX_RECIPIENTS = 50;
@@ -62,14 +61,6 @@ export function requireEmail(value: unknown, field = "email"): string {
   return v;
 }
 
-export function optionalEmail(
-  value: unknown,
-  field = "email"
-): string | undefined {
-  if (value === undefined || value === null || value === "") return undefined;
-  return requireEmail(value, field);
-}
-
 export function requireNumber(value: unknown, field: string): number {
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) {
@@ -102,14 +93,6 @@ export function requireBool(value: unknown, field: string): boolean {
     throw new ValidationError(`${field} must be a boolean`);
   }
   return value;
-}
-
-export function optionalBool(
-  value: unknown,
-  field: string
-): boolean | undefined {
-  if (value === undefined || value === null) return undefined;
-  return requireBool(value, field);
 }
 
 export function requireDateString(value: unknown, field: string): Date {

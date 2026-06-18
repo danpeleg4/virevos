@@ -49,13 +49,13 @@ const mainType = async (token: string) => {
     const client = clientRows[0];
 
     // Fetch client's cases
-    const clientProjects = await db
+    const clientCases = await db
       .select()
       .from(cases)
       .where(eq(cases.clientId, client.id));
 
     // Fetch case files for client's cases
-    const caseIds = clientProjects.map((p) => p.id);
+    const caseIds = clientCases.map((p) => p.id);
     const files: Array<typeof caseFiles.$inferSelect> = [];
     if (caseIds.length > 0) {
       // Fetch files for all cases (drizzle doesn't support inArray easily without import, use loop)
@@ -94,7 +94,7 @@ const mainType = async (token: string) => {
         email: client.email,
       },
       settings: portalToken.settings || {},
-      cases: clientProjects.map((p) => ({
+      cases: clientCases.map((p) => ({
         id: p.id,
         name: p.name,
         status: p.status,

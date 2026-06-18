@@ -1,3 +1,4 @@
+//TODO CHANGE TO 'Client' AND UPDATE ALL USAGES
 export type clients = {
   id: number;
   name: string;
@@ -28,5 +29,3 @@ type UpdateClientInput = {
   status?: "active" | "inactive";
   notes?: string;
 };
-
-export type ClientSummary = Pick<clients, "id" | "name">;
