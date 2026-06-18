@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/portal-chat/[clientId]/route";
+import { GET } from "@/app/api/portal-chat/[id]/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";

@@ -48,6 +48,30 @@ vi.mock("@/lib/portal_bookings", () => ({
   ),
 }));
 
+vi.mock("@/lib/portal_file_uploads", () => ({
+  uploadPortalFile: vi.fn(() =>
+    Promise.resolve({
+      id: 1,
+      name: "report.pdf",
+      size: 4,
+      mimeType: "application/pdf",
+      path: "p",
+      createdAt: new Date().toISOString(),
+      caseId: 7,
+    })
+  ),
+}));
+
+vi.mock("@/lib/portal_document_uploads", () => ({
+  uploadDocumentRequestItem: vi.fn(() =>
+    Promise.resolve({
+      itemId: 1,
+      status: "uploaded",
+      file: { id: 1, name: "doc.pdf", size: 4, mimeType: "application/pdf", path: "p" },
+    })
+  ),
+}));
+
 vi.mock("axios", () => {
   const axios = {
     get: vi.fn(),
@@ -59,6 +83,7 @@ vi.mock("axios", () => {
 
 import axios from "axios";
 import { sendPortalChatMessage } from "@/lib/portal_chat";
+import { uploadPortalFile } from "@/lib/portal_file_uploads";
 import PortalPage from "@/app/portal/[token]/page";
 
 const mockedAxiosGet = axios.get as Mock;
@@ -92,17 +117,19 @@ function setupAxiosRoutes(overrides: PortalOverrides = {}) {
     bookings: overrides.bookings ?? [],
     documentRequests: overrides.documentRequests ?? [],
   };
-  mockedAxiosGet.mockImplementation((url: string) => {
-    if (url.endsWith("/chat")) {
-      return Promise.resolve({
-        data: { messages: overrides.chatMessages ?? [] },
-      });
+  mockedAxiosGet.mockImplementation(
+    (url: string, config?: { params?: { type?: string } }) => {
+      if (url.endsWith("/chat") || config?.params?.type === "chat") {
+        return Promise.resolve({
+          data: { messages: overrides.chatMessages ?? [] },
+        });
+      }
+      if (overrides.failPortal) {
+        return Promise.reject(new Error("network"));
+      }
+      return Promise.resolve({ data: portalPayload });
     }
-    if (overrides.failPortal) {
-      return Promise.reject(new Error("network"));
-    }
-    return Promise.resolve({ data: portalPayload });
-  });
+  );
 }
 
 describe("Portal Page", () => {
@@ -310,10 +337,10 @@ describe("Portal Page", () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {
-      const uploadCall = (axios.post as Mock).mock.calls.find(
-        (args: unknown[]) => String(args[0]).endsWith("/files/upload")
+      expect(uploadPortalFile).toHaveBeenCalledWith(
+        "test-token-abc",
+        expect.any(FormData)
       );
-      expect(uploadCall).toBeTruthy();
     });
   });
 

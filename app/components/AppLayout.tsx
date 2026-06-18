@@ -219,7 +219,10 @@ export function AppLayout({ children }: AppLayoutProps) {
     queryKey: ["portalBookings"],
     queryFn: async () => {
       const { data } = await axios.get<{ bookings: BookingWithClient[] }>(
-        "/api/portal/bookings"
+        "/api/portal",
+        {
+          params: { type: "bookings" },
+        }
       );
       return data.bookings;
     },

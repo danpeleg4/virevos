@@ -20,7 +20,7 @@ async function loadPortalForUser(clientId: number, userId: string) {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ clientId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -28,8 +28,8 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { clientId: clientIdStr } = await params;
-    const clientId = Number(clientIdStr);
+    const { id } = await params;
+    const clientId = Number(id);
     if (!Number.isFinite(clientId)) {
       return NextResponse.json({ error: "Invalid clientId" }, { status: 400 });
     }

@@ -194,7 +194,9 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
         bookings: (PortalMeetingBooking & {
           clientDisplayName: string | null;
         })[];
-      }>("/api/portal/bookings");
+      }>("/api/portal", {
+        params: { type: "bookings" },
+      });
       return data.bookings;
     },
     enabled: meetingSchedulingEnabled && !!portalQuery.data?.id,

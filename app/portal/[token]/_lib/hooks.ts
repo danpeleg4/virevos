@@ -13,6 +13,7 @@ import type { DocumentRequestItem } from "@/types/document_requests";
 import { sendPortalChatMessage } from "@/lib/portal_chat";
 import { createPortalBooking } from "@/lib/portal_bookings";
 import { uploadDocumentRequestItem } from "@/lib/portal_document_uploads";
+import { uploadPortalFile } from "@/lib/portal_file_uploads";
 
 export const portalQueryKey = (token: string) => ["portal", token] as const;
 export const portalChatQueryKey = (token: string) =>
@@ -114,17 +115,10 @@ export function useFileUpload(token: string) {
       const formData = new FormData();
       formData.append("file", file);
       if (caseId) formData.append("caseId", String(caseId));
-      const res = await axios.post(
-        `/api/portal/${token}/files/upload`,
-        formData
-      );
-      return res.data;
+      return uploadPortalFile(token, formData);
     },
     onError: (err: unknown) => {
-      const message =
-        axios.isAxiosError(err) && err.response?.data?.error
-          ? err.response.data.error
-          : "Upload failed";
+      const message = err instanceof Error && err.message ? err.message : "Upload failed";
       toast.error(message);
     },
     onSuccess: () => {
