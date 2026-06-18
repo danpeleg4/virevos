@@ -6,10 +6,13 @@ import {
   cases,
   caseFiles,
   portalMeetingBookings,
+  portalMessages,
 } from "@db/schema";
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, lt } from "drizzle-orm";
 import { listApprovedRequestsForClient } from "@/lib/document_requests";
 import type { TimeSlot } from "@/types/portal";
+import { downloadFile } from "@/lib/storage";
+import { FILES_BUCKET } from "@/lib/supabase/supabase";
 
 const mainType = async (token: string) => {
   try {
@@ -245,6 +248,125 @@ const availabilityType = async (
   }
 };
 
+const chatType = async (token: string) => {
+  try {
+    const portalRows = await db
+      .select()
+      .from(clientPortalTokens)
+      .where(eq(clientPortalTokens.token, token))
+      .limit(1);
+    if (!portalRows.length || !portalRows[0].enabled) return null;
+
+    const portal = portalRows[0];
+    if (!portal) {
+      return NextResponse.json(
+        { error: "Portal not found or disabled" },
+        { status: 404 }
+      );
+    }
+
+    const rows = await db
+      .select({
+        id: portalMessages.id,
+        senderType: portalMessages.senderType,
+        body: portalMessages.body,
+        readAt: portalMessages.readAt,
+        createdAt: portalMessages.createdAt,
+      })
+      .from(portalMessages)
+      .where(eq(portalMessages.portalId, portal.id))
+      .orderBy(asc(portalMessages.createdAt));
+
+    // Mark agency messages as read by the client
+    await db
+      .update(portalMessages)
+      .set({ readAt: new Date() })
+      .where(
+        and(
+          eq(portalMessages.portalId, portal.id),
+          eq(portalMessages.senderType, "agency"),
+          isNull(portalMessages.readAt)
+        )
+      );
+
+    return NextResponse.json({
+      messages: rows.map((r) => ({
+        id: r.id,
+        senderType: r.senderType,
+        body: r.body,
+        readAt: r.readAt ? r.readAt.toISOString() : null,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    });
+  } catch (err) {
+    console.error("[api/portal/[token]/chat GET]", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+};
+
+const downloadFilesType = async (token: string, id: string) => {
+  const fileId = Number(id);
+
+  // Validate portal token
+  const [portalToken] = await db
+    .select()
+    .from(clientPortalTokens)
+    .where(eq(clientPortalTokens.token, token))
+    .limit(1);
+
+  if (!portalToken?.enabled) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
+  // Fetch the file
+  const [file] = await db
+    .select()
+    .from(caseFiles)
+    .where(eq(caseFiles.id, fileId))
+    .limit(1);
+
+  if (!file) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
+  // Verify the file belongs to a case owned by this portal's client
+  const [project] = await db
+    .select()
+    .from(cases)
+    .where(eq(cases.id, file.caseId))
+    .limit(1);
+
+  if (
+    !project ||
+    project.clientId == null ||
+    project.clientId !== portalToken.clientId
+  ) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  let body: Uint8Array;
+  try {
+    body = await downloadFile(FILES_BUCKET, file.path);
+  } catch {
+    return new NextResponse("Download failed", { status: 500 });
+  }
+
+  const asciiFallback = file.name
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/["\\]/g, "_");
+
+  return new NextResponse(Buffer.from(body), {
+    headers: {
+      "Content-Type": file.mimeType ?? "application/octet-stream",
+      "Content-Disposition": `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+      "Content-Length": body.byteLength.toString(),
+    },
+  });
+};
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -254,10 +376,14 @@ export async function GET(
   const type = searchParams.get("type");
   const dateParam = searchParams.get("date"); // "YYYY-MM-DD"
   const durationParam = searchParams.get("duration");
+  const fileId = searchParams.get("fileId");
 
   if (type == "main") return await mainType(token);
   if (type == "availability" && dateParam && durationParam)
     return await availabilityType(token, dateParam, durationParam);
+  if (type == "chat") return await chatType(token);
+  if (type == "filesDownload" && fileId)
+    return await downloadFilesType(token, fileId);
 
   return NextResponse.json({ error: "No type found" });
 }

@@ -1,6 +1,5 @@
-import { POST } from "@/app/api/portal/[token]/document-requests/[itemId]/upload/route";
+import { uploadDocumentRequestItem } from "@/lib/portal_document_uploads";
 import { db } from "@db/db";
-import { NextRequest } from "next/server";
 
 vi.mock("@db/db", () => ({
   db: {
@@ -8,6 +7,10 @@ vi.mock("@db/db", () => ({
     insert: vi.fn(),
     update: vi.fn(),
   },
+}));
+
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => ({ get: () => null })),
 }));
 
 // eslint-disable-next-line no-var
@@ -48,21 +51,19 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-function mockCtx(token: string, itemId: string) {
-  return { params: Promise.resolve({ token, itemId }) };
-}
-
-function mockRequest(file: File | null): NextRequest {
+function makeFormData(file: File | null): FormData {
   const fd = new FormData();
   if (file) fd.append("file", file);
-  return {
-    formData: vi.fn().mockResolvedValue(fd),
-  } as unknown as NextRequest;
+  return fd;
 }
 
 function makeFile(size: number, type = "application/pdf", name = "doc.pdf") {
   const blob = new Blob([new Uint8Array(size)], { type });
   return new File([blob], name, { type });
+}
+
+async function expectStatus(promise: Promise<unknown>, status: number) {
+  await expect(promise).rejects.toMatchObject({ status });
 }
 
 const portalToken = {
@@ -135,101 +136,119 @@ function primeHappyPath() {
   return { insertValues, updateSet };
 }
 
-describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
-  it("returns 400 for invalid itemId", async () => {
-    const res = await POST(mockRequest(null), mockCtx("tok", "abc"));
-    expect(res.status).toBe(400);
+describe("uploadDocumentRequestItem", () => {
+  it("throws 400 for invalid itemId", async () => {
+    await expectStatus(
+      uploadDocumentRequestItem("tok", NaN, makeFormData(null)),
+      400
+    );
   });
 
-  it("returns 404 for invalid token", async () => {
+  it("throws 404 for invalid token", async () => {
     (db.select as Mock).mockReturnValueOnce(setupPortalLookup([]));
-    const res = await POST(mockRequest(null), mockCtx("bad", "1"));
-    expect(res.status).toBe(404);
+    await expectStatus(
+      uploadDocumentRequestItem("bad", 1, makeFormData(null)),
+      404
+    );
   });
 
-  it("returns 404 for disabled portal", async () => {
+  it("throws 404 for disabled portal", async () => {
     (db.select as Mock).mockReturnValueOnce(
       setupPortalLookup([{ ...portalToken, enabled: false }])
     );
-    const res = await POST(mockRequest(null), mockCtx("tok", "1"));
-    expect(res.status).toBe(404);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(null)),
+      404
+    );
   });
 
-  it("returns 403 when fileSharing is disabled", async () => {
+  it("throws 403 when fileSharing is disabled", async () => {
     (db.select as Mock).mockReturnValueOnce(
       setupPortalLookup([{ ...portalToken, settings: { fileSharing: false } }])
     );
-    const res = await POST(mockRequest(null), mockCtx("tok", "1"));
-    expect(res.status).toBe(403);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(null)),
+      403
+    );
   });
 
-  it("returns 404 when item is not found", async () => {
+  it("throws 404 when item is not found", async () => {
     (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(setupItemLookup([]));
-    const res = await POST(mockRequest(null), mockCtx("tok", "1"));
-    expect(res.status).toBe(404);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(null)),
+      404
+    );
   });
 
-  it("returns 403 when item belongs to a different client", async () => {
+  it("throws 403 when item belongs to a different client", async () => {
     (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([{ ...baseItemRow, requestClientId: 999 }])
       );
-    const res = await POST(mockRequest(null), mockCtx("tok", "1"));
-    expect(res.status).toBe(403);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(null)),
+      403
+    );
   });
 
-  it("returns 403 when request is not approved", async () => {
+  it("throws 403 when request is not approved", async () => {
     (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([{ ...baseItemRow, requestStatus: "pending_approval" }])
       );
-    const res = await POST(mockRequest(null), mockCtx("tok", "1"));
-    expect(res.status).toBe(403);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(null)),
+      403
+    );
   });
 
-  it("returns 409 when item is already uploaded", async () => {
+  it("throws 409 when item is already uploaded", async () => {
     (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(
         setupItemLookup([{ ...baseItemRow, itemStatus: "uploaded" }])
       );
-    const res = await POST(mockRequest(null), mockCtx("tok", "1"));
-    expect(res.status).toBe(409);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(null)),
+      409
+    );
   });
 
-  it("returns 400 when no file provided", async () => {
+  it("throws 400 when no file provided", async () => {
     (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(setupItemLookup([baseItemRow]));
-    const res = await POST(mockRequest(null), mockCtx("tok", "1"));
-    expect(res.status).toBe(400);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(null)),
+      400
+    );
   });
 
-  it("returns 400 when file exceeds 10 MB", async () => {
+  it("throws 400 when file exceeds 10 MB", async () => {
     (db.select as Mock)
       .mockReturnValueOnce(setupPortalLookup([portalToken]))
       .mockReturnValueOnce(setupItemLookup([baseItemRow]));
     const big = makeFile(11 * 1024 * 1024);
-    const res = await POST(mockRequest(big), mockCtx("tok", "1"));
-    expect(res.status).toBe(400);
+    await expectStatus(
+      uploadDocumentRequestItem("tok", 1, makeFormData(big)),
+      400
+    );
   });
 
   it("uploads, runs analyzer, and marks item uploaded when verdict meets", async () => {
     const { insertValues, updateSet } = primeHappyPath();
 
     const file = makeFile(100);
-    const res = await POST(mockRequest(file), mockCtx("tok", "1"));
+    const result = await uploadDocumentRequestItem("tok", 1, makeFormData(file));
 
-    expect(res.status).toBe(201);
-    const json = await res.json();
-    expect(json.itemId).toBe(1);
-    expect(json.file.id).toBe(555);
-    expect(json.status).toBe("uploaded");
-    expect(json.analysis).toEqual({
+    expect(result.itemId).toBe(1);
+    expect(result.file.id).toBe(555);
+    expect(result.status).toBe("uploaded");
+    expect(result.analysis).toEqual({
       verdict: "meets",
       reasoning: "Looks good",
     });
@@ -268,7 +287,7 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     });
     const { updateSet } = primeHappyPath();
 
-    await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+    await uploadDocumentRequestItem("tok", 1, makeFormData(makeFile(100)));
 
     expect(updateSet).toHaveBeenCalledWith(
       expect.objectContaining({ aiCredits: expect.anything() })
@@ -282,9 +301,10 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     });
     const { updateSet } = primeHappyPath();
 
-    await POST(
-      mockRequest(makeFile(100, "text/plain", "notes.txt")),
-      mockCtx("tok", "1")
+    await uploadDocumentRequestItem(
+      "tok",
+      1,
+      makeFormData(makeFile(100, "text/plain", "notes.txt"))
     );
 
     const credits = updateSet.mock.calls.filter(
@@ -302,14 +322,14 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     );
     const { updateSet } = primeHappyPath();
 
-    const res = await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+    const result = await uploadDocumentRequestItem(
+      "tok",
+      1,
+      makeFormData(makeFile(100))
+    );
 
-    expect(res.status).toBe(201);
-    const json = await res.json();
-    expect(json.status).toBe("uploaded");
-
-    expect(json.analysis).toBeUndefined();
-
+    expect(result.status).toBe("uploaded");
+    expect(result.analysis).toBeUndefined();
     expect(mockAnalyze).not.toHaveBeenCalled();
 
     const credits = updateSet.mock.calls.filter(
@@ -341,12 +361,14 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     });
     const { updateSet } = primeHappyPath();
 
-    const res = await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+    const result = await uploadDocumentRequestItem(
+      "tok",
+      1,
+      makeFormData(makeFile(100))
+    );
 
-    expect(res.status).toBe(201);
-    const json = await res.json();
-    expect(json.status).toBe("rejected");
-    expect(json.analysis.verdict).toBe("does_not_meet");
+    expect(result.status).toBe("rejected");
+    expect(result.analysis?.verdict).toBe("does_not_meet");
     expect(updateSet).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "rejected",
@@ -364,12 +386,10 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     const { updateSet } = primeHappyPath();
 
     const file = makeFile(100, "text/plain", "notes.txt");
-    const res = await POST(mockRequest(file), mockCtx("tok", "1"));
+    const result = await uploadDocumentRequestItem("tok", 1, makeFormData(file));
 
-    expect(res.status).toBe(201);
-    const json = await res.json();
-    expect(json.status).toBe("uploaded");
-    expect(json.analysis.verdict).toBe("skipped");
+    expect(result.status).toBe("uploaded");
+    expect(result.analysis?.verdict).toBe("skipped");
     expect(updateSet).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "uploaded",
@@ -406,8 +426,12 @@ describe("POST /api/portal/[token]/document-requests/[itemId]/upload", () => {
     });
     mockUpload.mockResolvedValueOnce(undefined);
 
-    const res = await POST(mockRequest(makeFile(100)), mockCtx("tok", "1"));
+    const result = await uploadDocumentRequestItem(
+      "tok",
+      1,
+      makeFormData(makeFile(100))
+    );
 
-    expect(res.status).toBe(201);
+    expect(result.status).toBe("uploaded");
   });
 });

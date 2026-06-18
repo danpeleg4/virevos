@@ -12,6 +12,7 @@ import type {
 import type { DocumentRequestItem } from "@/types/document_requests";
 import { sendPortalChatMessage } from "@/lib/portal_chat";
 import { createPortalBooking } from "@/lib/portal_bookings";
+import { uploadDocumentRequestItem } from "@/lib/portal_document_uploads";
 
 export const portalQueryKey = (token: string) => ["portal", token] as const;
 export const portalChatQueryKey = (token: string) =>
@@ -39,7 +40,9 @@ export function usePortalChat(token: string) {
   const query = useQuery<{ messages: PortalChatMessage[] }>({
     queryKey,
     queryFn: async () => {
-      const res = await axios.get(`/api/portal/${token}/chat`);
+      const res = await axios.get(`/api/portal/${token}`, {
+        params: { type: "chat" },
+      });
       return res.data;
     },
     enabled: !!token,
@@ -142,13 +145,10 @@ export function useDocumentItemUpload(token: string) {
     mutationFn: async ({ itemId, file }: { itemId: number; file: File }) => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await axios.post(
-        `/api/portal/${token}/document-requests/${itemId}/upload`,
-        formData
-      );
+      const res = await uploadDocumentRequestItem(token, itemId, formData);
       return {
         fileName: file.name,
-        analysis: (res.data.analysis ?? null) as DocumentAnalysis | null,
+        analysis: (res.analysis ?? null) as DocumentAnalysis | null,
       };
     },
     onSuccess: ({ fileName, analysis }) => {
@@ -163,10 +163,7 @@ export function useDocumentItemUpload(token: string) {
       }
     },
     onError: (err: unknown) => {
-      const message =
-        axios.isAxiosError(err) && err.response?.data?.error
-          ? err.response.data.error
-          : "Upload failed";
+      const message = err instanceof Error && err.message ? err.message : "Upload failed";
       toast.error(message);
     },
     onSettled: () => {

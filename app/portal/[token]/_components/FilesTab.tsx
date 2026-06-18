@@ -178,7 +178,7 @@ export function FilesTab({ data, token }: FilesTabProps) {
                     className="shrink-0"
                   >
                     <a
-                      href={`/api/portal/${token}/files/${file.id}/download`}
+                      href={`/api/portal/${token}?type=filesDownload&fileId=${file.id}`}
                       download={file.name}
                     >
                       <Download className="h-4 w-4" />

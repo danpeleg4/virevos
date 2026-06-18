@@ -77,7 +77,7 @@ export function DocumentsTab({ data, token }: DocumentsTabProps) {
                                 <p className="text-xs text-green-700 dark:text-green-400 mt-1">
                                   Uploaded:{" "}
                                   <a
-                                    href={`/api/portal/${token}/files/${item.uploadedFile.id}/download`}
+                                    href={`/api/portal/${token}?type=filesDownload&fileId=${item.uploadedFile.id}`}
                                     className="underline"
                                     download={item.uploadedFile.name}
                                   >
@@ -90,7 +90,7 @@ export function DocumentsTab({ data, token }: DocumentsTabProps) {
                                 <p className="text-xs text-muted-foreground mt-1">
                                   Last upload:{" "}
                                   <a
-                                    href={`/api/portal/${token}/files/${item.uploadedFile.id}/download`}
+                                    href={`/api/portal/${token}?type=filesDownload&fileId=${item.uploadedFile.id}`}
                                     className="underline"
                                     download={item.uploadedFile.name}
                                   >
