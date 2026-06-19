@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/user/product-updates/route";
+import { GET } from "@/app/api/user/route";
 
 const mockGetProductUpdatesPreference = vi.fn();
 

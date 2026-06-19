@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/portal/[token]/chat/route";
+import { GET } from "@/app/api/portal/[token]/route";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
 
@@ -63,7 +63,7 @@ describe("GET /api/portal/[token]/chat", () => {
     const res = await GET(makeGetRequest("missing"), {
       params: makeParams("missing"),
     });
-    expect(res.status).toBe(404);
+    expect(res?.status).toBe(404);
   });
 
   it("returns 404 when portal is disabled", async () => {
@@ -71,7 +71,7 @@ describe("GET /api/portal/[token]/chat", () => {
     const res = await GET(makeGetRequest("test-token"), {
       params: makeParams("test-token"),
     });
-    expect(res.status).toBe(404);
+    expect(res?.status).toBe(404);
   });
 
   it("returns messages and marks agency messages as read", async () => {
@@ -98,8 +98,8 @@ describe("GET /api/portal/[token]/chat", () => {
     const res = await GET(makeGetRequest("test-token"), {
       params: makeParams("test-token"),
     });
-    expect(res.status).toBe(200);
-    const json = await res.json();
+    expect(res?.status).toBe(200);
+    const json = await res?.json();
     expect(json.messages).toHaveLength(2);
     expect(json.messages[0]).toMatchObject({
       id: 1,
