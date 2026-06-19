@@ -1,7 +1,7 @@
 import {
   createInstantMeeting,
   markActionItemAdded,
-  getPastMeetingTranscript,
+  meetingTranscriptSemanticSearch,
 } from "@/lib/workspace/meetings";
 import { getCurrentUser } from "@/lib/supabase/auth";
 
@@ -134,21 +134,31 @@ describe("markActionItemAdded", () => {
 describe("getPastMeetingTranscript", () => {
   it("returns ['Unauthorized'] when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    const result = await getPastMeetingTranscript("query");
+    const result = await meetingTranscriptSemanticSearch("query");
     expect(result).toEqual(["Unauthorized"]);
   });
 
-  it("returns array of chunk_text strings from Supabase vector hits", async () => {
+  it("filters by user_id only (room is post-filtered, not sent to the API)", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    mockQueryVectors.mockResolvedValueOnce({ data: { vectors: [] } });
+    await meetingTranscriptSemanticSearch("test query");
+    expect(mockQueryVectors).toHaveBeenCalledWith(
+      expect.objectContaining({ filter: { user_id: "user_1" } })
+    );
+  });
+
+  it("returns chunk_text only for hits belonging to the latest meeting room", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
       data: {
         vectors: [
-          { metadata: { chunk_text: "Hello world" } },
-          { metadata: { chunk_text: "Second chunk" } },
+          { metadata: { chunk_text: "Hello world", room: "evt-latest" } },
+          { metadata: { chunk_text: "Other meeting", room: "evt-other" } },
+          { metadata: { chunk_text: "Second chunk", room: "evt-latest" } },
         ],
       },
     });
-    const result = await getPastMeetingTranscript("test query");
+    const result = await meetingTranscriptSemanticSearch("test query");
     expect(mockCreateEmbedding).toHaveBeenCalledWith("test query");
     expect(result).toEqual(["Hello world", "Second chunk"]);
   });
@@ -156,9 +166,14 @@ describe("getPastMeetingTranscript", () => {
   it("returns empty array when no hits have chunk_text", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({
-      data: { vectors: [{ metadata: {} }, { metadata: { other: "data" } }] },
+      data: {
+        vectors: [
+          { metadata: { room: "evt-latest" } },
+          { metadata: { other: "data", room: "evt-latest" } },
+        ],
+      },
     });
-    const result = await getPastMeetingTranscript("test query");
+    const result = await meetingTranscriptSemanticSearch("test query");
     expect(result).toEqual([]);
   });
 });

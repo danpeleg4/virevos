@@ -73,7 +73,7 @@ export async function markActionItemAdded(eventId: string, itemIndex: number) {
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
 }
 
-export async function getPastMeetingTranscript(text: string) {
+export async function meetingTranscriptSemanticSearch(text: string) {
   const user = await getCurrentUser();
   if (!user?.id) {
     return ["Unauthorized"];
@@ -98,8 +98,8 @@ export async function getPastMeetingTranscript(text: string) {
 
   const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
-    topK: 10,
-    filter: { userId: user.id, room: latestEvent.id },
+    topK: 50,
+    filter: { user_id: user.id },
     returnMetadata: true,
   });
 
@@ -110,8 +110,10 @@ export async function getPastMeetingTranscript(text: string) {
 
   const arr: string[] = [];
   for (const hit of data?.vectors ?? []) {
-    const meta = hit.metadata as { chunk_text?: string } | undefined;
-    if (meta?.chunk_text) {
+    const meta = hit.metadata as
+      | { chunk_text?: string; room?: string }
+      | undefined;
+    if (meta?.chunk_text && meta.room === latestEvent.id) {
       arr.push(meta.chunk_text);
     }
   }

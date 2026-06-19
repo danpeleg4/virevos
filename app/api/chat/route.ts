@@ -180,6 +180,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json("No AI Credits", { status: 401 });
   }
 
+  // Update AI credits
   await db
     .update(users)
     .set({ aiCredits: sql`${users.aiCredits} + 1` })
