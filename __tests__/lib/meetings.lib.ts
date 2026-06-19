@@ -1,7 +1,7 @@
 import {
   createInstantMeeting,
   markActionItemAdded,
-  getPastMeetingTranscript,
+  meetingTranscriptSemanticSearch,
 } from "@/lib/workspace/meetings";
 import { getCurrentUser } from "@/lib/supabase/auth";
 
@@ -134,14 +134,14 @@ describe("markActionItemAdded", () => {
 describe("getPastMeetingTranscript", () => {
   it("returns ['Unauthorized'] when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    const result = await getPastMeetingTranscript("query");
+    const result = await meetingTranscriptSemanticSearch("query");
     expect(result).toEqual(["Unauthorized"]);
   });
 
   it("filters by user_id only (room is post-filtered, not sent to the API)", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockQueryVectors.mockResolvedValueOnce({ data: { vectors: [] } });
-    await getPastMeetingTranscript("test query");
+    await meetingTranscriptSemanticSearch("test query");
     expect(mockQueryVectors).toHaveBeenCalledWith(
       expect.objectContaining({ filter: { user_id: "user_1" } })
     );
@@ -158,7 +158,7 @@ describe("getPastMeetingTranscript", () => {
         ],
       },
     });
-    const result = await getPastMeetingTranscript("test query");
+    const result = await meetingTranscriptSemanticSearch("test query");
     expect(mockCreateEmbedding).toHaveBeenCalledWith("test query");
     expect(result).toEqual(["Hello world", "Second chunk"]);
   });
@@ -173,7 +173,7 @@ describe("getPastMeetingTranscript", () => {
         ],
       },
     });
-    const result = await getPastMeetingTranscript("test query");
+    const result = await meetingTranscriptSemanticSearch("test query");
     expect(result).toEqual([]);
   });
 });
