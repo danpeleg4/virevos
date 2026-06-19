@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/portal-chat/[clientId]/route";
+import { GET } from "@/app/api/portal-chat/[id]/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
@@ -27,7 +27,7 @@ vi.mock("@db/db", () => ({
 const makeGetRequest = (clientId: string) =>
   new NextRequest(`http://localhost/api/portal-chat/${clientId}`);
 
-const makeParams = (clientId: string) => Promise.resolve({ clientId });
+const makeParams = (clientId: string) => Promise.resolve({ id: clientId });
 
 const mockUser = { id: "user_1" };
 

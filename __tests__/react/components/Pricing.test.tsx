@@ -34,11 +34,11 @@ describe("Pricing", () => {
     expect(screen.getByText("$0")).toBeInTheDocument();
   });
 
-  it("renders Professional plan price $29", () => {
-    expect(screen.getByText("$29")).toBeInTheDocument();
+  it("renders Professional plan price $79", () => {
+    expect(screen.getByText("$79")).toBeInTheDocument();
   });
 
-  it("renders Business plan price $79", () => {
-    expect(screen.getByText("$79")).toBeInTheDocument();
+  it("renders Business plan price $129", () => {
+    expect(screen.getByText("$129")).toBeInTheDocument();
   });
 });

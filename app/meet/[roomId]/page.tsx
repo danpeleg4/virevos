@@ -375,16 +375,16 @@ export default function InMeetingView() {
 
 // Component to render a participant's video
 function ParticipantVideo({ participant }: { participant: Participant }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLDivElement>(null);
 
   // Attach video & audio tracks
   useEffect(() => {
-    if (!containerRef.current || !audioRef.current) return;
+    if (!videoRef.current || !audioRef.current) return;
 
     // Capture the current ref nodes so cleanup uses the same elements that
     // were mounted when the effect ran (refs may change before cleanup).
-    const container = containerRef.current;
+    const video = videoRef.current;
     const audio = audioRef.current;
 
     const attachTrack = (track: RemoteTrack | Track) => {
@@ -401,7 +401,7 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
         el.style.objectFit =
           track.source === Track.Source.ScreenShare ? "contain" : "cover";
         el.style.zIndex = track.source === Track.Source.ScreenShare ? "1" : "0";
-        containerRef.current?.appendChild(el);
+        videoRef.current?.appendChild(el);
       } else if (track.kind === "audio") {
         el.autoplay = true;
         audioRef.current?.appendChild(el);
@@ -433,7 +433,7 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
     );
 
     const handleLocalTrackUnpublished = (pub: LocalTrackPublication) => {
-      if (pub.track && containerRef.current) {
+      if (pub.track && videoRef.current) {
         pub.track.detach().forEach((el) => el.remove());
       }
     };
@@ -456,7 +456,7 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
         ParticipantEvent.LocalTrackUnpublished,
         handleLocalTrackUnpublished
       );
-      container.innerHTML = "";
+      video.innerHTML = "";
       audio.innerHTML = "";
     };
   }, [participant]);
@@ -467,7 +467,9 @@ function ParticipantVideo({ participant }: { participant: Participant }) {
 
   return (
     <>
-      <div className="absolute inset-0 overflow-hidden" ref={containerRef}>
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Imperatively-managed video tracks — React renders no children here */}
+        <div ref={videoRef} className="absolute inset-0" />
         {!hasVideo && (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center">

@@ -51,14 +51,16 @@ const mockUser = { id: "user_1" };
 describe("listPendingDocumentRequests", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(listPendingDocumentRequests()).rejects.toThrow("Unauthorized");
+    await expect(listPendingDocumentRequests(mockUser.id)).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("returns empty array when no pending requests exist", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     (db.select as Mock).mockReturnValue(buildSelectChain([]));
 
-    const result = await listPendingDocumentRequests();
+    const result = await listPendingDocumentRequests(mockUser.id);
     expect(result).toEqual([]);
   });
 
@@ -89,7 +91,7 @@ describe("listPendingDocumentRequests", () => {
       .mockReturnValueOnce(buildSelectChain([requestRow]))
       .mockReturnValueOnce(buildSelectChain([itemRow]));
 
-    const result = await listPendingDocumentRequests();
+    const result = await listPendingDocumentRequests(mockUser.id);
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({

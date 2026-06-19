@@ -218,7 +218,7 @@ export function CaseDetailView({
     queryKey: ["files", aCase.id],
     enabled: !!aCase.id,
     queryFn: async () => {
-      const res = await axios.get(`/api/files/${aCase.id}/get-files`);
+      const res = await axios.get(`/api/files/${aCase.id}?type=get-files`);
       return res.data;
     },
   });
@@ -873,7 +873,7 @@ export function CaseDetailView({
                           variant="ghost"
                           className="h-7 w-7 cursor-pointer"
                           onClick={() => {
-                            window.location.href = `/api/files/${file.id}/download`;
+                            window.location.href = `/api/files/${file.id}?type=download`;
                           }}
                         >
                           <Download className="h-4 w-4" />

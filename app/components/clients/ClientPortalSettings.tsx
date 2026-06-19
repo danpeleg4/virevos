@@ -131,7 +131,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
     queryKey: ["clientPortal", clientId],
     queryFn: async () => {
       const { data } = await axios.get<{ portal: PortalRecord | null }>(
-        `/api/clients/${clientId}/portal`
+        `/api/clients/${clientId}?type=portal`
       );
       return data.portal;
     },
@@ -194,7 +194,9 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
         bookings: (PortalMeetingBooking & {
           clientDisplayName: string | null;
         })[];
-      }>("/api/portal/bookings");
+      }>("/api/portal", {
+        params: { type: "bookings" },
+      });
       return data.bookings;
     },
     enabled: meetingSchedulingEnabled && !!portalQuery.data?.id,

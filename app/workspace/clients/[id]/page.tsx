@@ -126,7 +126,7 @@ export default function ClientDetailPage({
     queryKey: ["client", id],
     queryFn: async () => {
       const { data } = await axios.get<ClientDetailResponse>(
-        `/api/clients/${id}`
+        `/api/clients/${id}?type=main`
       );
       return data;
     },
@@ -137,7 +137,7 @@ export default function ClientDetailPage({
     queryKey: ["clientCases", id],
     queryFn: async () => {
       const { data } = await axios.get<{ cases: ClientCaseRow[] }>(
-        `/api/clients/${id}/cases`
+        `/api/clients/${id}?type=cases`
       );
       return data.cases;
     },
@@ -148,7 +148,7 @@ export default function ClientDetailPage({
     queryKey: ["clientOutlookEmails", id],
     queryFn: async () => {
       const { data } = await axios.get<{ emails: OutlookEmailRow[] }>(
-        `/api/clients/${id}/outlook-emails`
+        `/api/clients/${id}?type=outlook-emails`
       );
       return data.emails;
     },

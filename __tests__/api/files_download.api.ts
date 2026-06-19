@@ -1,7 +1,13 @@
-import { GET } from "@/app/api/files/[id]/download/route";
+import { GET } from "@/app/api/files/[id]/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { NextRequest } from "next/server";
+
+// The download + get-files routes were consolidated into [id]/route.ts behind
+// a `?type=` query param; build a request carrying that param.
+function downloadReq(id = "1") {
+  return new NextRequest(`http://localhost/api/files/${id}?type=download`);
+}
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -25,7 +31,7 @@ vi.mock("@/lib/supabase/supabase", () => ({
   FILES_BUCKET: "projectFiles",
 }));
 
-describe("GET /api/project-files/[id]", () => {
+describe("GET /api/files/[id]?type=download", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -39,10 +45,10 @@ describe("GET /api/project-files/[id]", () => {
   it("returns 401 if not authenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
 
-    const res = await GET({} as NextRequest, mockCtx("1"));
+    const res = await GET(downloadReq(), mockCtx("1"));
 
     expect(res.status).toBe(401);
-    expect(await res.text()).toBe("Unauthorized");
+    expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
   it("returns 404 if file not found", async () => {
@@ -53,7 +59,7 @@ describe("GET /api/project-files/[id]", () => {
       }),
     });
 
-    const res = await GET({} as NextRequest, mockCtx("1"));
+    const res = await GET(downloadReq(), mockCtx("1"));
 
     expect(res.status).toBe(404);
     expect(await res.text()).toBe("Not found");
@@ -77,7 +83,7 @@ describe("GET /api/project-files/[id]", () => {
 
     mockDownload.mockRejectedValue(new Error("Storage error"));
 
-    const res = await GET({} as NextRequest, mockCtx("1"));
+    const res = await GET(downloadReq(), mockCtx("1"));
 
     expect(res.status).toBe(500);
     expect(await res.text()).toBe("Download failed");
@@ -102,7 +108,7 @@ describe("GET /api/project-files/[id]", () => {
     const fakeBytes = new Uint8Array([1, 2, 3]);
     mockDownload.mockResolvedValue(fakeBytes);
 
-    const res = await GET({} as NextRequest, mockCtx("1"));
+    const res = await GET(downloadReq(), mockCtx("1"));
 
     expect(res.status).toBe(200);
 

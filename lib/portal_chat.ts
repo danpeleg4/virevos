@@ -1,16 +1,20 @@
 "use server";
 
+import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import { clientPortalTokens, portalMessages } from "@db/schema";
 import { and, desc, eq } from "drizzle-orm";
+import type { PortalChatMessage } from "@/types/portal";
 import {
   MAX_MESSAGE,
+  MAX_SHORT,
   ValidationError,
   requireInt,
   requireOneOf,
   requireString,
 } from "./util/validation";
+import { rateLimitHeaders } from "./util/rate_limit";
 
 const PORTAL_CHAT_ACTIONS = [
   "star",
@@ -32,6 +36,63 @@ async function loadPortalForUser(clientId: number, userId: string) {
     )
     .limit(1);
   return rows[0] ?? null;
+}
+
+async function loadPortalByToken(token: string) {
+  const rows = await db
+    .select()
+    .from(clientPortalTokens)
+    .where(eq(clientPortalTokens.token, token))
+    .limit(1);
+  if (!rows.length || !rows[0].enabled) return null;
+  return rows[0];
+}
+
+/**
+ * Public, token-authenticated action used by the client portal to post a chat
+ * message. Enforces a per-IP rate limit and returns the inserted message.
+ */
+export async function sendPortalChatMessage(
+  token: string,
+  message: string
+): Promise<PortalChatMessage> {
+  const limited = rateLimitHeaders(await headers(), {
+    keyPrefix: "portal-chat",
+    windowMs: 60_000,
+    max: 30,
+  });
+  if (limited) throw new ValidationError("Too many requests", 429);
+
+  const tokenValue = requireString(token, "token", MAX_SHORT);
+  const body = requireString(message, "message", MAX_MESSAGE);
+
+  const portal = await loadPortalByToken(tokenValue);
+  if (!portal) throw new ValidationError("Portal not found or disabled", 404);
+
+  const [inserted] = await db
+    .insert(portalMessages)
+    .values({
+      portalId: portal.id,
+      clientId: portal.clientId,
+      userId: portal.userId,
+      senderType: "client",
+      body,
+    })
+    .returning({
+      id: portalMessages.id,
+      senderType: portalMessages.senderType,
+      body: portalMessages.body,
+      readAt: portalMessages.readAt,
+      createdAt: portalMessages.createdAt,
+    });
+
+  return {
+    id: inserted.id,
+    senderType: inserted.senderType as PortalChatMessage["senderType"],
+    body: inserted.body,
+    readAt: inserted.readAt ? inserted.readAt.toISOString() : null,
+    createdAt: inserted.createdAt.toISOString(),
+  };
 }
 
 export async function sendAgencyChatMessage(clientId: number, message: string) {
@@ -63,7 +124,7 @@ export async function sendAgencyChatMessage(clientId: number, message: string) {
 
   return {
     id: inserted.id,
-    senderType: inserted.senderType,
+    senderType: inserted.senderType as PortalChatMessage["senderType"],
     body: inserted.body,
     readAt: inserted.readAt ? inserted.readAt.toISOString() : null,
     createdAt: inserted.createdAt.toISOString(),

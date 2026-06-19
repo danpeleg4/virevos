@@ -11,9 +11,14 @@ export async function GET(
 ) {
   const { id } = await params;
   const user = await getCurrentUser();
+  if (!user?.id) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   const [meeting] = await db.select().from(events).where(eq(events.id, id));
   if (!meeting) return new NextResponse("Not found", { status: 404 });
   const isHost = !!user && user.id === meeting.userId;
+
   return NextResponse.json({
     meeting: deriveMeetingStatus(meeting),
     isHost,

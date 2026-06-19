@@ -24,7 +24,7 @@ const plans = [
   },
   {
     name: "Professional",
-    price: "29",
+    price: "79",
     description: "For growing teams that need more power and flexibility",
     features: [
       "Everything in Starter plan +",
@@ -39,7 +39,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "79",
+    price: "129",
     description: "For bigger organizations with advanced needs and necessities",
     features: [
       "Everything in Professional plan +",

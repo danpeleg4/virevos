@@ -83,7 +83,12 @@ function SidebarContent({
 }: SidebarContentProps) {
   const { data: avatarData } = useQuery<{ url: string | null }>({
     queryKey: ["avatarUrl"],
-    queryFn: () => axios.get("/api/user/avatar").then((r) => r.data),
+    queryFn: async () => {
+      const res = await axios.get("/api/user", {
+        params: { type: "avatar" },
+      });
+      return res.data;
+    },
   });
   const avatarUrl = avatarData?.url ?? undefined;
   return (
@@ -219,7 +224,10 @@ export function AppLayout({ children }: AppLayoutProps) {
     queryKey: ["portalBookings"],
     queryFn: async () => {
       const { data } = await axios.get<{ bookings: BookingWithClient[] }>(
-        "/api/portal/bookings"
+        "/api/portal",
+        {
+          params: { type: "bookings" },
+        }
       );
       return data.bookings;
     },

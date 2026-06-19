@@ -26,6 +26,7 @@ describe("GET /api/events/[id]", () => {
   });
 
   it("returns 404 when meeting not found", async () => {
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
     where.mockResolvedValueOnce([]);
     const res = await GET({} as Request, params("missing"));
     expect(res.status).toBe(404);

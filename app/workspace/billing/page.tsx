@@ -92,7 +92,7 @@ const PLAN_DETAILS: Record<
   },
   professional: {
     name: "Professional",
-    price: 29,
+    price: 79,
     features: [
       "Unlimited clients",
       "Unlimited cases",
@@ -104,7 +104,7 @@ const PLAN_DETAILS: Record<
   },
   business: {
     name: "Business",
-    price: 79,
+    price: 129,
     features: [
       "Unlimited clients",
       "Unlimited projects",
