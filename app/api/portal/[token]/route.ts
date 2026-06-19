@@ -255,7 +255,8 @@ const chatType = async (token: string) => {
       .from(clientPortalTokens)
       .where(eq(clientPortalTokens.token, token))
       .limit(1);
-    if (!portalRows.length || !portalRows[0].enabled) return null;
+    if (!portalRows.length || !portalRows[0].enabled)
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
 
     const portal = portalRows[0];
     if (!portal) {

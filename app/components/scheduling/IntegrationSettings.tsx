@@ -21,7 +21,7 @@ export function VideoMeetingPreferences() {
   const { data: recordingStatus } = useQuery({
     queryKey: ["recordingStatus"],
     queryFn: async () => {
-      const res = await axios.get("/api/recording_status");
+      const res = await axios.get("/api/recording/status");
       return res.data;
     },
   });

@@ -42,40 +42,6 @@ const bookingsType = async (userId: string) => {
   }
 };
 
-const settingsType = async (userId: string) => {
-  try {
-    const rows = await db
-      .select({
-        id: clientPortalTokens.id,
-        clientId: clientPortalTokens.clientId,
-        token: clientPortalTokens.token,
-        enabled: clientPortalTokens.enabled,
-        settings: clientPortalTokens.settings,
-        lastAccessedAt: clientPortalTokens.lastAccessedAt,
-        createdAt: clientPortalTokens.createdAt,
-        clientName: clients.name,
-        clientEmail: clients.email,
-      })
-      .from(clientPortalTokens)
-      .leftJoin(clients, eq(clientPortalTokens.clientId, clients.id))
-      .where(eq(clientPortalTokens.userId, userId));
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-    const portalRecords = rows.map((r) => ({
-      ...r,
-      portalUrl: `${appUrl}/portal/${r.token}`,
-    }));
-
-    return NextResponse.json({ portals: portalRecords });
-  } catch (err) {
-    console.error("[api/portal/settings GET]", err);
-    return NextResponse.json(
-      { error: "Failed to fetch portal settings" },
-      { status: 500 }
-    );
-  }
-};
-
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user?.id) {

@@ -104,13 +104,23 @@ function ProfileTab() {
 
   const { data: avatarData } = useQuery<{ url: string | null }>({
     queryKey: ["avatarUrl"],
-    queryFn: () => axios.get("/api/user/avatar").then((r) => r.data),
+    queryFn: async () => {
+      const res = await axios.get("/api/user", {
+        params: { type: "avatar" },
+      });
+      return res.data;
+    },
   });
   const avatarUrl = avatarData?.url ?? undefined;
 
   const { data: profile } = useQuery<UserProfile>({
     queryKey: ["userProfile"],
-    queryFn: () => axios.get("/api/user/profile").then((r) => r.data),
+    queryFn: async () => {
+      const res = await axios.get("/api/user", {
+        params: { type: "profile" },
+      });
+      return res.data;
+    },
   });
 
   // Seed the editable fields from the loaded profile, re-seeding only when the
@@ -551,12 +561,22 @@ export default function Settings() {
 
   const { data: weeklySummary } = useQuery<boolean>({
     queryKey: ["weeklySummary"],
-    queryFn: () => axios.get("/api/user/weekly-summary").then((r) => r.data),
+    queryFn: async () => {
+      const res = await axios.get("/api/user", {
+        params: { type: "weekly-summary" },
+      });
+      return res.data;
+    },
   });
 
   const { data: productUpdates } = useQuery<boolean>({
     queryKey: ["productUpdates"],
-    queryFn: () => axios.get("/api/user/product-updates").then((r) => r.data),
+    queryFn: async () => {
+      const res = await axios.get("/api/user", {
+        params: { type: "product-updates" },
+      });
+      return res.data;
+    },
   });
 
   return (
