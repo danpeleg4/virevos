@@ -1,4 +1,8 @@
-import { GET } from "@/app/api/user/avatar/route";
+import { GET } from "@/app/api/user/route";
+import { NextRequest } from "next/server";
+
+const makeRequest = () =>
+  new NextRequest("http://localhost/api/user?type=avatar");
 
 const mockGetAvatarUrl = vi.fn();
 
@@ -17,10 +21,10 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-describe("GET /api/user/avatar", () => {
+describe("GET /api/user?type=avatar", () => {
   it("returns 200 with the signed avatar url", async () => {
     mockGetAvatarUrl.mockResolvedValue({ url: "https://example.com/a.png" });
-    const res = await GET();
+    const res = await GET(makeRequest());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual({ url: "https://example.com/a.png" });
@@ -28,7 +32,7 @@ describe("GET /api/user/avatar", () => {
 
   it("returns 200 with null url when no avatar set", async () => {
     mockGetAvatarUrl.mockResolvedValue({ url: null });
-    const res = await GET();
+    const res = await GET(makeRequest());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual({ url: null });
@@ -36,7 +40,7 @@ describe("GET /api/user/avatar", () => {
 
   it("returns 500 when getAvatarUrl throws", async () => {
     mockGetAvatarUrl.mockRejectedValue(new Error("storage error"));
-    const res = await GET();
+    const res = await GET(makeRequest());
     expect(res.status).toBe(500);
   });
 });

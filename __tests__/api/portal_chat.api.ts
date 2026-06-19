@@ -20,8 +20,16 @@ vi.mock("@db/db", () => ({
   },
 }));
 
+vi.mock("@/lib/storage", () => ({
+  downloadFile: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/supabase", () => ({
+  FILES_BUCKET: "projectFiles",
+}));
+
 const makeGetRequest = (token: string) =>
-  new NextRequest(`http://localhost/api/portal/${token}/chat`);
+  new NextRequest(`http://localhost/api/portal/${token}?type=chat`);
 
 const makeParams = (token: string) => Promise.resolve({ token });
 

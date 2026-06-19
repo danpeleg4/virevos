@@ -83,7 +83,12 @@ function SidebarContent({
 }: SidebarContentProps) {
   const { data: avatarData } = useQuery<{ url: string | null }>({
     queryKey: ["avatarUrl"],
-    queryFn: () => axios.get("/api/user/avatar").then((r) => r.data),
+    queryFn: async () => {
+      const res = await axios.get("/api/user", {
+        params: { type: "avatar" },
+      });
+      return res.data;
+    },
   });
   const avatarUrl = avatarData?.url ?? undefined;
   return (

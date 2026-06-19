@@ -118,7 +118,8 @@ export function useFileUpload(token: string) {
       return uploadPortalFile(token, formData);
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error && err.message ? err.message : "Upload failed";
+      const message =
+        err instanceof Error && err.message ? err.message : "Upload failed";
       toast.error(message);
     },
     onSuccess: () => {
@@ -157,7 +158,8 @@ export function useDocumentItemUpload(token: string) {
       }
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error && err.message ? err.message : "Upload failed";
+      const message =
+        err instanceof Error && err.message ? err.message : "Upload failed";
       toast.error(message);
     },
     onSettled: () => {

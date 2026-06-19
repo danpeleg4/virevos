@@ -7,17 +7,22 @@ import {
 } from "@/lib/user";
 
 export async function GET(req: NextRequest) {
-  const searchParams = req.nextUrl.searchParams;
-  const type = searchParams.get("type");
+  const type = req.nextUrl.searchParams.get("type");
 
-  if (type == "avatar")
-    return NextResponse.json(await getAvatarUrl());
-  if (type == "product-updates")
-    return NextResponse.json(await getProductUpdatesPreference());
-  if (type == "profile")
-    return NextResponse.json(await getUserProfile());
-  if (type == "weekly-summary")
-    return NextResponse.json(await getWeeklySummaryPreference());
+  try {
+    if (type == "avatar") return NextResponse.json(await getAvatarUrl());
+    if (type == "product-updates")
+      return NextResponse.json(await getProductUpdatesPreference());
+    if (type == "profile") return NextResponse.json(await getUserProfile());
+    if (type == "weekly-summary")
+      return NextResponse.json(await getWeeklySummaryPreference());
 
-  return NextResponse.json({ error: "No type found" }, { status: 400 });
+    return NextResponse.json({ error: "No type found" }, { status: 400 });
+  } catch (err) {
+    console.error("[api/user GET]", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

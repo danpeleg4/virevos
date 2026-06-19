@@ -1,4 +1,8 @@
-import { GET } from "@/app/api/user/profile/route";
+import { GET } from "@/app/api/user/route";
+import { NextRequest } from "next/server";
+
+const makeRequest = () =>
+  new NextRequest("http://localhost/api/user?type=profile");
 
 const mockGetUserProfile = vi.fn();
 
@@ -17,7 +21,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-describe("GET /api/user/profile", () => {
+describe("GET /api/user?type=profile", () => {
   it("returns 200 with the user profile", async () => {
     const profile = {
       name: "John Doe",
@@ -27,7 +31,7 @@ describe("GET /api/user/profile", () => {
       bio: "Hi",
     };
     mockGetUserProfile.mockResolvedValue(profile);
-    const res = await GET();
+    const res = await GET(makeRequest());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual(profile);
@@ -35,7 +39,7 @@ describe("GET /api/user/profile", () => {
 
   it("returns 500 when getUserProfile throws", async () => {
     mockGetUserProfile.mockRejectedValue(new Error("db error"));
-    const res = await GET();
+    const res = await GET(makeRequest());
     expect(res.status).toBe(500);
   });
 });

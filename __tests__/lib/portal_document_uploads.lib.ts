@@ -243,7 +243,11 @@ describe("uploadDocumentRequestItem", () => {
     const { insertValues, updateSet } = primeHappyPath();
 
     const file = makeFile(100);
-    const result = await uploadDocumentRequestItem("tok", 1, makeFormData(file));
+    const result = await uploadDocumentRequestItem(
+      "tok",
+      1,
+      makeFormData(file)
+    );
 
     expect(result.itemId).toBe(1);
     expect(result.file.id).toBe(555);
@@ -386,7 +390,11 @@ describe("uploadDocumentRequestItem", () => {
     const { updateSet } = primeHappyPath();
 
     const file = makeFile(100, "text/plain", "notes.txt");
-    const result = await uploadDocumentRequestItem("tok", 1, makeFormData(file));
+    const result = await uploadDocumentRequestItem(
+      "tok",
+      1,
+      makeFormData(file)
+    );
 
     expect(result.status).toBe("uploaded");
     expect(result.analysis?.verdict).toBe("skipped");

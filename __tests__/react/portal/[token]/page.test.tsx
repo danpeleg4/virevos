@@ -67,7 +67,13 @@ vi.mock("@/lib/portal_document_uploads", () => ({
     Promise.resolve({
       itemId: 1,
       status: "uploaded",
-      file: { id: 1, name: "doc.pdf", size: 4, mimeType: "application/pdf", path: "p" },
+      file: {
+        id: 1,
+        name: "doc.pdf",
+        size: 4,
+        mimeType: "application/pdf",
+        path: "p",
+      },
     })
   ),
 }));

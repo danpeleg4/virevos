@@ -143,9 +143,10 @@ describe("uploadPortalFile", () => {
       mockSelectChain([{ id: 10 }]); // client
 
       const fd = new FormData(); // no file
-      await expect(
-        uploadPortalFile("valid-token", fd)
-      ).rejects.toMatchObject({ status: 400, message: /no file/i });
+      await expect(uploadPortalFile("valid-token", fd)).rejects.toMatchObject({
+        status: 400,
+        message: /no file/i,
+      });
     });
 
     it("throws 400 when file exceeds 10 MB", async () => {

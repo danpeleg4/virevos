@@ -27,7 +27,7 @@ vi.mock("@db/db", () => ({
 const makeGetRequest = (clientId: string) =>
   new NextRequest(`http://localhost/api/portal-chat/${clientId}`);
 
-const makeParams = (clientId: string) => Promise.resolve({ clientId });
+const makeParams = (clientId: string) => Promise.resolve({ id: clientId });
 
 const mockUser = { id: "user_1" };
 
