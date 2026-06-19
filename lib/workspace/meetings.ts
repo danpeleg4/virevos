@@ -96,10 +96,15 @@ export async function getPastMeetingTranscript(text: string) {
 
   if (!latestEvent) return [];
 
+  // The transcription index only exposes `user_id` as a filterable metadata
+  // key (matching the snake_case key used at upload time). `room` is stored as
+  // metadata but is not filterable — passing it to the API returns a 400
+  // "Invalid filter" — so we filter by user here and narrow to the latest
+  // meeting by post-filtering on the returned `room` metadata.
   const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
-    topK: 10,
-    filter: { userId: user.id, room: latestEvent.id },
+    topK: 50,
+    filter: { user_id: user.id },
     returnMetadata: true,
   });
 
@@ -110,8 +115,10 @@ export async function getPastMeetingTranscript(text: string) {
 
   const arr: string[] = [];
   for (const hit of data?.vectors ?? []) {
-    const meta = hit.metadata as { chunk_text?: string } | undefined;
-    if (meta?.chunk_text) {
+    const meta = hit.metadata as
+      | { chunk_text?: string; room?: string }
+      | undefined;
+    if (meta?.chunk_text && meta.room === latestEvent.id) {
       arr.push(meta.chunk_text);
     }
   }
