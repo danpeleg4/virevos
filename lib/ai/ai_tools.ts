@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { addAClient, updateExistingClient } from "@/lib/workspace/clients";
-import { getPastMeetingTranscript } from "@/lib/workspace/meetings";
+import { meetingTranscriptSemanticSearch } from "@/lib/workspace/meetings";
 import { createCase, updateCase } from "@/lib/workspace/cases";
 import { addProjectTasksAction, updateTask } from "@/lib/workspace/tasks";
 import { addMeetingToCalendar, updateEvent } from "@/lib/workspace/calendar";
@@ -43,9 +43,9 @@ export const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "getPastMeetingData",
+    name: "meetingTranscriptSemanticSearch",
     description:
-      "Get meeting transcript data and does semantic search to find relevant info",
+      "Does semantic search to find relevant info about from a user's meetings",
     parameters: {
       type: "object",
       properties: {
@@ -311,8 +311,8 @@ export async function executeTool(
       message: "Client created successfully",
     };
   }
-  if (name === "getPastMeetingData") {
-    const res = await getPastMeetingTranscript(args.text as string);
+  if (name === "meetingTranscriptSemanticSearch") {
+    const res = await meetingTranscriptSemanticSearch(args.text as string);
     return {
       kind: "meeting_data",
       message: res.join("\n"),

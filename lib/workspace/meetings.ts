@@ -73,7 +73,7 @@ export async function markActionItemAdded(eventId: string, itemIndex: number) {
     .where(and(eq(events.id, id), eq(events.userId, user.id)));
 }
 
-export async function getPastMeetingTranscript(text: string) {
+export async function meetingTranscriptSemanticSearch(text: string) {
   const user = await getCurrentUser();
   if (!user?.id) {
     return ["Unauthorized"];
@@ -96,11 +96,6 @@ export async function getPastMeetingTranscript(text: string) {
 
   if (!latestEvent) return [];
 
-  // The transcription index only exposes `user_id` as a filterable metadata
-  // key (matching the snake_case key used at upload time). `room` is stored as
-  // metadata but is not filterable — passing it to the API returns a 400
-  // "Invalid filter" — so we filter by user here and narrow to the latest
-  // meeting by post-filtering on the returned `room` metadata.
   const { data, error } = await index.queryVectors({
     queryVector: { float32: queryEmbedding },
     topK: 50,
