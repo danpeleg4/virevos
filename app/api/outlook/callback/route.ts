@@ -8,6 +8,17 @@ import {
   performFullSync,
   setupSubscriptions,
 } from "@/lib/outlook/outlook_sync";
+import { OUTLOOK_STATE_COOKIE } from "@/app/api/outlook/route";
+
+function readCookie(req: Request, name: string): string | null {
+  const header = req.headers.get("cookie");
+  if (!header) return null;
+  for (const part of header.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key === name) return decodeURIComponent(rest.join("="));
+  }
+  return null;
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -15,6 +26,12 @@ export async function GET(req: Request) {
 
   if (!code) {
     return NextResponse.json({ error: "Missing code" }, { status: 400 });
+  }
+
+  const state = searchParams.get("state");
+  const expectedState = readCookie(req, OUTLOOK_STATE_COOKIE);
+  if (!state || !expectedState || state !== expectedState) {
+    return NextResponse.json({ error: "Invalid state" }, { status: 400 });
   }
 
   const user = await getCurrentUser();
@@ -72,10 +89,13 @@ export async function GET(req: Request) {
     console.error("[outlook/callback] Subscription setup failed:", err);
   }
 
-  return NextResponse.redirect(
+  const response = NextResponse.redirect(
     new URL(
       "/workspace/settings",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     )
   );
+  response.cookies.delete(OUTLOOK_STATE_COOKIE);
+
+  return response;
 }

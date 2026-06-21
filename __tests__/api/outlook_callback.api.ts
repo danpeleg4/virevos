@@ -29,11 +29,26 @@ import {
   setupSubscriptions,
 } from "@/lib/outlook/outlook_sync";
 
-function makeRequest(code?: string): Request {
-  const url = code
-    ? `http://localhost/api/outlook/callback?code=${code}`
+const VALID_STATE = "state_token_abc";
+
+function makeRequest(
+  code?: string,
+  opts: { state?: string | null; cookieState?: string | null } = {}
+): Request {
+  const { state = VALID_STATE, cookieState = VALID_STATE } = opts;
+
+  const params = new URLSearchParams();
+  if (code) params.set("code", code);
+  if (state) params.set("state", state);
+  const qs = params.toString();
+  const url = qs
+    ? `http://localhost/api/outlook/callback?${qs}`
     : "http://localhost/api/outlook/callback";
-  return new Request(url);
+
+  const headers: Record<string, string> = {};
+  if (cookieState) headers.cookie = `outlook_oauth_state=${cookieState}`;
+
+  return new Request(url, { headers });
 }
 
 function mockDbSelectEmpty() {
@@ -58,6 +73,26 @@ describe("GET /api/outlook/callback", () => {
     const res = await GET(makeRequest());
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: "Missing code" });
+  });
+
+  it("returns 400 if the state query param is missing", async () => {
+    const res = await GET(makeRequest("auth_code_123", { state: null }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Invalid state" });
+  });
+
+  it("returns 400 if the state cookie is missing", async () => {
+    const res = await GET(makeRequest("auth_code_123", { cookieState: null }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Invalid state" });
+  });
+
+  it("returns 400 if the state does not match the cookie", async () => {
+    const res = await GET(
+      makeRequest("auth_code_123", { state: "evil", cookieState: "legit" })
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Invalid state" });
   });
 
   it("returns 401 if user is not authenticated", async () => {

@@ -16,7 +16,7 @@ export const OUTLOOK_SCOPES = [
   "MailboxSettings.Read",
 ].join(" ");
 
-export function getOutlookAuthUrl(): string {
+export function getOutlookAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: process.env.OUTLOOK_CLIENT_ID!,
     response_type: "code",
@@ -24,6 +24,7 @@ export function getOutlookAuthUrl(): string {
     response_mode: "query",
     scope: OUTLOOK_SCOPES,
     prompt: "consent",
+    state,
   });
 
   return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
