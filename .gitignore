@@ -41,9 +41,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-web/next-env.d.ts
 
-web/.clerk/
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
@@ -51,3 +49,4 @@ web/.clerk/
 web/.next/
 /.idea/compiler.xml
 /.claude/scheduled_tasks.lock
+/livekit/dist/

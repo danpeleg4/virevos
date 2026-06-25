@@ -13,7 +13,11 @@
     "test-semantic-search": "node scripts/test-semantic-search.ts",
     "test-vector-upload": "node scripts/test-vector-upload.ts",
     "test-vector-create": "node scripts/test-vector-create.ts",
-    "test-weekly-summary": "node scripts/test-weekly-summary-cron.ts"
+    "test-weekly-summary": "node scripts/test-weekly-summary-cron.ts",
+    "livekit:typecheck": "tsc -p livekit/tsconfig.json --noEmit",
+    "livekit:build": "esbuild livekit/src/agent/agent.ts --bundle --platform=node --target=node20 --format=esm --packages=external --outfile=livekit/dist/agent.mjs",
+    "livekit:download-files": "node livekit/dist/agent.mjs download-files",
+    "livekit:start": "node livekit/dist/agent.mjs start"
   },
   "overrides": {
     "esbuild": "^0.27.0",
@@ -21,6 +25,9 @@
     "postcss": "$postcss"
   },
   "dependencies": {
+    "@livekit/agents": "^1.4.9",
+    "@livekit/agents-plugin-openai": "^1.4.9",
+    "@livekit/agents-plugin-silero": "^1.4.9",
     "@stripe/react-stripe-js": "^3.10.0",
     "@stripe/stripe-js": "^7.0.0",
     "@supabase/ssr": "^0.10.3",

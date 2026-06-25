@@ -1,0 +1,12 @@
+# Next.js
+.next/
+out/
+app/
+components/
+public/
+next.config.*
+next-env.d.ts
+postcss.config.*
+tailwind.config.*
+.env
+.env.local
