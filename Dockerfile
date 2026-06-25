@@ -11,8 +11,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy ONLY the livekit source, not the Next.js app
+# Copy the livekit source plus the shared db/ schema it imports
+# (livekit/src/agent/agent.ts -> ../../../db/schema), not the Next.js app
 COPY livekit/ ./livekit/
+COPY db/ ./db/
 
 RUN npm run livekit:build
 RUN npm run livekit:download-files
@@ -22,10 +24,7 @@ FROM base
 ARG UID=10001
 RUN adduser --disabled-password --gecos "" --home "/app" --shell "/sbin/nologin" --uid "${UID}" appuser
 WORKDIR /app
-ARG UID=10001
-RUN adduser --disabled-password --gecos "" --home "/app" --shell "/sbin/nologin" --uid "${UID}" appuser
-WORKDIR /app
 COPY --from=build --chown=appuser:appuser /app /app
 USER appuser
 ENV NODE_ENV=production
-CMD ["npm", "run", "agent:start"]
+CMD ["npm", "run", "livekit:start"]

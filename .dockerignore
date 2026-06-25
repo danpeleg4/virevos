@@ -1,3 +1,12 @@
+# Dependencies & VCS — never upload to the build context
+node_modules/
+.git/
+.github/
+
+# Build artifacts / caches
+tsconfig.tsbuildinfo
+livekit/dist/
+
 # Next.js
 .next/
 out/
