@@ -3,8 +3,6 @@
 # dependencies
 /node_modules
 **/node_modules
-**/package-lock.json
-!/package-lock.json
 /.pnp
 .pnp.*
 .yarn/*
@@ -41,9 +39,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-web/next-env.d.ts
 
-web/.clerk/
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
@@ -51,3 +47,4 @@ web/.clerk/
 web/.next/
 /.idea/compiler.xml
 /.claude/scheduled_tasks.lock
+/livekit/dist/
