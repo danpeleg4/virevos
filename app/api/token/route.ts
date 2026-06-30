@@ -81,8 +81,10 @@ export async function POST(req: NextRequest) {
   // Dispatch transcription agent once per room (on first participant join)
   try {
     // AgentDispatchClient requires https:// host, not wss://
-    const livekitHost = (process.env.LIVEKIT_HOST ??
-      process.env.NEXT_PUBLIC_LIVEKIT_URL)!.replace(/^wss?:\/\//, "https://");
+    const livekitHost = process.env.NEXT_PUBLIC_LIVEKIT_URL!.replace(
+      /^wss?:\/\//,
+      "https://"
+    );
     const dispatchClient = new AgentDispatchClient(
       livekitHost,
       process.env.LIVEKIT_API_KEY!,

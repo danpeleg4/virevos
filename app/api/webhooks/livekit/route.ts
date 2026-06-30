@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
 
     if (meeting?.recordingStatus) {
       try {
-        const egressClient = new EgressClient(process.env.LIVEKIT_HOST!);
+        const egressClient = new EgressClient(
+          process.env.NEXT_PUBLIC_LIVEKIT_URL!
+        );
 
         // Check if egress is already running for this room to avoid duplicates
         const existingEgresses = await egressClient.listEgress({ roomName });
