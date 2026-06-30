@@ -8,10 +8,11 @@
 
 Virevos is a SaaS platform that centralises the tools freelancers need to run their business:
 
-- Manage clients, projects, and tasks in one place
+- Manage clients, cases, projects, and tasks in one place
 - Hold video meetings with automatic recording, transcription, and AI-generated summaries
-- Use an AI assistant to add clients, create projects, and query past meeting data
-- Automate repetitive workflows and sync with Google Calendar
+- Use an AI assistant to add clients, create tasks, and query past meeting data
+- Talk to a real-time voice AI agent inside meetings (LiveKit Agents)
+- Automate repetitive workflows and sync email/calendar with Outlook (Microsoft Graph)
 - Communicate with clients via a unified inbox and shareable client portals
 - Track revenue and productivity with a built-in analytics dashboard
 
@@ -19,15 +20,16 @@ Virevos is a SaaS platform that centralises the tools freelancers need to run th
 
 ## Features
 
-- **Client & Project Management** — Centralised workspace for clients, projects, tasks, and files
-- **AI Assistant** — GPT-5 powered chat with tool use (add clients, create projects, search meeting transcripts)
+- **Client & Case Management** — Centralised workspace for clients, cases, tasks, and files
+- **AI Assistant** — GPT-5 powered chat with tool use (add clients, create tasks, search meeting transcripts)
+- **Real-time Voice Agent** — LiveKit Agents worker that joins meetings as an AI participant
 - **Built-in Video Meetings** — LiveKit-powered calls with automatic recording, transcription, and AI summaries
 - **Communications Hub** — Unified inbox for emails and client messages with AI reply suggestions
-- **Google Calendar Sync** — Two-way sync with real push notifications and incremental updates
-- **Workflow Automation** — Trigger-based automations for emails, tasks, and client onboarding
-- **Client Portal** — Shareable portals for client communication and file sharing
-- **Analytics Dashboard** — Revenue tracking, client activity insights, and productivity metrics
-- **Subscription Billing** — Stripe-powered plans with feature limits (Starter, Professional, Business)
+- **Outlook Integration** — Two-way email and calendar sync via Microsoft Graph with subscription (webhook) renewals
+- **Scheduled & Automated Email** — Queue and send email with HTML sanitization; transactional email via Resend
+- **Client Portal** — Shareable portals for client communication, bookings, and document/file requests
+- **Analytics & Weekly Summaries** — Revenue tracking, productivity metrics, and emailed weekly summaries
+- **Subscription Billing** — Stripe-powered plans with feature limits and AI credit tracking
 
 ---
 
@@ -35,17 +37,17 @@ Virevos is a SaaS platform that centralises the tools freelancers need to run th
 
 | Layer         | Technologies                                                                                     |
 | ------------- | ------------------------------------------------------------------------------------------------ |
-| Frontend      | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion |
-| Backend       | Next.js API Routes, Server Actions                                                               |
-| AI            | OpenAI GPT-5 (Responses API, streaming, tool use)                                                |
-| Video         | LiveKit (recording, transcription)                                                               |
+| Frontend      | Next.js 16 (App Router), React 19 (React Compiler), TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion |
+| Backend       | Next.js API Routes (GET), Server Actions (mutations)                                             |
+| AI            | OpenAI GPT-5 (Responses API, streaming, tool use); OpenAI embeddings for semantic search        |
+| Voice Agent   | LiveKit Agents (`@livekit/agents`, OpenAI + Silero plugins)                                      |
+| Video         | LiveKit (recording, transcription)                                                              |
 | Database      | PostgreSQL, Drizzle ORM                                                                          |
-| Vector Search | Pinecone (meeting transcript semantic search)                                                    |
-| Auth          | Clerk                                                                                            |
-| Storage       | Supabase (S3-compatible)                                                                         |
-| Email         | Gmail API                                                                                        |
+| Auth          | Supabase Auth                                                                                    |
+| Storage       | Supabase Storage (S3-compatible)                                                                 |
+| Email / Calendar | Microsoft Outlook (Graph API); Resend for transactional email                                 |
 | Payments      | Stripe                                                                                           |
-| Testing       | Jest, babel-jest                                                                                 |
+| Testing       | Vitest (`@vitejs/plugin-react`, jsdom)                                                           |
 
 ---
 
@@ -57,35 +59,35 @@ virevos/
 │   ├── api/                  # GET endpoints and webhooks
 │   │   ├── chat/             # AI assistant (streaming)
 │   │   ├── billing/
-│   │   ├── google/           # Google OAuth flow
-│   │   ├── gmail/            # Gmail sync and send
+│   │   ├── clients/  cases/  tasks/  events/  files/
+│   │   ├── outlook/          # Outlook OAuth, messages, sync
+│   │   ├── integrations/     # Integration connect/disconnect (Outlook)
 │   │   ├── token/            # LiveKit room tokens
-│   │   ├── portal/           # Client portal public API
+│   │   ├── recording/  transcript/
+│   │   ├── portal/  portal-chat/   # Client portal public API
+│   │   ├── scheduled-emails/  document-requests/  user/
 │   │   ├── cron/             # Vercel cron jobs
-│   │   └── webhooks/         # Stripe, Clerk, Google, LiveKit, Supabase
+│   │   └── webhooks/         # stripe, outlook, livekit
 │   ├── workspace/            # Authenticated app pages
-│   │   ├── dashboard/
-│   │   ├── clients/
-│   │   ├── projects/
-│   │   ├── tasks/
-│   │   ├── calendar/
-│   │   ├── communications/
-│   │   ├── billing/
-│   │   └── settings/
 │   ├── meet/[roomId]/        # Video meeting room
 │   ├── portal/[token]/       # Client portal
-│   └── (marketing)/          # Landing, pricing, features, blog
+│   └── (marketing)/          # Landing, pricing, features
 ├── lib/
-│   ├── server_actions/       # Mutations: clients, projects, tasks, meetings, etc.
-│   ├── ai_tools.ts           # OpenAI tools and agent config
-│   ├── google_sync.ts        # Google Calendar sync logic
-│   └── billing.ts            # Stripe helpers
+│   ├── ai/                   # ai_tools.ts (OpenAI tools/agent), document_analysis.ts
+│   ├── workspace/            # Mutations: clients, cases, tasks, meetings, calendar, billing
+│   ├── outlook/              # outlook_actions.ts, outlook_sync.ts, outlook_access.ts
+│   ├── supabase/             # Supabase server/client helpers
+│   ├── util/                 # validation.ts, html_sanitizer.ts
+│   ├── embeddings.ts         # OpenAI embeddings for semantic transcript search
+│   ├── resend.ts  weekly_summary.ts  scheduled_emails.ts  stripe.ts  storage.ts
+│   └── ...                   # portal_*, integrations, plan_limits, user, etc.
+├── livekit/
+│   ├── src/agent/agent.ts    # LiveKit Agents voice worker (bundled with esbuild)
+│   └── tsconfig.json
 ├── db/
 │   ├── schema.ts             # Drizzle schema
 │   └── migrations/
-└── __tests__/                # Jest test suites
-    ├── api/
-    └── lib/
+└── __tests__/                # Vitest suites (api/, lib/, react/, _helpers/)
 ```
 
 ---
@@ -94,9 +96,9 @@ virevos/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - PostgreSQL database
-- Accounts for: Clerk, OpenAI, LiveKit, Supabase, Stripe, Google Cloud, Pinecone
+- Accounts for: Supabase, OpenAI, LiveKit, Stripe, Microsoft Azure (Outlook/Graph app), Resend
 
 ### Install & Run
 
@@ -116,25 +118,39 @@ npx drizzle-kit generate
 npx drizzle-kit push
 ```
 
+### LiveKit Voice Agent
+
+The real-time voice agent lives in `livekit/` and runs as a separate worker process:
+
+```bash
+npm run livekit:typecheck      # Type-check the agent
+npm run livekit:build          # Bundle to livekit/dist/agent.mjs (esbuild, node20, ESM)
+npm run livekit:download-files # Download required model/runtime files
+npm run livekit:start          # Start the agent worker
+```
+
 ### Environment Variables
 
 Create a `.env.local` file in the root:
 
 ```bash
-# Auth
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-
 # Database
 DATABASE_URL=
+
+# Supabase (auth + storage)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_API_SECRET=
+SUPABASE_S3_ACCESS_KEY_ID=
+SUPABASE_S3_SECRET_ACCESS_KEY=
 
 # OpenAI
 OPENAI_API_KEY=
 
-# Google OAuth
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=
+# Outlook / Microsoft Graph
+OUTLOOK_CLIENT_ID=
+OUTLOOK_CLIENT_SECRET=
+OUTLOOK_REDIRECT_URI=
 
 # Stripe
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
@@ -146,15 +162,11 @@ STRIPE_PRICE_BUSINESS_MONTHLY=
 # LiveKit
 LIVEKIT_API_KEY=
 LIVEKIT_API_SECRET=
-LIVEKIT_HOST=
 NEXT_PUBLIC_LIVEKIT_URL=
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-SUPABASE_API_SECRET=
-SUPABASE_S3_ACCESS_KEY_ID=
-SUPABASE_S3_SECRET_ACCESS_KEY=
-SUPABASE_WEBHOOK_SECRET=
+# Email (Resend)
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
 
 # App
 NEXT_PUBLIC_APP_URL=
@@ -169,11 +181,13 @@ CRON_SECRET=
 ## Scripts
 
 ```bash
-npm run dev       # Start development server
-npm run build     # Build for production
-npm start         # Start production server
-npm run lint      # Run ESLint
-npm test          # Run Jest tests
+npm run dev        # Start development server
+npm run build      # Build for production
+npm start          # Start production server
+npm run lint       # Run ESLint
+npm test           # Run Vitest (single run)
+npm run test:watch # Vitest watch mode
+npm run format     # Prettier
 ```
 
 ---
@@ -182,27 +196,39 @@ npm test          # Run Jest tests
 
 ### AI Assistant
 
-Uses the OpenAI Responses API with streaming via `openai.responses.stream()`. The agent loop chains requests via `previous_response_id` and supports up to 5 tool-call steps per conversation. Available tools include client management, project creation, and semantic meeting transcript search. Streamed as newline-delimited JSON events.
+Uses the OpenAI Responses API with streaming via `openai.responses.stream()` (model `gpt-5`). The agent loop chains requests via `previous_response_id` and supports a bounded number of tool-call steps per turn. Tools and config live in `lib/ai/ai_tools.ts`. Output streams to the client as newline-delimited JSON events.
 
-### Google Calendar Sync
+### Semantic Search
 
-Real push notifications via `calendar.events.watch()`. Uses sync tokens for incremental updates; falls back to full sync on 410 Gone. The webhook at `/api/webhooks/google` authenticates via `X-Goog-Channel-Token` (userId). Requires a publicly accessible HTTPS URL (`NEXT_PUBLIC_APP_URL`).
+Meeting transcripts are embedded with OpenAI embeddings (`lib/embeddings.ts`) and stored in Postgres for semantic retrieval by the AI assistant — no external vector database.
+
+### Real-time Voice Agent
+
+A LiveKit Agents worker (`livekit/src/agent/agent.ts`, built with esbuild) joins meeting rooms as an AI participant using the OpenAI and Silero plugins. It runs as a standalone Node process, separate from the Next.js app.
+
+### Outlook Integration
+
+Email and calendar sync via Microsoft Graph. OAuth is handled under `app/api/outlook/`; change notifications arrive at `/api/webhooks/outlook`. Graph subscriptions are renewed on a schedule by the `renew-outlook-subscriptions` cron job.
 
 ### Video Meetings
 
-LiveKit rooms with server-side token generation. Recordings upload to Supabase, triggering a Supabase webhook that kicks off transcription. Transcripts are embedded into Pinecone for semantic search by the AI assistant.
+LiveKit rooms with server-side token generation (`/api/token`). Recordings notify `/api/webhooks/livekit`, which kicks off transcription; transcripts are then embedded for semantic search.
 
 ### Data Mutations
 
-POST/PATCH/DELETE operations are implemented as Next.js Server Actions in `lib/server_actions/` and called via TanStack Query `useMutation` hooks. GET operations use `/api` routes with `useQuery`.
+POST/PATCH/PUT/DELETE operations are implemented as Next.js Server Actions, organized under `lib/workspace/`, `lib/outlook/`, and flat `lib/*.ts` modules, called via TanStack Query `useMutation` hooks. GET operations use `/api` routes with `useQuery`. Inputs are validated with `lib/util/validation.ts`; outbound email HTML is sanitized with `lib/util/html_sanitizer.ts`.
+
+### Cron Jobs
+
+Vercel cron routes under `app/api/cron/`: `credit-reset`, `process-scheduled-emails`, `renew-outlook-subscriptions`, and `weekly-summary`. All are protected by `CRON_SECRET`.
 
 ---
 
 ## Testing
 
 ```bash
-npm test              # Run all tests
+npm test              # Run all tests (vitest run)
 npm run test:watch    # Watch mode
 ```
 
-Tests live in `__tests__/api/` and `__tests__/lib/`, covering success cases, error cases, and edge cases. The Jest config uses dual environments: `node` for API/lib and `jsdom` for React.
+Tests live in `__tests__/` (`api/`, `lib/`, `react/`, `_helpers/`), covering success, error, and edge cases. Vitest is configured with `@vitejs/plugin-react` and a jsdom environment for React component tests. Note: the React Compiler is enabled in `next.config` for the app build but not in the Vitest run, so tests execute uncompiled.
