@@ -42,11 +42,9 @@ const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
 
 vi.mock("@db/db", () => ({
   db: {
-    // eslint-disable-next-line prefer-spread
-    select: (...args: never[]) => mockSelect.apply(null, args),
+    select: (...args: never[]) => mockSelect(...args),
     update: vi.fn(() => ({ set: mockSet })),
-    // eslint-disable-next-line prefer-spread
-    insert: (...args: never[]) => mockInsert.apply(null, args),
+    insert: (...args: never[]) => mockInsert(...args),
   },
 }));
 

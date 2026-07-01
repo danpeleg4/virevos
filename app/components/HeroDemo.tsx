@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles,
   Send,
@@ -135,11 +134,7 @@ function TypingDots() {
 
 function ResultCardView({ card }: { card: ResultCard }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
-    >
+    <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
       {card.kind === "case" ? (
         <>
           <div className="flex items-start gap-3">
@@ -166,11 +161,9 @@ function ResultCardView({ card }: { card: ResultCard }) {
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(card.done / card.total) * 100}%` }}
-                transition={{ delay: 0.2, duration: 0.7 }}
+              <div
                 className="h-full rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
+                style={{ width: `${(card.done / card.total) * 100}%` }}
               />
             </div>
           </div>
@@ -213,7 +206,7 @@ function ResultCardView({ card }: { card: ResultCard }) {
           </div>
         </>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -290,36 +283,32 @@ export function HeroDemo() {
                 ) : (
                   <div className="space-y-2.5">
                     <p className="text-sm text-gray-700">{active.reply}</p>
-                    <AnimatePresence>
-                      {active.steps.slice(0, stepsShown).map((step) => {
-                        const tone = TONES[step.tone];
-                        const Icon = tone.icon;
-                        return (
-                          <motion.div
-                            key={step.label}
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-2.5"
+                    {active.steps.slice(0, stepsShown).map((step) => {
+                      const tone = TONES[step.tone];
+                      const Icon = tone.icon;
+                      return (
+                        <div
+                          key={step.label}
+                          className="flex items-center gap-2.5"
+                        >
+                          <span
+                            className={`flex shrink-0 items-center justify-center rounded-lg p-2 ${tone.bg}`}
                           >
-                            <span
-                              className={`flex shrink-0 items-center justify-center rounded-lg p-2 ${tone.bg}`}
-                            >
-                              <Icon className={`h-4 w-4 ${tone.fg}`} />
+                            <Icon className={`h-4 w-4 ${tone.fg}`} />
+                          </span>
+                          <span className="flex-1 text-sm text-gray-700">
+                            {step.label}
+                          </span>
+                          {step.badge ? (
+                            <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                              {step.badge}
                             </span>
-                            <span className="flex-1 text-sm text-gray-700">
-                              {step.label}
-                            </span>
-                            {step.badge ? (
-                              <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-                                {step.badge}
-                              </span>
-                            ) : (
-                              <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
-                            )}
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                          )}
+                        </div>
+                      );
+                    })}
 
                     {allStepsShown && active.result && (
                       <ResultCardView card={active.result} />

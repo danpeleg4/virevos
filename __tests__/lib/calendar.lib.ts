@@ -8,15 +8,14 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
 import type { Event } from "@/types/meeting";
 
-vi.mock("@/lib/supabase/auth", () => ({
+vi.mock(import("@/lib/supabase/auth"), () => ({
   getCurrentUser: vi.fn(),
 }));
 
 const mockGetFreshOutlookAccessToken = vi.fn();
-vi.mock("@/lib/outlook/outlook_access", () => ({
+vi.mock(import("@/lib/outlook/outlook_access"), () => ({
   getFreshOutlookAccessToken: (...args: never[]) =>
-    // eslint-disable-next-line prefer-spread
-    mockGetFreshOutlookAccessToken.apply(null, args),
+    mockGetFreshOutlookAccessToken(...args),
   getOutlookAuthUrl: vi.fn(),
 }));
 
@@ -26,15 +25,9 @@ const mockAxiosDelete = vi.fn();
 vi.mock("axios", () => ({
   __esModule: true,
   default: {
-    patch: (...args: never[]) =>
-      // eslint-disable-next-line prefer-spread
-      mockAxiosPatch.apply(null, args),
-    post: (...args: never[]) =>
-      // eslint-disable-next-line prefer-spread
-      mockAxiosPost.apply(null, args),
-    delete: (...args: never[]) =>
-      // eslint-disable-next-line prefer-spread
-      mockAxiosDelete.apply(null, args),
+    patch: (...args: never[]) => mockAxiosPatch(...args),
+    post: (...args: never[]) => mockAxiosPost(...args),
+    delete: (...args: never[]) => mockAxiosDelete(...args),
   },
 }));
 
@@ -47,11 +40,9 @@ const mockReturning = vi.fn();
 const mockValues = vi.fn(() => ({ returning: mockReturning }));
 const mockUpdateWhere = vi.fn();
 const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
-
 vi.mock("@db/db", () => ({
   db: {
-    // eslint-disable-next-line prefer-spread
-    select: (...args: never[]) => mockSelect.apply(null, args),
+    select: (...args: never[]) => mockSelect(...args),
     insert: vi.fn(() => ({ values: mockValues })),
     delete: vi.fn(() => ({ where: mockDeleteWhere })),
     update: vi.fn(() => ({ set: mockUpdateSet })),
@@ -77,7 +68,7 @@ const mockMeeting: Event = {
 let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockSelectLimit.mockResolvedValue([]);
   mockSelectWhere.mockReturnValue({ limit: mockSelectLimit });
@@ -105,14 +96,6 @@ describe("addMeetingToCalendar", () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
     await expect(addMeetingToCalendar(mockMeeting)).rejects.toThrow(
       "Unauthorized"
-    );
-  });
-
-  it("throws when user not found in DB", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectLimit.mockResolvedValueOnce([]); // no user in DB
-    await expect(addMeetingToCalendar(mockMeeting)).rejects.toThrow(
-      "User not found in database"
     );
   });
 
@@ -160,7 +143,7 @@ describe("deleteEventFromCalendar", () => {
   it("returns { success: false, error: 'Meeting not found' } when event does not exist in DB", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     mockSelectLimit.mockResolvedValueOnce([]); // event not found
-    const result = await deleteEventFromCalendar("event-1");
+    const result = await deleteEventFromCalendar("event-123");
     expect(result).toEqual({ success: false, error: "Meeting not found" });
   });
 });

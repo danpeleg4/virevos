@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Pricing } from "../components/Pricing";
 import {
   Accordion,
@@ -171,39 +170,25 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 opacity-70" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 sm:py-28 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center mb-8"
-          >
+          <div className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm">
               <Sparkles className="h-4 w-4 text-green-600" />
               <span className="text-sm text-gray-700">
                 Simple, transparent pricing
               </span>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 mb-6 leading-tight"
-          >
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 mb-6 leading-tight">
             Plans that scale{" "}
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               with you
             </span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-xl sm:text-2xl text-gray-500 max-w-2xl mx-auto"
-          >
+          <p className="text-xl sm:text-2xl text-gray-500 max-w-2xl mx-auto">
             Start free. Upgrade when you need to. No hidden fees, no surprises.
-          </motion.p>
+          </p>
         </div>
       </section>
 
@@ -213,26 +198,16 @@ export default function PricingPage() {
       {/* Comparison Table */}
       <section className="py-20 sm:py-28 bg-gray-50">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-14"
-          >
+          <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl text-gray-900 mb-2">
               Compare plans
             </h2>
             <p className="text-lg text-gray-500 pb-4">
               Everything, side by side
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm"
-          >
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -286,32 +261,23 @@ export default function PricingPage() {
                 </tbody>
               </table>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* FAQ */}
       <section className="py-20 sm:py-28 bg-white">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-14"
-          >
+          <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl text-gray-900 mb-2">
               Frequently asked questions
             </h2>
             <p className="text-lg text-gray-500 pb-4">
               Everything you need to know about pricing and billing.
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+          <div>
             <Accordion type="single" collapsible className="w-full space-y-2">
               {faqs.map((faq, index) => (
                 <AccordionItem
@@ -328,7 +294,7 @@ export default function PricingPage() {
                 </AccordionItem>
               ))}
             </Accordion>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -337,11 +303,7 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 opacity-70" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]" />
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+          <div>
             <h2 className="text-4xl sm:text-5xl text-gray-900 mb-6 leading-tight">
               Still have questions?{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -370,7 +332,7 @@ export default function PricingPage() {
                 Talk to sales
               </Button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 

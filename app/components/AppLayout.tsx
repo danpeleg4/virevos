@@ -1,7 +1,6 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -282,45 +281,34 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
       </aside>
 
-      <AnimatePresence>
-        {sidebarOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
 
-            <motion.aside
-              initial={{ x: -300 }}
-              animate={{ x: 0 }}
-              exit={{ x: -300 }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar border-r border-sidebar-border lg:hidden"
-            >
-              <SidebarContent
-                currentPath={currentPath}
-                pendingCount={pendingCount}
-                fullName={fullName}
-                initials={initials}
-                email={user?.email}
-                onNavigateHome={() => {
-                  router.push("/");
-                  setSidebarOpen(false);
-                }}
-                onToggleAi={() => {
-                  setAiOpen(!aiOpen);
-                  setSidebarOpen(false);
-                }}
-                onSignOut={handleSignOut}
-                onClose={() => setSidebarOpen(false)}
-              />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+          <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar border-r border-sidebar-border lg:hidden">
+            <SidebarContent
+              currentPath={currentPath}
+              pendingCount={pendingCount}
+              fullName={fullName}
+              initials={initials}
+              email={user?.email}
+              onNavigateHome={() => {
+                router.push("/");
+                setSidebarOpen(false);
+              }}
+              onToggleAi={() => {
+                setAiOpen(!aiOpen);
+                setSidebarOpen(false);
+              }}
+              onSignOut={handleSignOut}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </aside>
+        </>
+      )}
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-card border-b border-border sticky top-0 z-30">

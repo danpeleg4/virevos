@@ -2,7 +2,6 @@
 
 import { use } from "react";
 import { notFound, useRouter } from "next/navigation";
-import { motion } from "motion/react";
 import { Navigation } from "@/app/components/Navigation";
 import { Footer } from "@/app/components/Footer";
 import { ArrowLeft, Clock, User } from "lucide-react";
@@ -90,11 +89,7 @@ export default function BlogPostPage({
       <Navigation />
 
       {/* Hero */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+      <div>
         <div
           className={`bg-gradient-to-b ${post.image ? "from-gray-50 to-white" : "from-gray-50 to-white"} py-12 sm:py-16`}
         >
@@ -143,26 +138,16 @@ export default function BlogPostPage({
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Article body */}
-      <motion.article
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 space-y-6"
-      >
+      <article className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 space-y-6">
         {post.content.map((block, i) => renderBlock(block, i))}
-      </motion.article>
+      </article>
 
       {/* Related posts */}
       {related.length > 0 && (
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="border-t border-gray-200 py-16 sm:py-20"
-        >
+        <section className="border-t border-gray-200 py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-xl text-gray-900 mb-8">
               More from {post.category}
@@ -195,7 +180,7 @@ export default function BlogPostPage({
               ))}
             </div>
           </div>
-        </motion.section>
+        </section>
       )}
 
       <Footer />

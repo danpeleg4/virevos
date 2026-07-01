@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion } from "motion/react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -475,12 +474,8 @@ export function AIAssistant({
   return (
     <div>
       {isOpen && (
-        <motion.div
+        <div
           key="ai-assistant-panel"
-          initial={{ x: "100%", opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: "100%", opacity: 0 }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }}
           className="fixed right-0 top-0 h-screen bg-card border-l border-border z-50 flex flex-col shadow-2xl overflow-hidden"
           style={{ width: "420px" }}
         >
@@ -514,12 +509,7 @@ export function AIAssistant({
             <h4 className="text-sm text-gray-700 mb-3">Next Best Actions</h4>
             <div className="space-y-2">
               {nextBestActions.map((action, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
+                <div key={index}>
                   <Card className="p-3 transition-colors cursor-pointer bg-white border-gray-200 hover:bg-gray-100">
                     <div className="flex items-start space-x-3">
                       <div
@@ -565,7 +555,7 @@ export function AIAssistant({
                       </div>
                     </div>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -776,12 +766,9 @@ export function AIAssistant({
                 </div>
               </div>
             )}
-            {messages.map((message, msgIndex) => (
-              <motion.div
+            {messages.map((message) => (
+              <div
                 key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: msgIndex * 0.05 }}
                 className={`flex ${
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
@@ -810,10 +797,8 @@ export function AIAssistant({
                             const tone = ACTION_TONES[action.tone];
                             const Icon = tone.icon;
                             return (
-                              <motion.div
+                              <div
                                 key={action.id}
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
                                 className="flex items-center gap-2.5"
                               >
                                 <span
@@ -825,7 +810,7 @@ export function AIAssistant({
                                   {action.label}
                                 </span>
                                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
-                              </motion.div>
+                              </div>
                             );
                           })}
                         </div>
@@ -844,7 +829,7 @@ export function AIAssistant({
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
@@ -874,7 +859,7 @@ export function AIAssistant({
               </Button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

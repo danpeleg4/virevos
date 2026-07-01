@@ -27,7 +27,6 @@ import {
   User,
   Trash2,
 } from "lucide-react";
-import { motion } from "motion/react";
 import type { ActionItem } from "@/types/communications";
 
 interface ActionItemsDialogProps {
@@ -294,12 +293,9 @@ export function ActionItemsDialog({
         {/* Action Items List */}
         <ScrollArea className="flex-1 -mx-6 px-6">
           <div className="space-y-3">
-            {items.map((item, index) => (
-              <motion.div
+            {items.map((item) => (
+              <div
                 key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
                 className={`border rounded-lg p-4 ${
                   item.status === "completed"
                     ? "bg-muted/50 opacity-75"
@@ -370,7 +366,7 @@ export function ActionItemsDialog({
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </ScrollArea>

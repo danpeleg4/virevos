@@ -32,7 +32,6 @@ import {
   SlidersHorizontal,
   CheckIcon,
 } from "lucide-react";
-import { motion } from "motion/react";
 import { toast } from "sonner";
 import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
@@ -378,13 +377,8 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredMessages?.map((message, index) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
+          {filteredMessages?.map((message) => (
+            <div key={message.id}>
               <div className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4 flex-1">
@@ -465,7 +459,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}

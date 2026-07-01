@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Star, Quote } from "lucide-react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 
@@ -70,12 +69,7 @@ export function Testimonials() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center space-x-1 mb-6"
-          >
+          <div className="inline-flex items-center space-x-1 mb-6">
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
@@ -85,39 +79,21 @@ export function Testimonials() {
             <span className="ml-2 text-sm text-gray-600">
               5.0 from 2,000+ reviews
             </span>
-          </motion.div>
+          </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl text-gray-900 mb-6"
-          >
+          <h2 className="text-4xl sm:text-5xl text-gray-900 mb-6">
             Loved by individuals worldwide
-          </motion.h2>
+          </h2>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-gray-600"
-          >
+          <p className="text-xl text-gray-600">
             Join thousands of people using Virevos to work smarter
-          </motion.p>
+          </p>
         </div>
 
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-            >
+            <div key={index}>
               <div className="h-full bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-gray-300 transition-all duration-300">
                 {/* Quote Icon */}
                 <div className="mb-4">
@@ -156,17 +132,12 @@ export function Testimonials() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Company Logos */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-20 text-center"
-        >
+        <div className="mt-20 text-center">
           <p className="text-sm text-gray-500 mb-8">
             Trusted by leading companies
           </p>
@@ -184,7 +155,7 @@ export function Testimonials() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
