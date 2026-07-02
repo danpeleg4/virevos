@@ -165,7 +165,6 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         setFormBody("");
         setFormDate("");
         setFormTime("09:00");
-        //await fetchScheduledEmails();
       }
     } catch {
       toast.error("Failed to schedule message");
