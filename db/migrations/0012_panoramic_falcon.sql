@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "credits_reset_at" SET DATA TYPE timestamp with time zone;
