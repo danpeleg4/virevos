@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
@@ -22,11 +21,7 @@ export function Hero() {
           {/* Left: copy */}
           <div className="text-center lg:text-left">
             {/* Announcement Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8 flex justify-center lg:justify-start"
-            >
+            <div className="mb-8 flex justify-center lg:justify-start">
               <div className="inline-flex items-center space-x-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-sm transition-shadow hover:shadow-md cursor-pointer">
                 <Sparkles className="h-4 w-4 text-purple-600" />
                 <span className="text-sm text-gray-700">
@@ -34,38 +29,23 @@ export function Hero() {
                 </span>
                 <ArrowRight className="h-3 w-3 text-gray-400" />
               </div>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-6 text-4xl leading-tight text-gray-900 sm:text-5xl lg:text-6xl"
-            >
+            <h1 className="mb-6 text-4xl leading-tight text-gray-900 sm:text-5xl lg:text-6xl">
               Practice flows better with{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Virevos
               </span>
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mx-auto mb-8 max-w-xl text-lg leading-relaxed text-gray-600 sm:text-xl lg:mx-0"
-            >
+            <p className="mx-auto mb-8 max-w-xl text-lg leading-relaxed text-gray-600 sm:text-xl lg:mx-0">
               From F-1 and OPT to H-1B. Virevos uses AI to turn consultations
               into audited workflows, catching the manual errors that put
               student visas at risk.
-            </motion.p>
+            </p>
 
             {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mb-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start justify-center"
-            >
+            <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start justify-center">
               <Button
                 size="lg"
                 className="group rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6 text-lg text-white shadow-lg transition-all hover:shadow-xl"
@@ -82,15 +62,10 @@ export function Hero() {
               >
                 Schedule a demo
               </Button>
-            </motion.div>
+            </div>
 
             {/* Social Proof */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex flex-col items-center gap-6 text-sm text-gray-600 sm:flex-row lg:justify-start justify-center"
-            >
+            <div className="flex flex-col items-center gap-6 text-sm text-gray-600 sm:flex-row lg:justify-start justify-center">
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <span>Free Plan</span>
@@ -103,18 +78,13 @@ export function Hero() {
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <span>Cancel anytime</span>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Right: interactive product demo */}
-          <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="flex justify-center lg:justify-end"
-          >
+          <div className="flex justify-center lg:justify-end">
             <HeroDemo />
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

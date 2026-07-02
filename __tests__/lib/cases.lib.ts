@@ -28,8 +28,7 @@ vi.mock("@db/db", () => {
     delete: vi.fn(() => ({ where: mockDeleteWhere })),
     update: vi.fn(() => ({ set: mockSet })),
     insert: vi.fn(() => ({ values: mockValues })),
-    // eslint-disable-next-line prefer-spread
-    select: (...args: never[]) => mockSelect.apply(null, args),
+    select: (...args: never[]) => mockSelect(...args),
     transaction: vi.fn(),
   };
   // Run the transaction callback with the same db mock so tx.delete etc. flow

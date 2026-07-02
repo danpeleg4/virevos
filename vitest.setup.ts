@@ -1,39 +1,4 @@
 import "@testing-library/jest-dom/vitest";
-import type * as ReactTypes from "react";
-
-vi.mock("motion/react", async () => {
-  const React = await vi.importActual<typeof import("react")>("react");
-  const motion = new Proxy(
-    {},
-    {
-      get: (_t, _tag: string) =>
-        function MC({
-          children,
-          initial,
-          animate,
-          exit,
-          variants,
-          transition,
-          viewport,
-          whileInView,
-          whileHover,
-          whileTap,
-          ...props
-        }: Record<string, unknown>) {
-          return React.createElement(
-            _tag,
-            props,
-            children as ReactTypes.ReactNode
-          );
-        },
-    }
-  );
-  return {
-    motion,
-    AnimatePresence: ({ children }: { children: ReactTypes.ReactNode }) =>
-      React.createElement(React.Fragment, null, children),
-  };
-});
 
 vi.spyOn(console, "error").mockImplementation(() => {});
 vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {

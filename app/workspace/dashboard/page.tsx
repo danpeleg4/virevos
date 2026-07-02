@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Progress } from "@/app/components/ui/progress";
@@ -22,11 +21,6 @@ import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { updateTaskStatus } from "@/lib/workspace/tasks";
 import { Checkbox } from "@/app/components/ui/checkbox";
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
@@ -154,16 +148,9 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={{
-          visible: { transition: { staggerChildren: 0.1 } },
-        }}
-        className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-      >
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {theStats.map((stat, index) => (
-          <motion.div key={index} variants={fadeInUp}>
+          <div key={index}>
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div
@@ -193,9 +180,9 @@ export default function Dashboard() {
               <p className="text-2xl text-foreground mb-1">{stat.value}</p>
               <p className="text-sm text-muted-foreground">{stat.label}</p>
             </Card>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* Recent Projects & Tasks */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">

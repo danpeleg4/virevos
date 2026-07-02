@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -217,17 +216,7 @@ export default function Onboarding() {
             </p>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {renderStep()}
-            </motion.div>
-          </AnimatePresence>
+          <div key={currentStep}>{renderStep()}</div>
         </div>
 
         <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-[12px] text-gray-400 font-medium">

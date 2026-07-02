@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Check, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -62,14 +61,7 @@ export function Pricing() {
         {/* Pricing Cards */}
         <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="relative"
-            >
+            <div key={index} className="relative">
               {/* Popular Badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
@@ -132,17 +124,12 @@ export function Pricing() {
                   ))}
                 </ul>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* FAQ Callout */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-20 max-w-4xl mx-auto"
-        >
+        <div className="mt-20 max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 sm:p-12 border border-blue-100">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
@@ -193,7 +180,7 @@ export function Pricing() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

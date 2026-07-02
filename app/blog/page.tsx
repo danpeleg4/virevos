@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
 import { Navigation } from "@/app/components/Navigation";
 import { Footer } from "@/app/components/Footer";
 import { Clock, User, ArrowRight } from "lucide-react";
@@ -15,11 +14,6 @@ const categories: Category[] = [
   "Company",
   "Engineering",
 ];
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
 
 export default function Blog() {
   const router = useRouter();
@@ -43,30 +37,15 @@ export default function Blog() {
       <Navigation />
 
       {/* Header */}
-      <motion.section
-        initial="hidden"
-        animate="visible"
-        variants={fadeInUp}
-        transition={{ duration: 0.4 }}
-        className="py-16 sm:py-20 bg-gradient-to-b from-gray-50 to-white"
-      >
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.h1
-            variants={fadeInUp}
-            className="text-5xl sm:text-6xl text-gray-900 mb-4"
-          >
-            Blog
-          </motion.h1>
-          <motion.p
-            variants={fadeInUp}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-gray-500 max-w-xl"
-          >
+          <h1 className="text-5xl sm:text-6xl text-gray-900 mb-4">Blog</h1>
+          <p className="text-lg text-gray-500 max-w-xl">
             Insights on virevos, product updates, and engineering deep dives
             from the team.
-          </motion.p>
+          </p>
         </div>
-      </motion.section>
+      </section>
 
       {/* Category Tabs */}
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-sm border-y border-gray-200">
@@ -92,12 +71,7 @@ export default function Blog() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         {/* Featured Post */}
         {featuredPost && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-12"
-          >
+          <div className="mb-12">
             <div
               onClick={() => router.push(`/blog/${featuredPost.slug}`)}
               className="group cursor-pointer rounded-2xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all bg-white"
@@ -132,36 +106,22 @@ export default function Blog() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Post Grid */}
         {filteredPosts.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-24 text-gray-500"
-          >
+          <div className="text-center py-24 text-gray-500">
             No posts in this category yet.
-          </motion.div>
+          </div>
         ) : (
-          <motion.div
+          <div
             key={activeCategory}
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.07 },
-              },
-            }}
             className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {gridPosts.map((post) => (
-              <motion.article
+              <article
                 key={post.id}
-                variants={fadeInUp}
                 onClick={() => router.push(`/blog/${post.slug}`)}
                 className="group cursor-pointer rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all bg-white flex flex-col"
               >
@@ -190,9 +150,9 @@ export default function Blog() {
                     </span>
                   </div>
                 </div>
-              </motion.article>
+              </article>
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
 

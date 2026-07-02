@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
-import { events, users } from "@db/schema";
+import { events } from "@db/schema";
 import { eq, and } from "drizzle-orm";
 import { Event } from "@/types/meeting";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
@@ -16,17 +16,6 @@ export async function addMeetingToCalendar(meeting: Event) {
     throw new Error("Unauthorized");
   }
 
-  const dbUser = await db
-    .select()
-    .from(users)
-    .where(eq(users.userId, user.id))
-    .limit(1);
-
-  if (dbUser.length === 0) {
-    throw new Error("User not found in database");
-  }
-
-  const internalUserId = dbUser[0].userId;
   const startDate = new Date(meeting.dateTime);
   const meetingId = crypto.randomUUID();
 
@@ -74,7 +63,7 @@ export async function addMeetingToCalendar(meeting: Event) {
     hasTranscript: meeting.hasTranscript ?? false,
     autoRescheduled: meeting.autoRescheduled ?? false,
     conflictReason: meeting.conflictReason ?? null,
-    userId: internalUserId,
+    userId: user.id,
     outlookEventId,
   };
 

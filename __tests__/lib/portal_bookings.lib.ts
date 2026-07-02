@@ -27,9 +27,7 @@ vi.mock("@db/db", () => ({
 
 const mockAddMeetingToCalendar = vi.fn();
 vi.mock("@/lib/workspace/calendar", () => ({
-  addMeetingToCalendar: (...args: never[]) =>
-    // eslint-disable-next-line prefer-spread
-    mockAddMeetingToCalendar.apply(null, args),
+  addMeetingToCalendar: (...args: never[]) => mockAddMeetingToCalendar(...args),
 }));
 
 import { db } from "@db/db";

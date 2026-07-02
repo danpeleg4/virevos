@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import {
   Zap,
   Users,
@@ -93,49 +92,25 @@ export default function Features() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center space-x-2 bg-blue-50 border border-blue-100 rounded-full px-4 py-2 mb-6"
-          >
+          <div className="inline-flex items-center space-x-2 bg-blue-50 border border-blue-100 rounded-full px-4 py-2 mb-6">
             <Sparkles className="h-4 w-4 text-blue-600" />
             <span className="text-sm text-blue-900">Everything you need</span>
-          </motion.div>
+          </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl text-gray-900 mb-6"
-          >
+          <h2 className="text-4xl sm:text-5xl text-gray-900 mb-6">
             Built for Immigration Experts
-          </motion.h2>
+          </h2>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-gray-600"
-          >
+          <p className="text-xl text-gray-600">
             Everything you need to automate the F-1 to H-1B pipeline, track
             critical deadlines, and scale your practice without the risk.
-          </motion.p>
+          </p>
         </div>
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group relative"
-            >
+            <div key={index} className="group relative">
               <div className="h-full bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-gray-300 transition-all duration-300">
                 {/* Icon */}
                 <div className="mb-6">
@@ -165,19 +140,14 @@ export default function Features() {
                   ))}
                 </ul>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-20 text-center"
-        >
+        <div className="mt-20 text-center">
           <div className="inline-flex flex-col sm:flex-row items-center gap-4"></div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

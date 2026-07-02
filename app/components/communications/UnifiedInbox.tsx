@@ -47,7 +47,6 @@ import {
   Download,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { motion } from "motion/react";
 import { AIReplyComposer } from "./AIReplyComposer";
 import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
@@ -677,12 +676,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
               </div>
             ) : (
               <>
-                {filteredMessages.map((message, index) => (
-                  <motion.div
+                {filteredMessages.map((message) => (
+                  <div
                     key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.03, 0.3) }}
                     onClick={async () => await handleSelectMessage(message)}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       selectedMessage?.id === message.id
@@ -765,7 +761,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
                 {/* Infinite scroll sentinel */}
                 <div ref={sentinelRef} className="py-1" />
@@ -1171,10 +1167,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                     </h4>
                     <div className="space-y-2">
                       {threadMessages.map((msg) => (
-                        <motion.div
+                        <div
                           key={msg.id}
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
                           className={`rounded-lg border p-3 text-sm ${
                             msg.sent
                               ? "bg-blue-50 dark:bg-blue-950/50 border-blue-100 dark:border-blue-900 ml-6"
@@ -1204,7 +1198,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           <p className="text-muted-foreground line-clamp-3">
                             {msg.preview}
                           </p>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                     <Separator />

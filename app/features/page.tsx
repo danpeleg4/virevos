@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import {
   Bot,
   Users,
@@ -210,19 +209,6 @@ const spotlights = [
   },
 ];
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08 },
-  },
-};
-
 export default function FeaturesPage() {
   const router = useRouter();
 
@@ -236,35 +222,20 @@ export default function FeaturesPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           <div className="text-center max-w-4xl mx-auto">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 mb-6 leading-tight"
-            >
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 mb-6 leading-tight">
               Everything your business{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 needs to grow
               </span>
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
-            >
+            <p className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
               Client management, AI assistance, video meetings, and workflow
               automation — all in one platform designed for how you actually
               work.
-            </motion.p>
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 size="lg"
                 className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all group"
@@ -281,7 +252,7 @@ export default function FeaturesPage() {
               >
                 View pricing
               </Button>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -289,12 +260,7 @@ export default function FeaturesPage() {
       {/* Main Features Grid */}
       <section className="py-24 sm:py-32 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center max-w-2xl mx-auto mb-16"
-          >
+          <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-4xl sm:text-5xl text-gray-900 mb-4">
               Six tools. One workspace.
             </h2>
@@ -302,17 +268,11 @@ export default function FeaturesPage() {
               Replace the stack of apps you&#39;re juggling with a single
               platform that connects every part of your business.
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mainFeatures.map((feature, index) => (
-              <motion.div key={index} variants={fadeInUp}>
+              <div key={index}>
                 <div className="h-full bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-gray-300 transition-all duration-300 group">
                   <div className="mb-6">
                     <div
@@ -340,9 +300,9 @@ export default function FeaturesPage() {
                     ))}
                   </ul>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -353,11 +313,7 @@ export default function FeaturesPage() {
           className={`py-20 sm:py-28 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.5 }}
+            <div
               className={`grid lg:grid-cols-2 gap-12 lg:gap-20 items-center ${
                 index % 2 !== 0 ? "lg:[&>*:first-child]:order-2" : ""
               }`}
@@ -397,13 +353,7 @@ export default function FeaturesPage() {
               </div>
 
               {/* Visual Card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.15 }}
-                className="relative"
-              >
+              <div className="relative">
                 <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl">
                   <div
                     className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg mb-6"
@@ -431,8 +381,8 @@ export default function FeaturesPage() {
                   className="absolute -inset-px rounded-2xl opacity-10 blur-xl -z-10"
                   style={spotlight.iconStyle}
                 />
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
         </section>
       ))}
@@ -442,11 +392,7 @@ export default function FeaturesPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 opacity-70" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px]" />
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+          <div>
             <h2 className="text-4xl sm:text-5xl text-gray-900 mb-6 leading-tight">
               Ready to run your business{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -488,7 +434,7 @@ export default function FeaturesPage() {
                 Cancel anytime
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 

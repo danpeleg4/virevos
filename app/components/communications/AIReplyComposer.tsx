@@ -12,7 +12,6 @@ import {
 } from "../ui/select";
 import { Sparkles, RefreshCw, Send, Clock, Copy, X } from "lucide-react";
 import axios from "axios";
-import { motion } from "motion/react";
 
 interface AIReplyComposerProps {
   message: {
@@ -134,11 +133,7 @@ Return only the email body text, no subject line.`;
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
-    >
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Sparkles className="h-5 w-5 text-purple-600" />
@@ -223,11 +218,7 @@ Return only the email body text, no subject line.`;
 
       {/* Draft Preview */}
       {draft && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-3"
-        >
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm text-muted-foreground">
               AI-Generated Draft
@@ -250,7 +241,7 @@ Return only the email body text, no subject line.`;
           <p className="text-xs text-muted-foreground">
             You can edit the draft above before sending
           </p>
-        </motion.div>
+        </div>
       )}
 
       {/* Actions */}
@@ -285,6 +276,6 @@ Return only the email body text, no subject line.`;
           </Button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

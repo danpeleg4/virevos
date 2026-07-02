@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Button } from "./ui/button";
 import { ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -22,48 +21,25 @@ export function CTA() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex justify-center mb-8"
-          >
+          <div className="flex justify-center mb-8">
             <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-2">
               <Sparkles className="h-4 w-4 text-white" />
               <span className="text-sm text-white">Join Virevos Today!</span>
             </div>
-          </motion.div>
+          </div>
 
           {/* Heading */}
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl text-white mb-6 leading-tight"
-          >
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl text-white mb-6 leading-tight">
             Ready to transform how you work?
-          </motion.h2>
+          </h2>
 
           {/* Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-white/90 mb-12 max-w-2xl mx-auto"
-          >
+          <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
             Start your free Plan today. No credit card required, cancel anytime.
-          </motion.p>
+          </p>
 
           {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
-          >
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
             <Button
               size="lg"
               className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all group"
@@ -80,16 +56,10 @@ export function CTA() {
             >
               Schedule a demo
             </Button>
-          </motion.div>
+          </div>
 
           {/* Trust Indicators */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-white/90"
-          >
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-white/90">
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-green-300" />
               <span>Free Plan</span>
@@ -102,7 +72,7 @@ export function CTA() {
               <CheckCircle2 className="h-5 w-5 text-green-300" />
               <span>Cancel anytime</span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

@@ -25,7 +25,6 @@ import {
   Search,
   Loader2,
 } from "lucide-react";
-import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -303,17 +302,14 @@ export function AttachmentDialog({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {filteredAppFiles.map((file, index) => {
+                    {filteredAppFiles.map((file) => {
                       const type = getFileType(file.mimeType, file.name);
                       const attached = selectedFiles.find(
                         (f) => f.id === String(file.id)
                       );
                       return (
-                        <motion.div
+                        <div
                           key={file.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.03 }}
                           onClick={() => handleSelectAppFile(file)}
                           className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
                             attached
@@ -338,7 +334,7 @@ export function AttachmentDialog({
                               Selected
                             </Badge>
                           )}
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </div>
