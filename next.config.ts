@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "5mb",
     },
   },
-  serverExternalPackages: ["pg", "drizzle-orm", "isomorphic-dompurify"],
+  serverExternalPackages: ["pg", "drizzle-orm"],
   images: {
     remotePatterns: supabaseUrl
       ? [
