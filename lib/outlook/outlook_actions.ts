@@ -23,7 +23,9 @@ import {
   requireInt,
   requireOneOf,
   requireString,
+  requireNumber,
 } from "../util/validation";
+import { deleteScheduledEmail } from "@/lib/scheduled_emails";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const LARGE_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;
@@ -48,6 +50,8 @@ export interface OutlookAttachmentInput {
 }
 
 export interface SendOutlookEmailInput {
+  /** Scheduled email row id — set only when sending a scheduled email, which is deleted after a successful send */
+  id?: number;
   to: string;
   toName?: string;
   subject: string;
@@ -100,7 +104,13 @@ function validateAttachment(
   return { name, mimeType, url, path, data: att.data };
 }
 
-function validateSendInput(raw: SendOutlookEmailInput): SendOutlookEmailInput {
+function validateSendInput(
+  raw: Partial<SendOutlookEmailInput>
+): SendOutlookEmailInput {
+  const id =
+    raw.id !== undefined && raw.id !== null
+      ? requireNumber(raw.id, "id")
+      : undefined;
   const to = requireEmail(raw.to, "to");
   const toName = optionalString(raw.toName, "toName", MAX_NAME);
   const subject = requireString(raw.subject, "subject", MAX_TITLE);
@@ -136,6 +146,7 @@ function validateSendInput(raw: SendOutlookEmailInput): SendOutlookEmailInput {
   }
 
   return {
+    id,
     to,
     toName,
     subject,
@@ -215,7 +226,7 @@ export async function syncOutlookInbox() {
   return { success: true };
 }
 
-export async function sendOutlookEmail(raw: SendOutlookEmailInput) {
+export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
@@ -261,6 +272,9 @@ export async function sendOutlookEmail(raw: SendOutlookEmailInput) {
         { headers }
       );
     }
+    if (input.id !== undefined) {
+      await deleteScheduledEmail(input.id);
+    }
     return { success: true };
   }
 
@@ -297,6 +311,9 @@ export async function sendOutlookEmail(raw: SendOutlookEmailInput) {
     {},
     { headers }
   );
+  if (input.id !== undefined) {
+    await deleteScheduledEmail(input.id);
+  }
   return { success: true };
 }
 

@@ -40,59 +40,71 @@ export async function sendScheduledEmail(
   }
 
   const userId = scheduledEmail.userId;
-  const accessToken = await getFreshOutlookAccessToken(userId);
-
-  if (!accessToken) {
-    await db
-      .update(scheduledEmails)
-      .set({ status: "failed", errorMessage: "Outlook not connected for user" })
-      .where(eq(scheduledEmails.id, scheduledEmailId));
-    return;
-  }
-
-  const headers = {
-    Authorization: `Bearer ${accessToken}`,
-    "Content-Type": "application/json",
-  };
-
-  const profileRes = await axios.get<{
-    mail?: string;
-    userPrincipalName?: string;
-  }>(`${GRAPH_BASE}/me`, { headers });
-  const fromEmail =
-    profileRes.data.mail || profileRes.data.userPrincipalName || "";
-
-  const userRows = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.userId, userId))
-    .limit(1);
-  const fromName = userRows[0]?.name || "";
-
-  const messagePayload = {
-    subject: scheduledEmail.subject,
-    body: {
-      contentType: "HTML",
-      content: scheduledEmail.bodyHtml,
-    },
-    toRecipients: [
-      {
-        emailAddress: {
-          address:
-            parseEmailAddress(scheduledEmail.toEmail).email ||
-            scheduledEmail.toEmail,
-          name: scheduledEmail.toName || scheduledEmail.toEmail,
-        },
-      },
-    ],
-  };
 
   try {
-    const draftRes = await axios.post<{ id: string; conversationId: string }>(
-      `${GRAPH_BASE}/me/messages`,
-      messagePayload,
-      { headers }
-    );
+    const accessToken = await getFreshOutlookAccessToken(userId);
+
+    if (!accessToken) {
+      await db
+        .update(scheduledEmails)
+        .set({
+          status: "failed",
+          errorMessage: "Outlook not connected for user",
+        })
+        .where(eq(scheduledEmails.id, scheduledEmailId));
+      return;
+    }
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    };
+
+    const userRows = await db
+      .select({ name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.userId, userId))
+      .limit(1);
+    const fromName = userRows[0]?.name || "";
+
+    let fromEmail = userRows[0]?.email || "";
+    try {
+      // Get the user email connected the the Graph API to be as fromEmail
+      // in case the DB users.email and the connected outlook email are not the same
+      const profileRes = await axios.get<{
+        mail?: string;
+        userPrincipalName?: string;
+      }>(`${GRAPH_BASE}/me`, { headers });
+      fromEmail =
+        profileRes.data.mail || profileRes.data.userPrincipalName || fromEmail;
+    } catch {
+      console.warn(
+        "[process_scheduled_emails] Graph /me failed; using account email"
+      );
+    }
+
+    const messagePayload = {
+      subject: scheduledEmail.subject,
+      body: {
+        contentType: "HTML",
+        content: scheduledEmail.bodyHtml,
+      },
+      toRecipients: [
+        {
+          emailAddress: {
+            address:
+              parseEmailAddress(scheduledEmail.toEmail).email ||
+              scheduledEmail.toEmail,
+            name: scheduledEmail.toName || scheduledEmail.toEmail,
+          },
+        },
+      ],
+    };
+
+    const draftRes = await axios.post<{
+      id: string;
+      conversationId: string;
+    }>(`${GRAPH_BASE}/me/messages`, messagePayload, { headers });
     const outlookId = draftRes.data.id;
     const conversationId = draftRes.data.conversationId;
 
@@ -119,6 +131,7 @@ export async function sendScheduledEmail(
       }
     }
 
+    // fromEmail is the connected Graph API email address or the fallback DB users.email
     await db.insert(outlookEmails).values({
       outlookId,
       conversationId,
@@ -145,7 +158,13 @@ export async function sendScheduledEmail(
       .set({ status: "sent", sentAt: new Date() })
       .where(eq(scheduledEmails.id, scheduledEmailId));
   } catch (sendErr: unknown) {
-    const errMsg = sendErr instanceof Error ? sendErr.message : "Send failed";
+    const errMsg = axios.isAxiosError(sendErr)
+      ? ((sendErr.response?.data as { error?: { message?: string } })?.error
+          ?.message ?? sendErr.message)
+      : sendErr instanceof Error
+        ? sendErr.message
+        : "Send failed";
+    console.error("[process_scheduled_emails]", scheduledEmailId, sendErr);
     await db
       .update(scheduledEmails)
       .set({ status: "failed", errorMessage: errMsg })

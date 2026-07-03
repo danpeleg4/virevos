@@ -38,6 +38,7 @@ import type { ScheduledEmail } from "@/types/communications";
 import {
   createScheduledEmail,
   deleteScheduledEmail,
+  type ScheduleEmailInput,
 } from "@/lib/scheduled_emails";
 import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -48,7 +49,6 @@ interface ScheduledMessagesProps {
 
 export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [isCreating, setIsCreating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "sent" | "failed"
@@ -121,56 +121,118 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     }
   };
 
-  const sendNow = async (msg: ScheduledEmail) => {
-    try {
+  const sendNowMutation = useMutation({
+    mutationFn: async (msg: ScheduledEmail) => {
       await sendOutlookEmail({
+        id: msg.id,
         to: msg.toEmail,
         toName: msg.toName ?? undefined,
         subject: msg.subject,
         bodyHtml: msg.bodyHtml,
         bodyText: msg.bodyText ?? undefined,
       });
-      await deleteScheduledEmail(msg.id);
+    },
+    onMutate: async (msg) => {
+      await queryClient.cancelQueries({ queryKey: ["scheduled-emails"] });
+      const previous = queryClient.getQueryData<ScheduledEmail[]>([
+        "scheduled-emails",
+      ]);
+      queryClient.setQueryData<ScheduledEmail[]>(["scheduled-emails"], (old) =>
+        old?.map((m) =>
+          m.id === msg.id
+            ? {
+                ...m,
+                status: "sent",
+                sentAt: new Date().toISOString(),
+                errorMessage: null,
+              }
+            : m
+        )
+      );
+      return { previous };
+    },
+    onSuccess: () => {
       toast.success("Message sent successfully");
-    } catch {
+    },
+    onError: (_error, _msg, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["scheduled-emails"], context.previous);
+      }
       toast.error("Failed to send message");
-    }
-  };
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+    },
+  });
 
-  const handleSchedule = async () => {
+  const scheduleMutation = useMutation({
+    mutationFn: async (input: ScheduleEmailInput) => {
+      await createScheduledEmail(input);
+    },
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ["scheduled-emails"] });
+      const previous = queryClient.getQueryData<ScheduledEmail[]>([
+        "scheduled-emails",
+      ]);
+      const optimistic: ScheduledEmail = {
+        id: -Date.now(),
+        toEmail: input.toEmail,
+        toName: input.toName ?? null,
+        subject: input.subject,
+        bodyHtml: input.bodyHtml,
+        bodyText: input.bodyText ?? null,
+        scheduledAt: input.scheduledAt,
+        timezone: input.timezone ?? "UTC",
+        recurring: input.recurring ?? "none",
+        status: "pending",
+        sentAt: null,
+        errorMessage: null,
+        clientId: input.clientId ?? null,
+        createdAt: new Date().toISOString(),
+      };
+      queryClient.setQueryData<ScheduledEmail[]>(
+        ["scheduled-emails"],
+        (old) => [optimistic, ...(old ?? [])]
+      );
+      return { previous };
+    },
+    onSuccess: () => {
+      toast.success("Message scheduled successfully");
+      setFormToEmail("");
+      setFormToName("");
+      setFormSubject("");
+      setFormBody("");
+      setFormDate("");
+      setFormTime("09:00");
+    },
+    onError: (_error, _input, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["scheduled-emails"], context.previous);
+      }
+      toast.error("Failed to schedule message");
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+    },
+  });
+
+  const handleSchedule = () => {
     if (!formToEmail || !formSubject || !formBody || !formDate) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const scheduledAt = new Date(`${formDate}T${formTime}`).toISOString();
-      const data = await createScheduledEmail({
-        toEmail: formToEmail,
-        toName: formToName || undefined,
-        subject: formSubject,
-        bodyHtml: `<p>${formBody.replace(/\n/g, "<br>")}</p>`,
-        bodyText: formBody,
-        scheduledAt,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      });
-
-      if (data) {
-        toast.success("Message scheduled successfully");
-        setIsCreating(false);
-        setFormToEmail("");
-        setFormToName("");
-        setFormSubject("");
-        setFormBody("");
-        setFormDate("");
-        setFormTime("09:00");
-      }
-    } catch {
-      toast.error("Failed to schedule message");
-    } finally {
-      setIsSaving(false);
-    }
+    const scheduledAt = new Date(`${formDate}T${formTime}`).toISOString();
+    setIsCreating(false);
+    scheduleMutation.mutate({
+      toEmail: formToEmail,
+      toName: formToName || undefined,
+      subject: formSubject,
+      bodyHtml: `<p>${formBody.replace(/\n/g, "<br>")}</p>`,
+      bodyText: formBody,
+      scheduledAt,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
   };
 
   const filteredMessages = messages?.filter((msg) => {
@@ -331,8 +393,11 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
               <Button variant="outline" onClick={() => setIsCreating(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSchedule} disabled={isSaving}>
-                {isSaving ? (
+              <Button
+                onClick={handleSchedule}
+                disabled={scheduleMutation.isPending}
+              >
+                {scheduleMutation.isPending ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <Clock className="h-4 w-4 mr-2" />
@@ -434,17 +499,21 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                   </div>
 
                   <div className="flex items-center space-x-2 ml-4">
-                    {message.status === "pending" && (
+                    {message.status === "pending" && message.id > 0 && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => sendNow(message)}
+                        disabled={
+                          sendNowMutation.isPending &&
+                          sendNowMutation.variables?.id === message.id
+                        }
+                        onClick={() => sendNowMutation.mutate(message)}
                       >
                         <Send className="h-4 w-4 mr-2" />
                         Send Now
                       </Button>
                     )}
-                    {message.status === "pending" && (
+                    {message.status === "pending" && message.id > 0 && (
                       <Button
                         size="sm"
                         variant="ghost"
