@@ -103,9 +103,8 @@ const fillScheduleForm = (dialog: ReturnType<typeof within>) => {
   fireEvent.change(dialog.getByPlaceholderText("Type your message..."), {
     target: { value: "See you soon" },
   });
-  const dateInput = document.querySelector<HTMLInputElement>(
-    'input[type="date"]'
-  );
+  const dateInput =
+    document.querySelector<HTMLInputElement>('input[type="date"]');
   fireEvent.change(dateInput!, { target: { value: "2026-07-15" } });
 };
 

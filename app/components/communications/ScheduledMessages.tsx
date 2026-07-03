@@ -393,7 +393,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
               <Button variant="outline" onClick={() => setIsCreating(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSchedule} disabled={scheduleMutation.isPending}>
+              <Button
+                onClick={handleSchedule}
+                disabled={scheduleMutation.isPending}
+              >
                 {scheduleMutation.isPending ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
