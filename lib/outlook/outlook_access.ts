@@ -10,10 +10,13 @@ export const OUTLOOK_SCOPES = [
   "profile",
   "email",
   "offline_access",
+  "User.Read",
   "Calendars.ReadWrite",
   "Mail.ReadWrite",
   "Mail.Send",
   "MailboxSettings.Read",
+  "Calendars.Read",
+  "Mail.Read",
 ].join(" ");
 
 export function getOutlookAuthUrl(state: string): string {

@@ -23,7 +23,18 @@ export async function GET(req: Request) {
         )
       );
 
-    await Promise.allSettled(dueEmails.map((e) => sendScheduledEmail(e.id)));
+    const results = await Promise.allSettled(
+      dueEmails.map((e) => sendScheduledEmail(e.id))
+    );
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        console.error(
+          "[cron/process-scheduled-emails] failed for id",
+          dueEmails[i].id,
+          r.reason
+        );
+      }
+    });
 
     return NextResponse.json({ processed: dueEmails.length });
   } catch (err) {
