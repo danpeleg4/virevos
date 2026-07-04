@@ -6,11 +6,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   uploadAvatar,
   updateProfile,
-  updateWeeklySummaryPreference,
   updateProductUpdatesPreference,
   changePassword,
 } from "@/lib/user";
-import { type UserProfile, type UpdateProfileInput } from "@/lib/user_profile";
+import {
+  type UserProfile,
+  type UpdateProfileInput,
+} from "@/types/user_profile";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
@@ -346,35 +348,9 @@ function ProfileTab() {
   );
 }
 
-function NotificationsTab({
-  weeklySummary,
-  productUpdates,
-}: {
-  weeklySummary?: boolean;
-  productUpdates?: boolean;
-}) {
+function NotificationsTab({ productUpdates }: { productUpdates?: boolean }) {
   const queryClient = useQueryClient();
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  const weeklySummaryMutation = useMutation({
-    mutationFn: (enabled: boolean) => updateWeeklySummaryPreference(enabled),
-    onMutate: async (enabled) => {
-      setSaveError(null);
-      await queryClient.cancelQueries({ queryKey: ["weeklySummary"] });
-      const previous = queryClient.getQueryData<boolean>(["weeklySummary"]);
-      queryClient.setQueryData<boolean>(["weeklySummary"], enabled);
-      return { previous };
-    },
-    onError: (error: Error, _enabled, context) => {
-      if (context?.previous !== undefined) {
-        queryClient.setQueryData(["weeklySummary"], context.previous);
-      }
-      setSaveError(error.message || "Couldn't save. Please try again.");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["weeklySummary"] });
-    },
-  });
 
   const productUpdatesMutation = useMutation({
     mutationFn: (enabled: boolean) => updateProductUpdatesPreference(enabled),
@@ -401,13 +377,6 @@ function NotificationsTab({
       <div>
         <SectionLabel>Email</SectionLabel>
         <div className="space-y-4">
-          <ToggleRow
-            label="Weekly summary"
-            description="Get a weekly email with your productivity summary"
-            checked={!!weeklySummary}
-            onCheckedChange={(next) => weeklySummaryMutation.mutate(next)}
-            disabled={weeklySummaryMutation.isPending}
-          />
           <ToggleRow
             label="Product updates"
             description="News about features and improvements"
@@ -559,16 +528,6 @@ export default function Settings() {
     },
   });
 
-  const { data: weeklySummary } = useQuery<boolean>({
-    queryKey: ["weeklySummary"],
-    queryFn: async () => {
-      const res = await axios.get("/api/user", {
-        params: { type: "weekly-summary" },
-      });
-      return res.data;
-    },
-  });
-
   const { data: productUpdates } = useQuery<boolean>({
     queryKey: ["productUpdates"],
     queryFn: async () => {
@@ -613,10 +572,7 @@ export default function Settings() {
         {/* Tab content */}
         {activeTab === "profile" && <ProfileTab />}
         {activeTab === "notifications" && (
-          <NotificationsTab
-            weeklySummary={weeklySummary}
-            productUpdates={productUpdates}
-          />
+          <NotificationsTab productUpdates={productUpdates} />
         )}
         {activeTab === "security" && <SecurityTab />}
         {activeTab === "integrations" && (

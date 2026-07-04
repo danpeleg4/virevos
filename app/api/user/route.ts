@@ -3,7 +3,6 @@ import {
   getAvatarUrl,
   getProductUpdatesPreference,
   getUserProfile,
-  getWeeklySummaryPreference,
 } from "@/lib/user";
 
 export async function GET(req: NextRequest) {
@@ -14,8 +13,6 @@ export async function GET(req: NextRequest) {
     if (type == "product-updates")
       return NextResponse.json(await getProductUpdatesPreference());
     if (type == "profile") return NextResponse.json(await getUserProfile());
-    if (type == "weekly-summary")
-      return NextResponse.json(await getWeeklySummaryPreference());
 
     return NextResponse.json({ error: "No type found" }, { status: 400 });
   } catch (err) {

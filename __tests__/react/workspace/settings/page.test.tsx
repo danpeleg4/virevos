@@ -110,7 +110,7 @@ describe("Settings Page", () => {
   it("switches to Notifications tab when clicked", () => {
     render(<Settings />);
     fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
-    expect(screen.getByText(/weekly summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/product updates/i)).toBeInTheDocument();
   });
 
   it("reflects prefetched notification preferences in the toggles", () => {
@@ -119,8 +119,7 @@ describe("Settings Page", () => {
     );
     render(<Settings />);
     fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
-    const [weekly, product] = screen.getAllByRole("switch");
-    expect(weekly).toBeChecked();
+    const product = screen.getByRole("switch");
     expect(product).not.toBeChecked();
   });
 

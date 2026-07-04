@@ -6,8 +6,6 @@ import {
   getAvatarUrl,
   getUserProfile,
   updateProfile,
-  getWeeklySummaryPreference,
-  updateWeeklySummaryPreference,
 } from "@/lib/user";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -491,62 +489,5 @@ describe("updateProfile", () => {
     await expect(updateProfile({ name: "Jane Doe" })).rejects.toThrow(
       "Failed to update profile: auth boom"
     );
-  });
-});
-
-// ─── getWeeklySummaryPreference ───────────────────────────────────────────
-
-describe("getWeeklySummaryPreference", () => {
-  it("returns false when unauthenticated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(getWeeklySummaryPreference()).resolves.toBe(false);
-  });
-
-  it("returns the stored boolean", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([{ weeklySummary: true }]);
-    await expect(getWeeklySummaryPreference()).resolves.toBe(true);
-  });
-
-  it("returns false when the user row is missing", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([]);
-    await expect(getWeeklySummaryPreference()).resolves.toBe(false);
-  });
-});
-
-// ─── updateWeeklySummaryPreference ────────────────────────────────────────
-
-describe("updateWeeklySummaryPreference", () => {
-  it("throws when unauthenticated", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(updateWeeklySummaryPreference(true)).rejects.toThrow(
-      "No user"
-    );
-    expect(mockSet).not.toHaveBeenCalled();
-  });
-
-  it("rejects non-boolean input", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    await expect(
-      updateWeeklySummaryPreference("yes" as unknown as boolean)
-    ).rejects.toThrow("enabled must be a boolean");
-    expect(mockSet).not.toHaveBeenCalled();
-  });
-
-  it("persists true", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    await expect(updateWeeklySummaryPreference(true)).resolves.toEqual({
-      enabled: true,
-    });
-    expect(mockSet).toHaveBeenCalledWith({ weeklySummary: true });
-  });
-
-  it("persists false", async () => {
-    (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    await expect(updateWeeklySummaryPreference(false)).resolves.toEqual({
-      enabled: false,
-    });
-    expect(mockSet).toHaveBeenCalledWith({ weeklySummary: false });
   });
 });

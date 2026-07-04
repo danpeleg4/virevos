@@ -17,7 +17,7 @@ import {
   type UserProfile,
   type UpdateProfileInput,
   type ChangePasswordInput,
-} from "./user_profile";
+} from "@/types/user_profile";
 
 const MAX_BIO = 280;
 const MIN_PASSWORD = 8;
@@ -64,35 +64,6 @@ export async function updateProductUpdatesPreference(enabled: boolean) {
   await db
     .update(users)
     .set({ productUpdates: enabled })
-    .where(eq(users.userId, user.id));
-
-  return { enabled };
-}
-
-export async function getWeeklySummaryPreference(): Promise<boolean> {
-  const user = await getCurrentUser();
-  if (!user?.id) return false;
-
-  const [row] = await db
-    .select({ weeklySummary: users.weeklySummary })
-    .from(users)
-    .where(eq(users.userId, user.id));
-
-  return !!row?.weeklySummary;
-}
-
-export async function updateWeeklySummaryPreference(
-  enabled: boolean
-): Promise<{ enabled: boolean }> {
-  const user = await getCurrentUser();
-  if (!user?.id) throw new Error("No user");
-  if (typeof enabled !== "boolean") {
-    throw new ValidationError("enabled must be a boolean");
-  }
-
-  await db
-    .update(users)
-    .set({ weeklySummary: enabled })
     .where(eq(users.userId, user.id));
 
   return { enabled };
