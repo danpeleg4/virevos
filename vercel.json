@@ -5,7 +5,6 @@
       "path": "/api/cron/renew-outlook-subscriptions",
       "schedule": "0 0 * * *"
     },
-    { "path": "/api/cron/credit-reset", "schedule": "0 0 1 * *" },
-    { "path": "/api/cron/weekly-summary", "schedule": "0 14 * * 1" }
+    { "path": "/api/cron/credit-reset", "schedule": "0 0 1 * *" }
   ]
 }
