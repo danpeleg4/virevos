@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
-import { outlookEmails } from "@db/schema";
+import { outlookEmails, scheduledEmails } from "@db/schema";
 import { and, eq, InferSelectModel } from "drizzle-orm";
 import axios from "axios";
 import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
@@ -234,83 +234,136 @@ export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
   const token = await getFreshOutlookAccessToken(user.id);
   if (!token) throw new ValidationError("Outlook account not connected", 403);
 
-  const fileAttachments = (input.attachments ?? []).filter(
-    (a) => a.data || a.path
-  );
-  const urlAttachments = (input.attachments ?? []).filter(
-    (a) => a.url && !a.data && !a.path
-  );
-
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-
-  const messagePayload = {
-    subject: input.subject,
-    body: {
-      contentType: "HTML",
-      content: buildBodyHtml(input.bodyHtml, urlAttachments),
-    },
-    toRecipients: [buildRecipient(input.to, input.toName)],
-    ...(input.cc?.length
-      ? { ccRecipients: input.cc.map((addr) => buildRecipient(addr)) }
-      : {}),
-  };
-
-  if (fileAttachments.length === 0) {
-    if (input.replyToOutlookId) {
-      await axios.post(
-        `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/reply`,
-        { message: messagePayload },
-        { headers }
+  if (input.id !== undefined) {
+    const claimed = await db
+      .update(scheduledEmails)
+      .set({ status: "sent", sentAt: new Date() })
+      .where(
+        and(
+          eq(scheduledEmails.id, input.id),
+          eq(scheduledEmails.userId, user.id),
+          eq(scheduledEmails.status, "pending")
+        )
+      )
+      .returning({ id: scheduledEmails.id });
+    if (!claimed.length) {
+      throw new ValidationError(
+        "Scheduled email was already sent or cancelled",
+        409
       );
+    }
+  }
+  try {
+    const fileAttachments = (input.attachments ?? []).filter(
+      (a) => a.data || a.path
+    );
+    const urlAttachments = (input.attachments ?? []).filter(
+      (a) => a.url && !a.data && !a.path
+    );
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+
+    const messagePayload = {
+      subject: input.subject,
+      body: {
+        contentType: "HTML",
+        content: buildBodyHtml(input.bodyHtml, urlAttachments),
+      },
+      toRecipients: [buildRecipient(input.to, input.toName)],
+      ...(input.cc?.length
+        ? { ccRecipients: input.cc.map((addr) => buildRecipient(addr)) }
+        : {}),
+    };
+
+    if (fileAttachments.length === 0) {
+      if (input.replyToOutlookId) {
+        await axios.post(
+          `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/reply`,
+          { message: messagePayload },
+          { headers }
+        );
+      } else {
+        await axios.post(
+          `${GRAPH_BASE}/me/sendMail`,
+          { message: messagePayload, saveToSentItems: true },
+          { headers }
+        );
+      }
     } else {
+      let draftId: string;
+      if (input.replyToOutlookId) {
+        const res = await axios.post<{ id: string }>(
+          `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/createReply`,
+          { message: messagePayload },
+          { headers }
+        );
+        draftId = res.data.id;
+      } else {
+        const res = await axios.post<{ id: string }>(
+          `${GRAPH_BASE}/me/messages`,
+          messagePayload,
+          { headers }
+        );
+        draftId = res.data.id;
+      }
+
+      for (const att of fileAttachments) {
+        const buffer = await resolveBuffer(att);
+        if (!buffer) continue;
+        const contentType = att.mimeType ?? "application/octet-stream";
+        if (buffer.length < LARGE_ATTACHMENT_THRESHOLD) {
+          await addSmallAttachment(
+            draftId,
+            token,
+            att.name,
+            contentType,
+            buffer
+          );
+        } else {
+          await addLargeAttachment(
+            draftId,
+            token,
+            att.name,
+            contentType,
+            buffer
+          );
+        }
+      }
+
       await axios.post(
-        `${GRAPH_BASE}/me/sendMail`,
-        { message: messagePayload, saveToSentItems: true },
+        `${GRAPH_BASE}/me/messages/${draftId}/send`,
+        {},
         { headers }
       );
     }
+  } catch (err) {
+    console.error("[outlook_actions] sendOutlookEmail failed:", err);
+    // Release the claim so the row isn't stuck at "sent" when nothing went out
     if (input.id !== undefined) {
-      await deleteScheduledEmail(input.id);
+      const errMsg = axios.isAxiosError(err)
+        ? ((err.response?.data as { error?: { message?: string } })?.error
+            ?.message ?? err.message)
+        : err instanceof Error
+          ? err.message
+          : "Send failed";
+      await db
+        .update(scheduledEmails)
+        .set({ status: "failed", errorMessage: errMsg })
+        .where(
+          and(
+            eq(scheduledEmails.id, input.id),
+            eq(scheduledEmails.userId, user.id)
+          )
+        );
     }
-    return { success: true };
+    throw err;
   }
 
-  let draftId: string;
-  if (input.replyToOutlookId) {
-    const res = await axios.post<{ id: string }>(
-      `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/createReply`,
-      { message: messagePayload },
-      { headers }
-    );
-    draftId = res.data.id;
-  } else {
-    const res = await axios.post<{ id: string }>(
-      `${GRAPH_BASE}/me/messages`,
-      messagePayload,
-      { headers }
-    );
-    draftId = res.data.id;
-  }
-
-  for (const att of fileAttachments) {
-    const buffer = await resolveBuffer(att);
-    if (!buffer) continue;
-    const contentType = att.mimeType ?? "application/octet-stream";
-    if (buffer.length < LARGE_ATTACHMENT_THRESHOLD) {
-      await addSmallAttachment(draftId, token, att.name, contentType, buffer);
-    } else {
-      await addLargeAttachment(draftId, token, att.name, contentType, buffer);
-    }
-  }
-
-  await axios.post(
-    `${GRAPH_BASE}/me/messages/${draftId}/send`,
-    {},
-    { headers }
-  );
+  // The email is delivered at this point; a cleanup failure must not revert
+  // the claim (row stays "sent", so there is no duplicate-send risk)
   if (input.id !== undefined) {
     await deleteScheduledEmail(input.id);
   }

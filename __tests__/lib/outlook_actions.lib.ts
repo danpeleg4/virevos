@@ -10,8 +10,21 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
-vi.mock("@db/db", () => ({ db: {} }));
-vi.mock("@db/schema", () => ({ outlookEmails: {} }));
+// db.update chain: .set().where() is awaitable directly (failure revert) and
+// exposes .returning() (pending-claim)
+const mockClaimReturning = vi.fn();
+const mockDbUpdateWhere = vi.fn(() =>
+  Object.assign(Promise.resolve(undefined), { returning: mockClaimReturning })
+);
+const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
+const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
+
+vi.mock("@db/db", () => ({
+  db: {
+    update: (...args: unknown[]) => mockDbUpdate(...args),
+  },
+}));
+vi.mock("@db/schema", () => ({ outlookEmails: {}, scheduledEmails: {} }));
 vi.mock("drizzle-orm", () => ({
   and: vi.fn(),
   eq: vi.fn(),
@@ -24,6 +37,8 @@ vi.mock("axios", () => {
     patch: vi.fn(),
     delete: vi.fn(),
     get: vi.fn(),
+    isAxiosError: (e: unknown) =>
+      !!(e as { isAxiosError?: boolean })?.isAxiosError,
   };
   return { default: axios, ...axios };
 });
@@ -64,13 +79,21 @@ const baseInput: SendOutlookEmailInput = {
   bodyText: "Hi there",
 };
 
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockGetCurrentUser.mockResolvedValue({ id: "user_1" });
   mockGetFreshOutlookAccessToken.mockResolvedValue("token-123");
   mockAxiosPost.mockResolvedValue({ data: { id: "draft-1" } });
   mockAxiosPut.mockResolvedValue({ data: {} });
   mockDeleteScheduledEmail.mockResolvedValue({ success: true });
+  mockClaimReturning.mockResolvedValue([{ id: 42 }]);
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
 });
 
 describe("sendOutlookEmail", () => {
@@ -108,6 +131,7 @@ describe("sendOutlookEmail", () => {
     expect(payload.message.toRecipients).toEqual([
       { emailAddress: { address: "client@example.com", name: "Jane Client" } },
     ]);
+    expect(mockDbUpdate).not.toHaveBeenCalled();
     expect(mockDeleteScheduledEmail).not.toHaveBeenCalled();
   });
 
@@ -123,13 +147,22 @@ describe("sendOutlookEmail", () => {
     expect(mockAxiosPost.mock.calls[0][0]).toBe(
       "https://graph.microsoft.com/v1.0/me/messages/msg-9/reply"
     );
+    expect(mockDbUpdate).not.toHaveBeenCalled();
     expect(mockDeleteScheduledEmail).not.toHaveBeenCalled();
   });
 
-  it("deletes the scheduled email after sending when an id is provided", async () => {
+  it("claims the pending row before sending and deletes it after when an id is provided", async () => {
     const result = await sendOutlookEmail({ ...baseInput, id: 42 });
 
     expect(result).toEqual({ success: true });
+    expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
+    expect(mockDbUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "sent", sentAt: expect.any(Date) })
+    );
+    // the claim must win before the first Graph call
+    expect(mockDbUpdate.mock.invocationCallOrder[0]).toBeLessThan(
+      mockAxiosPost.mock.invocationCallOrder[0]
+    );
     expect(mockAxiosPost).toHaveBeenCalledTimes(1);
     expect(mockAxiosPost.mock.calls[0][0]).toBe(
       "https://graph.microsoft.com/v1.0/me/sendMail"
@@ -138,13 +171,67 @@ describe("sendOutlookEmail", () => {
     expect(mockDeleteScheduledEmail).toHaveBeenCalledWith(42);
   });
 
-  it("does not delete the scheduled email when sending fails", async () => {
+  it("throws 409 and sends nothing when the claim finds no pending row", async () => {
+    mockClaimReturning.mockResolvedValue([]);
+
+    await expect(sendOutlookEmail({ ...baseInput, id: 42 })).rejects.toThrow(
+      "Scheduled email was already sent or cancelled"
+    );
+    expect(mockAxiosPost).not.toHaveBeenCalled();
+    expect(mockDeleteScheduledEmail).not.toHaveBeenCalled();
+  });
+
+  it("releases the claim as failed and does not delete when sending fails", async () => {
     mockAxiosPost.mockRejectedValue(new Error("graph down"));
 
     await expect(sendOutlookEmail({ ...baseInput, id: 42 })).rejects.toThrow(
       "graph down"
     );
+    expect(mockDbUpdateSet).toHaveBeenCalledTimes(2);
+    expect(mockDbUpdateSet).toHaveBeenLastCalledWith({
+      status: "failed",
+      errorMessage: "graph down",
+    });
     expect(mockDeleteScheduledEmail).not.toHaveBeenCalled();
+  });
+
+  it("stores the Graph error message when the send fails with an axios error", async () => {
+    mockAxiosPost.mockRejectedValue({
+      isAxiosError: true,
+      message: "Request failed with status code 401",
+      response: {
+        data: { error: { message: "InvalidAuthenticationToken" } },
+      },
+    });
+
+    await expect(
+      sendOutlookEmail({ ...baseInput, id: 42 })
+    ).rejects.toBeTruthy();
+    expect(mockDbUpdateSet).toHaveBeenLastCalledWith({
+      status: "failed",
+      errorMessage: "InvalidAuthenticationToken",
+    });
+  });
+
+  it("does not revert the claim when sending fails without an id", async () => {
+    mockAxiosPost.mockRejectedValue(new Error("graph down"));
+
+    await expect(sendOutlookEmail(baseInput)).rejects.toThrow("graph down");
+    expect(mockDbUpdate).not.toHaveBeenCalled();
+  });
+
+  it("does not revert the claim when cleanup fails after a successful send", async () => {
+    mockDeleteScheduledEmail.mockRejectedValue(new Error("cleanup failed"));
+
+    await expect(sendOutlookEmail({ ...baseInput, id: 42 })).rejects.toThrow(
+      "cleanup failed"
+    );
+    // only the claim update ran — no "failed" revert for a delivered email
+    expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
+    expect(mockDbUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "sent" })
+    );
+    expect(mockAxiosPost).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a non-numeric id", async () => {

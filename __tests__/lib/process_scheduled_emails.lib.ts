@@ -18,7 +18,7 @@ vi.mock("@/lib/outlook/outlook_access", () => ({
 }));
 
 vi.mock("@db/schema", () => ({
-  scheduledEmails: { id: "id" },
+  scheduledEmails: { id: "id", status: "status" },
   users: { userId: "user_id", name: "name" },
   clients: { id: "id", email: "email", userId: "user_id" },
   outlookEmails: {},
@@ -31,9 +31,14 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 // Each db.select() consumes the next queued result; where() is awaitable
-// directly (clients query) and also exposes .limit() (row lookups)
+// directly (clients query) and also exposes .limit() (row lookups).
+// db.update().set().where() is awaitable directly (failure updates) and
+// exposes .returning() (pending-claim).
 let selectQueue: unknown[][];
-const mockUpdateWhere = vi.fn();
+const mockClaimReturning = vi.fn();
+const mockUpdateWhere = vi.fn(() =>
+  Object.assign(Promise.resolve(undefined), { returning: mockClaimReturning })
+);
 const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
 const mockUpdate = vi.fn(() => ({ set: mockUpdateSet }));
 const mockInsertValues = vi.fn();
@@ -58,10 +63,11 @@ import {
   sendScheduledEmail,
 } from "@/lib/process_scheduled_emails";
 
-const pendingRow = {
+// row as returned by the claim UPDATE ... RETURNING (already flipped to sent)
+const claimedRow = {
   id: 5,
   userId: "user_1",
-  status: "pending",
+  status: "sent",
   toEmail: "client@example.com",
   toName: "Jane Client",
   subject: "Quarterly review",
@@ -76,7 +82,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   selectQueue = [];
-  mockUpdateWhere.mockResolvedValue(undefined);
+  mockClaimReturning.mockResolvedValue([claimedRow]);
   mockInsertValues.mockResolvedValue(undefined);
   mockGetFreshOutlookAccessToken.mockResolvedValue("token-123");
   mockAxiosGet.mockResolvedValue({ data: { mail: "me@example.com" } });
@@ -106,23 +112,38 @@ describe("parseEmailAddress", () => {
 });
 
 describe("sendScheduledEmail", () => {
-  it("does nothing when the email is not pending", async () => {
-    selectQueue = [[{ ...pendingRow, status: "sent" }]];
+  it("claims the row as sent before doing any other work", async () => {
+    selectQueue = [[{ name: "Dan" }], []];
+
+    await sendScheduledEmail(5);
+
+    expect(mockUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "sent", sentAt: expect.any(Date) })
+    );
+    // the claim must win before the first Graph call
+    expect(mockUpdate.mock.invocationCallOrder[0]).toBeLessThan(
+      mockAxiosPost.mock.invocationCallOrder[0]
+    );
+  });
+
+  it("does nothing when the claim finds no pending row (missing, sent, or claimed by Send Now)", async () => {
+    mockClaimReturning.mockResolvedValue([]);
 
     await sendScheduledEmail(5);
 
     expect(mockGetFreshOutlookAccessToken).not.toHaveBeenCalled();
     expect(mockAxiosPost).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockInsertValues).not.toHaveBeenCalled();
+    // only the claim attempt itself touched the table
+    expect(mockUpdateSet).toHaveBeenCalledTimes(1);
   });
 
   it("marks the email failed when Outlook is not connected", async () => {
-    selectQueue = [[pendingRow]];
     mockGetFreshOutlookAccessToken.mockResolvedValue(null);
 
     await sendScheduledEmail(5);
 
-    expect(mockUpdateSet).toHaveBeenCalledWith({
+    expect(mockUpdateSet).toHaveBeenLastCalledWith({
       status: "failed",
       errorMessage: "Outlook not connected for user",
     });
@@ -130,25 +151,20 @@ describe("sendScheduledEmail", () => {
   });
 
   it("marks the email failed instead of rejecting when the token refresh throws", async () => {
-    selectQueue = [[pendingRow]];
     mockGetFreshOutlookAccessToken.mockRejectedValue(
       new Error("refresh token revoked")
     );
 
     await expect(sendScheduledEmail(5)).resolves.toBeUndefined();
 
-    expect(mockUpdateSet).toHaveBeenCalledWith({
+    expect(mockUpdateSet).toHaveBeenLastCalledWith({
       status: "failed",
       errorMessage: "refresh token revoked",
     });
   });
 
   it("still sends with the account email as fallback when the profile fetch fails", async () => {
-    selectQueue = [
-      [pendingRow],
-      [{ name: "Dan", email: "dan@example.com" }],
-      [],
-    ];
+    selectQueue = [[{ name: "Dan", email: "dan@example.com" }], []];
     mockAxiosGet.mockRejectedValue({
       isAxiosError: true,
       message: "Request failed with status code 403",
@@ -164,14 +180,11 @@ describe("sendScheduledEmail", () => {
     expect(mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({ fromEmail: "dan@example.com" })
     );
-    expect(mockUpdateSet).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "sent" })
-    );
     consoleWarnSpy.mockRestore();
   });
 
   it("marks the email failed with the Graph error message when the draft creation fails", async () => {
-    selectQueue = [[pendingRow], [{ name: "Dan", email: "dan@example.com" }]];
+    selectQueue = [[{ name: "Dan", email: "dan@example.com" }]];
     mockAxiosPost.mockRejectedValue({
       isAxiosError: true,
       message: "Request failed with status code 401",
@@ -183,18 +196,14 @@ describe("sendScheduledEmail", () => {
     await expect(sendScheduledEmail(5)).resolves.toBeUndefined();
 
     expect(mockInsertValues).not.toHaveBeenCalled();
-    expect(mockUpdateSet).toHaveBeenCalledWith({
+    expect(mockUpdateSet).toHaveBeenLastCalledWith({
       status: "failed",
       errorMessage: "InvalidAuthenticationToken",
     });
   });
 
-  it("sends via Graph, records the sent email, and marks the row sent", async () => {
-    selectQueue = [
-      [pendingRow],
-      [{ name: "Dan" }],
-      [{ id: 9, email: "client@example.com" }],
-    ];
+  it("sends via Graph and records the sent email", async () => {
+    selectQueue = [[{ name: "Dan" }], [{ id: 9, email: "client@example.com" }]];
 
     await sendScheduledEmail(5);
 
@@ -215,19 +224,18 @@ describe("sendScheduledEmail", () => {
         userId: "user_1",
       })
     );
-    expect(mockUpdateSet).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "sent" })
-    );
+    // the claim already marked the row sent; no second status update
+    expect(mockUpdateSet).toHaveBeenCalledTimes(1);
   });
 
-  it("marks the email failed when the Graph send call fails", async () => {
-    selectQueue = [[pendingRow], [{ name: "Dan" }]];
+  it("marks the email failed (releasing the claim) when the Graph send call fails", async () => {
+    selectQueue = [[{ name: "Dan" }]];
     mockAxiosPost.mockRejectedValue(new Error("graph down"));
 
     await expect(sendScheduledEmail(5)).resolves.toBeUndefined();
 
     expect(mockInsertValues).not.toHaveBeenCalled();
-    expect(mockUpdateSet).toHaveBeenCalledWith({
+    expect(mockUpdateSet).toHaveBeenLastCalledWith({
       status: "failed",
       errorMessage: "graph down",
     });

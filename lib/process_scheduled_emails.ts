@@ -2,7 +2,7 @@ import axios from "axios";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import { db } from "@db/db";
 import { clients, outlookEmails, scheduledEmails, users } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -22,22 +22,19 @@ export function parseEmailAddress(raw: string): {
 export async function sendScheduledEmail(
   scheduledEmailId: number
 ): Promise<void> {
-  const rows = await db
-    .select()
-    .from(scheduledEmails)
-    .where(eq(scheduledEmails.id, scheduledEmailId))
-    .limit(1);
+  const claimed = await db
+    .update(scheduledEmails)
+    .set({ status: "sent", sentAt: new Date() })
+    .where(
+      and(
+        eq(scheduledEmails.id, scheduledEmailId),
+        eq(scheduledEmails.status, "pending")
+      )
+    )
+    .returning();
 
-  if (!rows.length) {
-    console.error("Scheduled email not found:", scheduledEmailId);
-    return;
-  }
-
-  const scheduledEmail = rows[0];
-
-  if (scheduledEmail.status !== "pending") {
-    return;
-  }
+  if (!claimed.length) return; // missing, already sent, or claimed by Send Now
+  const scheduledEmail = claimed[0];
 
   const userId = scheduledEmail.userId;
 
@@ -152,11 +149,6 @@ export async function sendScheduledEmail(
       clientId,
       userId,
     });
-
-    await db
-      .update(scheduledEmails)
-      .set({ status: "sent", sentAt: new Date() })
-      .where(eq(scheduledEmails.id, scheduledEmailId));
   } catch (sendErr: unknown) {
     const errMsg = axios.isAxiosError(sendErr)
       ? ((sendErr.response?.data as { error?: { message?: string } })?.error
