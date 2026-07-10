@@ -27,20 +27,27 @@ vi.mock("sonner", () => ({
   },
 }));
 
-const mockSendOutlookEmail = vi.fn();
-
-vi.mock("@/lib/outlook/outlook_actions", () => ({
-  sendOutlookEmail: (...args: unknown[]) => mockSendOutlookEmail(...args),
-}));
-
 const mockCreateScheduledEmail = vi.fn();
 const mockDeleteScheduledEmail = vi.fn();
+const mockSendScheduledEmailNow = vi.fn();
 
 vi.mock("@/lib/scheduled_emails", () => ({
   createScheduledEmail: (...args: unknown[]) =>
     mockCreateScheduledEmail(...args),
   deleteScheduledEmail: (...args: unknown[]) =>
     mockDeleteScheduledEmail(...args),
+  sendScheduledEmailNow: (...args: unknown[]) =>
+    mockSendScheduledEmailNow(...args),
+}));
+
+// jsdom can't do the viewport math useCalcWindow relies on
+const calcWindow = vi.hoisted(() => ({ itemsPerPage: 10 }));
+
+vi.mock("@/app/hooks/useCalcWindow", () => ({
+  useCalcWindow: () => ({
+    itemsPerPage: calcWindow.itemsPerPage,
+    tableRef: { current: null },
+  }),
 }));
 
 import { ScheduledMessages } from "@/app/components/communications/ScheduledMessages";
@@ -110,6 +117,7 @@ const fillScheduleForm = (dialog: ReturnType<typeof within>) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  calcWindow.itemsPerPage = 10;
   scheduledEmails = [pendingEmail];
   mockAxiosGet.mockImplementation((url: string) => {
     if (url === "/api/integrations/outlook") {
@@ -133,9 +141,9 @@ describe("ScheduledMessages — Send Now", () => {
     expect(screen.getByText("Quarterly review")).toBeInTheDocument();
   });
 
-  it("optimistically marks the message as sent and calls sendOutlookEmail", async () => {
+  it("optimistically marks the message as sent and calls sendScheduledEmailNow", async () => {
     let resolveSend!: () => void;
-    mockSendOutlookEmail.mockImplementation(
+    mockSendScheduledEmailNow.mockImplementation(
       () =>
         new Promise<void>((resolve) => {
           resolveSend = resolve;
@@ -155,15 +163,8 @@ describe("ScheduledMessages — Send Now", () => {
     ).not.toBeInTheDocument();
     expect(toast.success).not.toHaveBeenCalled();
 
-    expect(mockSendOutlookEmail).toHaveBeenCalledTimes(1);
-    expect(mockSendOutlookEmail).toHaveBeenCalledWith({
-      id: 1,
-      to: "client@example.com",
-      toName: "Jane Client",
-      subject: "Quarterly review",
-      bodyHtml: "<p>Hello</p>",
-      bodyText: "Hello",
-    });
+    expect(mockSendScheduledEmailNow).toHaveBeenCalledTimes(1);
+    expect(mockSendScheduledEmailNow).toHaveBeenCalledWith(1);
 
     // Server confirms; refetch on settle returns the sent version
     scheduledEmails = [
@@ -183,7 +184,7 @@ describe("ScheduledMessages — Send Now", () => {
   });
 
   it("rolls back the optimistic update and shows an error toast when sending fails", async () => {
-    mockSendOutlookEmail.mockRejectedValue(new Error("smtp down"));
+    mockSendScheduledEmailNow.mockRejectedValue(new Error("smtp down"));
 
     renderComponent();
 
@@ -202,25 +203,18 @@ describe("ScheduledMessages — Send Now", () => {
     expect(toast.success).not.toHaveBeenCalled();
   });
 
-  it("maps null toName and bodyText to undefined in the send payload", async () => {
+  it("sends only the scheduled email id — the server reads the row itself", async () => {
     scheduledEmails = [
       { ...pendingEmail, id: 2, toName: null, bodyText: null },
     ];
-    mockSendOutlookEmail.mockResolvedValue(undefined);
+    mockSendScheduledEmailNow.mockResolvedValue({ success: true });
 
     renderComponent();
 
     fireEvent.click(await screen.findByRole("button", { name: /send now/i }));
 
     await waitFor(() => {
-      expect(mockSendOutlookEmail).toHaveBeenCalledWith({
-        id: 2,
-        to: "client@example.com",
-        toName: undefined,
-        subject: "Quarterly review",
-        bodyHtml: "<p>Hello</p>",
-        bodyText: undefined,
-      });
+      expect(mockSendScheduledEmailNow).toHaveBeenCalledWith(2);
     });
   });
 });
@@ -330,5 +324,79 @@ describe("ScheduledMessages — Schedule New Message", () => {
     expect(mockCreateScheduledEmail).not.toHaveBeenCalled();
     // Dialog stays open so the user can fix the form
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+});
+
+describe("ScheduledMessages — Pagination", () => {
+  const makeEmails = (n: number): ScheduledEmail[] =>
+    Array.from({ length: n }, (_, i) => ({
+      ...pendingEmail,
+      id: i + 1,
+      subject: `Message ${i + 1}`,
+    }));
+
+  it("splits messages into pages and navigates with Previous/Next", async () => {
+    calcWindow.itemsPerPage = 2;
+    scheduledEmails = makeEmails(3);
+
+    renderComponent();
+
+    expect(await screen.findByText("Message 1")).toBeInTheDocument();
+    expect(screen.getByText("Message 2")).toBeInTheDocument();
+    expect(screen.queryByText("Message 3")).not.toBeInTheDocument();
+    expect(screen.getByText(/Showing 1–2 of 3 messages/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+
+    expect(screen.getByText("Message 3")).toBeInTheDocument();
+    expect(screen.queryByText("Message 1")).not.toBeInTheDocument();
+    expect(screen.getByText(/Showing 3–3 of 3 messages/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: /previous/i }));
+    expect(screen.getByText("Message 1")).toBeInTheDocument();
+  });
+
+  it("resets to the first page when the search query changes", async () => {
+    calcWindow.itemsPerPage = 2;
+    scheduledEmails = makeEmails(3);
+    const navContainer = document.createElement("div");
+    document.body.appendChild(navContainer);
+    renderComponent(navContainer);
+
+    expect(await screen.findByText("Message 1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    expect(screen.getByText(/Showing 3–3 of 3 messages/)).toBeInTheDocument();
+
+    // all rows share client@example.com, so the list is unchanged — only the page resets
+    fireEvent.change(
+      within(navContainer).getByPlaceholderText("Search scheduled..."),
+      { target: { value: "client" } }
+    );
+
+    expect(screen.getByText(/Showing 1–2 of 3 messages/)).toBeInTheDocument();
+    expect(screen.getByText("Message 1")).toBeInTheDocument();
+  });
+
+  it("shows the filtered empty state inside the table when nothing matches", async () => {
+    const navContainer = document.createElement("div");
+    document.body.appendChild(navContainer);
+    renderComponent(navContainer);
+
+    expect(await screen.findByText("Quarterly review")).toBeInTheDocument();
+
+    fireEvent.change(
+      within(navContainer).getByPlaceholderText("Search scheduled..."),
+      { target: { value: "zzz-no-match" } }
+    );
+
+    expect(
+      screen.getByText("No messages match your filters")
+    ).toBeInTheDocument();
+    // the CTA empty state is reserved for a truly empty list
+    expect(
+      screen.queryByRole("button", { name: /schedule your first message/i })
+    ).not.toBeInTheDocument();
   });
 });

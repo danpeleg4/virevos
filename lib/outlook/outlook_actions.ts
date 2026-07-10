@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { db } from "@db/db";
-import { outlookEmails, scheduledEmails } from "@db/schema";
+import { outlookEmails } from "@db/schema";
 import { and, eq, InferSelectModel } from "drizzle-orm";
 import axios from "axios";
 import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
@@ -23,9 +23,7 @@ import {
   requireInt,
   requireOneOf,
   requireString,
-  requireNumber,
 } from "../util/validation";
-import { deleteScheduledEmail } from "@/lib/scheduled_emails";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const LARGE_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;
@@ -50,8 +48,6 @@ export interface OutlookAttachmentInput {
 }
 
 export interface SendOutlookEmailInput {
-  /** Scheduled email row id — set only when sending a scheduled email, which is deleted after a successful send */
-  id?: number;
   to: string;
   toName?: string;
   subject: string;
@@ -107,10 +103,6 @@ function validateAttachment(
 function validateSendInput(
   raw: Partial<SendOutlookEmailInput>
 ): SendOutlookEmailInput {
-  const id =
-    raw.id !== undefined && raw.id !== null
-      ? requireNumber(raw.id, "id")
-      : undefined;
   const to = requireEmail(raw.to, "to");
   const toName = optionalString(raw.toName, "toName", MAX_NAME);
   const subject = requireString(raw.subject, "subject", MAX_TITLE);
@@ -146,7 +138,6 @@ function validateSendInput(
   }
 
   return {
-    id,
     to,
     toName,
     subject,
@@ -234,25 +225,6 @@ export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
   const token = await getFreshOutlookAccessToken(user.id);
   if (!token) throw new ValidationError("Outlook account not connected", 403);
 
-  if (input.id !== undefined) {
-    const claimed = await db
-      .update(scheduledEmails)
-      .set({ status: "sent", sentAt: new Date() })
-      .where(
-        and(
-          eq(scheduledEmails.id, input.id),
-          eq(scheduledEmails.userId, user.id),
-          eq(scheduledEmails.status, "pending")
-        )
-      )
-      .returning({ id: scheduledEmails.id });
-    if (!claimed.length) {
-      throw new ValidationError(
-        "Scheduled email was already sent or cancelled",
-        409
-      );
-    }
-  }
   try {
     const fileAttachments = (input.attachments ?? []).filter(
       (a) => a.data || a.path
@@ -341,32 +313,9 @@ export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
     }
   } catch (err) {
     console.error("[outlook_actions] sendOutlookEmail failed:", err);
-    // Release the claim so the row isn't stuck at "sent" when nothing went out
-    if (input.id !== undefined) {
-      const errMsg = axios.isAxiosError(err)
-        ? ((err.response?.data as { error?: { message?: string } })?.error
-            ?.message ?? err.message)
-        : err instanceof Error
-          ? err.message
-          : "Send failed";
-      await db
-        .update(scheduledEmails)
-        .set({ status: "failed", errorMessage: errMsg })
-        .where(
-          and(
-            eq(scheduledEmails.id, input.id),
-            eq(scheduledEmails.userId, user.id)
-          )
-        );
-    }
     throw err;
   }
 
-  // The email is delivered at this point; a cleanup failure must not revert
-  // the claim (row stays "sent", so there is no duplicate-send risk)
-  if (input.id !== undefined) {
-    await deleteScheduledEmail(input.id);
-  }
   return { success: true };
 }
 
