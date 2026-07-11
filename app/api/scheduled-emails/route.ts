@@ -45,6 +45,7 @@ export async function POST(req: Request) {
     } else if (body.type == "schedule") {
       await createScheduledEmail(body.data, DrizzleInstance);
     }
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/scheduled-emails POST]", err);
     return NextResponse.json(
@@ -79,6 +80,7 @@ export async function DELETE(req: Request) {
     }
 
     await deleteScheduledEmail(id, DrizzleInstance);
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/scheduled-emails DELETE]", err);
     return NextResponse.json(

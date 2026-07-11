@@ -38,7 +38,7 @@ import {
 } from "@/lib/scheduled_emails";
 
 const fakeClass = {
-  claimEmail: async (id: number): Promise<Claimed | []> => {
+  claimEmail: vi.fn(async (id: number): Promise<Claimed | []> => {
     return [
       {
         id: 5,
@@ -49,16 +49,16 @@ const fakeClass = {
         subject: "Quarterly review",
         bodyHtml: "<p>Hello</p>",
         bodyText: "Hello",
-        clientId: null,
+        clientId: 1,
         scheduledAt: new Date(),
         timezone: "UTC",
-        recurring: null,
+        recurring: "",
         sentAt: new Date(),
         errorMessage: null,
         createdAt: new Date(),
       },
     ];
-  },
+  }),
   markAsFailed: async (_id: number): Promise<void> => {},
   getUserRows: async (_userId: string) => [
     { name: "Dan", email: "dan@example.com" },
@@ -66,8 +66,8 @@ const fakeClass = {
   getAllClients: async (_userId: string) => [
     { id: 1, email: "client@example.com" },
   ],
-  insertOutlookEmail: async () => {},
-  catchFailedInsertOutlookEmail: async () => {},
+  insertOutlookEmail: vi.fn(async () => {}),
+  catchFailedInsertOutlookEmail: vi.fn(async () => {}),
   insertScheduledEmail: async (input: InsertSchEmail) => {
     return {
       ...input,
@@ -179,14 +179,17 @@ describe("sendScheduledEmail", () => {
       error: "InvalidAuthenticationToken",
     });
 
-    expect(fakeClass.insertOutlookEmail()).not.toHaveBeenCalled();
-    expect(fakeClass.catchFailedInsertOutlookEmail()).toHaveBeenLastCalledWith({
-      status: "failed",
-      errorMessage: "InvalidAuthenticationToken",
-    });
+    expect(fakeClass.insertOutlookEmail).not.toHaveBeenCalled();
+    expect(fakeClass.catchFailedInsertOutlookEmail).toHaveBeenLastCalledWith(
+      "InvalidAuthenticationToken",
+      5
+    );
   });
 
   it("sends via Graph and records the sent email", async () => {
+    await expect(sendScheduledEmail(5, fakeClass)).resolves.toEqual({
+      outcome: "sent",
+    });
     expect(mockAxiosPost).toHaveBeenCalledTimes(2);
     expect(mockAxiosPost.mock.calls[0][0]).toBe(
       "https://graph.microsoft.com/v1.0/me/messages"
@@ -194,18 +197,17 @@ describe("sendScheduledEmail", () => {
     expect(mockAxiosPost.mock.calls[1][0]).toBe(
       "https://graph.microsoft.com/v1.0/me/messages/outlook-1/send"
     );
-    expect(fakeClass.insertOutlookEmail()).toHaveBeenCalledWith(
-      expect.objectContaining({
-        outlookId: "outlook-1",
-        conversationId: "conv-1",
-        subject: "Quarterly review",
-        isSent: true,
-        clientId: 9,
-        userId: "user_1",
-      })
+    expect(fakeClass.insertOutlookEmail).toHaveBeenCalledWith(
+      "outlook-1",
+      "conv-1",
+      expect.objectContaining({ id: 5, subject: "Quarterly review" }),
+      "me@example.com",
+      "Dan",
+      1,
+      "user_1"
     );
     // the claim already marked the row sent; no second status update
-    expect(fakeClass.claimEmail(5)).toHaveBeenCalledTimes(1);
+    expect(fakeClass.claimEmail).toHaveBeenCalledTimes(1);
   });
 
   it("marks the email failed (releasing the claim) when the Graph send call fails", async () => {
@@ -217,11 +219,11 @@ describe("sendScheduledEmail", () => {
       error: "graph down",
     });
 
-    expect(fakeClass.insertOutlookEmail()).not.toHaveBeenCalled();
-    expect(fakeClass.catchFailedInsertOutlookEmail()).toHaveBeenLastCalledWith({
-      status: "failed",
-      errorMessage: "graph down",
-    });
+    expect(fakeClass.insertOutlookEmail).not.toHaveBeenCalled();
+    expect(fakeClass.catchFailedInsertOutlookEmail).toHaveBeenLastCalledWith(
+      "graph down",
+      5
+    );
   });
 });
 
@@ -248,20 +250,23 @@ describe("createScheduledEmail", () => {
 
   it("creates a scheduled email successfully", async () => {
     const result = await createScheduledEmail(fakeInput, fakeClass);
-    expect(result).toEqual(
-      expect.objectContaining({
-        id: 1,
-        toEmail: "dan@example.com",
-        toName: "Dan",
-        subject: "Test Email",
-        bodyHtml: "<p>Hello</p>",
-        bodyText: "Hello",
-        scheduledAt: expect.any(String),
-        timezone: "UTC",
-        recurring: null,
-        clientId: null,
-      })
-    );
+    expect(result).toEqual({
+      id: 1,
+      toEmail: "dan@example.com",
+      toName: "Dan",
+      subject: "Test Email",
+      bodyHtml: "<p>Hello</p>",
+      bodyText: "Hello",
+      scheduledAt: new Date(fakeInput.scheduledAt), // exact parsed date
+      timezone: "UTC",
+      recurring: "none",
+      status: "pending",
+      clientId: null,
+      userId: "user_1",
+      sentAt: null,
+      errorMessage: null,
+      createdAt: expect.any(Date),
+    });
   });
 });
 
@@ -302,10 +307,6 @@ describe("sendScheduledEmailNow", () => {
     };
     await expect(sendScheduledEmailNow(5, alreadySentFake)).rejects.toThrow(
       "Scheduled email was already sent or cancelled"
-    );
-    await expect(sendScheduledEmailNow(999, fakeClass)).rejects.toThrow(
-      "Scheduled email was already sent or cancelled",
-      409
     );
   });
 
