@@ -1,9 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db, DBDrizzle, DrizzleInstance } from "@db/db";
-import { clients, scheduledEmails } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import type { DBDrizzle } from "@db/emails_db";
 import {
   MAX_HTML_BODY,
   MAX_NAME,
@@ -117,10 +115,7 @@ export async function sendScheduledEmail(
 
     let clientId: number | null = scheduledEmail.clientId;
     if (!clientId) {
-      const allClients = await db
-        .select({ id: clients.id, email: clients.email })
-        .from(clients)
-        .where(eq(clients.userId, userId));
+      const allClients = await dbDrizzle.getAllClients(userId);
       for (const c of allClients) {
         if (c.email?.toLowerCase() === toEmailAddr.toLowerCase()) {
           clientId = c.id;
@@ -232,35 +227,16 @@ export async function sendScheduledEmailNow(id: number, dbDrizzle: DBDrizzle) {
   return { success: true };
 }
 
-export async function deleteScheduledEmail(id: number) {
+export async function deleteScheduledEmail(id: number, dbDrizzle: DBDrizzle) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");
-
-  const rows = await db
-    .select()
-    .from(scheduledEmails)
-    .where(
-      and(
-        eq(scheduledEmails.id, numericId),
-        eq(scheduledEmails.userId, user.id)
-      )
-    )
-    .limit(1);
-
+  const rows = await dbDrizzle.getScheduledEmailById(numericId, user.id);
   if (!rows.length) {
     throw new ValidationError("Scheduled email not found", 404);
   }
 
-  await db
-    .delete(scheduledEmails)
-    .where(
-      and(
-        eq(scheduledEmails.id, numericId),
-        eq(scheduledEmails.userId, user.id)
-      )
-    );
-
+  await dbDrizzle.deleteScheduledEmailById(numericId, user.id);
   return { success: true };
 }

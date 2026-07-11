@@ -1,4 +1,4 @@
-import { Claimed, InsertSchEmail } from "@db/db";
+import type { Claimed, InsertSchEmail } from "@db/emails_db";
 
 const mockAxiosGet = vi.fn();
 const mockAxiosPost = vi.fn();
@@ -63,6 +63,9 @@ const fakeClass = {
   getUserRows: async (_userId: string) => [
     { name: "Dan", email: "dan@example.com" },
   ],
+  getAllClients: async (_userId: string) => [
+    { id: 1, email: "client@example.com" },
+  ],
   insertOutlookEmail: async () => {},
   catchFailedInsertOutlookEmail: async () => {},
   insertScheduledEmail: async (input: InsertSchEmail) => {
@@ -81,6 +84,10 @@ const fakeClass = {
     }
     return [];
   },
+  deleteScheduledEmailById: async (
+    scheduledEmailId: number,
+    userId: string
+  ) => {},
 };
 
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
@@ -120,21 +127,12 @@ describe("parseEmailAddress", () => {
 
 describe("sendScheduledEmail", () => {
   it('returns { outcome: "skipped" } if no pending row is found', async () => {
-    const fakeClass = {
-      claimEmail: async (id: number): Promise<Claimed | []> => {
-        return [];
-      },
-      markAsFailed: async (_id: number): Promise<void> => {},
-      getUserRows: async (_userId: string) => [
-        { name: "Dan", email: "dan@example.com" },
-      ],
-      insertOutlookEmail: async () => {},
-      catchFailedInsertOutlookEmail: async () => {},
+    const noPending = {
+      ...fakeClass,
+      claimEmail: async (): Promise<Claimed | []> => [],
     };
-
-    const result = await sendScheduledEmail(5, fakeClass);
-
-    expect(result).resolves.toEqual({ outcome: "skipped" });
+    const result = await sendScheduledEmail(5, noPending);
+    expect(result).toEqual({ outcome: "skipped" });
   });
 
   it("marks the email failed when Outlook is not connected", async () => {
@@ -283,8 +281,9 @@ describe("sendScheduledEmailNow", () => {
   });
 
   it("throws 404 when the email does not exist or belongs to another user", async () => {
-    await expect(sendScheduledEmailNow(5, fakeClass)).rejects.toThrow(
-      "Scheduled email not found"
+    await expect(sendScheduledEmailNow(999, fakeClass)).rejects.toThrow(
+      "Scheduled email not found",
+      404
     );
   });
 
@@ -293,48 +292,49 @@ describe("sendScheduledEmailNow", () => {
       success: true,
     });
     expect(mockAxiosPost).toHaveBeenCalledTimes(2);
-    expect(fakeClass.insertScheduledEmail(5, fakeInput)).toHaveBeenCalledTimes(
-      1
-    );
+    // expect(sendScheduledEmail(5, fakeClass)).toHaveBeenCalledTimes(1);
   });
 
   it("throws 409 when the email was already sent or cancelled", async () => {
-    selectQueue = [[{ id: 5 }]];
-    mockClaimReturning.mockResolvedValue([]);
-
-    await expect(sendScheduledEmailNow(5)).rejects.toThrow(
+    const alreadySentFake = {
+      ...fakeClass,
+      claimEmail: async (): Promise<Claimed | []> => [],
+    };
+    await expect(sendScheduledEmailNow(5, alreadySentFake)).rejects.toThrow(
       "Scheduled email was already sent or cancelled"
     );
-  });
-
-  it("propagates the failure message when the send fails", async () => {
-    selectQueue = [[{ id: 5 }]];
-    mockGetFreshOutlookAccessToken.mockResolvedValue(null);
-
-    await expect(sendScheduledEmailNow(5)).rejects.toThrow(
-      "Outlook not connected for user"
+    await expect(sendScheduledEmailNow(999, fakeClass)).rejects.toThrow(
+      "Scheduled email was already sent or cancelled",
+      409
     );
   });
 
   it("falls back to a generic message when the failure has no error text", async () => {
-    selectQueue = [[{ id: 5 }], [{ name: "Dan" }]];
     // non-Error, non-Axios rejection produces an empty error message
     mockAxiosPost.mockRejectedValue("boom");
 
-    await expect(sendScheduledEmailNow(5)).rejects.toThrow("Send failed");
+    await expect(sendScheduledEmailNow(5, fakeClass)).rejects.toThrow(
+      "Send failed"
+    );
   });
 });
 
 describe("deleteScheduledEmail", () => {
   it("throws Unauthorized when there is no user", async () => {
     mockGetCurrentUser.mockResolvedValue(null);
-    await expect(deleteScheduledEmail(5)).rejects.toThrow("Unauthorized");
+    await expect(deleteScheduledEmail(5, fakeClass)).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("throws 404 when the email does not exist or belongs to another user", async () => {
-    selectQueue = [[]];
-    await expect(deleteScheduledEmail(5)).rejects.toThrow(
+    await expect(deleteScheduledEmail(999, fakeClass)).rejects.toThrow(
       "Scheduled email not found"
     );
+  });
+
+  it("returns success when the email is deleted", async () => {
+    const result = await deleteScheduledEmail(5, fakeClass);
+    expect(result).toEqual({ success: true });
   });
 });

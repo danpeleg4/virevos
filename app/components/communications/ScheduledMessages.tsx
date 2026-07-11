@@ -39,12 +39,7 @@ import {
 import { toast } from "sonner";
 import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
-import {
-  createScheduledEmail,
-  deleteScheduledEmail,
-  sendScheduledEmailNow,
-  type ScheduleEmailInput,
-} from "@/lib/scheduled_emails";
+import { type ScheduleEmailInput } from "@/lib/scheduled_emails";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 
@@ -89,7 +84,9 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const deleteScheduledEmailMessage = useMutation({
     mutationFn: async (id: number) => {
-      await deleteScheduledEmail(id);
+      await axios.delete(`/api/scheduled-emails`, {
+        params: { id: id },
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
@@ -130,7 +127,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const sendNowMutation = useMutation({
     mutationFn: async (msg: ScheduledEmail) => {
-      await sendScheduledEmailNow(msg.id);
+      await axios.post("/api/scheduled-emails", {
+        id: msg.id,
+        type: "send-now",
+      });
     },
     onMutate: async (msg) => {
       await queryClient.cancelQueries({ queryKey: ["scheduled-emails"] });
@@ -167,7 +167,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const scheduleMutation = useMutation({
     mutationFn: async (input: ScheduleEmailInput) => {
-      await createScheduledEmail(input);
+      await axios.post("/api/scheduled-emails", { ...input, type: "schedule" });
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ["scheduled-emails"] });
