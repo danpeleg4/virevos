@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@db/db";
-import { DrizzleInstance } from "@db/emails_db";
+import { DrizzleInstance } from "@db/db";
 import { scheduledEmails } from "@db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { sendScheduledEmail } from "@/lib/scheduled_emails";

@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { DBDrizzle } from "@db/emails_db";
+import type { DBDrizzle } from "@db/db";
 import {
   MAX_HTML_BODY,
   MAX_NAME,

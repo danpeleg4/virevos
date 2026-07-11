@@ -128,7 +128,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const sendNowMutation = useMutation({
     mutationFn: async (msg: ScheduledEmail) => {
       await axios.post("/api/scheduled-emails", {
-        id: msg.id,
+        data: msg.id,
         type: "send-now",
       });
     },
@@ -167,7 +167,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const scheduleMutation = useMutation({
     mutationFn: async (input: ScheduleEmailInput) => {
-      await axios.post("/api/scheduled-emails", { ...input, type: "schedule" });
+      await axios.post("/api/scheduled-emails", {
+        data: { ...input },
+        type: "schedule",
+      });
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ["scheduled-emails"] });

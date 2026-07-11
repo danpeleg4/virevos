@@ -466,15 +466,18 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         const scheduledAt = new Date(
           `${pendingSchedule.date.toISOString().split("T")[0]}T${pendingSchedule.time}`
         );
-        await createScheduledEmail({
-          toEmail: selectedMessage.fromEmail || selectedMessage.from,
-          toName: selectedMessage.from,
-          subject: `Re: ${selectedMessage.subject || ""}`,
-          bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-          bodyText: replyText,
-          scheduledAt: scheduledAt.toISOString(),
-          timezone: pendingSchedule.timezone,
-          clientId: selectedMessage.clientId,
+        await axios.post("/api/scheduled-emails", {
+          data: {
+            toEmail: selectedMessage.fromEmail || selectedMessage.from,
+            toName: selectedMessage.from,
+            subject: `Re: ${selectedMessage.subject || ""}`,
+            bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+            bodyText: replyText,
+            scheduledAt: scheduledAt.toISOString(),
+            timezone: pendingSchedule.timezone,
+            clientId: selectedMessage.clientId,
+          },
+          type: "schedule",
         });
         toast.success(
           `Reply scheduled for ${pendingSchedule.date.toLocaleDateString()} at ${pendingSchedule.time}`

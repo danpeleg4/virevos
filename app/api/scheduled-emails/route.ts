@@ -8,7 +8,7 @@ import {
   deleteScheduledEmail,
   sendScheduledEmailNow,
 } from "@/lib/scheduled_emails";
-import { DrizzleInstance } from "@db/emails_db";
+import { DrizzleInstance } from "@db/db";
 
 export async function GET() {
   try {
@@ -41,9 +41,9 @@ export async function POST(req: Request) {
     }
     const body = await req.json();
     if (body.type == "send-now") {
-      await sendScheduledEmailNow(body.id, DrizzleInstance);
+      await sendScheduledEmailNow(body.data, DrizzleInstance);
     } else if (body.type == "schedule") {
-      await createScheduledEmail(body, DrizzleInstance);
+      await createScheduledEmail(body.data, DrizzleInstance);
     }
   } catch (err) {
     console.error("[api/scheduled-emails POST]", err);

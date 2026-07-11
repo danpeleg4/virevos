@@ -1,4 +1,4 @@
-import type { Claimed, InsertSchEmail } from "@db/emails_db";
+import type { Claimed, InsertSchEmail } from "@db/db";
 
 const mockAxiosGet = vi.fn();
 const mockAxiosPost = vi.fn();
