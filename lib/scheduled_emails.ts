@@ -18,9 +18,10 @@ import {
 import { sanitizeEmailHtml } from "./util/html_sanitizer";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import axios from "axios";
+import { ScheduledEmailServiceInterface } from "@/api_client/axios_api_client";
 
 const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
-const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+const GRAPH_BASE = "https://graph.microsoft.com/v1.0"; // DELETE ME
 
 export type SendScheduledEmailResult =
   | { outcome: "sent" }
@@ -42,7 +43,8 @@ export async function parseEmailAddress(raw: string): Promise<{
 
 export async function sendScheduledEmail(
   scheduledEmailId: number,
-  dbDrizzle: DBDrizzle
+  dbDrizzle: DBDrizzle,
+  apiClient: ScheduledEmailServiceInterface
 ): Promise<SendScheduledEmailResult> {
   const claimed = await dbDrizzle.claimEmail(scheduledEmailId);
   if (!claimed.length) return { outcome: "skipped" }; // missing, already sent, or claimed by Send Now
@@ -72,12 +74,8 @@ export async function sendScheduledEmail(
     try {
       // Get the user email connected the the Graph API to be as fromEmail
       // in case the DB users.email and the connected outlook email are not the same
-      const profileRes = await axios.get<{
-        mail?: string;
-        userPrincipalName?: string;
-      }>(`${GRAPH_BASE}/me`, { headers });
-      fromEmail =
-        profileRes.data.mail || profileRes.data.userPrincipalName || fromEmail;
+      const profileRes = await apiClient.getProfile(headers);
+      fromEmail = profileRes.mail || profileRes.userPrincipalName || fromEmail;
     } catch {
       console.warn(
         "[process_scheduled_emails] Graph /me failed; using account email"
@@ -100,18 +98,11 @@ export async function sendScheduledEmail(
       ],
     };
 
-    const draftRes = await axios.post<{
-      id: string;
-      conversationId: string;
-    }>(`${GRAPH_BASE}/me/messages`, messagePayload, { headers });
-    const outlookId = draftRes.data.id;
-    const conversationId = draftRes.data.conversationId;
+    const draftRes = await apiClient.draftMessage(headers, messagePayload);
+    const outlookId = draftRes.id;
+    const conversationId = draftRes.conversationId;
 
-    await axios.post(
-      `${GRAPH_BASE}/me/messages/${outlookId}/send`,
-      {},
-      { headers }
-    );
+    await apiClient.sendDraftMessage(headers, outlookId);
 
     let clientId: number | null = scheduledEmail.clientId;
     if (!clientId) {
@@ -201,7 +192,11 @@ export async function createScheduledEmail(
   });
 }
 
-export async function sendScheduledEmailNow(id: number, dbDrizzle: DBDrizzle) {
+export async function sendScheduledEmailNow(
+  id: number,
+  dbDrizzle: DBDrizzle,
+  apiClient: ScheduledEmailServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
@@ -213,7 +208,7 @@ export async function sendScheduledEmailNow(id: number, dbDrizzle: DBDrizzle) {
     throw new ValidationError("Scheduled email not found", 404);
   }
 
-  const result = await sendScheduledEmail(numericId, dbDrizzle);
+  const result = await sendScheduledEmail(numericId, dbDrizzle, apiClient);
   if (result.outcome === "skipped") {
     throw new ValidationError(
       "Scheduled email was already sent or cancelled",

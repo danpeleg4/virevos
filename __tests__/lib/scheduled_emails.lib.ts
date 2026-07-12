@@ -38,7 +38,7 @@ import {
 } from "@/lib/scheduled_emails";
 
 const fakeClass = {
-  claimEmail: vi.fn(async (id: number): Promise<Claimed | []> => {
+  claimEmail: vi.fn(async (_id: number): Promise<Claimed | []> => {
     return [
       {
         id: 5,

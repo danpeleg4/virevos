@@ -9,6 +9,7 @@ import {
   sendScheduledEmailNow,
 } from "@/lib/scheduled_emails";
 import { DrizzleInstance } from "@db/db";
+import { scheduledEmailService } from "@/api_client/axios_api_client";
 
 export async function GET() {
   try {
@@ -41,7 +42,11 @@ export async function POST(req: Request) {
     }
     const body = await req.json();
     if (body.type == "send-now") {
-      await sendScheduledEmailNow(body.data, DrizzleInstance);
+      await sendScheduledEmailNow(
+        body.data,
+        DrizzleInstance,
+        scheduledEmailService
+      );
     } else if (body.type == "schedule") {
       await createScheduledEmail(body.data, DrizzleInstance);
     }
