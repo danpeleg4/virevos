@@ -1,19 +1,7 @@
 import type { Claimed, InsertSchEmail } from "@db/db";
 
-const mockAxiosGet = vi.fn();
-const mockAxiosPost = vi.fn();
 const mockGetFreshOutlookAccessToken = vi.fn();
 const mockGetCurrentUser = vi.fn();
-
-vi.mock("axios", () => {
-  const axios = {
-    get: (...args: unknown[]) => mockAxiosGet(...args),
-    post: (...args: unknown[]) => mockAxiosPost(...args),
-    isAxiosError: (e: unknown) =>
-      !!(e as { isAxiosError?: boolean })?.isAxiosError,
-  };
-  return { default: axios, ...axios };
-});
 
 vi.mock("@/lib/outlook/outlook_access", () => ({
   getFreshOutlookAccessToken: (...args: unknown[]) =>
@@ -36,6 +24,7 @@ import {
   sendScheduledEmail,
   sendScheduledEmailNow,
 } from "@/lib/scheduled_emails";
+import { ScheduledEmailServiceInterface } from "@/api_client/axios_api_client";
 
 const fakeClass = {
   claimEmail: vi.fn(async (_id: number): Promise<Claimed | []> => {
@@ -90,6 +79,15 @@ const fakeClass = {
   ) => {},
 };
 
+const fakeScheduledEmailService = {
+  getProfile: vi.fn(async () => ({ mail: "me@example.com" })),
+  draftMessage: vi.fn(async () => ({
+    id: "outlook-1",
+    conversationId: "conv-1",
+  })),
+  sendDraftMessage: vi.fn(async () => {}),
+} satisfies ScheduledEmailServiceInterface;
+
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
@@ -97,10 +95,6 @@ beforeEach(() => {
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockGetCurrentUser.mockResolvedValue({ id: "user_1" });
   mockGetFreshOutlookAccessToken.mockResolvedValue("token-123");
-  mockAxiosGet.mockResolvedValue({ data: { mail: "me@example.com" } });
-  mockAxiosPost.mockResolvedValue({
-    data: { id: "outlook-1", conversationId: "conv-1" },
-  });
 });
 
 afterEach(() => {
@@ -131,50 +125,57 @@ describe("sendScheduledEmail", () => {
       ...fakeClass,
       claimEmail: async (): Promise<Claimed | []> => [],
     };
-    const result = await sendScheduledEmail(5, noPending);
+    const result = await sendScheduledEmail(
+      5,
+      noPending,
+      fakeScheduledEmailService
+    );
     expect(result).toEqual({ outcome: "skipped" });
   });
 
   it("marks the email failed when Outlook is not connected", async () => {
     mockGetFreshOutlookAccessToken.mockResolvedValue(null);
-
-    await expect(sendScheduledEmail(5, fakeClass)).resolves.toEqual({
+    await expect(
+      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+    ).resolves.toEqual({
       outcome: "failed",
       error: "Outlook not connected for user",
     });
-
-    expect(mockAxiosPost).not.toHaveBeenCalled();
+    expect(fakeScheduledEmailService.getProfile).not.toHaveBeenCalled();
   });
 
   it("still sends with the account email as fallback when the profile fetch fails", async () => {
-    mockAxiosGet.mockRejectedValue({
-      isAxiosError: true,
-      message: "Request failed with status code 403",
-      response: { data: { error: { message: "Insufficient privileges" } } },
-    });
+    fakeScheduledEmailService.getProfile.mockRejectedValueOnce(
+      new Error("Insufficient privileges")
+    );
     const consoleWarnSpy = vi
       .spyOn(console, "warn")
       .mockImplementation(() => {});
 
-    await expect(sendScheduledEmail(5, fakeClass)).resolves.toEqual({
+    await expect(
+      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+    ).resolves.toEqual({
       outcome: "sent",
     });
 
-    expect(mockAxiosPost).toHaveBeenCalledTimes(2);
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      "[process_scheduled_emails] Graph /me failed; using account email"
+    );
+
+    expect(fakeScheduledEmailService.getProfile).toHaveBeenCalledTimes(1);
+    expect(fakeScheduledEmailService.draftMessage).toHaveBeenCalledTimes(1);
     consoleWarnSpy.mockRestore();
   });
 
   it("marks the email failed with the Graph error message when the draft creation fails", async () => {
     await fakeClass.claimEmail(5); // claim the email first
-    mockAxiosPost.mockRejectedValue({
-      isAxiosError: true,
-      message: "Request failed with status code 401",
-      response: {
-        data: { error: { message: "InvalidAuthenticationToken" } },
-      },
-    });
+    fakeScheduledEmailService.draftMessage.mockRejectedValueOnce(
+      new Error("InvalidAuthenticationToken")
+    );
 
-    await expect(sendScheduledEmail(5, fakeClass)).resolves.toEqual({
+    await expect(
+      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+    ).resolves.toEqual({
       outcome: "failed",
       error: "InvalidAuthenticationToken",
     });
@@ -187,16 +188,14 @@ describe("sendScheduledEmail", () => {
   });
 
   it("sends via Graph and records the sent email", async () => {
-    await expect(sendScheduledEmail(5, fakeClass)).resolves.toEqual({
+    await expect(
+      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+    ).resolves.toEqual({
       outcome: "sent",
     });
-    expect(mockAxiosPost).toHaveBeenCalledTimes(2);
-    expect(mockAxiosPost.mock.calls[0][0]).toBe(
-      "https://graph.microsoft.com/v1.0/me/messages"
-    );
-    expect(mockAxiosPost.mock.calls[1][0]).toBe(
-      "https://graph.microsoft.com/v1.0/me/messages/outlook-1/send"
-    );
+
+    expect(fakeScheduledEmailService.draftMessage).toHaveBeenCalledTimes(1);
+    expect(fakeScheduledEmailService.sendDraftMessage).toHaveBeenCalledTimes(1);
     expect(fakeClass.insertOutlookEmail).toHaveBeenCalledWith(
       "outlook-1",
       "conv-1",
@@ -212,9 +211,13 @@ describe("sendScheduledEmail", () => {
 
   it("marks the email failed (releasing the claim) when the Graph send call fails", async () => {
     await fakeClass.claimEmail(5); // claim the email first
-    mockAxiosPost.mockRejectedValue(new Error("graph down"));
+    fakeScheduledEmailService.sendDraftMessage.mockRejectedValue(
+      new Error("graph down")
+    );
 
-    await expect(sendScheduledEmail(5, fakeClass)).resolves.toEqual({
+    await expect(
+      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+    ).resolves.toEqual({
       outcome: "failed",
       error: "graph down",
     });
@@ -274,30 +277,40 @@ describe("sendScheduledEmailNow", () => {
   it("throws Unauthorized when there is no user", async () => {
     mockGetCurrentUser.mockResolvedValue(null);
 
-    await expect(sendScheduledEmailNow(5, fakeClass)).rejects.toThrow(
-      "Unauthorized"
-    );
+    await expect(
+      sendScheduledEmailNow(5, fakeClass, fakeScheduledEmailService)
+    ).rejects.toThrow("Unauthorized");
   });
 
   it("rejects a non-integer id", async () => {
     await expect(
-      sendScheduledEmailNow("nope" as unknown as number, fakeClass)
+      sendScheduledEmailNow(
+        "nope" as unknown as number,
+        fakeClass,
+        fakeScheduledEmailService
+      )
     ).rejects.toThrow("id must be a number");
   });
 
   it("throws 404 when the email does not exist or belongs to another user", async () => {
-    await expect(sendScheduledEmailNow(999, fakeClass)).rejects.toThrow(
-      "Scheduled email not found",
-      404
-    );
+    await expect(
+      sendScheduledEmailNow(999, fakeClass, fakeScheduledEmailService)
+    ).rejects.toThrow("Scheduled email not found", 404);
   });
 
   it("resolves success after claiming and sending the email", async () => {
-    await expect(sendScheduledEmailNow(5, fakeClass)).resolves.toEqual({
+    fakeScheduledEmailService.draftMessage.mockResolvedValue({
+      id: "outlook-1",
+      conversationId: "conv-1",
+    });
+    fakeScheduledEmailService.sendDraftMessage.mockResolvedValue();
+    await expect(
+      sendScheduledEmailNow(5, fakeClass, fakeScheduledEmailService)
+    ).resolves.toEqual({
       success: true,
     });
-    expect(mockAxiosPost).toHaveBeenCalledTimes(2);
-    // expect(sendScheduledEmail(5, fakeClass)).toHaveBeenCalledTimes(1);
+    expect(fakeScheduledEmailService.draftMessage).toHaveBeenCalledTimes(1);
+    expect(fakeScheduledEmailService.sendDraftMessage).toHaveBeenCalledTimes(1);
   });
 
   it("throws 409 when the email was already sent or cancelled", async () => {
@@ -305,18 +318,18 @@ describe("sendScheduledEmailNow", () => {
       ...fakeClass,
       claimEmail: async (): Promise<Claimed | []> => [],
     };
-    await expect(sendScheduledEmailNow(5, alreadySentFake)).rejects.toThrow(
-      "Scheduled email was already sent or cancelled"
-    );
+    await expect(
+      sendScheduledEmailNow(5, alreadySentFake, fakeScheduledEmailService)
+    ).rejects.toThrow("Scheduled email was already sent or cancelled");
   });
 
   it("falls back to a generic message when the failure has no error text", async () => {
     // non-Error, non-Axios rejection produces an empty error message
-    mockAxiosPost.mockRejectedValue("boom");
+    fakeScheduledEmailService.draftMessage.mockRejectedValueOnce("boom");
 
-    await expect(sendScheduledEmailNow(5, fakeClass)).rejects.toThrow(
-      "Send failed"
-    );
+    await expect(
+      sendScheduledEmailNow(5, fakeClass, fakeScheduledEmailService)
+    ).rejects.toThrow("Send failed");
   });
 });
 

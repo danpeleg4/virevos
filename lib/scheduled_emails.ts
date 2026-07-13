@@ -17,11 +17,9 @@ import {
 } from "./util/validation";
 import { sanitizeEmailHtml } from "./util/html_sanitizer";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
-import axios from "axios";
 import { ScheduledEmailServiceInterface } from "@/api_client/axios_api_client";
 
 const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
-const GRAPH_BASE = "https://graph.microsoft.com/v1.0"; // DELETE ME
 
 export type SendScheduledEmailResult =
   | { outcome: "sent" }
@@ -72,7 +70,7 @@ export async function sendScheduledEmail(
       scheduledEmail.toEmail;
 
     try {
-      // Get the user email connected the the Graph API to be as fromEmail
+      // Get the user email connected to the Graph API to be as fromEmail
       // in case the DB users.email and the connected outlook email are not the same
       const profileRes = await apiClient.getProfile(headers);
       fromEmail = profileRes.mail || profileRes.userPrincipalName || fromEmail;
@@ -127,12 +125,7 @@ export async function sendScheduledEmail(
     );
     return { outcome: "sent" };
   } catch (sendErr: unknown) {
-    const errMsg = axios.isAxiosError(sendErr)
-      ? ((sendErr.response?.data as { error?: { message?: string } })?.error
-          ?.message ?? sendErr.message)
-      : sendErr instanceof Error
-        ? sendErr.message
-        : "Send failed";
+    const errMsg = sendErr instanceof Error ? sendErr.message : "Send failed";
     console.error("[process_scheduled_emails]", scheduledEmailId, sendErr);
     await dbDrizzle.catchFailedInsertOutlookEmail(errMsg, scheduledEmailId);
     return { outcome: "failed", error: errMsg };

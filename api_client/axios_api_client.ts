@@ -42,6 +42,14 @@ export const axiosApiClient = new AxiosApiClient();
 export class ScheduledEmailService implements ScheduledEmailServiceInterface {
   private api: AxiosClient;
   private readonly GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+  private rethrowGraphError(err: unknown): never {
+    if (axios.isAxiosError(err)) {
+      const graphMsg = (err.response?.data as { error?: { message?: string } })
+        ?.error?.message;
+      throw new Error(graphMsg ?? err.message);
+    }
+    throw err;
+  }
 
   constructor(api: AxiosClient) {
     this.api = api;
@@ -50,27 +58,39 @@ export class ScheduledEmailService implements ScheduledEmailServiceInterface {
   async getProfile(
     headers: Record<string, string>
   ): Promise<{ mail?: string; userPrincipalName?: string }> {
-    return this.api.get(`${this.GRAPH_BASE}/me`, { headers });
+    try {
+      return await this.api.get(`${this.GRAPH_BASE}/me`, { headers });
+    } catch (err) {
+      this.rethrowGraphError(err);
+    }
   }
 
   async draftMessage(
     headers: Record<string, string>,
     message: unknown
   ): Promise<{ id: string; conversationId: string }> {
-    return this.api.post(`${this.GRAPH_BASE}/me/messages`, message, {
-      headers,
-    });
+    try {
+      return await this.api.post(`${this.GRAPH_BASE}/me/messages`, message, {
+        headers,
+      });
+    } catch (err) {
+      this.rethrowGraphError(err);
+    }
   }
 
   async sendDraftMessage(
     headers: Record<string, string>,
     outlookId: string
   ): Promise<void> {
-    await this.api.post(
-      `${this.GRAPH_BASE}/me/messages/${outlookId}/send`,
-      {},
-      { headers }
-    );
+    try {
+      await this.api.post(
+        `${this.GRAPH_BASE}/me/messages/${outlookId}/send`,
+        {},
+        { headers }
+      );
+    } catch (err) {
+      this.rethrowGraphError(err);
+    }
   }
 }
 
