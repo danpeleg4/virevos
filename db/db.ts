@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 import { clients, outlookEmails, scheduledEmails, users } from "./schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -102,7 +102,7 @@ export interface DBDrizzle {
   deleteScheduledEmailById(
     scheduledEmailId: number,
     userId: string
-  ): Promise<void>;
+  ): Promise<{ id: number }[]>;
 }
 export class Drizzle implements DBDrizzle {
   async claimEmail(scheduledEmailId: number): Promise<Claimed | []> {
@@ -237,15 +237,18 @@ export class Drizzle implements DBDrizzle {
   async deleteScheduledEmailById(
     scheduledEmailId: number,
     userId: string
-  ): Promise<void> {
-    await db
+  ): Promise<{ id: number }[]> {
+    // Never delete a sent row — it is the only record that the email went out
+    return db
       .delete(scheduledEmails)
       .where(
         and(
           eq(scheduledEmails.id, scheduledEmailId),
-          eq(scheduledEmails.userId, userId)
+          eq(scheduledEmails.userId, userId),
+          ne(scheduledEmails.status, "sent")
         )
-      );
+      )
+      .returning({ id: scheduledEmails.id });
   }
 }
 

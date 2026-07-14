@@ -10,6 +10,7 @@ import {
 } from "@/lib/scheduled_emails";
 import { DrizzleInstance } from "@db/db";
 import { scheduledEmailService } from "@/api_client/axios_api_client";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {
   try {
@@ -55,6 +56,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/scheduled-emails POST]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json(
       { error: "Failed to create scheduled email" },
       { status: 500 }
@@ -90,6 +94,9 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/scheduled-emails DELETE]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json(
       { error: "Failed to delete scheduled email" },
       { status: 500 }

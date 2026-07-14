@@ -7,6 +7,7 @@ import {
 } from "@/lib/scheduled_emails";
 import { DrizzleInstance } from "@db/db";
 import { scheduledEmailService } from "@/api_client/axios_api_client";
+import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -146,15 +147,26 @@ describe("POST /api/scheduled-emails", () => {
   });
 
   it("returns 500 when the lib call throws", async () => {
-    (sendScheduledEmailNow as Mock).mockRejectedValueOnce(
-      new Error("already sent")
-    );
+    (sendScheduledEmailNow as Mock).mockRejectedValueOnce(new Error("db down"));
 
     const res = await POST(postRequest({ type: "send-now", data: 7 }));
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({
       error: "Failed to create scheduled email",
+    });
+  });
+
+  it("propagates a ValidationError status — 409 on a send-now claim miss", async () => {
+    (sendScheduledEmailNow as Mock).mockRejectedValueOnce(
+      new ValidationError("Scheduled email was already sent or cancelled", 409)
+    );
+
+    const res = await POST(postRequest({ type: "send-now", data: 7 }));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      error: "Scheduled email was already sent or cancelled",
     });
   });
 
@@ -210,15 +222,29 @@ describe("DELETE /api/scheduled-emails", () => {
   });
 
   it("returns 500 when the lib call throws", async () => {
-    (deleteScheduledEmail as Mock).mockRejectedValueOnce(
-      new Error("not yours")
-    );
+    (deleteScheduledEmail as Mock).mockRejectedValueOnce(new Error("db down"));
 
     const res = await DELETE(deleteRequest("?id=42"));
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({
       error: "Failed to delete scheduled email",
+    });
+  });
+
+  it("propagates a ValidationError status — 409 when the row was already sent", async () => {
+    (deleteScheduledEmail as Mock).mockRejectedValueOnce(
+      new ValidationError(
+        "Scheduled email was already sent and cannot be deleted",
+        409
+      )
+    );
+
+    const res = await DELETE(deleteRequest("?id=42"));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      error: "Scheduled email was already sent and cannot be deleted",
     });
   });
 });

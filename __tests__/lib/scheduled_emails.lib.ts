@@ -73,10 +73,9 @@ const fakeClass = {
     }
     return [];
   },
-  deleteScheduledEmailById: async (
-    scheduledEmailId: number,
-    userId: string
-  ) => {},
+  deleteScheduledEmailById: vi.fn(
+    async (_scheduledEmailId: number, _userId: string) => [{ id: 5 }]
+  ),
 };
 
 const fakeScheduledEmailService = {
@@ -207,6 +206,22 @@ describe("sendScheduledEmail", () => {
     );
     // the claim already marked the row sent; no second status update
     expect(fakeClass.claimEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("still reports sent when post-send bookkeeping fails — the email was delivered", async () => {
+    fakeClass.insertOutlookEmail.mockRejectedValueOnce(new Error("db down"));
+
+    await expect(
+      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+    ).resolves.toEqual({ outcome: "sent" });
+
+    // the claimed row must stay "sent" — no failed flip after delivery
+    expect(fakeClass.catchFailedInsertOutlookEmail).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[process_scheduled_emails] post-send bookkeeping failed for",
+      5,
+      expect.any(Error)
+    );
   });
 
   it("marks the email failed (releasing the claim) when the Graph send call fails", async () => {
@@ -350,5 +365,19 @@ describe("deleteScheduledEmail", () => {
   it("returns success when the email is deleted", async () => {
     const result = await deleteScheduledEmail(5, fakeClass);
     expect(result).toEqual({ success: true });
+    expect(fakeClass.deleteScheduledEmailById).toHaveBeenCalledWith(
+      5,
+      "user_1"
+    );
+  });
+
+  it("throws 409 when the row exists but was already sent", async () => {
+    // the status-guarded delete matches nothing for a sent row
+    fakeClass.deleteScheduledEmailById.mockResolvedValueOnce([]);
+
+    await expect(deleteScheduledEmail(5, fakeClass)).rejects.toMatchObject({
+      message: "Scheduled email was already sent and cannot be deleted",
+      status: 409,
+    });
   });
 });

@@ -102,27 +102,38 @@ export async function sendScheduledEmail(
 
     await apiClient.sendDraftMessage(headers, outlookId);
 
-    let clientId: number | null = scheduledEmail.clientId;
-    if (!clientId) {
-      const allClients = await dbDrizzle.getAllClients(userId);
-      for (const c of allClients) {
-        if (c.email?.toLowerCase() === toEmailAddr.toLowerCase()) {
-          clientId = c.id;
-          break;
+    // The email is delivered from here on — bookkeeping failures must not
+    // flip the claimed row to "failed" or reject the send, or a retry would
+    // deliver a duplicate.
+    try {
+      let clientId: number | null = scheduledEmail.clientId;
+      if (!clientId) {
+        const allClients = await dbDrizzle.getAllClients(userId);
+        for (const c of allClients) {
+          if (c.email?.toLowerCase() === toEmailAddr.toLowerCase()) {
+            clientId = c.id;
+            break;
+          }
         }
       }
-    }
 
-    // fromEmail is the connected Graph API email address or the fallback DB users.email
-    await dbDrizzle.insertOutlookEmail(
-      outlookId,
-      conversationId,
-      scheduledEmail,
-      fromEmail,
-      fromName,
-      clientId,
-      userId
-    );
+      // fromEmail is the connected Graph API email address or the fallback DB users.email
+      await dbDrizzle.insertOutlookEmail(
+        outlookId,
+        conversationId,
+        scheduledEmail,
+        fromEmail,
+        fromName,
+        clientId,
+        userId
+      );
+    } catch (bookkeepingErr) {
+      console.error(
+        "[process_scheduled_emails] post-send bookkeeping failed for",
+        scheduledEmailId,
+        bookkeepingErr
+      );
+    }
     return { outcome: "sent" };
   } catch (sendErr: unknown) {
     const errMsg = sendErr instanceof Error ? sendErr.message : "Send failed";
@@ -225,6 +236,13 @@ export async function deleteScheduledEmail(id: number, dbDrizzle: DBDrizzle) {
     throw new ValidationError("Scheduled email not found", 404);
   }
 
-  await dbDrizzle.deleteScheduledEmailById(numericId, user.id);
+  const deleted = await dbDrizzle.deleteScheduledEmailById(numericId, user.id);
+  if (!deleted.length) {
+    // Row exists but the guarded delete matched nothing — it was already sent
+    throw new ValidationError(
+      "Scheduled email was already sent and cannot be deleted",
+      409
+    );
+  }
   return { success: true };
 }
