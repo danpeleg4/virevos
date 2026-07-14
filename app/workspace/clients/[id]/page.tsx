@@ -4,7 +4,6 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import {
   AlertCircle,
   ArrowLeft,
@@ -161,10 +160,8 @@ export default function ClientDetailPage({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Client deleted");
       router.push("/workspace/clients");
     },
-    onError: () => toast.error("Failed to delete client"),
   });
 
   if (clientQuery.isLoading) {

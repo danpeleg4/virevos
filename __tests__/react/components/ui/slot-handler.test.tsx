@@ -1,8 +1,5 @@
-/**
- * @vitest-environment jsdom
- */
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 import {
   DropdownMenu,
@@ -12,8 +9,8 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 
 describe("Slot in DropdownMenuTrigger asChild — DOM inspection", () => {
-  it("propagates aria, data-state, and onClick onto the cloned <button>", () => {
-    render(
+  it("propagates aria, data-state, and onClick onto the cloned <button>", async () => {
+    const screen = await render(
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button>Sort</button>
@@ -24,18 +21,20 @@ describe("Slot in DropdownMenuTrigger asChild — DOM inspection", () => {
       </DropdownMenu>
     );
     const btn = screen.getByRole("button", { name: "Sort" });
-    expect(btn.getAttribute("aria-haspopup")).toBe("menu");
-    expect(btn.getAttribute("aria-expanded")).toBe("false");
-    expect(btn.getAttribute("data-state")).toBe("closed");
-    expect(btn.getAttribute("data-slot")).toBe("dropdown-menu-trigger");
-    fireEvent.click(btn);
-    expect(btn.getAttribute("aria-expanded")).toBe("true");
-    expect(btn.getAttribute("data-state")).toBe("open");
-    expect(screen.getByText("Item")).toBeInTheDocument();
+    await expect.element(btn).toHaveAttribute("aria-haspopup", "menu");
+    await expect.element(btn).toHaveAttribute("aria-expanded", "false");
+    await expect.element(btn).toHaveAttribute("data-state", "closed");
+    await expect
+      .element(btn)
+      .toHaveAttribute("data-slot", "dropdown-menu-trigger");
+    await btn.click();
+    await expect.element(btn).toHaveAttribute("aria-expanded", "true");
+    await expect.element(btn).toHaveAttribute("data-state", "open");
+    await expect.element(screen.getByText("Item")).toBeInTheDocument();
   });
 
-  it("preserves the user's inline button children", () => {
-    render(
+  it("preserves the user's inline button children", async () => {
+    const screen = await render(
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button>
@@ -49,8 +48,8 @@ describe("Slot in DropdownMenuTrigger asChild — DOM inspection", () => {
         </DropdownMenuContent>
       </DropdownMenu>
     );
-    expect(screen.getByTestId("icon")).toBeInTheDocument();
-    expect(screen.getByTestId("dot")).toBeInTheDocument();
-    expect(screen.getByText("Sort")).toBeInTheDocument();
+    await expect.element(screen.getByTestId("icon")).toBeInTheDocument();
+    await expect.element(screen.getByTestId("dot")).toBeInTheDocument();
+    await expect.element(screen.getByText("Sort")).toBeInTheDocument();
   });
 });

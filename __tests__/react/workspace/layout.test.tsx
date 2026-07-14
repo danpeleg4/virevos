@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -45,21 +45,25 @@ vi.mock("@/app/components/AIAssistant", () => ({
 import WorkSpaceLayout from "@/app/workspace/layout";
 
 describe("WorkSpaceLayout", () => {
-  it("renders children content", () => {
-    render(
+  it("renders children content", async () => {
+    const screen = await render(
       <WorkSpaceLayout>
         <div data-testid="page-content">Dashboard Content</div>
       </WorkSpaceLayout>
     );
-    expect(screen.getByTestId("page-content")).toBeInTheDocument();
+    await expect
+      .element(screen.getByTestId("page-content"))
+      .toBeInTheDocument();
   });
 
-  it("renders sidebar navigation", () => {
-    render(
+  it("renders sidebar navigation", async () => {
+    const screen = await render(
       <WorkSpaceLayout>
         <div />
       </WorkSpaceLayout>
     );
-    expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
+    await expect
+      .element(screen.getByText("Dashboard", { exact: true }).first())
+      .toBeInTheDocument();
   });
 });

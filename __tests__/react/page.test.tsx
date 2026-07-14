@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, type RenderResult } from "vitest-browser-react";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -23,28 +23,39 @@ vi.mock("next-themes", () => ({
 import Page from "@/app/page";
 
 describe("Root Page (Landing)", () => {
-  beforeEach(() => {
-    render(<Page />);
+  let screen: RenderResult;
+
+  beforeEach(async () => {
+    screen = await render(<Page />);
   });
 
-  it("renders Hero section", () => {
-    expect(screen.getByText(/practice flows better/i)).toBeInTheDocument();
+  it("renders Hero section", async () => {
+    await expect
+      .element(screen.getByText(/practice flows better/i))
+      .toBeInTheDocument();
   });
 
-  it("renders Features section", () => {
-    expect(screen.getByText(/case lifecycle automation/i)).toBeInTheDocument();
+  it("renders Features section", async () => {
+    await expect
+      .element(screen.getByText(/case lifecycle automation/i))
+      .toBeInTheDocument();
   });
 
-  it("renders CTA section", () => {
-    expect(screen.getByText(/ready to transform/i)).toBeInTheDocument();
+  it("renders CTA section", async () => {
+    await expect
+      .element(screen.getByText(/ready to transform/i))
+      .toBeInTheDocument();
   });
 
-  it("renders Footer section", () => {
-    expect(screen.getByText(/© 2026 Virevos/i)).toBeInTheDocument();
+  it("renders Footer section", async () => {
+    await expect
+      .element(screen.getByText(/© 2026 Virevos/i))
+      .toBeInTheDocument();
   });
 
-  it("renders navigation", () => {
-    const vireTypes = screen.getAllByText(/virevos/i);
-    expect(vireTypes.length).toBeGreaterThan(0);
+  it("renders navigation", async () => {
+    await expect
+      .element(screen.getByText(/virevos/i).first())
+      .toBeInTheDocument();
   });
 });

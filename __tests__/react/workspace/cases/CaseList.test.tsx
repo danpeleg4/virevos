@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 vi.mock("@tanstack/react-query", () => ({
   useMutation: () => ({ mutate: vi.fn(), isPending: false }),
@@ -62,43 +62,49 @@ describe("CaseList", () => {
     onSelect.mockClear();
   });
 
-  it("renders case names", () => {
-    render(
+  it("renders case names", async () => {
+    const screen = await render(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
-    expect(screen.getByText("Alpha Case")).toBeInTheDocument();
-    expect(screen.getByText("Beta Case")).toBeInTheDocument();
+    await expect.element(screen.getByText("Alpha Case")).toBeInTheDocument();
+    await expect.element(screen.getByText("Beta Case")).toBeInTheDocument();
   });
 
-  it("renders status badges", () => {
-    render(
+  it("renders status badges", async () => {
+    const screen = await render(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
-    expect(screen.getAllByText(/active/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/completed/i).length).toBeGreaterThan(0);
+    await expect
+      .element(screen.getByText(/active/i).first())
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/completed/i).first())
+      .toBeInTheDocument();
   });
 
-  it("calls onSelect when a case row is clicked", () => {
-    render(
+  it("calls onSelect when a case row is clicked", async () => {
+    const screen = await render(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
-    fireEvent.click(screen.getByText("Alpha Case"));
+    await screen.getByText("Alpha Case").click();
     expect(onSelect).toHaveBeenCalledWith(mockCases[0]);
   });
 
-  it("renders 'New Case' button", () => {
-    render(
+  it("renders 'New Case' button", async () => {
+    const screen = await render(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
-    expect(
-      screen.getByRole("button", { name: /new case/i })
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /new case/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders search input", () => {
-    render(
+  it("renders search input", async () => {
+    const screen = await render(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
-    expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByPlaceholder(/search/i))
+      .toBeInTheDocument();
   });
 });

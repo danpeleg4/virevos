@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 const mockSignUp = vi.fn();
@@ -39,32 +39,40 @@ describe("Onboarding Page", () => {
     mockResend.mockReset();
   });
 
-  it("renders Welcome step initially", () => {
-    render(<Onboarding />);
-    expect(screen.getByText(/welcome to virevos/i)).toBeInTheDocument();
+  it("renders Welcome step initially", async () => {
+    const screen = await render(<Onboarding />);
+    await expect
+      .element(screen.getByText(/welcome to virevos/i))
+      .toBeInTheDocument();
   });
 
-  it("renders step indicators", () => {
-    render(<Onboarding />);
-    expect(screen.getByText(/welcome/i)).toBeInTheDocument();
+  it("renders step indicators", async () => {
+    const screen = await render(<Onboarding />);
+    await expect
+      .element(screen.getByText(/welcome/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders 'Get Started' button on welcome step", () => {
-    render(<Onboarding />);
-    expect(
-      screen.getByRole("button", { name: /get started/i })
-    ).toBeInTheDocument();
+  it("renders 'Get Started' button on welcome step", async () => {
+    const screen = await render(<Onboarding />);
+    await expect
+      .element(screen.getByRole("button", { name: /get started/i }))
+      .toBeInTheDocument();
   });
 
-  it("navigates to account step when 'Get Started' is clicked", () => {
-    render(<Onboarding />);
-    fireEvent.click(screen.getByRole("button", { name: /get started/i }));
-    expect(screen.getByText(/create your account/i)).toBeInTheDocument();
+  it("navigates to account step when 'Get Started' is clicked", async () => {
+    const screen = await render(<Onboarding />);
+    await screen.getByRole("button", { name: /get started/i }).click();
+    await expect
+      .element(screen.getByText(/create your account/i))
+      .toBeInTheDocument();
   });
 
-  it("account step renders email and password fields", () => {
-    render(<Onboarding />);
-    fireEvent.click(screen.getByRole("button", { name: /get started/i }));
-    expect(screen.getByPlaceholderText(/company\.com/i)).toBeInTheDocument();
+  it("account step renders email and password fields", async () => {
+    const screen = await render(<Onboarding />);
+    await screen.getByRole("button", { name: /get started/i }).click();
+    await expect
+      .element(screen.getByPlaceholder(/company\.com/i))
+      .toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render } from "vitest-browser-react";
+import { page } from "vitest/browser";
 
 const { pushMock, axiosPostMock } = vi.hoisted(() => ({
   pushMock: vi.fn(),
@@ -60,7 +61,6 @@ Object.defineProperty(navigator, "mediaDevices", {
   },
 });
 
-// Prevent Clerk ESM import chain from failing in Jest
 vi.mock("@/lib/workspace/meetings", () => ({
   startMeeting: vi.fn(),
 }));
@@ -91,38 +91,43 @@ vi.mock("@tanstack/react-query", () => ({
 import InMeetingView from "@/app/meet/[roomId]/page";
 
 describe("InMeetingView Page", () => {
-  it("renders name input before joining", () => {
-    render(<InMeetingView />);
-    expect(screen.getByRole("textbox")).toBeInTheDocument();
+  it("renders name input before joining", async () => {
+    const screen = await render(<InMeetingView />);
+    await expect.element(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
-  it("renders 'Join' button", () => {
-    render(<InMeetingView />);
-    expect(screen.getByRole("button", { name: /join/i })).toBeInTheDocument();
+  it("renders 'Join' button", async () => {
+    const screen = await render(<InMeetingView />);
+    await expect
+      .element(screen.getByRole("button", { name: /join/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders audio/video controls in pre-join UI", () => {
-    render(<InMeetingView />);
-    const buttons = screen.getAllByRole("button");
-    expect(buttons.length).toBeGreaterThan(0);
+  it("renders audio/video controls in pre-join UI", async () => {
+    const screen = await render(<InMeetingView />);
+    await expect
+      .element(screen.getByRole("button").first())
+      .toBeInTheDocument();
   });
 
-  it("renders 'Ready to join?' heading", () => {
-    render(<InMeetingView />);
-    expect(screen.getByText(/ready to join/i)).toBeInTheDocument();
+  it("renders 'Ready to join?' heading", async () => {
+    const screen = await render(<InMeetingView />);
+    await expect
+      .element(screen.getByText(/ready to join/i))
+      .toBeInTheDocument();
   });
 
-  it("renders loading state when meeting info is loading", () => {
+  it("renders loading state when meeting info is loading", async () => {
     mockUseQuery.mockReturnValueOnce({
       data: undefined,
       isLoading: true,
     });
-    const { container } = render(<InMeetingView />);
+    const screen = await render(<InMeetingView />);
     // Loading spinner is a div, not a heading/button
-    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+    expect(screen.container.querySelector(".animate-pulse")).not.toBeNull();
   });
 
-  it("renders pre-meeting screen for upcoming meetings", () => {
+  it("renders pre-meeting screen for upcoming meetings", async () => {
     mockUseQuery.mockReturnValueOnce({
       data: {
         meeting: {
@@ -134,9 +139,13 @@ describe("InMeetingView Page", () => {
       },
       isLoading: false,
     });
-    render(<InMeetingView />);
-    expect(screen.getByText(/start meeting now/i)).toBeInTheDocument();
-    expect(screen.getByText(/scheduled for/i)).toBeInTheDocument();
+    const screen = await render(<InMeetingView />);
+    await expect
+      .element(screen.getByText(/start meeting now/i))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/scheduled for/i))
+      .toBeInTheDocument();
   });
 
   describe("leave behavior", () => {
@@ -145,24 +154,19 @@ describe("InMeetingView Page", () => {
         data: { token: "t", meetingTitle: "Test", url: "wss://x" },
       });
 
-      render(<InMeetingView />);
-      fireEvent.change(screen.getByRole("textbox"), {
-        target: { value: "Tester" },
-      });
-      fireEvent.click(screen.getByRole("button", { name: /join meeting/i }));
+      const screen = await render(<InMeetingView />);
+      await screen.getByRole("textbox").fill("Tester");
+      await screen.getByRole("button", { name: /join meeting/i }).click();
 
       // Wait for joined-state control bar (4 buttons: mute, camera, screen, leave-X)
-      const xButton = await waitFor(() => {
-        const buttons = screen.getAllByRole("button");
+      const xButton = await vi.waitFor(() => {
+        const buttons = screen.getByRole("button").elements();
         if (buttons.length < 4) throw new Error("join not complete");
         return buttons[buttons.length - 1];
       });
-      fireEvent.click(xButton);
+      await page.elementLocator(xButton).click();
 
-      const confirm = await screen.findByRole("button", {
-        name: /leave meeting/i,
-      });
-      fireEvent.click(confirm);
+      await screen.getByRole("button", { name: /leave meeting/i }).click();
     };
 
     it("redirects host to /workspace/dashboard on leave", async () => {

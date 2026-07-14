@@ -1,8 +1,6 @@
-/**
- * @vitest-environment jsdom
- */
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
+import { userEvent } from "vitest/browser";
 
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -57,89 +55,91 @@ import {
 } from "@/app/components/ui/select";
 
 describe("Trivial components", () => {
-  it("Button renders and handles click", () => {
+  it("Button renders and handles click", async () => {
     const handler = vi.fn();
-    render(<Button onClick={handler}>Click</Button>);
-    fireEvent.click(screen.getByRole("button", { name: /click/i }));
+    const screen = await render(<Button onClick={handler}>Click</Button>);
+    await screen.getByRole("button", { name: /click/i }).click();
     expect(handler).toHaveBeenCalled();
   });
 
-  it("Button asChild forwards to child element", () => {
-    render(
+  it("Button asChild forwards to child element", async () => {
+    const screen = await render(
       <Button asChild>
         <a href="/x">Link</a>
       </Button>
     );
     const link = screen.getByRole("link", { name: /link/i });
-    expect(link).toHaveAttribute("href", "/x");
-    expect(link.getAttribute("data-slot")).toBe("button");
+    await expect.element(link).toHaveAttribute("href", "/x");
+    await expect.element(link).toHaveAttribute("data-slot", "button");
   });
 
-  it("Badge renders with default variant", () => {
-    render(<Badge>New</Badge>);
-    expect(screen.getByText("New")).toBeInTheDocument();
+  it("Badge renders with default variant", async () => {
+    const screen = await render(<Badge>New</Badge>);
+    await expect
+      .element(screen.getByText("New", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("Label renders as <label>", () => {
-    render(<Label htmlFor="x">Name</Label>);
-    expect(screen.getByText("Name").tagName).toBe("LABEL");
+  it("Label renders as <label>", async () => {
+    const screen = await render(<Label htmlFor="x">Name</Label>);
+    expect(screen.getByText("Name").element().tagName).toBe("LABEL");
   });
 
-  it("Separator renders with orientation", () => {
-    render(<Separator orientation="vertical" data-testid="sep" />);
-    expect(screen.getByTestId("sep")).toHaveAttribute(
-      "data-orientation",
-      "vertical"
+  it("Separator renders with orientation", async () => {
+    const screen = await render(
+      <Separator orientation="vertical" data-testid="sep" />
     );
+    await expect
+      .element(screen.getByTestId("sep"))
+      .toHaveAttribute("data-orientation", "vertical");
   });
 
-  it("Avatar fallback renders when image fails", () => {
-    render(
+  it("Avatar fallback renders when image fails", async () => {
+    const screen = await render(
       <Avatar>
         <AvatarFallback>AB</AvatarFallback>
       </Avatar>
     );
-    expect(screen.getByText("AB")).toBeInTheDocument();
+    await expect.element(screen.getByText("AB")).toBeInTheDocument();
   });
 });
 
 describe("Checkbox / Switch", () => {
-  it("Checkbox toggles checked state", () => {
+  it("Checkbox toggles checked state", async () => {
     const handler = vi.fn();
-    render(<Checkbox onCheckedChange={handler} />);
+    const screen = await render(<Checkbox onCheckedChange={handler} />);
     const box = screen.getByRole("checkbox");
-    expect(box).toHaveAttribute("data-state", "unchecked");
-    fireEvent.click(box);
+    await expect.element(box).toHaveAttribute("data-state", "unchecked");
+    await box.click();
     expect(handler).toHaveBeenCalledWith(true);
   });
 
-  it("Switch toggles checked state", () => {
+  it("Switch toggles checked state", async () => {
     const handler = vi.fn();
-    render(<Switch onCheckedChange={handler} />);
-    const sw = screen.getByRole("switch");
-    fireEvent.click(sw);
+    const screen = await render(<Switch onCheckedChange={handler} />);
+    await screen.getByRole("switch").click();
     expect(handler).toHaveBeenCalledWith(true);
   });
 
-  it("Checkbox respects controlled checked prop", () => {
-    const { rerender } = render(
+  it("Checkbox respects controlled checked prop", async () => {
+    const screen = await render(
       <Checkbox checked={false} onCheckedChange={() => {}} />
     );
-    expect(screen.getByRole("checkbox")).toHaveAttribute(
-      "data-state",
-      "unchecked"
+    await expect
+      .element(screen.getByRole("checkbox"))
+      .toHaveAttribute("data-state", "unchecked");
+    await screen.rerender(
+      <Checkbox checked={true} onCheckedChange={() => {}} />
     );
-    rerender(<Checkbox checked={true} onCheckedChange={() => {}} />);
-    expect(screen.getByRole("checkbox")).toHaveAttribute(
-      "data-state",
-      "checked"
-    );
+    await expect
+      .element(screen.getByRole("checkbox"))
+      .toHaveAttribute("data-state", "checked");
   });
 });
 
 describe("Tabs", () => {
-  it("renders active tab content and switches on click", () => {
-    render(
+  it("renders active tab content and switches on click", async () => {
+    const screen = await render(
       <Tabs defaultValue="a">
         <TabsList>
           <TabsTrigger value="a">A</TabsTrigger>
@@ -149,16 +149,16 @@ describe("Tabs", () => {
         <TabsContent value="b">Panel B</TabsContent>
       </Tabs>
     );
-    expect(screen.getByText("Panel A")).toBeInTheDocument();
-    expect(screen.queryByText("Panel B")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "B" }));
-    expect(screen.getByText("Panel B")).toBeInTheDocument();
+    await expect.element(screen.getByText("Panel A")).toBeInTheDocument();
+    await expect.element(screen.getByText("Panel B")).not.toBeInTheDocument();
+    await screen.getByRole("tab", { name: "B" }).click();
+    await expect.element(screen.getByText("Panel B")).toBeInTheDocument();
   });
 });
 
 describe("Accordion", () => {
-  it("opens and closes a single item", () => {
-    render(
+  it("opens and closes a single item", async () => {
+    const screen = await render(
       <Accordion type="single" collapsible>
         <AccordionItem value="x">
           <AccordionTrigger>Q</AccordionTrigger>
@@ -166,17 +166,17 @@ describe("Accordion", () => {
         </AccordionItem>
       </Accordion>
     );
-    expect(screen.queryByText("Answer")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Q" }));
-    expect(screen.getByText("Answer")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Q" }));
-    expect(screen.queryByText("Answer")).not.toBeInTheDocument();
+    await expect.element(screen.getByText("Answer")).not.toBeInTheDocument();
+    await screen.getByRole("button", { name: "Q" }).click();
+    await expect.element(screen.getByText("Answer")).toBeInTheDocument();
+    await screen.getByRole("button", { name: "Q" }).click();
+    await expect.element(screen.getByText("Answer")).not.toBeInTheDocument();
   });
 });
 
 describe("Dialog", () => {
-  it("opens on trigger click and closes via Escape", () => {
-    render(
+  it("opens on trigger click and closes via Escape", async () => {
+    const screen = await render(
       <Dialog>
         <DialogTrigger>Open</DialogTrigger>
         <DialogContent>
@@ -184,16 +184,16 @@ describe("Dialog", () => {
         </DialogContent>
       </Dialog>
     );
-    expect(screen.queryByText("Title")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Open" }));
-    expect(screen.getByText("Title")).toBeInTheDocument();
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByText("Title")).not.toBeInTheDocument();
+    await expect.element(screen.getByText("Title")).not.toBeInTheDocument();
+    await screen.getByRole("button", { name: "Open" }).click();
+    await expect.element(screen.getByText("Title")).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(screen.getByText("Title")).not.toBeInTheDocument();
   });
 
-  it("forwards ref to the trigger button (React 19 ref-as-prop)", () => {
+  it("forwards ref to the trigger button (React 19 ref-as-prop)", async () => {
     const ref = React.createRef<HTMLButtonElement>();
-    render(
+    await render(
       <Dialog>
         <DialogTrigger ref={ref}>Open</DialogTrigger>
         <DialogContent>
@@ -205,9 +205,9 @@ describe("Dialog", () => {
     expect(ref.current?.textContent).toBe("Open");
   });
 
-  it("supports a function ref on the trigger", () => {
+  it("supports a function ref on the trigger", async () => {
     let captured: HTMLButtonElement | null = null;
-    render(
+    await render(
       <Dialog>
         <DialogTrigger
           ref={(node) => {
@@ -226,8 +226,8 @@ describe("Dialog", () => {
 });
 
 describe("AlertDialog", () => {
-  it("opens, then Cancel closes", () => {
-    render(
+  it("opens, then Cancel closes", async () => {
+    const screen = await render(
       <AlertDialog>
         <AlertDialogTrigger>Open</AlertDialogTrigger>
         <AlertDialogContent>
@@ -237,31 +237,31 @@ describe("AlertDialog", () => {
         </AlertDialogContent>
       </AlertDialog>
     );
-    fireEvent.click(screen.getByRole("button", { name: "Open" }));
-    expect(screen.getByText("Confirm")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    await screen.getByRole("button", { name: "Open" }).click();
+    await expect.element(screen.getByText("Confirm")).toBeInTheDocument();
+    await screen.getByRole("button", { name: "Cancel" }).click();
+    await expect.element(screen.getByText("Confirm")).not.toBeInTheDocument();
   });
 });
 
 describe("Popover", () => {
-  it("opens on trigger click", () => {
-    render(
+  it("opens on trigger click", async () => {
+    const screen = await render(
       <Popover>
         <PopoverTrigger>Open</PopoverTrigger>
         <PopoverContent>Body</PopoverContent>
       </Popover>
     );
-    expect(screen.queryByText("Body")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Open" }));
-    expect(screen.getByText("Body")).toBeInTheDocument();
+    await expect.element(screen.getByText("Body")).not.toBeInTheDocument();
+    await screen.getByRole("button", { name: "Open" }).click();
+    await expect.element(screen.getByText("Body")).toBeInTheDocument();
   });
 });
 
 describe("DropdownMenu", () => {
-  it("opens, item click closes and fires onSelect", () => {
+  it("opens, item click closes and fires onSelect", async () => {
     const onSelect = vi.fn();
-    render(
+    const screen = await render(
       <DropdownMenu>
         <DropdownMenuTrigger>Menu</DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -269,16 +269,16 @@ describe("DropdownMenu", () => {
         </DropdownMenuContent>
       </DropdownMenu>
     );
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    fireEvent.click(screen.getByText("Item"));
+    await screen.getByRole("button", { name: "Menu" }).click();
+    await screen.getByText("Item").click();
     expect(onSelect).toHaveBeenCalled();
   });
 });
 
 describe("Select", () => {
-  it("renders trigger, shows placeholder, picks an option", () => {
+  it("renders trigger, shows placeholder, picks an option", async () => {
     const onValueChange = vi.fn();
-    render(
+    const screen = await render(
       <Select onValueChange={onValueChange}>
         <SelectTrigger>
           <SelectValue placeholder="Pick" />
@@ -289,9 +289,9 @@ describe("Select", () => {
         </SelectContent>
       </Select>
     );
-    expect(screen.getByText("Pick")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("combobox"));
-    fireEvent.click(screen.getByRole("option", { name: "High" }));
+    await expect.element(screen.getByText("Pick")).toBeInTheDocument();
+    await screen.getByRole("combobox").click();
+    await screen.getByRole("option", { name: "High" }).click();
     expect(onValueChange).toHaveBeenCalledWith("high");
   });
 });

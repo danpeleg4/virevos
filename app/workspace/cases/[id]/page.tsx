@@ -61,7 +61,6 @@ import {
 import { deleteTask, updateTaskStatus } from "@/lib/workspace/tasks";
 import { Case, CaseFile, CaseNote } from "@/types/cases";
 import { Task } from "@/types/tasks";
-import { toast } from "sonner";
 
 function formatNoteDate(raw: Date | string | null | undefined): string {
   if (!raw) return "";
@@ -190,9 +189,6 @@ export function CaseDetailView({
       await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
     } catch (err) {
       console.error("Upload failed:", err);
-      toast.error(
-        "Failed to upload file. You may have reached your storage limit."
-      );
     }
   };
 

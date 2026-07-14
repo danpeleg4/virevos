@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 import type { Integration } from "@/types/integrations";
 
 const mockMutate = vi.fn();
@@ -19,12 +19,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-vi.mock("next/image", () => ({
-  default: (props: { alt: string }) => (
+vi.mock("next/image", () => {
+  function MockImage(props: { alt: string }) {
     // eslint-disable-next-line @next/next/no-img-element
-    <img alt={props.alt} />
-  ),
-}));
+    return <img alt={props.alt} />;
+  }
+  return { __esModule: true, default: MockImage };
+});
 
 vi.mock("@/lib/integrations", () => ({
   disconnectOutlook: vi.fn(),
@@ -52,28 +53,42 @@ beforeEach(() => {
 });
 
 describe("IntegrationSettings", () => {
-  it("renders the integration from props as Not Connected", () => {
-    render(<IntegrationSettings integrations={[outlook(false)]} />);
-    expect(screen.getByText("Microsoft Outlook")).toBeInTheDocument();
-    expect(screen.getByText(/not connected/i)).toBeInTheDocument();
+  it("renders the integration from props as Not Connected", async () => {
+    const screen = await render(
+      <IntegrationSettings integrations={[outlook(false)]} />
+    );
+    await expect
+      .element(screen.getByText("Microsoft Outlook"))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/not connected/i))
+      .toBeInTheDocument();
   });
 
-  it("shows the Connected badge and features when connected", () => {
-    render(<IntegrationSettings integrations={[outlook(true)]} />);
-    expect(screen.getByText(/^connected$/i)).toBeInTheDocument();
-    expect(screen.getByText("Two-way calendar sync")).toBeInTheDocument();
+  it("shows the Connected badge and features when connected", async () => {
+    const screen = await render(
+      <IntegrationSettings integrations={[outlook(true)]} />
+    );
+    await expect.element(screen.getByText(/^connected$/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Two-way calendar sync"))
+      .toBeInTheDocument();
   });
 
-  it("starts the OAuth flow when connecting a disconnected integration", () => {
-    render(<IntegrationSettings integrations={[outlook(false)]} />);
-    fireEvent.click(screen.getByRole("switch"));
+  it("starts the OAuth flow when connecting a disconnected integration", async () => {
+    const screen = await render(
+      <IntegrationSettings integrations={[outlook(false)]} />
+    );
+    await screen.getByRole("switch").click();
     expect(mockPush).toHaveBeenCalledWith("/api/outlook");
     expect(mockMutate).not.toHaveBeenCalled();
   });
 
-  it("disconnects when toggling off a connected integration", () => {
-    render(<IntegrationSettings integrations={[outlook(true)]} />);
-    fireEvent.click(screen.getByRole("switch"));
+  it("disconnects when toggling off a connected integration", async () => {
+    const screen = await render(
+      <IntegrationSettings integrations={[outlook(true)]} />
+    );
+    await screen.getByRole("switch").click();
     expect(mockMutate).toHaveBeenCalledWith({
       id: "outlook",
       action: "disconnect",

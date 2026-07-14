@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 const mockSignInWithPassword = vi.fn();
@@ -29,69 +29,70 @@ describe("Login Page", () => {
     mockResetPasswordForEmail.mockReset();
   });
 
-  it("renders email input", () => {
-    render(<Login />);
-    expect(
-      screen.getByPlaceholderText(/name@company\.com/i)
-    ).toBeInTheDocument();
+  it("renders email input", async () => {
+    const screen = await render(<Login />);
+    await expect
+      .element(screen.getByPlaceholder(/name@company\.com/i))
+      .toBeInTheDocument();
   });
 
-  it("renders password input", () => {
-    render(<Login />);
-    expect(screen.getByPlaceholderText(/••••••••/)).toBeInTheDocument();
+  it("renders password input", async () => {
+    const screen = await render(<Login />);
+    await expect
+      .element(screen.getByPlaceholder(/••••••••/))
+      .toBeInTheDocument();
   });
 
-  it("renders Sign In button", () => {
-    render(<Login />);
-    expect(
-      screen.getByRole("button", { name: /sign in/i })
-    ).toBeInTheDocument();
+  it("renders Sign In button", async () => {
+    const screen = await render(<Login />);
+    await expect
+      .element(screen.getByRole("button", { name: /sign in/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Forgot Password link", () => {
-    render(<Login />);
-    expect(
-      screen.getByRole("button", { name: /forgot password/i })
-    ).toBeInTheDocument();
+  it("renders Forgot Password link", async () => {
+    const screen = await render(<Login />);
+    await expect
+      .element(screen.getByRole("button", { name: /forgot password/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders 'Create One Now' link", () => {
-    render(<Login />);
-    expect(
-      screen.getByRole("button", { name: /create one now/i })
-    ).toBeInTheDocument();
+  it("renders 'Create One Now' link", async () => {
+    const screen = await render(<Login />);
+    await expect
+      .element(screen.getByRole("button", { name: /create one now/i }))
+      .toBeInTheDocument();
   });
 
-  it("navigates to /onboard when 'Create One Now' is clicked", () => {
-    render(<Login />);
-    fireEvent.click(screen.getByRole("button", { name: /create one now/i }));
+  it("navigates to /onboard when 'Create One Now' is clicked", async () => {
+    const screen = await render(<Login />);
+    await screen.getByRole("button", { name: /create one now/i }).click();
     expect(mockPush).toHaveBeenCalledWith("/onboard");
   });
 
-  it("toggles password visibility when eye button is clicked", () => {
-    render(<Login />);
-    const passwordInput = screen.getByPlaceholderText(/••••••••/);
-    expect(passwordInput).toHaveAttribute("type", "password");
-    const eyeBtn = screen.getByRole("button", { name: "" });
-    fireEvent.click(eyeBtn);
-    expect(screen.getByPlaceholderText(/••••••••/)).toHaveAttribute(
-      "type",
-      "text"
-    );
+  it("toggles password visibility when eye button is clicked", async () => {
+    const screen = await render(<Login />);
+    await expect
+      .element(screen.getByPlaceholder(/••••••••/))
+      .toHaveAttribute("type", "password");
+    await screen.getByRole("button", { name: /^$/ }).click();
+    await expect
+      .element(screen.getByPlaceholder(/••••••••/))
+      .toHaveAttribute("type", "text");
   });
 
   it("shows error when sign-in fails", async () => {
     mockSignInWithPassword.mockResolvedValue({
       error: { message: "Invalid credentials" },
     });
-    render(<Login />);
-    fireEvent.change(screen.getByPlaceholderText(/name@company\.com/i), {
-      target: { value: "user@example.com" },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/••••••••/), {
-      target: { value: "wrong" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-    expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument();
+    const screen = await render(<Login />);
+    await screen
+      .getByPlaceholder(/name@company\.com/i)
+      .fill("user@example.com");
+    await screen.getByPlaceholder(/••••••••/).fill("wrong");
+    await screen.getByRole("button", { name: /sign in/i }).click();
+    await expect
+      .element(screen.getByText(/invalid credentials/i))
+      .toBeInTheDocument();
   });
 });

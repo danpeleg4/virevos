@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, type RenderResult } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 
@@ -10,35 +10,49 @@ vi.mock("next/navigation", () => ({
 import { Pricing } from "@/app/components/Pricing";
 
 describe("Pricing", () => {
-  beforeEach(() => {
-    render(<Pricing />);
+  let screen: RenderResult;
+
+  beforeEach(async () => {
+    screen = await render(<Pricing />);
   });
 
-  it("renders Starter plan", () => {
-    expect(screen.getAllByText(/starter/i).length).toBeGreaterThan(0);
+  it("renders Starter plan", async () => {
+    await expect
+      .element(screen.getByText(/starter/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders Professional plan", () => {
-    expect(screen.getAllByText(/professional/i).length).toBeGreaterThan(0);
+  it("renders Professional plan", async () => {
+    await expect
+      .element(screen.getByText(/professional/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders Business plan", () => {
-    expect(screen.getAllByText(/business/i).length).toBeGreaterThan(0);
+  it("renders Business plan", async () => {
+    await expect
+      .element(screen.getByText(/business/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders 'Most Popular' badge", () => {
-    expect(screen.getByText(/most popular/i)).toBeInTheDocument();
+  it("renders 'Most Popular' badge", async () => {
+    await expect.element(screen.getByText(/most popular/i)).toBeInTheDocument();
   });
 
-  it("renders Starter plan price $0", () => {
-    expect(screen.getByText("$0")).toBeInTheDocument();
+  it("renders Starter plan price $0", async () => {
+    await expect
+      .element(screen.getByText("$0", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("renders Professional plan price $79", () => {
-    expect(screen.getByText("$79")).toBeInTheDocument();
+  it("renders Professional plan price $79", async () => {
+    await expect
+      .element(screen.getByText("$79", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("renders Business plan price $129", () => {
-    expect(screen.getByText("$129")).toBeInTheDocument();
+  it("renders Business plan price $129", async () => {
+    await expect
+      .element(screen.getByText("$129", { exact: true }))
+      .toBeInTheDocument();
   });
 });

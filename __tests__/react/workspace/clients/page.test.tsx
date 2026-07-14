@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockUseQuery = vi.fn();
 const mockUseMutation = vi.fn();
@@ -23,6 +23,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/workspace/clients", () => ({
   addAClient: vi.fn(),
   deleteClient: vi.fn(),
+  updateExistingClient: vi.fn(),
 }));
 
 const mockClients = [
@@ -62,56 +63,66 @@ describe("Clients Page", () => {
     });
   });
 
-  it("renders clients table with client names", () => {
-    render(<Clients />);
-    expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByText("Beta LLC")).toBeInTheDocument();
+  it("renders clients table with client names", async () => {
+    const screen = await render(<Clients />);
+    await expect.element(screen.getByText("Acme Corp")).toBeInTheDocument();
+    await expect.element(screen.getByText("Beta LLC")).toBeInTheDocument();
   });
 
-  it("renders search input", () => {
-    render(<Clients />);
-    expect(screen.getByPlaceholderText(/search clients/i)).toBeInTheDocument();
+  it("renders search input", async () => {
+    const screen = await render(<Clients />);
+    await expect
+      .element(screen.getByPlaceholder(/search clients/i))
+      .toBeInTheDocument();
   });
 
-  it("renders Add Client button", () => {
-    render(<Clients />);
-    expect(
-      screen.getByRole("button", { name: /add client/i })
-    ).toBeInTheDocument();
+  it("renders Add Client button", async () => {
+    const screen = await render(<Clients />);
+    await expect
+      .element(screen.getByRole("button", { name: /add client/i }))
+      .toBeInTheDocument();
   });
 
-  it("opens add client dialog when button is clicked", () => {
-    render(<Clients />);
-    fireEvent.click(screen.getByRole("button", { name: /add client/i }));
-    expect(screen.getByText("Add New Client")).toBeInTheDocument();
+  it("opens add client dialog when button is clicked", async () => {
+    const screen = await render(<Clients />);
+    await screen.getByRole("button", { name: /add client/i }).click();
+    await expect
+      .element(screen.getByText("Add New Client", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("renders client status badges", () => {
-    render(<Clients />);
-    expect(screen.getByText("Active")).toBeInTheDocument();
-    expect(screen.getByText("Inactive")).toBeInTheDocument();
+  it("renders client status badges", async () => {
+    const screen = await render(<Clients />);
+    await expect
+      .element(screen.getByText("Active", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Inactive", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("filters clients by search query", () => {
-    render(<Clients />);
-    fireEvent.change(screen.getByPlaceholderText(/search clients/i), {
-      target: { value: "acme" },
-    });
-    expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.queryByText("Beta LLC")).not.toBeInTheDocument();
+  it("filters clients by search query", async () => {
+    const screen = await render(<Clients />);
+    await screen.getByPlaceholder(/search clients/i).fill("acme");
+    await expect.element(screen.getByText("Acme Corp")).toBeInTheDocument();
+    await expect.element(screen.getByText("Beta LLC")).not.toBeInTheDocument();
   });
 
-  it("renders pagination controls", () => {
-    render(<Clients />);
-    expect(
-      screen.getByRole("button", { name: /previous/i })
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /next/i })).toBeInTheDocument();
+  it("renders pagination controls", async () => {
+    const screen = await render(<Clients />);
+    await expect
+      .element(screen.getByRole("button", { name: /previous/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /next/i }))
+      .toBeInTheDocument();
   });
 
-  it("shows empty state when no clients", () => {
+  it("shows empty state when no clients", async () => {
     mockUseQuery.mockReturnValue({ data: [], isLoading: false, error: null });
-    render(<Clients />);
-    expect(screen.getByText(/no clients yet/i)).toBeInTheDocument();
+    const screen = await render(<Clients />);
+    await expect
+      .element(screen.getByText(/no clients yet/i))
+      .toBeInTheDocument();
   });
 });

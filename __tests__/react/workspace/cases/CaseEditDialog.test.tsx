@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockMutate = vi.fn();
 
@@ -46,8 +46,8 @@ describe("CaseEditDialog", () => {
     onOpenChange.mockClear();
   });
 
-  it("renders dialog when open=true", () => {
-    render(
+  it("renders dialog when open=true", async () => {
+    const screen = await render(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -55,11 +55,13 @@ describe("CaseEditDialog", () => {
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByText("Edit Case")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Edit Case", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("does not render content when open=false", () => {
-    render(
+  it("does not render content when open=false", async () => {
+    const screen = await render(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -67,11 +69,13 @@ describe("CaseEditDialog", () => {
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.queryByText("Edit Case")).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Edit Case", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
-  it("pre-fills the case name", () => {
-    render(
+  it("pre-fills the case name", async () => {
+    await render(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -79,11 +83,17 @@ describe("CaseEditDialog", () => {
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByDisplayValue("Existing Case")).toBeInTheDocument();
+    // no getByDisplayValue locator; assert an input carries the value
+    await vi.waitFor(() => {
+      const hasValue = Array.from(document.querySelectorAll("input")).some(
+        (input) => input.value === "Existing Case"
+      );
+      expect(hasValue).toBe(true);
+    });
   });
 
-  it("renders Save Changes button", () => {
-    render(
+  it("renders Save Changes button", async () => {
+    const screen = await render(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -91,13 +101,13 @@ describe("CaseEditDialog", () => {
         onOpenChange={onOpenChange}
       />
     );
-    expect(
-      screen.getByRole("button", { name: /save changes/i })
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /save changes/i }))
+      .toBeInTheDocument();
   });
 
-  it("calls mutation on save", () => {
-    render(
+  it("calls mutation on save", async () => {
+    const screen = await render(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -105,7 +115,7 @@ describe("CaseEditDialog", () => {
         onOpenChange={onOpenChange}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    await screen.getByRole("button", { name: /save changes/i }).click();
     expect(mockMutate).toHaveBeenCalledTimes(1);
   });
 });

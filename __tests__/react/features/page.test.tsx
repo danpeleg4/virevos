@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 
@@ -20,18 +20,24 @@ vi.mock("@/lib/supabase/client", () => ({
 import FeaturesPage from "@/app/features/page";
 
 describe("Features Page", () => {
-  it("renders features content", () => {
-    render(<FeaturesPage />);
-    expect(screen.getAllByText(/AI Assistant/i).length).toBeGreaterThan(0);
+  it("renders features content", async () => {
+    const screen = await render(<FeaturesPage />);
+    await expect
+      .element(screen.getByText(/AI Assistant/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders navigation", () => {
-    render(<FeaturesPage />);
-    expect(screen.getAllByText(/virevos/i).length).toBeGreaterThan(0);
+  it("renders navigation", async () => {
+    const screen = await render(<FeaturesPage />);
+    await expect
+      .element(screen.getByText(/virevos/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders footer", () => {
-    render(<FeaturesPage />);
-    expect(screen.getByText(/© 2026 Virevos/i)).toBeInTheDocument();
+  it("renders footer", async () => {
+    const screen = await render(<FeaturesPage />);
+    await expect
+      .element(screen.getByText(/© 2026 Virevos/i))
+      .toBeInTheDocument();
   });
 });

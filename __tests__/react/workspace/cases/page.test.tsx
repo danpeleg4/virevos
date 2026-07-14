@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockUseQuery = vi.fn();
 const mockUseMutation = vi.fn();
@@ -69,14 +69,18 @@ describe("Cases Page", () => {
     });
   });
 
-  it("renders case names", () => {
-    render(<CasesPage />);
-    expect(screen.getByText("Website Redesign")).toBeInTheDocument();
-    expect(screen.getByText("Mobile App")).toBeInTheDocument();
+  it("renders case names", async () => {
+    const screen = await render(<CasesPage />);
+    await expect
+      .element(screen.getByText("Website Redesign"))
+      .toBeInTheDocument();
+    await expect.element(screen.getByText("Mobile App")).toBeInTheDocument();
   });
 
-  it("renders case status indicators", () => {
-    render(<CasesPage />);
-    expect(screen.getAllByText(/active|completed/i).length).toBeGreaterThan(0);
+  it("renders case status indicators", async () => {
+    const screen = await render(<CasesPage />);
+    await expect
+      .element(screen.getByText(/active|completed/i).first())
+      .toBeInTheDocument();
   });
 });

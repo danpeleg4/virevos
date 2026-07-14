@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockUseQuery = vi.fn();
 const mockUseMutation = vi.fn();
@@ -66,24 +66,30 @@ describe("Billing Page", () => {
     });
   });
 
-  it("renders current plan name", () => {
-    render(<Billing />);
-    expect(screen.getAllByText(/professional/i).length).toBeGreaterThan(0);
+  it("renders current plan name", async () => {
+    const screen = await render(<Billing />);
+    await expect
+      .element(screen.getByText(/professional/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders usage section", () => {
-    render(<Billing />);
-    expect(screen.getAllByText(/clients/i).length).toBeGreaterThan(0);
+  it("renders usage section", async () => {
+    const screen = await render(<Billing />);
+    await expect
+      .element(screen.getByText(/clients/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders billing history", () => {
-    render(<Billing />);
-    expect(screen.getByText(/billing history/i)).toBeInTheDocument();
+  it("renders billing history", async () => {
+    const screen = await render(<Billing />);
+    await expect
+      .element(screen.getByText(/billing history/i))
+      .toBeInTheDocument();
   });
 
-  it("renders payment method info", () => {
-    render(<Billing />);
-    expect(screen.getByText(/visa/i)).toBeInTheDocument();
-    expect(screen.getByText(/4242/i)).toBeInTheDocument();
+  it("renders payment method info", async () => {
+    const screen = await render(<Billing />);
+    await expect.element(screen.getByText(/visa/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/4242/i)).toBeInTheDocument();
   });
 });

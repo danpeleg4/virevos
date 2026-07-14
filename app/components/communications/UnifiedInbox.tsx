@@ -52,7 +52,6 @@ import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { PortalChatPane } from "./PortalChatPane";
-import { toast } from "sonner";
 import axios from "axios";
 import type {
   InboxMessage,
@@ -292,10 +291,9 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     setIsSyncing(true);
     try {
       await syncOutlookInbox();
-      toast.success("Emails synced successfully");
       await refetch();
-    } catch {
-      toast.error("Sync failed");
+    } catch (err) {
+      console.error("Sync failed:", err);
     } finally {
       setIsSyncing(false);
     }
@@ -371,7 +369,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           queryClient.setQueryData(["portal-chat-conversations"], prev);
         }
         setSelectedMessage(previousSelected);
-        toast.error("Action failed");
       }
       return;
     }
@@ -402,7 +399,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       // Revert optimistic update on failure
       queryClient.setQueryData(emailsQueryKey, previousData);
       setSelectedMessage(previousSelected);
-      toast.error("Action failed");
     }
   };
 
@@ -442,9 +438,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         await queryClient.invalidateQueries({
           queryKey: ["portal-chat-thread", clientId],
         });
-        toast.success("Chat deleted");
-      } catch {
-        toast.error("Delete failed");
+      } catch (err) {
+        console.error("Delete failed:", err);
       }
       return;
     }
@@ -452,9 +447,8 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       await deleteOutlookMessage(Number(id));
       removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
-      toast.success("Message deleted");
-    } catch {
-      toast.error("Delete failed");
+    } catch (err) {
+      console.error("Delete failed:", err);
     }
   };
 
@@ -479,9 +473,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
           },
           type: "schedule",
         });
-        toast.success(
-          `Reply scheduled for ${pendingSchedule.date.toLocaleDateString()} at ${pendingSchedule.time}`
-        );
         setReplyText("");
         setPendingAttachments([]);
         setPendingSchedule(null);
@@ -503,14 +494,12 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
               mimeType: f.mimeType,
             })),
         });
-        toast.success("Reply sent successfully");
         setReplyText("");
         setPendingAttachments([]);
         await refetch();
       }
     } catch (err) {
-      const error = err as Error;
-      toast.error(error.message || "Failed to send reply");
+      console.error("Failed to send reply:", err);
     } finally {
       setIsSending(false);
     }
@@ -828,9 +817,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           wasArchived ? "unarchive" : "archive"
                         );
                         if (!wasArchived) setSelectedMessage(null);
-                        toast.success(
-                          wasArchived ? "Chat unarchived" : "Chat archived"
-                        );
                       }}
                     >
                       <Archive
@@ -849,11 +835,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           selectedMessage.id,
                           selectedMessage.starred ? "unstar" : "star"
                         );
-                        toast.success(
-                          selectedMessage.starred
-                            ? "Removed from starred"
-                            : "Added to starred"
-                        );
                       }}
                     >
                       <Star
@@ -869,7 +850,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       className="cursor-pointer"
                       onClick={async () => {
                         await applyAction(selectedMessage.id, "markUnread");
-                        toast.success("Marked as unread");
                       }}
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -959,11 +939,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           );
                           if (!selectedMessage.archived)
                             setSelectedMessage(null);
-                          toast.success(
-                            selectedMessage.archived
-                              ? "Message unarchived"
-                              : "Message archived"
-                          );
                         }}
                       >
                         <Archive
@@ -978,11 +953,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                             selectedMessage.id,
                             selectedMessage.starred
                           );
-                          toast.success(
-                            selectedMessage.starred
-                              ? "Removed from starred"
-                              : "Added to starred"
-                          );
                         }}
                       >
                         <Star
@@ -996,11 +966,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                           await applyAction(
                             selectedMessage.id,
                             selectedMessage.unread ? "markRead" : "markUnread"
-                          );
-                          toast.success(
-                            selectedMessage.unread
-                              ? "Marked as read"
-                              : "Marked as unread"
                           );
                         }}
                       >
@@ -1336,12 +1301,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                         threadId: selectedMessage.threadId,
                         replyToOutlookId: selectedMessage.outlookId,
                       });
-                      toast.success("Reply sent successfully");
                       setShowAIComposer(false);
                       await refetch();
                     } catch (err) {
-                      const error = err as Error;
-                      toast.error(error.message || "Failed to send");
+                      console.error("Failed to send:", err);
                     } finally {
                       setIsSending(false);
                     }
@@ -1395,7 +1358,6 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
             const newFiles = files.filter((f) => !existingIds.has(f.id));
             return [...prev, ...newFiles];
           });
-          toast.success(`${files.length} file(s) ready to attach`);
         }}
       />
       <ScheduleMessageDialog

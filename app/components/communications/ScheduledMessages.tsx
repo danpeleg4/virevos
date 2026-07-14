@@ -36,7 +36,6 @@ import {
   FileText,
   Target,
 } from "lucide-react";
-import { toast } from "sonner";
 import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
 import { type ScheduleEmailInput } from "@/lib/scheduled_emails";
@@ -93,38 +92,6 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     },
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-            <Clock className="h-3 w-3" />
-            Scheduled
-          </span>
-        );
-      case "sent":
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            Sent
-          </span>
-        );
-      case "failed":
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-            Failed
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted/50 text-muted-foreground border border-border">
-            {status}
-          </span>
-        );
-    }
-  };
-
   const sendNowMutation = useMutation({
     mutationFn: async (msg: ScheduledEmail) => {
       await axios.post("/api/scheduled-emails", {
@@ -151,14 +118,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       );
       return { previous };
     },
-    onSuccess: () => {
-      toast.success("Message sent successfully");
-    },
     onError: (_error, _msg, context) => {
       if (context?.previous) {
         queryClient.setQueryData(["scheduled-emails"], context.previous);
       }
-      toast.error("Failed to send message");
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
@@ -200,7 +163,6 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       return { previous };
     },
     onSuccess: () => {
-      toast.success("Message scheduled successfully");
       setFormToEmail("");
       setFormToName("");
       setFormSubject("");
@@ -212,16 +174,46 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       if (context?.previous) {
         queryClient.setQueryData(["scheduled-emails"], context.previous);
       }
-      toast.error("Failed to schedule message");
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
     },
   });
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+            <Clock className="h-3 w-3" />
+            Scheduled
+          </span>
+        );
+      case "sent":
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            Sent
+          </span>
+        );
+      case "failed":
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            Failed
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md font-medium bg-muted/50 text-muted-foreground border border-border">
+            {status}
+          </span>
+        );
+    }
+  };
+
   const handleSchedule = () => {
     if (!formToEmail || !formSubject || !formBody || !formDate) {
-      toast.error("Please fill in all required fields");
       return;
     }
 

@@ -1,9 +1,6 @@
-/**
- * @vitest-environment jsdom
- */
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render } from "vitest-browser-react";
+import { userEvent } from "vitest/browser";
 
 import {
   DropdownMenu,
@@ -14,8 +11,7 @@ import {
 
 describe("DropdownMenu with asChild trigger (real-event sequence)", () => {
   it("opens via userEvent click on the wrapped button", async () => {
-    const user = userEvent.setup();
-    render(
+    const screen = await render(
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button>Sort</button>
@@ -25,8 +21,10 @@ describe("DropdownMenu with asChild trigger (real-event sequence)", () => {
         </DropdownMenuContent>
       </DropdownMenu>
     );
-    expect(screen.queryByText("Name (A-Z)")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Sort" }));
-    expect(screen.queryByText("Name (A-Z)")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Name (A-Z)"))
+      .not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Sort" }));
+    await expect.element(screen.getByText("Name (A-Z)")).toBeInTheDocument();
   });
 });

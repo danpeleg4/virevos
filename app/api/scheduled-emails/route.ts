@@ -49,6 +49,8 @@ export async function POST(req: Request) {
       );
     } else if (body.type == "schedule") {
       await createScheduledEmail(body.data, DrizzleInstance);
+    } else {
+      return NextResponse.json({ success: false });
     }
     return NextResponse.json({ success: true });
   } catch (err) {

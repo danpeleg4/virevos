@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockMutate = vi.fn();
 
@@ -32,6 +32,18 @@ const mockClient = {
 
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
 
+// no getByDisplayValue locator in browser mode; assert a field carries the value
+const expectFieldWithValue = async (value: string) => {
+  await vi.waitFor(() => {
+    const match = Array.from(
+      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        "input, textarea"
+      )
+    ).some((field) => field.value === value);
+    expect(match).toBe(true);
+  });
+};
+
 describe("ClientEditDialog", () => {
   const onOpenChange = vi.fn();
 
@@ -40,64 +52,68 @@ describe("ClientEditDialog", () => {
     onOpenChange.mockClear();
   });
 
-  it("renders dialog when open=true", () => {
-    render(
+  it("renders dialog when open=true", async () => {
+    const screen = await render(
       <ClientEditDialog
         aClient={mockClient}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByText("Edit Client")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Edit Client", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("does not render content when open=false", () => {
-    render(
+  it("does not render content when open=false", async () => {
+    const screen = await render(
       <ClientEditDialog
         aClient={mockClient}
         open={false}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.queryByText("Edit Client")).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Edit Client", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
-  it("pre-fills name, email, phone, and notes", () => {
-    render(
+  it("pre-fills name, email, phone, and notes", async () => {
+    await render(
       <ClientEditDialog
         aClient={mockClient}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByDisplayValue("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("contact@acme.com")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("555-1234")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Long-time client")).toBeInTheDocument();
+    await expectFieldWithValue("Acme Corp");
+    await expectFieldWithValue("contact@acme.com");
+    await expectFieldWithValue("555-1234");
+    await expectFieldWithValue("Long-time client");
   });
 
-  it("renders Save Changes button", () => {
-    render(
+  it("renders Save Changes button", async () => {
+    const screen = await render(
       <ClientEditDialog
         aClient={mockClient}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(
-      screen.getByRole("button", { name: /save changes/i })
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /save changes/i }))
+      .toBeInTheDocument();
   });
 
-  it("calls mutation on save with current field values", () => {
-    render(
+  it("calls mutation on save with current field values", async () => {
+    const screen = await render(
       <ClientEditDialog
         aClient={mockClient}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    await screen.getByRole("button", { name: /save changes/i }).click();
     expect(mockMutate).toHaveBeenCalledTimes(1);
     expect(mockMutate).toHaveBeenCalledWith({
       id: 1,
@@ -109,42 +125,42 @@ describe("ClientEditDialog", () => {
     });
   });
 
-  it("normalizes a non-active stored status to inactive", () => {
-    render(
+  it("normalizes a non-active stored status to inactive", async () => {
+    const screen = await render(
       <ClientEditDialog
         aClient={{ ...mockClient, status: "inactive" }}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    await screen.getByRole("button", { name: /save changes/i }).click();
     expect(mockMutate).toHaveBeenCalledWith(
       expect.objectContaining({ status: "inactive" })
     );
   });
 
-  it("disables Save when name is empty", () => {
-    render(
+  it("disables Save when name is empty", async () => {
+    const screen = await render(
       <ClientEditDialog
         aClient={{ ...mockClient, name: "" }}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(
-      screen.getByRole("button", { name: /save changes/i })
-    ).toBeDisabled();
+    await expect
+      .element(screen.getByRole("button", { name: /save changes/i }))
+      .toBeDisabled();
   });
 
-  it("calls onOpenChange(false) when Cancel is clicked", () => {
-    render(
+  it("calls onOpenChange(false) when Cancel is clicked", async () => {
+    const screen = await render(
       <ClientEditDialog
         aClient={mockClient}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    await screen.getByRole("button", { name: /cancel/i }).click();
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

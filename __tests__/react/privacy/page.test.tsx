@@ -1,18 +1,18 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 import PrivacyPolicyPage from "@/app/privacy/page";
 
 describe("Privacy Policy Page", () => {
-  it("renders Privacy Policy heading", () => {
-    render(<PrivacyPolicyPage />);
-    expect(
-      screen.getByRole("heading", { name: /privacy policy/i })
-    ).toBeInTheDocument();
+  it("renders Privacy Policy heading", async () => {
+    const screen = await render(<PrivacyPolicyPage />);
+    await expect
+      .element(screen.getByRole("heading", { name: /privacy policy/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Introduction section", () => {
-    render(<PrivacyPolicyPage />);
-    expect(screen.getByText(/introduction/i)).toBeInTheDocument();
+  it("renders Introduction section", async () => {
+    const screen = await render(<PrivacyPolicyPage />);
+    await expect.element(screen.getByText(/introduction/i)).toBeInTheDocument();
   });
 });

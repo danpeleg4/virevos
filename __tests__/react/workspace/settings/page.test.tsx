@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
+import { page } from "vitest/browser";
 
 const mockUseQuery = vi.fn();
 const mockMutate = vi.fn();
@@ -68,106 +69,112 @@ beforeEach(() => {
 });
 
 describe("Settings Page", () => {
-  it("renders Settings heading", () => {
-    render(<Settings />);
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+  it("renders Settings heading", async () => {
+    const screen = await render(<Settings />);
+    await expect
+      .element(screen.getByText("Settings", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("renders Profile tab", () => {
-    render(<Settings />);
-    expect(
-      screen.getByRole("button", { name: /profile/i })
-    ).toBeInTheDocument();
+  it("renders Profile tab", async () => {
+    const screen = await render(<Settings />);
+    await expect
+      .element(screen.getByRole("button", { name: /profile/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Notifications tab", () => {
-    render(<Settings />);
-    expect(
-      screen.getByRole("button", { name: /notifications/i })
-    ).toBeInTheDocument();
+  it("renders Notifications tab", async () => {
+    const screen = await render(<Settings />);
+    await expect
+      .element(screen.getByRole("button", { name: /notifications/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Security tab", () => {
-    render(<Settings />);
-    expect(
-      screen.getByRole("button", { name: /security/i })
-    ).toBeInTheDocument();
+  it("renders Security tab", async () => {
+    const screen = await render(<Settings />);
+    await expect
+      .element(screen.getByRole("button", { name: /security/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Integrations tab", () => {
-    render(<Settings />);
-    expect(
-      screen.getByRole("button", { name: /integrations/i })
-    ).toBeInTheDocument();
+  it("renders Integrations tab", async () => {
+    const screen = await render(<Settings />);
+    await expect
+      .element(screen.getByRole("button", { name: /integrations/i }))
+      .toBeInTheDocument();
   });
 
-  it("shows profile content by default", () => {
-    render(<Settings />);
+  it("shows profile content by default", async () => {
+    const screen = await render(<Settings />);
     // Default tab is profile — shows the Full name field
-    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByLabelText(/full name/i))
+      .toBeInTheDocument();
   });
 
-  it("switches to Notifications tab when clicked", () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
-    expect(screen.getByText(/product updates/i)).toBeInTheDocument();
+  it("switches to Notifications tab when clicked", async () => {
+    const screen = await render(<Settings />);
+    await screen.getByRole("button", { name: /notifications/i }).click();
+    await expect
+      .element(screen.getByText(/product updates/i))
+      .toBeInTheDocument();
   });
 
-  it("reflects prefetched notification preferences in the toggles", () => {
+  it("reflects prefetched notification preferences in the toggles", async () => {
     mockUseQuery.mockImplementation(
       mockQueriesByKey({ weeklySummary: true, productUpdates: false })
     );
-    render(<Settings />);
-    fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
-    const product = screen.getByRole("switch");
-    expect(product).not.toBeChecked();
+    const screen = await render(<Settings />);
+    await screen.getByRole("button", { name: /notifications/i }).click();
+    await expect.element(screen.getByRole("switch")).not.toBeChecked();
   });
 
-  it("saves a notification preference via the mutation", () => {
+  it("saves a notification preference via the mutation", async () => {
     mockUseQuery.mockImplementation(
       mockQueriesByKey({ weeklySummary: false, productUpdates: false })
     );
-    render(<Settings />);
-    fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
-    const [weekly] = screen.getAllByRole("switch");
-    fireEvent.click(weekly);
+    const screen = await render(<Settings />);
+    await screen.getByRole("button", { name: /notifications/i }).click();
+    await screen.getByRole("switch").first().click();
     expect(mockMutate).toHaveBeenCalledWith(true);
   });
 
-  it("switches to Security tab when clicked", () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByRole("button", { name: /security/i }));
-    expect(screen.getByText(/change password/i)).toBeInTheDocument();
+  it("switches to Security tab when clicked", async () => {
+    const screen = await render(<Settings />);
+    await screen.getByRole("button", { name: /security/i }).click();
+    await expect
+      .element(screen.getByText(/change password/i))
+      .toBeInTheDocument();
   });
 
-  it("switches to Integrations tab when clicked", () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByRole("button", { name: /integrations/i }));
-    expect(screen.getByTestId("integration-settings")).toBeInTheDocument();
+  it("switches to Integrations tab when clicked", async () => {
+    const screen = await render(<Settings />);
+    await screen.getByRole("button", { name: /integrations/i }).click();
+    await expect
+      .element(screen.getByTestId("integration-settings"))
+      .toBeInTheDocument();
   });
 
-  it("seeds the full name field from the loaded profile", () => {
-    render(<Settings />);
-    const input = screen.getByLabelText(/full name/i) as HTMLInputElement;
-    expect(input.value).toBe("John Doe");
+  it("seeds the full name field from the loaded profile", async () => {
+    const screen = await render(<Settings />);
+    await expect
+      .element(screen.getByLabelText(/full name/i))
+      .toHaveValue("John Doe");
   });
 
-  it("updates the full name field on input", () => {
-    render(<Settings />);
-    const input = screen.getByLabelText(/full name/i) as HTMLInputElement;
-    fireEvent.change(input, { target: { value: "Jane Doe" } });
-    expect(input.value).toBe("Jane Doe");
+  it("updates the full name field on input", async () => {
+    const screen = await render(<Settings />);
+    await screen.getByLabelText(/full name/i).fill("Jane Doe");
+    await expect
+      .element(screen.getByLabelText(/full name/i))
+      .toHaveValue("Jane Doe");
   });
 
-  it("saves the edited profile via the mutation", () => {
-    render(<Settings />);
-    fireEvent.change(screen.getByLabelText(/full name/i), {
-      target: { value: "Jane Doe" },
-    });
-    fireEvent.change(screen.getByLabelText(/job title/i), {
-      target: { value: "Attorney" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
+  it("saves the edited profile via the mutation", async () => {
+    const screen = await render(<Settings />);
+    await screen.getByLabelText(/full name/i).fill("Jane Doe");
+    await screen.getByLabelText(/job title/i).fill("Attorney");
+    await screen.getByRole("button", { name: /^save$/i }).click();
     expect(mockMutate).toHaveBeenCalledWith({
       name: "Jane Doe",
       jobTitle: "Attorney",
@@ -176,48 +183,53 @@ describe("Settings Page", () => {
     });
   });
 
-  it("disables Save when the name is unchanged", () => {
-    render(<Settings />);
-    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
+  it("disables Save when the name is unchanged", async () => {
+    const screen = await render(<Settings />);
+    await expect
+      .element(screen.getByRole("button", { name: /^save$/i }))
+      .toBeDisabled();
   });
 
-  it("disables Save when the name is emptied", () => {
-    render(<Settings />);
-    const input = screen.getByLabelText(/full name/i) as HTMLInputElement;
-    fireEvent.change(input, { target: { value: "   " } });
-    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
+  it("disables Save when the name is emptied", async () => {
+    const screen = await render(<Settings />);
+    await screen.getByLabelText(/full name/i).fill("   ");
+    await expect
+      .element(screen.getByRole("button", { name: /^save$/i }))
+      .toBeDisabled();
   });
 
-  it("uploads a selected avatar image via the mutation", () => {
-    const { container } = render(<Settings />);
-    const fileInput = container.querySelector(
-      'input[type="file"]'
-    ) as HTMLInputElement;
+  it("uploads a selected avatar image via the mutation", async () => {
+    const { container } = await render(<Settings />);
+    const fileInput = page.elementLocator(
+      container.querySelector('input[type="file"]')!
+    );
     const file = new File(["x"], "avatar.png", { type: "image/png" });
-    fireEvent.change(fileInput, { target: { files: [file] } });
+    await fileInput.upload(file);
     expect(mockMutate).toHaveBeenCalledWith(file);
   });
 
-  it("rejects unsupported avatar file types without uploading", () => {
-    const { container } = render(<Settings />);
-    const fileInput = container.querySelector(
-      'input[type="file"]'
-    ) as HTMLInputElement;
+  it("rejects unsupported avatar file types without uploading", async () => {
+    const screen = await render(<Settings />);
+    const fileInput = page.elementLocator(
+      screen.container.querySelector('input[type="file"]')!
+    );
     const file = new File(["x"], "doc.pdf", { type: "application/pdf" });
-    fireEvent.change(fileInput, { target: { files: [file] } });
+    await fileInput.upload(file);
     expect(mockMutate).not.toHaveBeenCalled();
-    expect(screen.getByText(/unsupported image type/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/unsupported image type/i))
+      .toBeInTheDocument();
   });
 
-  it("renders the avatar image when a URL is available", () => {
+  it("renders the avatar image when a URL is available", async () => {
     mockUseQuery.mockImplementation(
       mockQueriesByKey({ avatarUrl: { url: "https://cdn/avatar.png" } })
     );
-    render(<Settings />);
+    const screen = await render(<Settings />);
     // AvatarImage only renders once the underlying image reports "loaded",
     // but the file input and upload control should always be present.
-    expect(
-      screen.getByRole("button", { name: /upload new/i })
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /upload new/i }))
+      .toBeInTheDocument();
   });
 });

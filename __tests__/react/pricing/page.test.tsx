@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, type RenderResult } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 
@@ -24,61 +24,78 @@ vi.mock("next-themes", () => ({
 import PricingPage from "@/app/pricing/page";
 
 describe("Pricing Page", () => {
-  it("renders the hero heading", () => {
-    render(<PricingPage />);
-    expect(screen.getByText(/plans that scale/i)).toBeInTheDocument();
+  let screen: RenderResult;
+
+  beforeEach(async () => {
+    screen = await render(<PricingPage />);
   });
 
-  it("renders simple transparent pricing badge", () => {
-    render(<PricingPage />);
-    expect(
-      screen.getByText(/simple, transparent pricing/i)
-    ).toBeInTheDocument();
+  it("renders the hero heading", async () => {
+    await expect
+      .element(screen.getByText(/plans that scale/i))
+      .toBeInTheDocument();
   });
 
-  it("renders the comparison table heading", () => {
-    render(<PricingPage />);
-    expect(screen.getAllByText(/compare plans/i).length).toBeGreaterThan(0);
+  it("renders simple transparent pricing badge", async () => {
+    await expect
+      .element(screen.getByText(/simple, transparent pricing/i))
+      .toBeInTheDocument();
   });
 
-  it("renders FAQ section heading", () => {
-    render(<PricingPage />);
-    expect(screen.getByText(/frequently asked questions/i)).toBeInTheDocument();
+  it("renders the comparison table heading", async () => {
+    await expect
+      .element(screen.getByText(/compare plans/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders FAQ questions", () => {
-    render(<PricingPage />);
-    expect(screen.getByText(/can i change my plan later/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/what payment methods do you accept/i)
-    ).toBeInTheDocument();
+  it("renders FAQ section heading", async () => {
+    await expect
+      .element(screen.getByText(/frequently asked questions/i))
+      .toBeInTheDocument();
   });
 
-  it("renders Start for free CTA button", () => {
-    render(<PricingPage />);
-    const startFreeButtons = screen.getAllByText(/start for free/i);
-    expect(startFreeButtons.length).toBeGreaterThan(0);
+  it("renders FAQ questions", async () => {
+    await expect
+      .element(screen.getByText(/can i change my plan later/i))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/what payment methods do you accept/i))
+      .toBeInTheDocument();
   });
 
-  it("renders Talk to sales button", () => {
-    render(<PricingPage />);
-    expect(screen.getAllByText(/talk to sales/i).length).toBeGreaterThan(0);
+  it("renders Start for free CTA button", async () => {
+    await expect
+      .element(screen.getByText(/start for free/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders navigation", () => {
-    render(<PricingPage />);
-    expect(screen.getAllByText(/virevos/i).length).toBeGreaterThan(0);
+  it("renders Talk to sales button", async () => {
+    await expect
+      .element(screen.getByText(/talk to sales/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders footer", () => {
-    render(<PricingPage />);
-    expect(screen.getByText(/© 2026 Virevos/i)).toBeInTheDocument();
+  it("renders navigation", async () => {
+    await expect
+      .element(screen.getByText(/virevos/i).first())
+      .toBeInTheDocument();
   });
 
-  it("renders comparison table columns", () => {
-    render(<PricingPage />);
-    expect(screen.getAllByText(/Starter/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Professional/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Business/i).length).toBeGreaterThan(0);
+  it("renders footer", async () => {
+    await expect
+      .element(screen.getByText(/© 2026 Virevos/i))
+      .toBeInTheDocument();
+  });
+
+  it("renders comparison table columns", async () => {
+    await expect
+      .element(screen.getByText(/Starter/i).first())
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/Professional/i).first())
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/Business/i).first())
+      .toBeInTheDocument();
   });
 });

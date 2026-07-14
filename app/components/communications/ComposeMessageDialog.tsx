@@ -16,7 +16,6 @@ import {
 } from "../ui/select";
 import { Separator } from "../ui/separator";
 import { Mail, MessageSquare, Send, Loader2, Paperclip, X } from "lucide-react";
-import { toast } from "sonner";
 import axios from "axios";
 import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
 import { sendAgencyChatMessage } from "@/lib/portal_chat";
@@ -99,7 +98,6 @@ export function ComposeMessageDialog({
     const currentTotal = attachments.reduce((sum, a) => sum + a.size, 0);
     const incoming = files.reduce((sum, f) => sum + f.size, 0);
     if (currentTotal + incoming > MAX_ATTACHMENT_BYTES) {
-      toast.error("Total attachments exceed the 25 MB limit");
       e.target.value = "";
       return;
     }
@@ -150,13 +148,11 @@ export function ComposeMessageDialog({
             }
           : {}),
       });
-      toast.success("Email sent successfully");
       resetForm();
       onOpenChange(false);
       onSent();
     } catch (err) {
-      const error = err as Error;
-      toast.error(error.message || "Failed to send email");
+      console.error("Failed to send email:", err);
     } finally {
       setIsSending(false);
     }
@@ -167,13 +163,11 @@ export function ComposeMessageDialog({
     setIsSending(true);
     try {
       await sendAgencyChatMessage(Number(chatClientId), chatMessage.trim());
-      toast.success("Message sent successfully");
       resetForm();
       onOpenChange(false);
       onSent();
     } catch (err) {
-      const error = err as Error;
-      toast.error(error.message || "Failed to send message");
+      console.error("Failed to send message:", err);
     } finally {
       setIsSending(false);
     }

@@ -25,7 +25,6 @@ import {
   Search,
   Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import type { AttachedFile } from "@/types/communications";
@@ -121,8 +120,8 @@ export function AttachmentDialog({
         };
         setSelectedFiles((prev) => [...prev, attachedFile]);
       }
-    } catch {
-      toast.error("Failed to read file");
+    } catch (err) {
+      console.error("Failed to read file:", err);
     } finally {
       setIsReading(false);
     }

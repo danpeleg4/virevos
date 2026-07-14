@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 vi.mock("@stripe/stripe-js", () => ({
   loadStripe: vi.fn(() => Promise.resolve(null)),
@@ -32,6 +32,7 @@ vi.mock("@/lib/workspace/billing", () => ({
   registerFreePlan: vi.fn(),
   changePlan: vi.fn(),
   cancelSubscription: vi.fn(),
+  createSubscription: vi.fn(),
 }));
 
 import PaymentStep from "@/app/onboard/PaymentStep";
@@ -41,15 +42,15 @@ describe("PaymentStep", () => {
     formData: { selectedPlan: "professional" as const },
   };
 
-  it("renders without crashing", () => {
-    const { container } = render(<PaymentStep {...mockProps} />);
-    expect(container).toBeInTheDocument();
+  it("renders without crashing", async () => {
+    const { container } = await render(<PaymentStep {...mockProps} />);
+    await expect.element(container).toBeInTheDocument();
   });
 
-  it("renders payment plan information", () => {
-    render(<PaymentStep {...mockProps} />);
+  it("renders payment plan information", async () => {
+    await render(<PaymentStep {...mockProps} />);
     // Should render some text about the plan or payment
     const container = document.querySelector("div");
-    expect(container).toBeInTheDocument();
+    await expect.element(container!).toBeInTheDocument();
   });
 });
