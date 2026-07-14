@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 import { InlineForm } from "@/app/components/AIInlineForm";
 import type { AIFormRequest } from "@/types/ai";
@@ -36,36 +36,40 @@ const form: AIFormRequest = {
 };
 
 describe("InlineForm", () => {
-  it("renders the title and a control for each field", () => {
-    render(<InlineForm form={form} onSubmit={vi.fn()} />);
+  it("renders the title and a control for each field", async () => {
+    const screen = await render(<InlineForm form={form} onSubmit={vi.fn()} />);
 
-    expect(screen.getByText(/set up your new case/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/case name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/due date/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/notes/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/set up your new case/i))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByLabelText(/case name/i))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByLabelText(/due date/i))
+      .toBeInTheDocument();
+    await expect.element(screen.getByLabelText(/notes/i)).toBeInTheDocument();
   });
 
-  it("blocks submission and shows an error when a required field is empty", () => {
+  it("blocks submission and shows an error when a required field is empty", async () => {
     const onSubmit = vi.fn();
-    render(<InlineForm form={form} onSubmit={onSubmit} />);
+    const screen = await render(<InlineForm form={form} onSubmit={onSubmit} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    await screen.getByRole("button", { name: /submit/i }).click();
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByText(/please fill in: case name/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/please fill in: case name/i))
+      .toBeInTheDocument();
   });
 
-  it("submits the entered values when required fields are filled", () => {
+  it("submits the entered values when required fields are filled", async () => {
     const onSubmit = vi.fn();
-    render(<InlineForm form={form} onSubmit={onSubmit} />);
+    const screen = await render(<InlineForm form={form} onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText(/case name/i), {
-      target: { value: "Smith H-1B" },
-    });
-    fireEvent.change(screen.getByLabelText(/notes/i), {
-      target: { value: "urgent" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    await screen.getByLabelText(/case name/i).fill("Smith H-1B");
+    await screen.getByLabelText(/notes/i).fill("urgent");
+    await screen.getByRole("button", { name: /submit/i }).click();
 
     expect(onSubmit).toHaveBeenCalledWith({
       caseName: "Smith H-1B",
@@ -74,13 +78,15 @@ describe("InlineForm", () => {
     });
   });
 
-  it("locks the form and hides the submit button once submitted", () => {
-    render(<InlineForm form={form} submitted onSubmit={vi.fn()} />);
+  it("locks the form and hides the submit button once submitted", async () => {
+    const screen = await render(
+      <InlineForm form={form} submitted onSubmit={vi.fn()} />
+    );
 
-    expect(
-      screen.queryByRole("button", { name: /submit/i })
-    ).not.toBeInTheDocument();
-    expect(screen.getByText(/submitted/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/case name/i)).toBeDisabled();
+    await expect
+      .element(screen.getByRole("button", { name: /submit/i }))
+      .not.toBeInTheDocument();
+    await expect.element(screen.getByText(/submitted/i)).toBeInTheDocument();
+    await expect.element(screen.getByLabelText(/case name/i)).toBeDisabled();
   });
 });

@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
+import { page } from "vitest/browser";
 
 const mockQueryClient = {
   setQueryData: vi.fn(),
@@ -36,17 +37,9 @@ vi.mock("@/lib/document_requests", () => ({
   updateDocumentRequest: vi.fn(),
 }));
 
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 // Mock fetch for streaming
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
-import { waitFor } from "@testing-library/react";
 import { AIAssistant } from "@/app/components/AIAssistant";
 
 describe("AIAssistant", () => {
@@ -54,62 +47,64 @@ describe("AIAssistant", () => {
 
   beforeEach(() => {
     onClose.mockClear();
-    (global.fetch as Mock).mockClear();
+    (globalThis.fetch as unknown as Mock).mockClear();
   });
 
-  it("renders panel when isOpen=true", () => {
-    render(
+  it("renders panel when isOpen=true", async () => {
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
-    expect(screen.getByText(/virevos ai/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/virevos ai/i)).toBeInTheDocument();
   });
 
-  it("does not render panel when isOpen=false", () => {
-    render(
+  it("does not render panel when isOpen=false", async () => {
+    const screen = await render(
       <AIAssistant isOpen={false} onClose={onClose} pendingBookings={[]} />
     );
-    expect(screen.queryByText(/virevos ai/i)).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/virevos ai/i))
+      .not.toBeInTheDocument();
   });
 
-  it("renders input field when open", () => {
-    render(
+  it("renders input field when open", async () => {
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
-    expect(
-      screen.getByPlaceholderText(/plan, search, build/i)
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByPlaceholder(/plan, search, build/i))
+      .toBeInTheDocument();
   });
 
-  it("send button is disabled when input is empty", () => {
-    render(
+  it("send button is disabled when input is empty", async () => {
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     // Find the button that is disabled when input is empty (the Send icon button)
-    const buttons = screen.getAllByRole("button");
+    const buttons = screen.getByRole("button").elements();
     const sendButton = buttons.find((b) => b.hasAttribute("disabled"));
     expect(sendButton).toBeDefined();
   });
 
-  it("close button calls onClose", () => {
-    render(
+  it("close button calls onClose", async () => {
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
-    const buttons = screen.getAllByRole("button");
     // The X button is the close button in the header
-    fireEvent.click(buttons[0]);
+    await screen.getByRole("button").first().click();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("input accepts text", () => {
-    render(
+  it("input accepts text", async () => {
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
-    const input = screen.getByPlaceholderText(/plan, search, build/i);
-    fireEvent.change(input, { target: { value: "Hello AI" } });
-    expect(input).toHaveValue("Hello AI");
+    await screen.getByPlaceholder(/plan, search, build/i).fill("Hello AI");
+    await expect
+      .element(screen.getByPlaceholder(/plan, search, build/i))
+      .toHaveValue("Hello AI");
   });
 
-  it("shows meeting request section when there are pending bookings", () => {
+  it("shows meeting request section when there are pending bookings", async () => {
     const pending = [
       {
         id: 1,
@@ -128,22 +123,26 @@ describe("AIAssistant", () => {
         clientDisplayName: "Alice Corp",
       },
     ];
-    render(
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
-    expect(screen.getByText(/1 meeting request/i)).toBeInTheDocument();
-    expect(screen.getByText(/alice corp/i)).toBeInTheDocument();
-    expect(screen.getByText(/accept/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /decline/i })
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/1 meeting request/i))
+      .toBeInTheDocument();
+    await expect.element(screen.getByText(/alice corp/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/accept/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /decline/i }))
+      .toBeInTheDocument();
   });
 
-  it("does not show meeting request section when there are no pending bookings", () => {
-    render(
+  it("does not show meeting request section when there are no pending bookings", async () => {
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
-    expect(screen.queryByText(/meeting request/i)).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/meeting request/i))
+      .not.toBeInTheDocument();
   });
 
   const makeBooking = (id: number, clientName: string) => ({
@@ -163,39 +162,37 @@ describe("AIAssistant", () => {
     clientDisplayName: clientName,
   });
 
-  it("shows all bookings inline and disables the toggle when count <= 2", () => {
+  it("shows all bookings inline and disables the toggle when count <= 2", async () => {
     const pending = [makeBooking(1, "Alice Corp"), makeBooking(2, "Bob Inc")];
-    render(
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
-    expect(screen.getByText(/alice corp/i)).toBeInTheDocument();
-    expect(screen.getByText(/bob inc/i)).toBeInTheDocument();
-    const toggle = screen.getByRole("button", {
-      name: /2 meeting requests/i,
-    });
-    expect(toggle).toBeDisabled();
+    await expect.element(screen.getByText(/alice corp/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/bob inc/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /2 meeting requests/i }))
+      .toBeDisabled();
   });
 
-  it("collapses booking list by default when count > 2", () => {
+  it("collapses booking list by default when count > 2", async () => {
     const pending = [
       makeBooking(1, "Alice Corp"),
       makeBooking(2, "Bob Inc"),
       makeBooking(3, "Carol LLC"),
     ];
-    render(
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
-    const toggle = screen.getByRole("button", {
-      name: /3 meeting requests/i,
-    });
-    expect(toggle).toBeEnabled();
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText(/alice corp/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/carol llc/i)).not.toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: /3 meeting requests/i });
+    await expect.element(toggle).toBeEnabled();
+    await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect
+      .element(screen.getByText(/alice corp/i))
+      .not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/carol llc/i))
+      .not.toBeInTheDocument();
   });
-
-  const getToggle = () =>
-    screen.getByRole("button", { name: /meeting request/i });
 
   it("expands the booking list when the toggle is clicked", async () => {
     const pending = [
@@ -203,14 +200,15 @@ describe("AIAssistant", () => {
       makeBooking(2, "Bob Inc"),
       makeBooking(3, "Carol LLC"),
     ];
-    render(
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
-    fireEvent.click(getToggle());
-    await screen.findByText(/alice corp/i);
-    expect(getToggle()).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText(/bob inc/i)).toBeInTheDocument();
-    expect(screen.getByText(/carol llc/i)).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: /meeting request/i });
+    await toggle.click();
+    await expect.element(screen.getByText(/alice corp/i)).toBeInTheDocument();
+    await expect.element(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect.element(screen.getByText(/bob inc/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/carol llc/i)).toBeInTheDocument();
   });
 
   it("collapses the booking list again on a second click", async () => {
@@ -219,33 +217,33 @@ describe("AIAssistant", () => {
       makeBooking(2, "Bob Inc"),
       makeBooking(3, "Carol LLC"),
     ];
-    render(
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
-    fireEvent.click(getToggle());
-    await screen.findByText(/alice corp/i);
-    fireEvent.click(getToggle());
-    await waitFor(() =>
-      expect(screen.queryByText(/alice corp/i)).not.toBeInTheDocument()
-    );
-    expect(getToggle()).toHaveAttribute("aria-expanded", "false");
+    const toggle = screen.getByRole("button", { name: /meeting request/i });
+    await toggle.click();
+    await expect.element(screen.getByText(/alice corp/i)).toBeInTheDocument();
+    await toggle.click();
+    await expect
+      .element(screen.getByText(/alice corp/i))
+      .not.toBeInTheDocument();
+    await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
   it("shows error message when fetch fails", async () => {
-    (global.fetch as Mock).mockRejectedValueOnce(new Error("Network error"));
-    render(
+    (globalThis.fetch as unknown as Mock).mockRejectedValueOnce(
+      new Error("Network error")
+    );
+    const screen = await render(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
-    const input = screen.getByPlaceholderText(/plan, search, build/i);
-    fireEvent.change(input, { target: { value: "Hello" } });
+    await screen.getByPlaceholder(/plan, search, build/i).fill("Hello");
     // Click the send button (last button in the component)
-    const buttons = screen.getAllByRole("button");
-    const sendBtn = buttons[buttons.length - 1];
-    fireEvent.click(sendBtn);
+    const buttons = screen.getByRole("button").elements();
+    await page.elementLocator(buttons[buttons.length - 1]).click();
     // After submitting, the user message should appear in the chat
-    await waitFor(
-      () => expect(screen.getAllByText("Hello").length).toBeGreaterThan(0),
-      { timeout: 3000 }
-    );
+    await expect
+      .element(screen.getByText("Hello", { exact: true }).first())
+      .toBeInTheDocument();
   });
 });

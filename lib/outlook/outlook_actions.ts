@@ -23,9 +23,7 @@ import {
   requireInt,
   requireOneOf,
   requireString,
-  requireNumber,
 } from "../util/validation";
-import { deleteScheduledEmail } from "@/lib/scheduled_emails";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const LARGE_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;
@@ -50,8 +48,6 @@ export interface OutlookAttachmentInput {
 }
 
 export interface SendOutlookEmailInput {
-  /** Scheduled email row id — set only when sending a scheduled email, which is deleted after a successful send */
-  id?: number;
   to: string;
   toName?: string;
   subject: string;
@@ -107,10 +103,6 @@ function validateAttachment(
 function validateSendInput(
   raw: Partial<SendOutlookEmailInput>
 ): SendOutlookEmailInput {
-  const id =
-    raw.id !== undefined && raw.id !== null
-      ? requireNumber(raw.id, "id")
-      : undefined;
   const to = requireEmail(raw.to, "to");
   const toName = optionalString(raw.toName, "toName", MAX_NAME);
   const subject = requireString(raw.subject, "subject", MAX_TITLE);
@@ -146,7 +138,6 @@ function validateSendInput(
   }
 
   return {
-    id,
     to,
     toName,
     subject,
@@ -234,86 +225,97 @@ export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
   const token = await getFreshOutlookAccessToken(user.id);
   if (!token) throw new ValidationError("Outlook account not connected", 403);
 
-  const fileAttachments = (input.attachments ?? []).filter(
-    (a) => a.data || a.path
-  );
-  const urlAttachments = (input.attachments ?? []).filter(
-    (a) => a.url && !a.data && !a.path
-  );
+  try {
+    const fileAttachments = (input.attachments ?? []).filter(
+      (a) => a.data || a.path
+    );
+    const urlAttachments = (input.attachments ?? []).filter(
+      (a) => a.url && !a.data && !a.path
+    );
 
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
 
-  const messagePayload = {
-    subject: input.subject,
-    body: {
-      contentType: "HTML",
-      content: buildBodyHtml(input.bodyHtml, urlAttachments),
-    },
-    toRecipients: [buildRecipient(input.to, input.toName)],
-    ...(input.cc?.length
-      ? { ccRecipients: input.cc.map((addr) => buildRecipient(addr)) }
-      : {}),
-  };
+    const messagePayload = {
+      subject: input.subject,
+      body: {
+        contentType: "HTML",
+        content: buildBodyHtml(input.bodyHtml, urlAttachments),
+      },
+      toRecipients: [buildRecipient(input.to, input.toName)],
+      ...(input.cc?.length
+        ? { ccRecipients: input.cc.map((addr) => buildRecipient(addr)) }
+        : {}),
+    };
 
-  if (fileAttachments.length === 0) {
-    if (input.replyToOutlookId) {
+    if (fileAttachments.length === 0) {
+      if (input.replyToOutlookId) {
+        await axios.post(
+          `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/reply`,
+          { message: messagePayload },
+          { headers }
+        );
+      } else {
+        await axios.post(
+          `${GRAPH_BASE}/me/sendMail`,
+          { message: messagePayload, saveToSentItems: true },
+          { headers }
+        );
+      }
+    } else {
+      let draftId: string;
+      if (input.replyToOutlookId) {
+        const res = await axios.post<{ id: string }>(
+          `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/createReply`,
+          { message: messagePayload },
+          { headers }
+        );
+        draftId = res.data.id;
+      } else {
+        const res = await axios.post<{ id: string }>(
+          `${GRAPH_BASE}/me/messages`,
+          messagePayload,
+          { headers }
+        );
+        draftId = res.data.id;
+      }
+
+      for (const att of fileAttachments) {
+        const buffer = await resolveBuffer(att);
+        if (!buffer) continue;
+        const contentType = att.mimeType ?? "application/octet-stream";
+        if (buffer.length < LARGE_ATTACHMENT_THRESHOLD) {
+          await addSmallAttachment(
+            draftId,
+            token,
+            att.name,
+            contentType,
+            buffer
+          );
+        } else {
+          await addLargeAttachment(
+            draftId,
+            token,
+            att.name,
+            contentType,
+            buffer
+          );
+        }
+      }
+
       await axios.post(
-        `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/reply`,
-        { message: messagePayload },
+        `${GRAPH_BASE}/me/messages/${draftId}/send`,
+        {},
         { headers }
       );
-    } else {
-      await axios.post(
-        `${GRAPH_BASE}/me/sendMail`,
-        { message: messagePayload, saveToSentItems: true },
-        { headers }
-      );
     }
-    if (input.id !== undefined) {
-      await deleteScheduledEmail(input.id);
-    }
-    return { success: true };
+  } catch (err) {
+    console.error("[outlook_actions] sendOutlookEmail failed:", err);
+    throw err;
   }
 
-  let draftId: string;
-  if (input.replyToOutlookId) {
-    const res = await axios.post<{ id: string }>(
-      `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/createReply`,
-      { message: messagePayload },
-      { headers }
-    );
-    draftId = res.data.id;
-  } else {
-    const res = await axios.post<{ id: string }>(
-      `${GRAPH_BASE}/me/messages`,
-      messagePayload,
-      { headers }
-    );
-    draftId = res.data.id;
-  }
-
-  for (const att of fileAttachments) {
-    const buffer = await resolveBuffer(att);
-    if (!buffer) continue;
-    const contentType = att.mimeType ?? "application/octet-stream";
-    if (buffer.length < LARGE_ATTACHMENT_THRESHOLD) {
-      await addSmallAttachment(draftId, token, att.name, contentType, buffer);
-    } else {
-      await addLargeAttachment(draftId, token, att.name, contentType, buffer);
-    }
-  }
-
-  await axios.post(
-    `${GRAPH_BASE}/me/messages/${draftId}/send`,
-    {},
-    { headers }
-  );
-  if (input.id !== undefined) {
-    await deleteScheduledEmail(input.id);
-  }
   return { success: true };
 }
 

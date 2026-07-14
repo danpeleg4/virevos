@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { render, screen, act } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockUseQuery = vi.fn();
 const mockUseMutation = vi.fn();
@@ -33,6 +33,8 @@ vi.mock("@/lib/workspace/tasks", () => ({
   updateTaskStatus: vi.fn(),
   deleteTask: vi.fn(),
   addProjectTasksAction: vi.fn(),
+  changePriorityStatus: vi.fn(),
+  updateTaskDueDate: vi.fn(),
 }));
 
 vi.mock("@/lib/util/task_percentage", () => ({
@@ -71,15 +73,12 @@ const mockTasks = [
 
 import CasePage from "@/app/workspace/cases/[id]/page";
 
-const renderPage = async () => {
-  await act(async () => {
-    render(
-      <Suspense fallback={<div>Loading...</div>}>
-        <CasePage params={Promise.resolve({ id: "1" })} />
-      </Suspense>
-    );
-  });
-};
+const renderPage = () =>
+  render(
+    <Suspense fallback={<div>Loading...</div>}>
+      <CasePage params={Promise.resolve({ id: "1" })} />
+    </Suspense>
+  );
 
 describe("Case Detail Page", () => {
   beforeEach(() => {
@@ -98,35 +97,39 @@ describe("Case Detail Page", () => {
   });
 
   it("renders case name", async () => {
-    await renderPage();
-    expect(screen.getByText("Alpha Case")).toBeInTheDocument();
+    const screen = await renderPage();
+    await expect.element(screen.getByText("Alpha Case")).toBeInTheDocument();
   });
 
   it("renders task list", async () => {
-    await renderPage();
-    expect(screen.getByText("Design mockup")).toBeInTheDocument();
-    expect(screen.getByText("Write tests")).toBeInTheDocument();
+    const screen = await renderPage();
+    await expect.element(screen.getByText("Design mockup")).toBeInTheDocument();
+    await expect.element(screen.getByText("Write tests")).toBeInTheDocument();
   });
 
   it("renders Files section", async () => {
-    await renderPage();
-    expect(screen.getAllByText(/files/i).length).toBeGreaterThan(0);
+    const screen = await renderPage();
+    await expect
+      .element(screen.getByText(/files/i).first())
+      .toBeInTheDocument();
   });
 
   it("renders Notes section", async () => {
-    await renderPage();
-    expect(screen.getAllByText(/notes/i).length).toBeGreaterThan(0);
+    const screen = await renderPage();
+    await expect
+      .element(screen.getByText(/notes/i).first())
+      .toBeInTheDocument();
   });
 
   it("renders client name", async () => {
-    await renderPage();
-    expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    const screen = await renderPage();
+    await expect.element(screen.getByText("Acme Corp")).toBeInTheDocument();
   });
 
   it("renders Add Task button", async () => {
-    await renderPage();
-    expect(
-      screen.getByRole("button", { name: /new task/i })
-    ).toBeInTheDocument();
+    const screen = await renderPage();
+    await expect
+      .element(screen.getByRole("button", { name: /new task/i }))
+      .toBeInTheDocument();
   });
 });

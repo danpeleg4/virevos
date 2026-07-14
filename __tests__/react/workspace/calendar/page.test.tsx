@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -44,54 +44,62 @@ vi.mock("@/app/components/scheduling/IntegrationSettings", () => ({
 import CalendarPage from "@/app/workspace/calendar/page";
 
 describe("Calendar Page", () => {
-  it("renders Calendar tab button", () => {
-    render(<CalendarPage />);
-    expect(
-      screen.getByRole("button", { name: /^calendar$/i })
-    ).toBeInTheDocument();
+  it("renders Calendar tab button", async () => {
+    const screen = await render(<CalendarPage />);
+    await expect
+      .element(screen.getByRole("button", { name: /^calendar$/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Meetings tab button", () => {
-    render(<CalendarPage />);
-    expect(
-      screen.getByRole("button", { name: /^meetings$/i })
-    ).toBeInTheDocument();
+  it("renders Meetings tab button", async () => {
+    const screen = await render(<CalendarPage />);
+    await expect
+      .element(screen.getByRole("button", { name: /^meetings$/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Meeting Notes tab button", () => {
-    render(<CalendarPage />);
-    expect(
-      screen.getByRole("button", { name: /meeting notes/i })
-    ).toBeInTheDocument();
+  it("renders Meeting Notes tab button", async () => {
+    const screen = await render(<CalendarPage />);
+    await expect
+      .element(screen.getByRole("button", { name: /meeting notes/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Preferences tab button", () => {
-    render(<CalendarPage />);
-    expect(
-      screen.getByRole("button", { name: /preferences/i })
-    ).toBeInTheDocument();
+  it("renders Preferences tab button", async () => {
+    const screen = await render(<CalendarPage />);
+    await expect
+      .element(screen.getByRole("button", { name: /preferences/i }))
+      .toBeInTheDocument();
   });
 
-  it("shows CalendarView by default", () => {
-    render(<CalendarPage />);
-    expect(screen.getByTestId("calendar-view")).toBeInTheDocument();
+  it("shows CalendarView by default", async () => {
+    const screen = await render(<CalendarPage />);
+    await expect
+      .element(screen.getByTestId("calendar-view"))
+      .toBeInTheDocument();
   });
 
-  it("shows Meetings view when Meetings tab is clicked", () => {
-    render(<CalendarPage />);
-    fireEvent.click(screen.getByRole("button", { name: /^meetings$/i }));
-    expect(screen.getByTestId("meetings-view")).toBeInTheDocument();
+  it("shows Meetings view when Meetings tab is clicked", async () => {
+    const screen = await render(<CalendarPage />);
+    await screen.getByRole("button", { name: /^meetings$/i }).click();
+    await expect
+      .element(screen.getByTestId("meetings-view"))
+      .toBeInTheDocument();
   });
 
-  it("shows Meeting Notes when notes tab is clicked", () => {
-    render(<CalendarPage />);
-    fireEvent.click(screen.getByRole("button", { name: /meeting notes/i }));
-    expect(screen.getByTestId("meeting-notes")).toBeInTheDocument();
+  it("shows Meeting Notes when notes tab is clicked", async () => {
+    const screen = await render(<CalendarPage />);
+    await screen.getByRole("button", { name: /meeting notes/i }).click();
+    await expect
+      .element(screen.getByTestId("meeting-notes"))
+      .toBeInTheDocument();
   });
 
-  it("shows Preferences when preferences tab is clicked", () => {
-    render(<CalendarPage />);
-    fireEvent.click(screen.getByRole("button", { name: /preferences/i }));
-    expect(screen.getByTestId("video-preferences")).toBeInTheDocument();
+  it("shows Preferences when preferences tab is clicked", async () => {
+    const screen = await render(<CalendarPage />);
+    await screen.getByRole("button", { name: /preferences/i }).click();
+    await expect
+      .element(screen.getByTestId("video-preferences"))
+      .toBeInTheDocument();
   });
 });

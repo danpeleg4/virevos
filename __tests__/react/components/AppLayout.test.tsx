@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 const mockUseAuthUser = vi.fn();
@@ -55,28 +55,34 @@ describe("AppLayout", () => {
     mockUseAuthUser.mockReturnValue({ data: defaultUser, isPending: false });
   });
 
-  it("renders children", () => {
-    render(
+  it("renders children", async () => {
+    const screen = await render(
       <AppLayout>
         <div data-testid="child-content">Hello</div>
       </AppLayout>
     );
-    expect(screen.getByTestId("child-content")).toBeInTheDocument();
+    await expect
+      .element(screen.getByTestId("child-content"))
+      .toBeInTheDocument();
   });
 
-  it("shows loading spinner when user not loaded", () => {
+  it("shows loading spinner when user not loaded", async () => {
     mockUseAuthUser.mockReturnValue({ data: null, isPending: true });
-    const { container } = render(
+    const screen = await render(
       <AppLayout>
         <div />
       </AppLayout>
     );
-    expect(container.firstChild).toBeInTheDocument();
-    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+    await expect
+      .element(screen.container.firstElementChild!)
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Dashboard", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
-  it("renders all 8 nav items in the desktop sidebar", () => {
-    render(
+  it("renders all 8 nav items in the desktop sidebar", async () => {
+    const screen = await render(
       <AppLayout>
         <div />
       </AppLayout>
@@ -91,38 +97,50 @@ describe("AppLayout", () => {
       "Billing",
       "Settings",
     ];
-    navLabels.forEach((label) => {
-      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
-    });
+    for (const label of navLabels) {
+      await expect
+        .element(screen.getByText(label, { exact: true }).first())
+        .toBeInTheDocument();
+    }
   });
 
-  it("renders user email in sidebar", () => {
-    render(
+  it("renders user email in sidebar", async () => {
+    const screen = await render(
       <AppLayout>
         <div />
       </AppLayout>
     );
-    expect(screen.getAllByText("john@example.com").length).toBeGreaterThan(0);
+    await expect
+      .element(screen.getByText("john@example.com").first())
+      .toBeInTheDocument();
   });
 
-  it("opens AI assistant when AI Assistant button is clicked", () => {
-    render(
+  it("opens AI assistant when AI Assistant button is clicked", async () => {
+    const screen = await render(
       <AppLayout>
         <div />
       </AppLayout>
     );
-    expect(screen.queryByTestId("ai-assistant")).not.toBeInTheDocument();
-    const aiButtons = screen.getAllByRole("button", { name: /ai assistant/i });
-    fireEvent.click(aiButtons[0]);
-    expect(screen.getByTestId("ai-assistant")).toBeInTheDocument();
+    await expect
+      .element(screen.getByTestId("ai-assistant"))
+      .not.toBeInTheDocument();
+    await screen
+      .getByRole("button", { name: /ai assistant/i })
+      .first()
+      .click();
+    await expect
+      .element(screen.getByTestId("ai-assistant"))
+      .toBeInTheDocument();
   });
 
-  it("opens mobile sidebar when menu button is clicked", () => {
-    render(
+  it("opens mobile sidebar when menu button is clicked", async () => {
+    const screen = await render(
       <AppLayout>
         <div />
       </AppLayout>
     );
-    expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
+    await expect
+      .element(screen.getByText("Dashboard", { exact: true }).first())
+      .toBeInTheDocument();
   });
 });

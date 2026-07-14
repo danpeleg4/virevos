@@ -67,7 +67,6 @@ import {
   declineDocumentRequest,
   updateDocumentRequest,
 } from "@/lib/document_requests";
-import { toast } from "sonner";
 
 interface ChatRequestBody {
   messages?: ChatMessage[];
@@ -154,9 +153,7 @@ export function AIAssistant({
     mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success("Meeting confirmed and added to calendar");
     },
-    onError: () => toast.error("Failed to confirm meeting"),
   });
 
   const denyMutation = useMutation({
@@ -164,9 +161,7 @@ export function AIAssistant({
       updateBookingStatus(bookingId, "cancelled"),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success("Meeting request declined");
     },
-    onError: () => toast.error("Failed to decline meeting"),
   });
 
   const pendingDocRequestsQuery = useQuery({
@@ -901,9 +896,7 @@ function DocRequestCard({
         queryKey: ["documentRequests", "pending"],
       });
       setDirty(false);
-      toast.success("Saved");
     },
-    onError: () => toast.error("Failed to save changes"),
   });
 
   const approveMutation = useMutation({
@@ -914,10 +907,7 @@ function DocRequestCard({
       await queryClient.invalidateQueries({
         queryKey: ["documentRequests", "pending"],
       });
-      toast.success("Document request sent to client");
     },
-    onError: (err: Error) =>
-      toast.error(err.message || "Failed to approve request"),
   });
 
   const declineMutation = useMutation({
@@ -928,9 +918,7 @@ function DocRequestCard({
       await queryClient.invalidateQueries({
         queryKey: ["documentRequests", "pending"],
       });
-      toast.success("Document request declined");
     },
-    onError: () => toast.error("Failed to decline request"),
   });
 
   const handleClientChange = (value: string) => {

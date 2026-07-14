@@ -1,21 +1,21 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 import ChangelogPage from "@/app/changelog/page";
 
 describe("Changelog Page", () => {
-  it("renders Changelog heading", () => {
-    render(<ChangelogPage />);
-    expect(screen.getByText("Changelog")).toBeInTheDocument();
+  it("renders Changelog heading", async () => {
+    const screen = await render(<ChangelogPage />);
+    await expect.element(screen.getByText("Changelog")).toBeInTheDocument();
   });
 
-  it("renders some version entries", () => {
-    render(<ChangelogPage />);
-    expect(screen.getAllByText(/v1\./i).length).toBeGreaterThan(0);
+  it("renders some version entries", async () => {
+    const screen = await render(<ChangelogPage />);
+    await expect.element(screen.getByText(/v1\./i).first()).toBeInTheDocument();
   });
 
-  it("renders description text", () => {
-    render(<ChangelogPage />);
-    expect(screen.getByText(/every update/i)).toBeInTheDocument();
+  it("renders description text", async () => {
+    const screen = await render(<ChangelogPage />);
+    await expect.element(screen.getByText(/every update/i)).toBeInTheDocument();
   });
 });

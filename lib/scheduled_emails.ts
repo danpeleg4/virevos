@@ -1,9 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { scheduledEmails } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import type { DBDrizzle } from "@db/db";
 import {
   MAX_HTML_BODY,
   MAX_NAME,
@@ -18,8 +16,132 @@ import {
   requireString,
 } from "./util/validation";
 import { sanitizeEmailHtml } from "./util/html_sanitizer";
+import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
+import { ScheduledEmailServiceInterface } from "@/api_client/axios_api_client";
 
 const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
+
+export type SendScheduledEmailResult =
+  | { outcome: "sent" }
+  | { outcome: "skipped" } // claim miss: missing, already sent, or cancelled
+  | { outcome: "failed"; error: string }; // row marked failed + errorMessage
+
+export async function parseEmailAddress(raw: string): Promise<{
+  name: string;
+  email: string;
+}> {
+  const match = raw?.match(/^(.*?)\s*<(.+?)>$/); // "Name <email>" or "Name<email>"
+  if (match)
+    return {
+      name: match[1].trim().replace(/^"|"$/g, ""), // remove surrounding quotes
+      email: match[2].trim(), // remove surrounding whitespace
+    };
+  return { name: "", email: raw?.trim() ?? "" };
+}
+
+export async function sendScheduledEmail(
+  scheduledEmailId: number,
+  dbDrizzle: DBDrizzle,
+  apiClient: ScheduledEmailServiceInterface
+): Promise<SendScheduledEmailResult> {
+  const claimed = await dbDrizzle.claimEmail(scheduledEmailId);
+  if (!claimed.length) return { outcome: "skipped" }; // missing, already sent, or claimed by Send Now
+  const scheduledEmail = claimed[0];
+  const userId = scheduledEmail.userId;
+
+  try {
+    const accessToken = await getFreshOutlookAccessToken(userId);
+    if (!accessToken) {
+      await dbDrizzle.markAsFailed(scheduledEmailId);
+      return { outcome: "failed", error: "Outlook not connected for user" };
+    }
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    };
+
+    const userRows = await dbDrizzle.getUserRows(userId);
+
+    const fromName = userRows[0]?.name || "";
+    let fromEmail = userRows[0]?.email || "";
+    const toEmailAddr =
+      (await parseEmailAddress(scheduledEmail.toEmail)).email ||
+      scheduledEmail.toEmail;
+
+    try {
+      // Get the user email connected to the Graph API to be as fromEmail
+      // in case the DB users.email and the connected outlook email are not the same
+      const profileRes = await apiClient.getProfile(headers);
+      fromEmail = profileRes.mail || profileRes.userPrincipalName || fromEmail;
+    } catch {
+      console.warn(
+        "[process_scheduled_emails] Graph /me failed; using account email"
+      );
+    }
+
+    const messagePayload = {
+      subject: scheduledEmail.subject,
+      body: {
+        contentType: "HTML",
+        content: scheduledEmail.bodyHtml,
+      },
+      toRecipients: [
+        {
+          emailAddress: {
+            address: toEmailAddr,
+            name: scheduledEmail.toName || scheduledEmail.toEmail,
+          },
+        },
+      ],
+    };
+
+    const draftRes = await apiClient.draftMessage(headers, messagePayload);
+    const outlookId = draftRes.id;
+    const conversationId = draftRes.conversationId;
+
+    await apiClient.sendDraftMessage(headers, outlookId);
+
+    // The email is delivered from here on — bookkeeping failures must not
+    // flip the claimed row to "failed" or reject the send, or a retry would
+    // deliver a duplicate.
+    try {
+      let clientId: number | null = scheduledEmail.clientId;
+      if (!clientId) {
+        const allClients = await dbDrizzle.getAllClients(userId);
+        for (const c of allClients) {
+          if (c.email?.toLowerCase() === toEmailAddr.toLowerCase()) {
+            clientId = c.id;
+            break;
+          }
+        }
+      }
+
+      // fromEmail is the connected Graph API email address or the fallback DB users.email
+      await dbDrizzle.insertOutlookEmail(
+        outlookId,
+        conversationId,
+        scheduledEmail,
+        fromEmail,
+        fromName,
+        clientId,
+        userId
+      );
+    } catch (bookkeepingErr) {
+      console.error(
+        "[process_scheduled_emails] post-send bookkeeping failed for",
+        scheduledEmailId,
+        bookkeepingErr
+      );
+    }
+    return { outcome: "sent" };
+  } catch (sendErr: unknown) {
+    const errMsg = sendErr instanceof Error ? sendErr.message : "Send failed";
+    console.error("[process_scheduled_emails]", scheduledEmailId, sendErr);
+    await dbDrizzle.catchFailedInsertOutlookEmail(errMsg, scheduledEmailId);
+    return { outcome: "failed", error: errMsg };
+  }
+}
 
 export interface ScheduleEmailInput {
   toEmail: string;
@@ -33,7 +155,10 @@ export interface ScheduleEmailInput {
   clientId?: number | null;
 }
 
-export async function createScheduledEmail(input: ScheduleEmailInput) {
+export async function createScheduledEmail(
+  input: ScheduleEmailInput,
+  dbDrizzle: DBDrizzle
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
@@ -56,55 +181,68 @@ export async function createScheduledEmail(input: ScheduleEmailInput) {
       ? requireInt(input.clientId, "clientId")
       : null;
 
-  const [inserted] = await db
-    .insert(scheduledEmails)
-    .values({
-      toEmail,
-      toName,
-      subject,
-      bodyHtml,
-      bodyText,
-      scheduledAt,
-      timezone,
-      recurring,
-      status: "pending",
-      clientId,
-      userId: user.id,
-    })
-    .returning();
-
-  return inserted;
+  return dbDrizzle.insertScheduledEmail({
+    toEmail,
+    toName,
+    subject,
+    bodyHtml,
+    bodyText,
+    scheduledAt,
+    timezone,
+    recurring,
+    status: "pending",
+    clientId,
+    userId: user.id,
+  });
 }
 
-export async function deleteScheduledEmail(id: number) {
+export async function sendScheduledEmailNow(
+  id: number,
+  dbDrizzle: DBDrizzle,
+  apiClient: ScheduledEmailServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");
 
-  const rows = await db
-    .select()
-    .from(scheduledEmails)
-    .where(
-      and(
-        eq(scheduledEmails.id, numericId),
-        eq(scheduledEmails.userId, user.id)
-      )
-    )
-    .limit(1);
-
+  // Ownership check — sendScheduledEmail is cron-scoped and has none
+  const rows = await dbDrizzle.getScheduledEmailById(numericId, user.id);
   if (!rows.length) {
     throw new ValidationError("Scheduled email not found", 404);
   }
 
-  await db
-    .delete(scheduledEmails)
-    .where(
-      and(
-        eq(scheduledEmails.id, numericId),
-        eq(scheduledEmails.userId, user.id)
-      )
+  const result = await sendScheduledEmail(numericId, dbDrizzle, apiClient);
+  if (result.outcome === "skipped") {
+    throw new ValidationError(
+      "Scheduled email was already sent or cancelled",
+      409
     );
+  }
+  if (result.outcome === "failed") {
+    throw new ValidationError(result.error || "Send failed", 502);
+  }
 
+  return { success: true };
+}
+
+export async function deleteScheduledEmail(id: number, dbDrizzle: DBDrizzle) {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+
+  const numericId = requireInt(id, "id");
+  const rows = await dbDrizzle.getScheduledEmailById(numericId, user.id);
+  if (!rows.length) {
+    throw new ValidationError("Scheduled email not found", 404);
+  }
+
+  const deleted = await dbDrizzle.deleteScheduledEmailById(numericId, user.id);
+  if (!deleted.length) {
+    // Row exists but the guarded delete matched nothing — it was already sent
+    throw new ValidationError(
+      "Scheduled email was already sent and cannot be deleted",
+      409
+    );
+  }
   return { success: true };
 }

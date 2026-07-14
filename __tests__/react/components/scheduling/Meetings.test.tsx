@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockUseQuery = vi.fn();
 const mockUseQueryClient = vi.fn(() => ({
@@ -81,76 +81,95 @@ describe("Meetings", () => {
     });
   });
 
-  it("renders the meetings table with data", () => {
-    render(<Meetings />);
-    expect(screen.getByText("Sprint Planning")).toBeInTheDocument();
-    expect(screen.getByText("Client Review")).toBeInTheDocument();
+  it("renders the meetings table with data", async () => {
+    const screen = await render(<Meetings />);
+    await expect
+      .element(screen.getByText("Sprint Planning"))
+      .toBeInTheDocument();
+    await expect.element(screen.getByText("Client Review")).toBeInTheDocument();
   });
 
-  it("renders search input", () => {
-    render(<Meetings />);
-    expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
+  it("renders search input", async () => {
+    const screen = await render(<Meetings />);
+    await expect
+      .element(screen.getByPlaceholder(/search/i))
+      .toBeInTheDocument();
   });
 
-  it("filters meetings by search query", () => {
-    render(<Meetings />);
-    fireEvent.change(screen.getByPlaceholderText(/search/i), {
-      target: { value: "sprint" },
-    });
-    expect(screen.getByText("Sprint Planning")).toBeInTheDocument();
-    expect(screen.queryByText("Client Review")).not.toBeInTheDocument();
+  it("filters meetings by search query", async () => {
+    const screen = await render(<Meetings />);
+    await screen.getByPlaceholder(/search/i).fill("sprint");
+    await expect
+      .element(screen.getByText("Sprint Planning"))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Client Review"))
+      .not.toBeInTheDocument();
   });
 
-  it("renders 'New Meeting' button", () => {
-    render(<Meetings />);
-    expect(
-      screen.getByRole("button", { name: /new meeting/i })
-    ).toBeInTheDocument();
+  it("renders 'New Meeting' button", async () => {
+    const screen = await render(<Meetings />);
+    await expect
+      .element(screen.getByRole("button", { name: /new meeting/i }))
+      .toBeInTheDocument();
   });
 
-  it("opens Start Meeting modal when button is clicked", () => {
-    render(<Meetings />);
-    fireEvent.click(screen.getByRole("button", { name: /new meeting/i }));
-    expect(screen.getByText(/start new meeting/i)).toBeInTheDocument();
+  it("opens Start Meeting modal when button is clicked", async () => {
+    const screen = await render(<Meetings />);
+    await screen.getByRole("button", { name: /new meeting/i }).click();
+    await expect
+      .element(screen.getByText(/start new meeting/i))
+      .toBeInTheDocument();
   });
 
-  it("shows empty state when no meetings loaded", () => {
+  it("shows empty state when no meetings loaded", async () => {
     mockUseQuery.mockReturnValue({ data: [], isLoading: false, error: null });
-    render(<Meetings />);
-    expect(screen.queryByText("Sprint Planning")).not.toBeInTheDocument();
+    const screen = await render(<Meetings />);
+    await expect
+      .element(screen.getByText("Sprint Planning"))
+      .not.toBeInTheDocument();
   });
 
-  it("shows loading state while fetching", () => {
+  it("shows loading state while fetching", async () => {
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
     });
-    render(<Meetings />);
+    const screen = await render(<Meetings />);
     // Still renders the layout
-    expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByPlaceholder(/search/i))
+      .toBeInTheDocument();
   });
 
-  it("renders a delete button for each meeting row", () => {
-    render(<Meetings />);
-    const deleteButtons = screen.getAllByRole("button", {
+  it("renders a delete button for each meeting row", async () => {
+    const screen = await render(<Meetings />);
+    const deleteButtons = screen.getByRole("button", {
       name: /delete meeting/i,
     });
-    expect(deleteButtons.length).toBe(mockMeetings.length);
+    await expect.element(deleteButtons.first()).toBeInTheDocument();
+    expect(deleteButtons.elements().length).toBe(mockMeetings.length);
   });
 
-  it("opens the delete confirmation dialog when the delete button is clicked", () => {
-    render(<Meetings />);
-    const deleteButtons = screen.getAllByRole("button", {
-      name: /delete meeting/i,
-    });
-    fireEvent.click(deleteButtons[0]);
-    expect(screen.getByText(/delete meeting\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/permanently deleted/i)).toBeInTheDocument();
-    expect(screen.getByText(/"sprint planning"/i)).toBeInTheDocument();
+  it("opens the delete confirmation dialog when the delete button is clicked", async () => {
+    const screen = await render(<Meetings />);
+    await screen
+      .getByRole("button", { name: /delete meeting/i })
+      .first()
+      .click();
+    await expect
+      .element(screen.getByText(/delete meeting\?/i))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/permanently deleted/i))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/"sprint planning"/i))
+      .toBeInTheDocument();
   });
 
-  it("calls deleteMeeting.mutate with the meeting id when the user confirms", () => {
+  it("calls deleteMeeting.mutate with the meeting id when the user confirms", async () => {
     // Track the mutate function passed to the delete mutation specifically.
     // The component calls useMutation three times: createMeeting, deleteMeeting,
     // and (in CalendarView pattern only) no others — so deleteMeeting is the
@@ -162,12 +181,12 @@ describe("Meetings", () => {
       return { mutate, isPending: false };
     });
 
-    render(<Meetings />);
-    const deleteButtons = screen.getAllByRole("button", {
-      name: /delete meeting/i,
-    });
-    fireEvent.click(deleteButtons[0]);
-    fireEvent.click(screen.getByRole("button", { name: /^delete$/i }));
+    const screen = await render(<Meetings />);
+    await screen
+      .getByRole("button", { name: /delete meeting/i })
+      .first()
+      .click();
+    await screen.getByRole("button", { name: /^delete$/i }).click();
 
     const calledMutates = mutateFns.filter((m) => m.mock.calls.length > 0);
     expect(calledMutates).toHaveLength(1);

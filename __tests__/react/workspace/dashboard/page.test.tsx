@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockUseQuery = vi.fn();
 const mockUseMutation = vi.fn();
@@ -98,42 +98,56 @@ describe("Dashboard Page", () => {
     });
   });
 
-  it("renders Dashboard heading", () => {
-    render(<Dashboard />);
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+  it("renders Dashboard heading", async () => {
+    const screen = await render(<Dashboard />);
+    await expect
+      .element(screen.getByText("Dashboard", { exact: true }))
+      .toBeInTheDocument();
   });
 
-  it("renders stat cards", () => {
-    render(<Dashboard />);
-    expect(screen.getByText("Active Clients")).toBeInTheDocument();
-    expect(screen.getByText("Active Cases")).toBeInTheDocument();
-    expect(screen.getByText("Tasks Completed")).toBeInTheDocument();
-    expect(screen.getByText("Automations Run")).toBeInTheDocument();
+  it("renders stat cards", async () => {
+    const screen = await render(<Dashboard />);
+    await expect
+      .element(screen.getByText("Active Clients"))
+      .toBeInTheDocument();
+    await expect.element(screen.getByText("Active Cases")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Tasks Completed"))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Automations Run"))
+      .toBeInTheDocument();
   });
 
-  it("renders Recent Cases section", () => {
-    render(<Dashboard />);
-    expect(screen.getByText("Recent Cases")).toBeInTheDocument();
+  it("renders Recent Cases section", async () => {
+    const screen = await render(<Dashboard />);
+    await expect.element(screen.getByText("Recent Cases")).toBeInTheDocument();
   });
 
-  it("renders Upcoming Tasks section", () => {
-    render(<Dashboard />);
-    expect(screen.getByText("Upcoming Tasks")).toBeInTheDocument();
+  it("renders Upcoming Tasks section", async () => {
+    const screen = await render(<Dashboard />);
+    await expect
+      .element(screen.getByText("Upcoming Tasks"))
+      .toBeInTheDocument();
   });
 
-  it("renders cases from query", () => {
-    render(<Dashboard />);
-    expect(screen.getAllByText("Alpha Project").length).toBeGreaterThan(0);
+  it("renders cases from query", async () => {
+    const screen = await render(<Dashboard />);
+    await expect
+      .element(screen.getByText("Alpha Project").first())
+      .toBeInTheDocument();
   });
 
-  it("renders tasks from query", () => {
-    render(<Dashboard />);
-    expect(screen.getByText("Fix login bug")).toBeInTheDocument();
+  it("renders tasks from query", async () => {
+    const screen = await render(<Dashboard />);
+    await expect.element(screen.getByText("Fix login bug")).toBeInTheDocument();
   });
 
-  it("shows client count", () => {
-    render(<Dashboard />);
+  it("shows client count", async () => {
+    const screen = await render(<Dashboard />);
     // 2 clients in mock data - may appear in multiple stat cards
-    expect(screen.getAllByText("2").length).toBeGreaterThan(0);
+    await expect
+      .element(screen.getByText("2", { exact: true }).first())
+      .toBeInTheDocument();
   });
 });

@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { render } from "vitest-browser-react";
+import { page } from "vitest/browser";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function renderWithClient(ui: React.ReactElement) {
@@ -21,15 +16,11 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({ token: "test-token-abc" }),
 }));
 
-vi.mock("sonner", () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
-}));
-
 vi.mock("@/lib/util/date_utils", () => ({
   parseDateOnlyString: vi.fn((s: string) => new Date(s)),
 }));
 
-// Server actions pull in the DB layer, which is unavailable under jsdom — stub them.
+// Server actions pull in the DB layer, which is unavailable in the browser — stub them.
 vi.mock("@/lib/portal_chat", () => ({
   sendPortalChatMessage: vi.fn(() =>
     Promise.resolve({
@@ -144,42 +135,51 @@ describe("Portal Page", () => {
     setupAxiosRoutes();
   });
 
-  it("renders without crashing", () => {
-    const { container } = renderWithClient(<PortalPage />);
-    expect(container).toBeInTheDocument();
+  it("renders without crashing", async () => {
+    const { container } = await renderWithClient(<PortalPage />);
+    await expect.element(container).toBeInTheDocument();
   });
 
-  it("renders loading state initially", () => {
-    renderWithClient(<PortalPage />);
-    expect(screen.getByText(/loading your portal/i)).toBeInTheDocument();
+  it("renders loading state initially", async () => {
+    // keep the portal query pending so the loading state stays visible
+    mockedAxiosGet.mockImplementation(() => new Promise(() => {}));
+    const screen = await renderWithClient(<PortalPage />);
+    await expect
+      .element(screen.getByText(/loading your portal/i))
+      .toBeInTheDocument();
   });
 
-  const findTabBar = async () =>
-    (await screen.findByTestId("portal-tab-bar")) as HTMLElement;
+  const findTabBar = async (screen: {
+    getByTestId: (id: string) => ReturnType<typeof page.getByTestId>;
+  }) => {
+    const tabBar = screen.getByTestId("portal-tab-bar");
+    await expect.element(tabBar).toBeInTheDocument();
+    return tabBar;
+  };
 
   it("renders the workspace-style tab pill buttons after data loads", async () => {
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    expect(
-      within(tabBar).getByRole("button", { name: /^overview$/i })
-    ).toBeInTheDocument();
-    expect(
-      within(tabBar).getByRole("button", { name: /^cases$/i })
-    ).toBeInTheDocument();
-    expect(
-      within(tabBar).getByRole("button", { name: /^messages$/i })
-    ).toBeInTheDocument();
-    expect(
-      within(tabBar).getByRole("button", { name: /^files$/i })
-    ).toBeInTheDocument();
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await expect
+      .element(tabBar.getByRole("button", { name: /^overview$/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(tabBar.getByRole("button", { name: /^cases$/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(tabBar.getByRole("button", { name: /^messages$/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(tabBar.getByRole("button", { name: /^files$/i }))
+      .toBeInTheDocument();
   });
 
   it("hides the schedule tab when meeting scheduling is disabled", async () => {
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    expect(
-      within(tabBar).queryByRole("button", { name: /schedule meeting/i })
-    ).not.toBeInTheDocument();
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await expect
+      .element(tabBar.getByRole("button", { name: /schedule meeting/i }))
+      .not.toBeInTheDocument();
   });
 
   it("shows the schedule tab when meeting scheduling is enabled", async () => {
@@ -189,11 +189,11 @@ describe("Portal Page", () => {
         availability: { meetingDurations: [30] },
       },
     });
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    expect(
-      within(tabBar).getByRole("button", { name: /schedule meeting/i })
-    ).toBeInTheDocument();
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await expect
+      .element(tabBar.getByRole("button", { name: /schedule meeting/i }))
+      .toBeInTheDocument();
   });
 
   it("shows count badges on cases, messages and files tabs", async () => {
@@ -250,17 +250,17 @@ describe("Portal Page", () => {
         },
       ],
     });
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    expect(
-      within(tabBar).getByRole("button", { name: /^cases\s*2$/i })
-    ).toBeInTheDocument();
-    expect(
-      within(tabBar).getByRole("button", { name: /^messages\s*2$/i })
-    ).toBeInTheDocument();
-    expect(
-      within(tabBar).getByRole("button", { name: /^files\s*1$/i })
-    ).toBeInTheDocument();
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await expect
+      .element(tabBar.getByRole("button", { name: /^cases\s*2$/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(tabBar.getByRole("button", { name: /^messages\s*2$/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(tabBar.getByRole("button", { name: /^files\s*1$/i }))
+      .toBeInTheDocument();
   });
 
   it("switches the active tab when a tab pill is clicked", async () => {
@@ -276,42 +276,41 @@ describe("Portal Page", () => {
         },
       ],
     });
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
 
     // Overview tab default: shows "Active Cases" toolbar header
-    expect(screen.getByText(/active cases/i)).toBeInTheDocument();
-    expect(screen.queryByText(/all cases/i)).not.toBeInTheDocument();
+    await expect.element(screen.getByText(/active cases/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/all cases/i))
+      .not.toBeInTheDocument();
 
-    fireEvent.click(
-      within(tabBar).getByRole("button", { name: /^cases\s*1$/i })
-    );
+    await tabBar.getByRole("button", { name: /^cases\s*1$/i }).click();
 
-    await waitFor(() =>
-      expect(screen.getByText(/all cases/i)).toBeInTheDocument()
-    );
-    expect(screen.queryByText(/active cases/i)).not.toBeInTheDocument();
+    await expect.element(screen.getByText(/all cases/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/active cases/i))
+      .not.toBeInTheDocument();
   });
 
   it("renders the not-found state when portal data fails to load", async () => {
     setupAxiosRoutes({ failPortal: true });
-    renderWithClient(<PortalPage />);
-    expect(await screen.findByText(/portal not found/i)).toBeInTheDocument();
+    const screen = await renderWithClient(<PortalPage />);
+    await expect
+      .element(screen.getByText(/portal not found/i))
+      .toBeInTheDocument();
   });
 
   it("sends a chat message via the server action", async () => {
     setupAxiosRoutes();
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    fireEvent.click(
-      within(tabBar).getByRole("button", { name: /^messages$/i })
-    );
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await tabBar.getByRole("button", { name: /^messages$/i }).click();
 
-    const textarea = await screen.findByPlaceholderText(/write a message/i);
-    fireEvent.change(textarea, { target: { value: "Hello there" } });
-    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+    await screen.getByPlaceholder(/write a message/i).fill("Hello there");
+    await screen.getByRole("button", { name: /send/i }).click();
 
-    await waitFor(() =>
+    await vi.waitFor(() =>
       expect(sendPortalChatMessage).toHaveBeenCalledWith(
         "test-token-abc",
         "Hello there"
@@ -332,17 +331,17 @@ describe("Portal Page", () => {
         },
       ],
     });
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    fireEvent.click(within(tabBar).getByRole("button", { name: /^files/i }));
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await tabBar.getByRole("button", { name: /^files/i }).click();
 
-    const fileInput = document.getElementById(
-      "portalFileInput"
-    ) as HTMLInputElement;
+    const fileInput = page.elementLocator(
+      document.getElementById("portalFileInput")!
+    );
     const file = new File(["data"], "report.pdf", { type: "application/pdf" });
-    fireEvent.change(fileInput, { target: { files: [file] } });
+    await fileInput.upload(file);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(uploadPortalFile).toHaveBeenCalledWith(
         "test-token-abc",
         expect.any(FormData)
@@ -376,12 +375,12 @@ describe("Portal Page", () => {
         },
       ],
     });
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    fireEvent.click(
-      within(tabBar).getByRole("button", { name: /documents needed/i })
-    );
-    expect(await screen.findByText(/passport copy/i)).toBeInTheDocument();
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await tabBar.getByRole("button", { name: /documents needed/i }).click();
+    await expect
+      .element(screen.getByText(/passport copy/i))
+      .toBeInTheDocument();
   });
 
   it("shows the date prompt before any availability is requested on the schedule tab", async () => {
@@ -391,15 +390,13 @@ describe("Portal Page", () => {
         availability: { meetingDurations: [30, 60] },
       },
     });
-    renderWithClient(<PortalPage />);
-    const tabBar = await findTabBar();
-    fireEvent.click(
-      within(tabBar).getByRole("button", { name: /schedule meeting/i })
-    );
+    const screen = await renderWithClient(<PortalPage />);
+    const tabBar = await findTabBar(screen);
+    await tabBar.getByRole("button", { name: /schedule meeting/i }).click();
 
-    expect(
-      await screen.findByText(/choose a date to see available slots/i)
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/choose a date to see available slots/i))
+      .toBeInTheDocument();
     // The availability query stays disabled until a date is picked
     const availabilityCall = (axios.get as Mock).mock.calls.find(
       (args: unknown[]) => {

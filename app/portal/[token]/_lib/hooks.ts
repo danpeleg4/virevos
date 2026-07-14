@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { toast } from "sonner";
 import type {
   BookingInput,
   PortalChatMessage,
@@ -72,7 +71,6 @@ export function usePortalChat(token: string) {
     },
     onError: (_err, _body, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous);
-      toast.error("Failed to send message");
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey });
@@ -117,11 +115,6 @@ export function useFileUpload(token: string) {
       if (caseId) formData.append("caseId", String(caseId));
       return uploadPortalFile(token, formData);
     },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error && err.message ? err.message : "Upload failed";
-      toast.error(message);
-    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
     },
@@ -133,7 +126,7 @@ interface DocumentAnalysis {
   reasoning: string;
 }
 
-/** Uploads a file against a document-checklist item, with AI-verdict toasts. */
+/** Uploads a file against a document-checklist item. */
 export function useDocumentItemUpload(token: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -146,22 +139,6 @@ export function useDocumentItemUpload(token: string) {
         analysis: (res.analysis ?? null) as DocumentAnalysis | null,
       };
     },
-    onSuccess: ({ fileName, analysis }) => {
-      if (analysis?.verdict === "does_not_meet") {
-        toast.error(
-          analysis.reasoning || `${fileName} does not meet the requirement`
-        );
-      } else if (analysis?.verdict === "meets") {
-        toast.success(`${fileName} looks good`);
-      } else {
-        toast.success(`${fileName} uploaded`);
-      }
-    },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error && err.message ? err.message : "Upload failed";
-      toast.error(message);
-    },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
     },
@@ -173,8 +150,5 @@ export function useBookMeeting(token: string, onConfirmed: () => void) {
   return useMutation({
     mutationFn: (input: BookingInput) => createPortalBooking(token, input),
     onSuccess: () => onConfirmed(),
-    onError: () => {
-      toast.error("Failed to book meeting");
-    },
   });
 }

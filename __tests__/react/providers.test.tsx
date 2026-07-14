@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 vi.mock("@tanstack/react-query", () => ({
   QueryClient: vi.fn(function () {
@@ -19,13 +19,15 @@ vi.mock("next-themes", () => ({
 import { Providers } from "@/app/providers";
 
 describe("Providers", () => {
-  it("renders children without crashing", () => {
-    render(
+  it("renders children without crashing", async () => {
+    const screen = await render(
       <Providers>
         <div data-testid="child">Hello World</div>
       </Providers>
     );
-    expect(screen.getByTestId("child")).toBeInTheDocument();
-    expect(screen.getByText("Hello World")).toBeInTheDocument();
+    await expect.element(screen.getByTestId("child")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Hello World", { exact: true }))
+      .toBeInTheDocument();
   });
 });

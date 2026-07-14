@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 const mockUseQuery = vi.fn();
@@ -86,7 +86,7 @@ const mockEmails = [
 import ClientDetailPage from "@/app/workspace/clients/[id]/page";
 
 // React's `use(thenable)` returns synchronously when the thenable carries
-// status: "fulfilled". Build one to avoid suspending under jsdom.
+// status: "fulfilled". Build one to avoid suspending during render.
 function fulfilledParams<T>(value: T): Promise<T> {
   const p = Promise.resolve(value) as Promise<T> & {
     status?: string;
@@ -139,63 +139,91 @@ describe("Client Detail Page", () => {
     mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
   });
 
-  it("shows a loader while client query is loading", () => {
+  it("shows a loader while client query is loading", async () => {
     setupQueries({ clientLoading: true });
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
     // Loader2 has role of presentation; assert no client name yet
-    expect(screen.queryByText("Acme Corp")).not.toBeInTheDocument();
+    await expect.element(screen.getByText("Acme Corp")).not.toBeInTheDocument();
   });
 
-  it("shows an error when client fails to load", () => {
+  it("shows an error when client fails to load", async () => {
     setupQueries({ clientError: true });
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
-    expect(screen.getByText(/failed to load client/i)).toBeInTheDocument();
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
+    await expect
+      .element(screen.getByText(/failed to load client/i))
+      .toBeInTheDocument();
   });
 
-  it("renders the client header with name, email, and phone", () => {
+  it("renders the client header with name, email, and phone", async () => {
     setupQueries();
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
-    expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByText("contact@acme.com")).toBeInTheDocument();
-    expect(screen.getByText("555-1234")).toBeInTheDocument();
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
+    await expect.element(screen.getByText("Acme Corp")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("contact@acme.com"))
+      .toBeInTheDocument();
+    await expect.element(screen.getByText("555-1234")).toBeInTheDocument();
   });
 
-  it("renders all three section tabs", () => {
+  it("renders all three section tabs", async () => {
     setupQueries();
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
-    expect(screen.getByRole("button", { name: /portal/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /cases/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /communications/i })
-    ).toBeInTheDocument();
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
+    await expect
+      .element(screen.getByRole("button", { name: /portal/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /cases/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /communications/i }))
+      .toBeInTheDocument();
   });
 
-  it("shows the Portal settings by default", () => {
+  it("shows the Portal settings by default", async () => {
     setupQueries();
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
-    expect(screen.getByTestId("portal-settings")).toBeInTheDocument();
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
+    await expect
+      .element(screen.getByTestId("portal-settings"))
+      .toBeInTheDocument();
   });
 
-  it("switches to Cases tab and shows cases", () => {
+  it("switches to Cases tab and shows cases", async () => {
     setupQueries();
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
-    fireEvent.click(screen.getByRole("button", { name: /cases/i }));
-    expect(screen.getByTestId("cases-tab")).toBeInTheDocument();
-    expect(screen.getByText("Visa Application")).toBeInTheDocument();
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
+    await screen.getByRole("button", { name: /cases/i }).click();
+    await expect.element(screen.getByTestId("cases-tab")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Visa Application"))
+      .toBeInTheDocument();
   });
 
-  it("switches to Communications tab and shows chat + emails", () => {
+  it("switches to Communications tab and shows chat + emails", async () => {
     setupQueries();
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
-    fireEvent.click(screen.getByRole("button", { name: /communications/i }));
-    expect(screen.getByTestId("chat-pane")).toBeInTheDocument();
-    expect(screen.getByText("Hello")).toBeInTheDocument();
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
+    await screen.getByRole("button", { name: /communications/i }).click();
+    await expect.element(screen.getByTestId("chat-pane")).toBeInTheDocument();
+    await expect.element(screen.getByText("Hello")).toBeInTheDocument();
   });
 
-  it("clicking back navigates to the clients list", () => {
+  it("clicking back navigates to the clients list", async () => {
     setupQueries();
-    render(<ClientDetailPage params={fulfilledParams({ id: "42" })} />);
-    fireEvent.click(screen.getByRole("button", { name: /back to clients/i }));
+    const screen = await render(
+      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+    );
+    await screen.getByRole("button", { name: /back to clients/i }).click();
     expect(mockPush).toHaveBeenCalledWith("/workspace/clients");
   });
 });

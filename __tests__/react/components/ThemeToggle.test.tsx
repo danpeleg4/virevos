@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockSetTheme = vi.fn();
 const mockUseTheme = vi.fn();
@@ -15,53 +15,51 @@ describe("ThemeToggle", () => {
     mockSetTheme.mockClear();
   });
 
-  it("renders nothing (empty div) when theme is not yet resolved", () => {
+  it("renders nothing (empty div) when theme is not yet resolved", async () => {
     mockUseTheme.mockReturnValue({
       resolvedTheme: undefined,
       setTheme: mockSetTheme,
     });
-    const { container } = render(<ThemeToggle />);
-    expect(container.firstChild).toBeEmptyDOMElement();
+    const { container } = await render(<ThemeToggle />);
+    await expect.element(container.firstElementChild!).toBeEmptyDOMElement();
   });
 
-  it("shows Moon icon when in light mode", () => {
+  it("shows Moon icon when in light mode", async () => {
     mockUseTheme.mockReturnValue({
       resolvedTheme: "light",
       setTheme: mockSetTheme,
     });
-    render(<ThemeToggle />);
+    const screen = await render(<ThemeToggle />);
     // Moon icon is shown in light mode (to switch to dark)
-    const btn = screen.getByRole("button");
-    expect(btn).toBeInTheDocument();
+    await expect.element(screen.getByRole("button")).toBeInTheDocument();
   });
 
-  it("shows Sun icon when in dark mode", () => {
+  it("shows Sun icon when in dark mode", async () => {
     mockUseTheme.mockReturnValue({
       resolvedTheme: "dark",
       setTheme: mockSetTheme,
     });
-    render(<ThemeToggle />);
-    const btn = screen.getByRole("button");
-    expect(btn).toBeInTheDocument();
+    const screen = await render(<ThemeToggle />);
+    await expect.element(screen.getByRole("button")).toBeInTheDocument();
   });
 
-  it("calls setTheme('dark') when clicked in light mode", () => {
+  it("calls setTheme('dark') when clicked in light mode", async () => {
     mockUseTheme.mockReturnValue({
       resolvedTheme: "light",
       setTheme: mockSetTheme,
     });
-    render(<ThemeToggle />);
-    fireEvent.click(screen.getByRole("button"));
+    const screen = await render(<ThemeToggle />);
+    await screen.getByRole("button").click();
     expect(mockSetTheme).toHaveBeenCalledWith("dark");
   });
 
-  it("calls setTheme('light') when clicked in dark mode", () => {
+  it("calls setTheme('light') when clicked in dark mode", async () => {
     mockUseTheme.mockReturnValue({
       resolvedTheme: "dark",
       setTheme: mockSetTheme,
     });
-    render(<ThemeToggle />);
-    fireEvent.click(screen.getByRole("button"));
+    const screen = await render(<ThemeToggle />);
+    await screen.getByRole("button").click();
     expect(mockSetTheme).toHaveBeenCalledWith("light");
   });
 });

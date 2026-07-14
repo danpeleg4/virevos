@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 const mockInvalidateQueries = vi.fn();
 const mockUseQueryClient = vi.fn(() => ({
@@ -50,90 +50,98 @@ describe("EventDetailsDialog", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the event title", () => {
-    render(
+  it("renders the event title", async () => {
+    const screen = await render(
       <EventDetailsDialog
         event={baseEvent}
         open={true}
         onOpenChange={vi.fn()}
       />
     );
-    expect(screen.getByText("Team Sync")).toBeInTheDocument();
+    await expect.element(screen.getByText("Team Sync")).toBeInTheDocument();
   });
 
-  it("renders date, time and duration", () => {
-    render(
+  it("renders date, time and duration", async () => {
+    const screen = await render(
       <EventDetailsDialog
         event={baseEvent}
         open={true}
         onOpenChange={vi.fn()}
       />
     );
-    expect(screen.getByText("Jan 1, 2026")).toBeInTheDocument();
-    expect(screen.getByText(/10:00 AM/)).toBeInTheDocument();
-    expect(screen.getByText(/30/)).toBeInTheDocument();
+    await expect.element(screen.getByText("Jan 1, 2026")).toBeInTheDocument();
+    await expect.element(screen.getByText(/10:00 AM/)).toBeInTheDocument();
+    await expect.element(screen.getByText(/30/)).toBeInTheDocument();
   });
 
-  it("renders attendees when provided", () => {
+  it("renders attendees when provided", async () => {
     const event: Event = {
       ...baseEvent,
       attendees: [{ name: "Alice", initials: "A" }],
     };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(screen.getByText("Alice")).toBeInTheDocument();
+    await expect.element(screen.getByText("Alice")).toBeInTheDocument();
   });
 
-  it("renders tags when provided", () => {
+  it("renders tags when provided", async () => {
     const event: Event = { ...baseEvent, tags: ["design", "frontend"] };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(screen.getByText("design")).toBeInTheDocument();
-    expect(screen.getByText("frontend")).toBeInTheDocument();
+    await expect.element(screen.getByText("design")).toBeInTheDocument();
+    await expect.element(screen.getByText("frontend")).toBeInTheDocument();
   });
 
-  it("renders meeting link with Copy and Open buttons", () => {
+  it("renders meeting link with Copy and Open buttons", async () => {
     const event: Event = { ...baseEvent, link: "https://meet.example.com/abc" };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(
-      screen.getByDisplayValue("https://meet.example.com/abc")
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /copy/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /open/i })).toBeInTheDocument();
+    // no getByDisplayValue locator; assert an input carries the link value
+    await vi.waitFor(() => {
+      const match = Array.from(document.querySelectorAll("input")).some(
+        (input) => input.value === "https://meet.example.com/abc"
+      );
+      expect(match).toBe(true);
+    });
+    await expect
+      .element(screen.getByRole("button", { name: /copy/i }))
+      .toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /open/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders AI summary when hasNotes and ai_summary are set", () => {
+  it("renders AI summary when hasNotes and ai_summary are set", async () => {
     const event: Event = {
       ...baseEvent,
       hasNotes: true,
       ai_summary: "This meeting covered Q1 goals.",
     };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(
-      screen.getByText("This meeting covered Q1 goals.")
-    ).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("This meeting covered Q1 goals."))
+      .toBeInTheDocument();
   });
 
-  it("renders key points when hasNotes and key_points are set", () => {
+  it("renders key points when hasNotes and key_points are set", async () => {
     const event: Event = {
       ...baseEvent,
       hasNotes: true,
       key_points: ["Point A", "Point B"],
     };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(screen.getByText("Point A")).toBeInTheDocument();
-    expect(screen.getByText("Point B")).toBeInTheDocument();
+    await expect.element(screen.getByText("Point A")).toBeInTheDocument();
+    await expect.element(screen.getByText("Point B")).toBeInTheDocument();
   });
 
-  it("renders action items with Add buttons", () => {
+  it("renders action items with Add buttons", async () => {
     const event: Event = {
       ...baseEvent,
       hasNotes: true,
@@ -154,15 +162,17 @@ describe("EventDetailsDialog", () => {
         },
       ],
     };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(screen.getByText("Write report")).toBeInTheDocument();
-    expect(screen.getByText("Send email")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^add$/i })).toHaveLength(2);
-    expect(
-      screen.getByRole("button", { name: /add all to tasks/i })
-    ).toBeInTheDocument();
+    await expect.element(screen.getByText("Write report")).toBeInTheDocument();
+    await expect.element(screen.getByText("Send email")).toBeInTheDocument();
+    const addButtons = screen.getByRole("button", { name: /^add$/i });
+    await expect.element(addButtons.first()).toBeInTheDocument();
+    expect(addButtons.elements()).toHaveLength(2);
+    await expect
+      .element(screen.getByRole("button", { name: /add all to tasks/i }))
+      .toBeInTheDocument();
   });
 
   it("marks action item as added after clicking Add", async () => {
@@ -179,18 +189,21 @@ describe("EventDetailsDialog", () => {
         },
       ],
     };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
-    await waitFor(() => {
+    await screen.getByRole("button", { name: /^add$/i }).click();
+    await vi.waitFor(() => {
       expect(addProjectTasksAction).toHaveBeenCalledWith(
         expect.objectContaining({ title: "Fix bug", status: "in-progress" })
       );
       expect(markActionItemAdded).toHaveBeenCalledWith("evt-1", 0);
     });
-    const addedButtons = screen.getAllByRole("button", { name: /added/i });
-    addedButtons.forEach((btn) => expect(btn).toBeDisabled());
+    const addedButtons = screen.getByRole("button", { name: /added/i });
+    await expect.element(addedButtons.first()).toBeInTheDocument();
+    for (const btn of addedButtons.all()) {
+      await expect.element(btn).toBeDisabled();
+    }
   });
 
   it("disables 'Add All to Tasks' when all items already added", async () => {
@@ -207,10 +220,12 @@ describe("EventDetailsDialog", () => {
         },
       ],
     };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(screen.getByRole("button", { name: /all added/i })).toBeDisabled();
+    await expect
+      .element(screen.getByRole("button", { name: /all added/i }))
+      .toBeDisabled();
   });
 
   it("fetches and displays transcript when hasTranscript is true", async () => {
@@ -225,14 +240,14 @@ describe("EventDetailsDialog", () => {
     });
 
     const event: Event = { ...baseEvent, hasTranscript: true };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText("Alice")).toBeInTheDocument();
-      expect(screen.getByText("Hello everyone")).toBeInTheDocument();
-    });
+    await expect.element(screen.getByText("Alice")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Hello everyone"))
+      .toBeInTheDocument();
     expect(mockAxiosGet).toHaveBeenCalledWith("/api/transcript/evt-1");
   });
 
@@ -250,38 +265,36 @@ describe("EventDetailsDialog", () => {
     });
 
     const event: Event = { ...baseEvent, hasTranscript: true };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /view full transcript/i })
-      ).toBeInTheDocument();
-    });
-    expect(screen.queryByText("Line 4")).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /view full transcript/i }))
+      .toBeInTheDocument();
+    await expect.element(screen.getByText("Line 4")).not.toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /view full transcript/i })
-    );
-    expect(screen.getByText("Line 4")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /show less/i })
-    ).toBeInTheDocument();
+    await screen.getByRole("button", { name: /view full transcript/i }).click();
+    await expect.element(screen.getByText("Line 4")).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("button", { name: /show less/i }))
+      .toBeInTheDocument();
   });
 
-  it("shows loading state while fetching transcript", () => {
+  it("shows loading state while fetching transcript", async () => {
     mockAxiosGet.mockReturnValueOnce(new Promise(() => {})); // never resolves
     const event: Event = { ...baseEvent, hasTranscript: true };
-    render(
+    const screen = await render(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
-    expect(screen.getByText(/loading transcript/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/loading transcript/i))
+      .toBeInTheDocument();
   });
 
-  it("does not fetch transcript when dialog is closed", () => {
+  it("does not fetch transcript when dialog is closed", async () => {
     const event: Event = { ...baseEvent, hasTranscript: true };
-    render(
+    await render(
       <EventDetailsDialog event={event} open={false} onOpenChange={vi.fn()} />
     );
     expect(mockAxiosGet).not.toHaveBeenCalled();

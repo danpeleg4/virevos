@@ -2,7 +2,6 @@ import type { SendOutlookEmailInput } from "@/lib/outlook/outlook_actions";
 
 const mockGetCurrentUser = vi.fn();
 const mockGetFreshOutlookAccessToken = vi.fn();
-const mockDeleteScheduledEmail = vi.fn();
 const mockAxiosPost = vi.fn();
 const mockAxiosPut = vi.fn();
 
@@ -10,7 +9,13 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
-vi.mock("@db/db", () => ({ db: {} }));
+const mockDbUpdate = vi.fn();
+
+vi.mock("@db/db", () => ({
+  db: {
+    update: (...args: unknown[]) => mockDbUpdate(...args),
+  },
+}));
 vi.mock("@db/schema", () => ({ outlookEmails: {} }));
 vi.mock("drizzle-orm", () => ({
   and: vi.fn(),
@@ -24,6 +29,8 @@ vi.mock("axios", () => {
     patch: vi.fn(),
     delete: vi.fn(),
     get: vi.fn(),
+    isAxiosError: (e: unknown) =>
+      !!(e as { isAxiosError?: boolean })?.isAxiosError,
   };
   return { default: axios, ...axios };
 });
@@ -49,11 +56,6 @@ vi.mock("@/lib/util/html_sanitizer", () => ({
   sanitizeEmailHtml: (html: string) => html,
 }));
 
-vi.mock("@/lib/scheduled_emails", () => ({
-  deleteScheduledEmail: (...args: unknown[]) =>
-    mockDeleteScheduledEmail(...args),
-}));
-
 import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
 
 const baseInput: SendOutlookEmailInput = {
@@ -64,13 +66,19 @@ const baseInput: SendOutlookEmailInput = {
   bodyText: "Hi there",
 };
 
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockGetCurrentUser.mockResolvedValue({ id: "user_1" });
   mockGetFreshOutlookAccessToken.mockResolvedValue("token-123");
   mockAxiosPost.mockResolvedValue({ data: { id: "draft-1" } });
   mockAxiosPut.mockResolvedValue({ data: {} });
-  mockDeleteScheduledEmail.mockResolvedValue({ success: true });
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
 });
 
 describe("sendOutlookEmail", () => {
@@ -97,7 +105,7 @@ describe("sendOutlookEmail", () => {
     expect(mockAxiosPost).not.toHaveBeenCalled();
   });
 
-  it("sends a compose email without an id and does not touch scheduled emails", async () => {
+  it("sends a compose email and never touches the db", async () => {
     const result = await sendOutlookEmail(baseInput);
 
     expect(result).toEqual({ success: true });
@@ -108,10 +116,10 @@ describe("sendOutlookEmail", () => {
     expect(payload.message.toRecipients).toEqual([
       { emailAddress: { address: "client@example.com", name: "Jane Client" } },
     ]);
-    expect(mockDeleteScheduledEmail).not.toHaveBeenCalled();
+    expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 
-  it("sends a reply without an id via the reply endpoint", async () => {
+  it("sends a reply via the reply endpoint", async () => {
     const result = await sendOutlookEmail({
       ...baseInput,
       replyToOutlookId: "msg-9",
@@ -123,44 +131,19 @@ describe("sendOutlookEmail", () => {
     expect(mockAxiosPost.mock.calls[0][0]).toBe(
       "https://graph.microsoft.com/v1.0/me/messages/msg-9/reply"
     );
-    expect(mockDeleteScheduledEmail).not.toHaveBeenCalled();
+    expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 
-  it("deletes the scheduled email after sending when an id is provided", async () => {
-    const result = await sendOutlookEmail({ ...baseInput, id: 42 });
-
-    expect(result).toEqual({ success: true });
-    expect(mockAxiosPost).toHaveBeenCalledTimes(1);
-    expect(mockAxiosPost.mock.calls[0][0]).toBe(
-      "https://graph.microsoft.com/v1.0/me/sendMail"
-    );
-    expect(mockDeleteScheduledEmail).toHaveBeenCalledTimes(1);
-    expect(mockDeleteScheduledEmail).toHaveBeenCalledWith(42);
-  });
-
-  it("does not delete the scheduled email when sending fails", async () => {
+  it("propagates the send failure and never touches the db", async () => {
     mockAxiosPost.mockRejectedValue(new Error("graph down"));
 
-    await expect(sendOutlookEmail({ ...baseInput, id: 42 })).rejects.toThrow(
-      "graph down"
-    );
-    expect(mockDeleteScheduledEmail).not.toHaveBeenCalled();
+    await expect(sendOutlookEmail(baseInput)).rejects.toThrow("graph down");
+    expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 
-  it("rejects a non-numeric id", async () => {
-    await expect(
-      sendOutlookEmail({
-        ...baseInput,
-        id: "not-a-number" as unknown as number,
-      })
-    ).rejects.toThrow("id must be a number");
-    expect(mockAxiosPost).not.toHaveBeenCalled();
-  });
-
-  it("sends attachments via a draft and still deletes the scheduled email", async () => {
+  it("sends attachments via a draft", async () => {
     const result = await sendOutlookEmail({
       ...baseInput,
-      id: 7,
       attachments: [
         {
           name: "doc.pdf",
@@ -177,6 +160,5 @@ describe("sendOutlookEmail", () => {
       "https://graph.microsoft.com/v1.0/me/messages/draft-1/attachments",
       "https://graph.microsoft.com/v1.0/me/messages/draft-1/send",
     ]);
-    expect(mockDeleteScheduledEmail).toHaveBeenCalledWith(7);
   });
 });

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, type RenderResult } from "vitest-browser-react";
 
 const mockPush = vi.fn();
 const mockUseAuthUser = vi.fn();
@@ -31,30 +31,36 @@ describe("Navigation", () => {
   });
 
   describe("when user is not signed in", () => {
-    beforeEach(() => {
+    let screen: RenderResult;
+
+    beforeEach(async () => {
       mockUseAuthUser.mockReturnValue({ data: null, isPending: false });
-      render(<Navigation />);
+      screen = await render(<Navigation />);
     });
 
-    it("renders the brand/logo", () => {
-      expect(screen.getAllByText(/virevos/i).length).toBeGreaterThan(0);
+    it("renders the brand/logo", async () => {
+      await expect
+        .element(screen.getByText(/virevos/i).first())
+        .toBeInTheDocument();
     });
 
-    it("shows Login button", () => {
-      expect(
-        screen.getByRole("button", { name: /login/i })
-      ).toBeInTheDocument();
+    it("shows Login button", async () => {
+      await expect
+        .element(screen.getByRole("button", { name: /login/i }))
+        .toBeInTheDocument();
     });
 
-    it("shows Sign Up button", () => {
-      expect(
-        screen.getByRole("button", { name: /sign up/i })
-      ).toBeInTheDocument();
+    it("shows Sign Up button", async () => {
+      await expect
+        .element(screen.getByRole("button", { name: /sign up/i }))
+        .toBeInTheDocument();
     });
   });
 
   describe("when user is signed in", () => {
-    beforeEach(() => {
+    let screen: RenderResult;
+
+    beforeEach(async () => {
       mockUseAuthUser.mockReturnValue({
         data: {
           id: "user_1",
@@ -63,34 +69,37 @@ describe("Navigation", () => {
         },
         isPending: false,
       });
-      render(<Navigation />);
+      screen = await render(<Navigation />);
     });
 
-    it("does not show Login button", () => {
-      expect(
-        screen.queryByRole("button", { name: /^login$/i })
-      ).not.toBeInTheDocument();
+    it("does not show Login button", async () => {
+      await expect
+        .element(screen.getByRole("button", { name: /^login$/i }))
+        .not.toBeInTheDocument();
     });
 
-    it("shows Dashboard button", () => {
-      expect(
-        screen.getByRole("button", { name: /dashboard/i })
-      ).toBeInTheDocument();
+    it("shows Dashboard button", async () => {
+      await expect
+        .element(screen.getByRole("button", { name: /dashboard/i }))
+        .toBeInTheDocument();
     });
   });
 
   describe("mobile menu", () => {
-    beforeEach(() => {
+    let screen: RenderResult;
+
+    beforeEach(async () => {
       mockUseAuthUser.mockReturnValue({ data: null, isPending: false });
-      render(<Navigation />);
+      screen = await render(<Navigation />);
     });
 
-    it("opens mobile menu when hamburger button is clicked", () => {
-      const buttons = screen.getAllByRole("button");
-      const menuButton = buttons[buttons.length - 1];
-      expect(menuButton).toBeInTheDocument();
-      fireEvent.click(menuButton);
-      expect(screen.getAllByText(/pricing/i).length).toBeGreaterThan(0);
+    it("opens mobile menu when hamburger button is clicked", async () => {
+      const menuButton = screen.getByRole("button").last();
+      await expect.element(menuButton).toBeInTheDocument();
+      await menuButton.click();
+      await expect
+        .element(screen.getByText(/pricing/i).first())
+        .toBeInTheDocument();
     });
   });
 });

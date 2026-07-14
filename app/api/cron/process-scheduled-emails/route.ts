@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@db/db";
+import { DrizzleInstance } from "@db/db";
 import { scheduledEmails } from "@db/schema";
 import { eq, and, lte } from "drizzle-orm";
-import { sendScheduledEmail } from "@/lib/process_scheduled_emails";
+import { sendScheduledEmail } from "@/lib/scheduled_emails";
+import { scheduledEmailService } from "@/api_client/axios_api_client";
 
 export async function GET(req: Request) {
   const authHeader = req.headers
@@ -24,7 +26,9 @@ export async function GET(req: Request) {
       );
 
     const results = await Promise.allSettled(
-      dueEmails.map((e) => sendScheduledEmail(e.id))
+      dueEmails.map((e) =>
+        sendScheduledEmail(e.id, DrizzleInstance, scheduledEmailService)
+      )
     );
     results.forEach((r, i) => {
       if (r.status === "rejected") {

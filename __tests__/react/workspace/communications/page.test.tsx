@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 // Mock heavy child components
 vi.mock("@/app/components/communications/UnifiedInbox", () => ({
@@ -13,33 +13,39 @@ vi.mock("@/app/components/communications/ScheduledMessages", () => ({
 import Communications from "@/app/workspace/communications/page";
 
 describe("Communications Page", () => {
-  it("renders Inbox tab button", () => {
-    render(<Communications />);
-    expect(screen.getByRole("button", { name: /inbox/i })).toBeInTheDocument();
+  it("renders Inbox tab button", async () => {
+    const screen = await render(<Communications />);
+    await expect
+      .element(screen.getByRole("button", { name: /inbox/i }))
+      .toBeInTheDocument();
   });
 
-  it("renders Scheduled tab button", () => {
-    render(<Communications />);
-    expect(
-      screen.getByRole("button", { name: /scheduled/i })
-    ).toBeInTheDocument();
+  it("renders Scheduled tab button", async () => {
+    const screen = await render(<Communications />);
+    await expect
+      .element(screen.getByRole("button", { name: /scheduled/i }))
+      .toBeInTheDocument();
   });
 
-  it("does not render Client Portal tab", () => {
-    render(<Communications />);
-    expect(
-      screen.queryByRole("button", { name: /client portal/i })
-    ).not.toBeInTheDocument();
+  it("does not render Client Portal tab", async () => {
+    const screen = await render(<Communications />);
+    await expect
+      .element(screen.getByRole("button", { name: /client portal/i }))
+      .not.toBeInTheDocument();
   });
 
-  it("shows UnifiedInbox by default (inbox tab active)", () => {
-    render(<Communications />);
-    expect(screen.getByTestId("unified-inbox")).toBeInTheDocument();
+  it("shows UnifiedInbox by default (inbox tab active)", async () => {
+    const screen = await render(<Communications />);
+    await expect
+      .element(screen.getByTestId("unified-inbox"))
+      .toBeInTheDocument();
   });
 
-  it("shows ScheduledMessages when Scheduled tab is clicked", () => {
-    render(<Communications />);
-    fireEvent.click(screen.getByRole("button", { name: /scheduled/i }));
-    expect(screen.getByTestId("scheduled-messages")).toBeInTheDocument();
+  it("shows ScheduledMessages when Scheduled tab is clicked", async () => {
+    const screen = await render(<Communications />);
+    await screen.getByRole("button", { name: /scheduled/i }).click();
+    await expect
+      .element(screen.getByTestId("scheduled-messages"))
+      .toBeInTheDocument();
   });
 });

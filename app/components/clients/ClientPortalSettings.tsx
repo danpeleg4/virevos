@@ -36,7 +36,6 @@ import {
   User,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   PortalRecord,
@@ -175,13 +174,8 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
         queryKey: ["clientPortal", clientId],
       });
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success("Portal settings saved");
     } catch (err: unknown) {
-      const message =
-        axios.isAxiosError(err) && err.response?.data?.error
-          ? err.response.data.error
-          : "Failed to save settings";
-      toast.error(message);
+      console.error("Failed to save settings:", err);
     } finally {
       setIsSaving(false);
     }
@@ -210,9 +204,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
     mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success("Booking confirmed and added to calendar");
     },
-    onError: () => toast.error("Failed to confirm booking"),
   });
 
   const cancelBooking = useMutation({
@@ -220,9 +212,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
       updateBookingStatus(bookingId, "cancelled"),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success("Booking cancelled");
     },
-    onError: () => toast.error("Failed to cancel booking"),
   });
 
   const updateDaySchedule = (
@@ -315,7 +305,6 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
                       void navigator.clipboard
                         .writeText(portalUrl)
                         .catch(() => {});
-                      toast.success("URL copied to clipboard");
                     }}
                   >
                     <Copy className="h-4 w-4 mr-2" />

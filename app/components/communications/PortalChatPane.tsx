@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { toast } from "sonner";
 import { Loader2, Send } from "lucide-react";
 import { sendAgencyChatMessage } from "@/lib/portal_chat";
 import { Button } from "../ui/button";
@@ -71,7 +70,6 @@ export function PortalChatPane({
     },
     onError: (_err, _body, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous);
-      toast.error("Failed to send message");
     },
     onSuccess: async () => {
       await Promise.all([

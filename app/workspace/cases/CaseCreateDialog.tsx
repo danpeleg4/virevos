@@ -24,7 +24,6 @@ import type { clients } from "@/types/clients";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCase } from "@/lib/workspace/cases";
 import { Case } from "@/types/cases";
-import { toast } from "sonner";
 
 export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,7 +46,6 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const submit = async () => {
     const trimmedName = caseName.trim();
     if (!trimmedName) {
-      toast.error("Case name is required");
       return;
     }
 

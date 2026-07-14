@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
+import { page } from "vitest/browser";
 
 const mockMutate = vi.fn();
 const mockQueryClient = {
@@ -50,53 +51,61 @@ describe("TaskDetailModal", () => {
     onOpenChange.mockClear();
   });
 
-  it("renders task title when open", () => {
-    render(
+  it("renders task title when open", async () => {
+    const screen = await render(
       <TaskDetailModal
         task={mockTask}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByText("Fix critical bug")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Fix critical bug"))
+      .toBeInTheDocument();
   });
 
-  it("renders task description when open", () => {
-    render(
+  it("renders task description when open", async () => {
+    const screen = await render(
       <TaskDetailModal
         task={mockTask}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByText("This is a test description")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("This is a test description"))
+      .toBeInTheDocument();
   });
 
-  it("does not render content when closed", () => {
-    render(
+  it("does not render content when closed", async () => {
+    const screen = await render(
       <TaskDetailModal
         task={mockTask}
         open={false}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.queryByText("Fix critical bug")).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Fix critical bug"))
+      .not.toBeInTheDocument();
   });
 
-  it("renders 'No description provided' when description is empty", () => {
+  it("renders 'No description provided' when description is empty", async () => {
     const taskNoDesc = { ...mockTask, description: "" };
-    render(
+    const screen = await render(
       <TaskDetailModal
         task={taskNoDesc}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    expect(screen.getByText(/no description provided/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/no description provided/i))
+      .toBeInTheDocument();
   });
 
-  it("renders delete button", () => {
-    render(
+  it("renders delete button", async () => {
+    const screen = await render(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -104,12 +113,13 @@ describe("TaskDetailModal", () => {
       />
     );
     // Trash2 delete button — first button before the dialog's close button
-    const buttons = screen.getAllByRole("button");
-    expect(buttons.length).toBeGreaterThan(0);
+    await expect
+      .element(screen.getByRole("button").first())
+      .toBeInTheDocument();
   });
 
-  it("calls delete mutation when delete button is clicked", () => {
-    render(
+  it("calls delete mutation when delete button is clicked", async () => {
+    const screen = await render(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -117,16 +127,16 @@ describe("TaskDetailModal", () => {
       />
     );
     // The delete button is the first button in the dialog content (before the close button)
-    const buttons = screen.getAllByRole("button");
+    const buttons = screen.getByRole("button").elements();
     const deleteBtn = buttons.find(
       (btn) => btn.textContent?.trim() !== "Close"
     )!;
-    fireEvent.click(deleteBtn);
+    await page.elementLocator(deleteBtn).click();
     expect(mockMutate).toHaveBeenCalledTimes(1);
   });
 
-  it("renders status select with current status", () => {
-    render(
+  it("renders status select with current status", async () => {
+    await render(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -135,29 +145,35 @@ describe("TaskDetailModal", () => {
     );
   });
 
-  it("renders due date input", () => {
-    render(
+  it("renders due date input", async () => {
+    await render(
       <TaskDetailModal
         task={mockTask}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    const dateInput = screen.getByDisplayValue("2026-05-01");
-    expect(dateInput).toBeInTheDocument();
+    const dateInput = page.elementLocator(
+      document.querySelector('input[type="date"]')!
+    );
+    await expect.element(dateInput).toHaveValue("2026-05-01");
   });
 
-  it("calls changeDueDate mutation on date blur", () => {
-    render(
+  it("calls changeDueDate mutation on date blur", async () => {
+    await render(
       <TaskDetailModal
         task={mockTask}
         open={true}
         onOpenChange={onOpenChange}
       />
     );
-    const dateInput = screen.getByDisplayValue("2026-05-01");
-    fireEvent.change(dateInput, { target: { value: "2026-06-01" } });
-    fireEvent.blur(dateInput);
-    expect(mockMutate).toHaveBeenCalled();
+    const dateInput = page.elementLocator(
+      document.querySelector('input[type="date"]')!
+    );
+    await dateInput.fill("2026-06-01");
+    (dateInput.element() as HTMLInputElement).blur();
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
   });
 });

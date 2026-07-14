@@ -14,20 +14,6 @@ Do not manually manage loading/error states outside of TanStack Query unless nec
 
 Use Optimistic Updates with mutations.
 
-## API Routes vs Server Actions
-
-For GET, API routes in /api are allowed.
-
-For POST, PATCH, PUT, DELETE requests:
-
-Do not put them in API routes.
-
-Instead, implement as server actions in the lib directory.
-
-Server actions should be callable directly from the frontend with TanStack Query mutations.
-
-Ensure server actions are type-safe and validate inputs.
-
 ## **TypeScript Guidelines**
 
 Never use the any type.

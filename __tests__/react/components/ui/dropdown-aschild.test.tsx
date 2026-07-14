@@ -1,8 +1,5 @@
-/**
- * @vitest-environment jsdom
- */
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "vitest-browser-react";
 
 import {
   DropdownMenu,
@@ -12,8 +9,8 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 
 describe("DropdownMenu with asChild trigger", () => {
-  it("opens when the wrapped <button> is clicked", () => {
-    render(
+  it("opens when the wrapped <button> is clicked", async () => {
+    const screen = await render(
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button>Sort</button>
@@ -23,14 +20,16 @@ describe("DropdownMenu with asChild trigger", () => {
         </DropdownMenuContent>
       </DropdownMenu>
     );
-    expect(screen.queryByText("Name (A-Z)")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Sort" }));
-    expect(screen.getByText("Name (A-Z)")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Name (A-Z)"))
+      .not.toBeInTheDocument();
+    await screen.getByRole("button", { name: "Sort" }).click();
+    await expect.element(screen.getByText("Name (A-Z)")).toBeInTheDocument();
   });
 
-  it("fires the consumer's onClick on a DropdownMenuItem and closes", () => {
+  it("fires the consumer's onClick on a DropdownMenuItem and closes", async () => {
     const onClick = vi.fn();
-    render(
+    const screen = await render(
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button>Sort</button>
@@ -40,9 +39,11 @@ describe("DropdownMenu with asChild trigger", () => {
         </DropdownMenuContent>
       </DropdownMenu>
     );
-    fireEvent.click(screen.getByRole("button", { name: "Sort" }));
-    fireEvent.click(screen.getByText("Name (A-Z)"));
+    await screen.getByRole("button", { name: "Sort" }).click();
+    await screen.getByText("Name (A-Z)").click();
     expect(onClick).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Name (A-Z)")).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Name (A-Z)"))
+      .not.toBeInTheDocument();
   });
 });
