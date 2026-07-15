@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Loader2, Send } from "lucide-react";
-import { sendAgencyChatMessage } from "@/lib/portal_chat";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -43,7 +42,10 @@ export function PortalChatPane({
 
   const send = useMutation({
     mutationFn: async (body: string) => {
-      return (await sendAgencyChatMessage(clientId, body)) as PortalChatMessage;
+      const res = await axios.post(`/api/portal-chat/${clientId}`, {
+        message: body,
+      });
+      return res.data as PortalChatMessage;
     },
     onMutate: async (body) => {
       await queryClient.cancelQueries({ queryKey });

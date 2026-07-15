@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { db } from "@db/db";
-import { outlookSyncState } from "@db/schema";
-import { lte } from "drizzle-orm";
+import { outlookDrizzle } from "@db/outlook_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
 import { renewSubscriptions } from "@/lib/outlook/outlook_sync";
 
 export async function GET(req: Request) {
@@ -15,12 +15,18 @@ export async function GET(req: Request) {
   // Renew subscriptions expiring within the next 24 hours
   const threshold = Date.now() + 24 * 60 * 60 * 1000;
 
-  const rows = await db
-    .select({ userId: outlookSyncState.userId })
-    .from(outlookSyncState)
-    .where(lte(outlookSyncState.subscriptionExpiration, threshold));
+  const rows = await outlookDrizzle.getExpiringSyncStates(threshold);
 
-  await Promise.allSettled(rows.map((r) => renewSubscriptions(r.userId)));
+  await Promise.allSettled(
+    rows.map((r) =>
+      renewSubscriptions(
+        r.userId,
+        outlookDrizzle,
+        graphAuthService,
+        graphMailService
+      )
+    )
+  );
 
   return NextResponse.json({ renewed: rows.length });
 }

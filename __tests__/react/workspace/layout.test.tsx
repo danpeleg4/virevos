@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "vitest-browser-react";
+import { renderWithQueryClient } from "../../_helpers/render";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -27,17 +27,6 @@ vi.mock("next-themes", () => ({
   useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
 
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: vi.fn(() => ({ data: undefined, isLoading: false })),
-}));
-
-vi.mock("axios", () => {
-  const axios = {
-    get: vi.fn(() => Promise.resolve({ data: { bookings: [] } })),
-  };
-  return { default: axios, ...axios };
-});
-
 vi.mock("@/app/components/AIAssistant", () => ({
   AIAssistant: () => null,
 }));
@@ -46,7 +35,7 @@ import WorkSpaceLayout from "@/app/workspace/layout";
 
 describe("WorkSpaceLayout", () => {
   it("renders children content", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <WorkSpaceLayout>
         <div data-testid="page-content">Dashboard Content</div>
       </WorkSpaceLayout>
@@ -57,7 +46,7 @@ describe("WorkSpaceLayout", () => {
   });
 
   it("renders sidebar navigation", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <WorkSpaceLayout>
         <div />
       </WorkSpaceLayout>

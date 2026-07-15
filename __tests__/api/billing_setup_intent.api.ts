@@ -1,16 +1,29 @@
 import { GET } from "@/app/api/billing/setup-intent/route";
+import { getCurrentUser } from "@/lib/supabase/auth";
+import { createSetupIntent } from "@/lib/workspace/billing";
+import { billingDrizzle } from "@db/billing_db";
+import { userDrizzle } from "@db/user_db";
+import { stripeApiClient } from "@/api_client/stripe_client";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-const mockCreateSetupIntent = vi.fn();
-
 vi.mock("@/lib/workspace/billing", () => ({
-  createSetupIntent: (...args: unknown[]) => mockCreateSetupIntent(...args),
+  createSetupIntent: vi.fn(),
 }));
 
-import { getCurrentUser } from "@/lib/supabase/auth";
+vi.mock("@db/billing_db", () => ({
+  billingDrizzle: { __sentinel: "billingDrizzle" },
+}));
+
+vi.mock("@db/user_db", () => ({
+  userDrizzle: { __sentinel: "userDrizzle" },
+}));
+
+vi.mock("@/api_client/stripe_client", () => ({
+  stripeApiClient: { __sentinel: "stripeApiClient" },
+}));
 
 let consoleErrorSpy: MockInstance;
 
@@ -28,21 +41,26 @@ describe("GET /api/billing/setup-intent", () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
     const res = await GET();
     expect(res.status).toBe(401);
-    expect(mockCreateSetupIntent).not.toHaveBeenCalled();
+    expect(createSetupIntent).not.toHaveBeenCalled();
   });
 
-  it("returns 200 with the client secret when authenticated", async () => {
+  it("returns 200 with the client secret from the wired deps", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    mockCreateSetupIntent.mockResolvedValue("seti_secret_123");
+    (createSetupIntent as Mock).mockResolvedValue("seti_secret_123");
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual({ clientSecret: "seti_secret_123" });
+    expect(createSetupIntent).toHaveBeenCalledWith(
+      billingDrizzle,
+      stripeApiClient,
+      userDrizzle
+    );
   });
 
   it("returns 500 when createSetupIntent throws", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    mockCreateSetupIntent.mockRejectedValue(new Error("Stripe error"));
+    (createSetupIntent as Mock).mockRejectedValue(new Error("Stripe error"));
     const res = await GET();
     expect(res.status).toBe(500);
   });

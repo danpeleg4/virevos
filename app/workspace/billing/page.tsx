@@ -53,12 +53,6 @@ import {
   Sparkles,
   Server,
 } from "lucide-react";
-import {
-  changePlan,
-  cancelSubscription,
-  resubscribe,
-  updatePaymentMethod,
-} from "@/lib/workspace/billing";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -147,7 +141,12 @@ function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: (pmId: string) => updatePaymentMethod(pmId),
+    mutationFn: async (pmId: string) => {
+      await axios.post("/api/billing", {
+        type: "update-payment-method",
+        data: { paymentMethodId: pmId },
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["billing"] });
       onSuccess();
@@ -239,7 +238,12 @@ export default function Billing() {
   });
 
   const changePlanMutation = useMutation({
-    mutationFn: (planId: PlanId) => changePlan({ planId }),
+    mutationFn: async (planId: PlanId) => {
+      await axios.post("/api/billing", {
+        type: "change-plan",
+        data: { planId },
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["billing"] });
       setChangePlanOpen(false);
@@ -247,14 +251,18 @@ export default function Billing() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: cancelSubscription,
+    mutationFn: async () => {
+      await axios.post("/api/billing", { type: "cancel" });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["billing"] });
     },
   });
 
   const resubscribeMutation = useMutation({
-    mutationFn: resubscribe,
+    mutationFn: async () => {
+      await axios.post("/api/billing", { type: "resubscribe" });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["billing"] });
     },

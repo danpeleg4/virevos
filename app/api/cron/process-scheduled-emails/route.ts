@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { db } from "@db/db";
-import { DrizzleInstance } from "@db/db";
-import { scheduledEmails } from "@db/schema";
-import { eq, and, lte } from "drizzle-orm";
-import { sendScheduledEmail } from "@/lib/scheduled_emails";
-import { scheduledEmailService } from "@/api_client/axios_api_client";
+import { scheduledEmailsDrizzle } from "@db/scheduled_emails_db";
+import { processDueScheduledEmails } from "@/lib/scheduled_emails";
+import { scheduledEmailService } from "@/api_client/ms_graph/scheduled_email_service";
+import { outlookDrizzle } from "@db/outlook_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 
 export async function GET(req: Request) {
   const authHeader = req.headers
@@ -15,32 +14,14 @@ export async function GET(req: Request) {
   }
 
   try {
-    const dueEmails = await db
-      .select({ id: scheduledEmails.id })
-      .from(scheduledEmails)
-      .where(
-        and(
-          eq(scheduledEmails.status, "pending"),
-          lte(scheduledEmails.scheduledAt, new Date())
-        )
-      );
-
-    const results = await Promise.allSettled(
-      dueEmails.map((e) =>
-        sendScheduledEmail(e.id, DrizzleInstance, scheduledEmailService)
-      )
+    const { processed } = await processDueScheduledEmails(
+      scheduledEmailsDrizzle,
+      scheduledEmailService,
+      outlookDrizzle,
+      graphAuthService
     );
-    results.forEach((r, i) => {
-      if (r.status === "rejected") {
-        console.error(
-          "[cron/process-scheduled-emails] failed for id",
-          dueEmails[i].id,
-          r.reason
-        );
-      }
-    });
 
-    return NextResponse.json({ processed: dueEmails.length });
+    return NextResponse.json({ processed });
   } catch (err) {
     console.error("[cron/process-scheduled-emails]", err);
     return NextResponse.json({ error: "Cron failed" }, { status: 500 });

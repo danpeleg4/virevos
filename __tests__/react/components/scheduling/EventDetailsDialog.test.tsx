@@ -1,37 +1,14 @@
 import React from "react";
-import { render } from "vitest-browser-react";
+import { delay, http, HttpResponse } from "msw";
+import { worker } from "../../../msw/worker";
+import { renderWithQueryClient } from "../../../_helpers/render";
 
-const mockInvalidateQueries = vi.fn();
-const mockUseQueryClient = vi.fn(() => ({
-  invalidateQueries: mockInvalidateQueries,
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQueryClient: () => mockUseQueryClient(),
-}));
-
-const mockAxiosGet = vi.fn();
-vi.mock("axios", () => {
-  const axios = {
-    get: (...args: unknown[]) => mockAxiosGet(...args),
-  };
-  return { default: axios, ...axios };
-});
-
-vi.mock("@/lib/workspace/tasks", () => ({
-  addProjectTasksAction: vi.fn().mockResolvedValue(undefined),
-}));
-vi.mock("@/lib/workspace/meetings", () => ({
-  markActionItemAdded: vi.fn().mockResolvedValue(undefined),
-}));
 vi.mock("@/lib/util/date_utils", () => ({
   formatDateOnly: vi.fn(() => "Jan 1, 2026"),
   formatTimeOnly: vi.fn(() => "10:00 AM"),
 }));
 
 import { EventDetailsDialog } from "@/app/components/scheduling/EventDetailsDialog";
-import { addProjectTasksAction } from "@/lib/workspace/tasks";
-import { markActionItemAdded } from "@/lib/workspace/meetings";
 import { Event } from "@/types/meeting";
 
 const baseEvent: Event = {
@@ -46,12 +23,8 @@ const baseEvent: Event = {
 };
 
 describe("EventDetailsDialog", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("renders the event title", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog
         event={baseEvent}
         open={true}
@@ -62,7 +35,7 @@ describe("EventDetailsDialog", () => {
   });
 
   it("renders date, time and duration", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog
         event={baseEvent}
         open={true}
@@ -79,7 +52,7 @@ describe("EventDetailsDialog", () => {
       ...baseEvent,
       attendees: [{ name: "Alice", initials: "A" }],
     };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await expect.element(screen.getByText("Alice")).toBeInTheDocument();
@@ -87,7 +60,7 @@ describe("EventDetailsDialog", () => {
 
   it("renders tags when provided", async () => {
     const event: Event = { ...baseEvent, tags: ["design", "frontend"] };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await expect.element(screen.getByText("design")).toBeInTheDocument();
@@ -96,7 +69,7 @@ describe("EventDetailsDialog", () => {
 
   it("renders meeting link with Copy and Open buttons", async () => {
     const event: Event = { ...baseEvent, link: "https://meet.example.com/abc" };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     // no getByDisplayValue locator; assert an input carries the link value
@@ -120,7 +93,7 @@ describe("EventDetailsDialog", () => {
       hasNotes: true,
       ai_summary: "This meeting covered Q1 goals.",
     };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await expect
@@ -134,7 +107,7 @@ describe("EventDetailsDialog", () => {
       hasNotes: true,
       key_points: ["Point A", "Point B"],
     };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await expect.element(screen.getByText("Point A")).toBeInTheDocument();
@@ -162,7 +135,7 @@ describe("EventDetailsDialog", () => {
         },
       ],
     };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await expect.element(screen.getByText("Write report")).toBeInTheDocument();
@@ -176,6 +149,21 @@ describe("EventDetailsDialog", () => {
   });
 
   it("marks action item as added after clicking Add", async () => {
+    let taskPostBody: Record<string, unknown> | undefined;
+    let patchBody: unknown;
+    let patchedId: string | undefined;
+    worker.use(
+      http.post("/api/tasks", async ({ request }) => {
+        taskPostBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ id: 99, ...taskPostBody });
+      }),
+      http.patch("/api/events/:id", async ({ request, params }) => {
+        patchedId = String(params.id);
+        patchBody = await request.json();
+        return HttpResponse.json({ success: true, id: String(params.id) });
+      })
+    );
+
     const event: Event = {
       ...baseEvent,
       hasNotes: true,
@@ -189,15 +177,19 @@ describe("EventDetailsDialog", () => {
         },
       ],
     };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await screen.getByRole("button", { name: /^add$/i }).click();
     await vi.waitFor(() => {
-      expect(addProjectTasksAction).toHaveBeenCalledWith(
+      expect(taskPostBody).toEqual(
         expect.objectContaining({ title: "Fix bug", status: "in-progress" })
       );
-      expect(markActionItemAdded).toHaveBeenCalledWith("evt-1", 0);
+      expect(patchedId).toBe("evt-1");
+      expect(patchBody).toEqual({
+        type: "mark-action-item",
+        data: { itemIndex: 0 },
+      });
     });
     const addedButtons = screen.getByRole("button", { name: /added/i });
     await expect.element(addedButtons.first()).toBeInTheDocument();
@@ -220,7 +212,7 @@ describe("EventDetailsDialog", () => {
         },
       ],
     };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await expect
@@ -229,18 +221,20 @@ describe("EventDetailsDialog", () => {
   });
 
   it("fetches and displays transcript when hasTranscript is true", async () => {
-    mockAxiosGet.mockResolvedValueOnce({
-      data: {
-        chunks: [
-          { speaker: "Alice", text: "Hello everyone", createdAt: null },
-          { speaker: "Bob", text: "Good morning", createdAt: null },
-        ],
-        meetingStartTimeEpoch: 1000,
-      },
-    });
+    worker.use(
+      http.get("/api/transcript/:id", () =>
+        HttpResponse.json({
+          chunks: [
+            { speaker: "Alice", text: "Hello everyone", createdAt: null },
+            { speaker: "Bob", text: "Good morning", createdAt: null },
+          ],
+          meetingStartTimeEpoch: 1000,
+        })
+      )
+    );
 
     const event: Event = { ...baseEvent, hasTranscript: true };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
 
@@ -248,24 +242,25 @@ describe("EventDetailsDialog", () => {
     await expect
       .element(screen.getByText("Hello everyone"))
       .toBeInTheDocument();
-    expect(mockAxiosGet).toHaveBeenCalledWith("/api/transcript/evt-1");
   });
 
   it("shows 'View full transcript' button when transcript has more than 3 chunks", async () => {
-    mockAxiosGet.mockResolvedValueOnce({
-      data: {
-        chunks: [
-          { speaker: "Alice", text: "Line 1", createdAt: null },
-          { speaker: "Bob", text: "Line 2", createdAt: null },
-          { speaker: "Alice", text: "Line 3", createdAt: null },
-          { speaker: "Bob", text: "Line 4", createdAt: null },
-        ],
-        meetingStartTimeEpoch: 1000,
-      },
-    });
+    worker.use(
+      http.get("/api/transcript/:id", () =>
+        HttpResponse.json({
+          chunks: [
+            { speaker: "Alice", text: "Line 1", createdAt: null },
+            { speaker: "Bob", text: "Line 2", createdAt: null },
+            { speaker: "Alice", text: "Line 3", createdAt: null },
+            { speaker: "Bob", text: "Line 4", createdAt: null },
+          ],
+          meetingStartTimeEpoch: 1000,
+        })
+      )
+    );
 
     const event: Event = { ...baseEvent, hasTranscript: true };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
 
@@ -282,9 +277,14 @@ describe("EventDetailsDialog", () => {
   });
 
   it("shows loading state while fetching transcript", async () => {
-    mockAxiosGet.mockReturnValueOnce(new Promise(() => {})); // never resolves
+    worker.use(
+      http.get("/api/transcript/:id", async () => {
+        await delay("infinite");
+        return HttpResponse.json({});
+      })
+    );
     const event: Event = { ...baseEvent, hasTranscript: true };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
     );
     await expect
@@ -293,10 +293,17 @@ describe("EventDetailsDialog", () => {
   });
 
   it("does not fetch transcript when dialog is closed", async () => {
+    let called = false;
+    worker.use(
+      http.get("/api/transcript/:id", () => {
+        called = true;
+        return HttpResponse.json({});
+      })
+    );
     const event: Event = { ...baseEvent, hasTranscript: true };
-    await render(
+    await renderWithQueryClient(
       <EventDetailsDialog event={event} open={false} onOpenChange={vi.fn()} />
     );
-    expect(mockAxiosGet).not.toHaveBeenCalled();
+    expect(called).toBe(false);
   });
 });

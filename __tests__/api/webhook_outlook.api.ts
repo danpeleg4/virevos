@@ -1,17 +1,42 @@
 import { POST } from "@/app/api/webhooks/outlook/route";
-import { db } from "@db/db";
+import { outlookDrizzle } from "@db/outlook_db";
+import { calendarDrizzle } from "@db/calendar_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
+import { openAIClient } from "@/api_client/openai_client";
+import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
 
-vi.mock("@db/db", () => ({
-  db: {
-    select: vi.fn(),
+vi.mock("@db/outlook_db", () => ({
+  outlookDrizzle: {
+    __sentinel: "outlookDrizzle",
+    findSyncStateBySubscriptionId: vi.fn().mockResolvedValue([]),
   },
+}));
+
+vi.mock("@db/calendar_db", () => ({
+  calendarDrizzle: { __sentinel: "calendarDrizzle" },
+}));
+
+vi.mock("@/api_client/ms_graph/graph_auth_service", () => ({
+  graphAuthService: { __sentinel: "graphAuthService" },
+}));
+
+vi.mock("@/api_client/ms_graph/graph_mail_service", () => ({
+  graphMailService: { __sentinel: "graphMailService" },
+}));
+
+vi.mock("@/api_client/supabase_storage_client", () => ({
+  supabaseStorageClient: { __sentinel: "supabaseStorageClient" },
+}));
+
+vi.mock("@/api_client/openai_client", () => ({
+  openAIClient: { __sentinel: "openAIClient" },
 }));
 
 vi.mock("@/lib/outlook/outlook_sync", () => ({
   performIncrementalSync: vi.fn().mockResolvedValue(undefined),
 }));
-
-import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
 
 function makeRequest(
   body: unknown,
@@ -51,22 +76,17 @@ describe("POST /api/webhooks/outlook", () => {
     expect(res.status).toBe(202);
   });
 
-  it("triggers incremental sync on valid notification", async () => {
-    (db.select as Mock).mockReturnValueOnce({
-      from: () => ({
-        where: () => ({
-          limit: () =>
-            Promise.resolve([
-              {
-                userId: "user_1",
-                clientState: "secret_state",
-                calendarSubscriptionId: "sub_cal_1",
-                emailSubscriptionId: "sub_email_1",
-              },
-            ]),
-        }),
-      }),
-    });
+  it("triggers incremental sync on valid notification, wired with the singletons", async () => {
+    (
+      outlookDrizzle.findSyncStateBySubscriptionId as Mock
+    ).mockResolvedValueOnce([
+      {
+        userId: "user_1",
+        clientState: "secret_state",
+        calendarSubscriptionId: "sub_cal_1",
+        emailSubscriptionId: "sub_email_1",
+      },
+    ]);
 
     const req = makeRequest({
       value: [
@@ -81,26 +101,29 @@ describe("POST /api/webhooks/outlook", () => {
 
     const res = await POST(req as Parameters<typeof POST>[0]);
 
-    expect(performIncrementalSync).toHaveBeenCalledWith("user_1");
+    expect(performIncrementalSync).toHaveBeenCalledWith(
+      "user_1",
+      outlookDrizzle,
+      calendarDrizzle,
+      graphAuthService,
+      graphMailService,
+      supabaseStorageClient,
+      openAIClient
+    );
     expect(res.status).toBe(202);
   });
 
   it("skips notification if clientState does not match", async () => {
-    (db.select as Mock).mockReturnValueOnce({
-      from: () => ({
-        where: () => ({
-          limit: () =>
-            Promise.resolve([
-              {
-                userId: "user_1",
-                clientState: "correct_state",
-                calendarSubscriptionId: "sub_cal_1",
-                emailSubscriptionId: null,
-              },
-            ]),
-        }),
-      }),
-    });
+    (
+      outlookDrizzle.findSyncStateBySubscriptionId as Mock
+    ).mockResolvedValueOnce([
+      {
+        userId: "user_1",
+        clientState: "correct_state",
+        calendarSubscriptionId: "sub_cal_1",
+        emailSubscriptionId: null,
+      },
+    ]);
 
     vi.spyOn(console, "warn").mockImplementationOnce(() => {});
 
@@ -122,21 +145,9 @@ describe("POST /api/webhooks/outlook", () => {
   });
 
   it("skips notification if subscription is not found", async () => {
-    (db.select as Mock)
-      .mockReturnValueOnce({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([]),
-          }),
-        }),
-      })
-      .mockReturnValueOnce({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([]),
-          }),
-        }),
-      });
+    (
+      outlookDrizzle.findSyncStateBySubscriptionId as Mock
+    ).mockResolvedValueOnce([]);
 
     const req = makeRequest({
       value: [

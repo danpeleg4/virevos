@@ -17,8 +17,6 @@ import {
 import { Separator } from "../ui/separator";
 import { Mail, MessageSquare, Send, Loader2, Paperclip, X } from "lucide-react";
 import axios from "axios";
-import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
-import { sendAgencyChatMessage } from "@/lib/portal_chat";
 
 interface AttachmentFile {
   name: string;
@@ -134,7 +132,7 @@ export function ComposeMessageDialog({
     if (!emailTo.trim() || !emailBody.trim()) return;
     setIsSending(true);
     try {
-      await sendOutlookEmail({
+      await axios.post("/api/outlook/messages", {
         to: emailTo.trim(),
         subject: emailSubject.trim(),
         bodyHtml: `<p>${emailBody.replace(/\n/g, "<br>")}</p>`,
@@ -162,7 +160,9 @@ export function ComposeMessageDialog({
     if (!chatClientId || !chatMessage.trim()) return;
     setIsSending(true);
     try {
-      await sendAgencyChatMessage(Number(chatClientId), chatMessage.trim());
+      await axios.post(`/api/portal-chat/${Number(chatClientId)}`, {
+        message: chatMessage.trim(),
+      });
       resetForm();
       onOpenChange(false);
       onSent();

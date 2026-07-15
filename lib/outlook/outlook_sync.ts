@@ -1,14 +1,18 @@
-import axios from "axios";
-import { db } from "@db/db";
-import { events, outlookEmails, outlookSyncState } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import type { OutlookDB, NewOutlookEmailRow } from "@db/outlook_db";
+import type { CalendarDB, NewEventRow } from "@db/calendar_db";
+import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
+import type {
+  GraphDeltaResponse,
+  GraphMailServiceInterface,
+} from "@/api_client/ms_graph/graph_mail_service";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
+import type { OpenAIClientInterface } from "@/api_client/openai_client";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import {
   createEmbeddings,
   EMAILS_BUCKET,
   EMAILS_INDEX,
 } from "@/lib/embeddings";
-import { supabaseAdmin } from "@/lib/supabase/supabase";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -48,19 +52,23 @@ async function indexEmailVectors(
     sentAt: Date;
     isSent: boolean;
     input: string;
-  }>
+  }>,
+  storage: StorageClientInterface,
+  openaiClient: OpenAIClientInterface
 ): Promise<void> {
   if (rows.length === 0) return;
-  const index = supabaseAdmin.storage.vectors
-    .from(EMAILS_BUCKET)
-    .index(EMAILS_INDEX);
 
   for (let start = 0; start < rows.length; start += VECTOR_BATCH_SIZE) {
     const chunk = rows.slice(start, start + VECTOR_BATCH_SIZE);
     try {
-      const embeddings = await createEmbeddings(chunk.map((r) => r.input));
-      await index.putVectors({
-        vectors: chunk.map((r, i) => ({
+      const embeddings = await createEmbeddings(
+        chunk.map((r) => r.input),
+        openaiClient
+      );
+      await storage.putVectors(
+        EMAILS_BUCKET,
+        EMAILS_INDEX,
+        chunk.map((r, i) => ({
           key: `${r.userId}/${r.outlookId}`,
           data: { float32: embeddings[i] },
           metadata: {
@@ -72,8 +80,8 @@ async function indexEmailVectors(
             sent_at: r.sentAt.toISOString(),
             is_sent: r.isSent,
           },
-        })),
-      });
+        }))
+      );
     } catch (err) {
       console.error(
         "[outlook_sync] Failed to index email batch into vector bucket:",
@@ -115,36 +123,8 @@ interface GraphMessage {
   "@removed"?: { reason: string };
 }
 
-interface GraphDeltaResponse<T> {
-  value: T[];
-  "@odata.nextLink"?: string;
-  "@odata.deltaLink"?: string;
-}
-
-async function graphGet<T>(
-  token: string,
-  url: string
-): Promise<GraphDeltaResponse<T>> {
-  try {
-    const response = await axios.get<GraphDeltaResponse<T>>(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        "[graphGet] status:",
-        err.response?.status,
-        "body:",
-        JSON.stringify(err.response?.data)
-      );
-      console.error("[graphGet] url:", url);
-    }
-    throw err;
-  }
-}
-
 async function fetchAllPages<T>(
+  graphMailService: GraphMailServiceInterface,
   token: string,
   initialUrl: string
 ): Promise<{ items: T[]; deltaLink?: string }> {
@@ -153,7 +133,10 @@ async function fetchAllPages<T>(
   let deltaLink: string | undefined;
 
   while (nextUrl) {
-    const data: GraphDeltaResponse<T> = await graphGet<T>(token, nextUrl);
+    const data: GraphDeltaResponse<T> = await graphMailService.fetchDelta<T>(
+      token,
+      nextUrl
+    );
     items.push(...data.value);
     nextUrl = data["@odata.nextLink"];
     if (!nextUrl) {
@@ -162,6 +145,10 @@ async function fetchAllPages<T>(
   }
 
   return { items, deltaLink };
+}
+
+function axiosStatus(err: unknown): number | undefined {
+  return (err as { response?: { status?: number } })?.response?.status;
 }
 
 export function parseGraphDateTime(dt: {
@@ -177,18 +164,16 @@ export function parseGraphDateTime(dt: {
 async function applyOutlookEventsToDb(
   graphEvents: GraphEvent[],
   userId: string,
-  isFullSync: boolean
+  isFullSync: boolean,
+  calendarDb: CalendarDB
 ): Promise<void> {
-  const existingEvents = await db
-    .select()
-    .from(events)
-    .where(eq(events.userId, userId));
+  const existingEvents = await calendarDb.getEventsForUser(userId);
 
   const existingMap = new Map(
     existingEvents.map((e) => [e.outlookEventId ?? e.id, e])
   );
 
-  const toInsert = [];
+  const toInsert: NewEventRow[] = [];
 
   for (const e of graphEvents) {
     if (!e.id) continue;
@@ -198,13 +183,9 @@ async function applyOutlookEventsToDb(
     if (isRemoved) {
       const existing = existingMap.get(e.id);
       if (existing) {
-        await db.delete(events).where(eq(events.id, existing.id));
+        await calendarDb.deleteEvent(existing.id, userId);
       } else {
-        await db
-          .delete(events)
-          .where(
-            and(eq(events.outlookEventId, e.id), eq(events.userId, userId))
-          );
+        await calendarDb.deleteEventByOutlookEventId(e.id, userId);
       }
       continue;
     }
@@ -232,16 +213,13 @@ async function applyOutlookEventsToDb(
         m.status !== status;
 
       if (hasChanged) {
-        await db
-          .update(events)
-          .set({
-            title,
-            description,
-            dateTime: start,
-            duration: durationMinutes,
-            status,
-          })
-          .where(eq(events.id, m.id));
+        await calendarDb.updateEvent(m.id, userId, {
+          title,
+          description,
+          dateTime: start,
+          duration: durationMinutes,
+          status,
+        });
       }
       continue;
     }
@@ -260,7 +238,7 @@ async function applyOutlookEventsToDb(
   }
 
   if (toInsert.length > 0) {
-    await db.insert(events).values(toInsert);
+    await calendarDb.insertEvents(toInsert);
   }
 
   // Full sync: remove events in our DB that weren't returned by Outlook
@@ -269,7 +247,7 @@ async function applyOutlookEventsToDb(
     for (const m of existingEvents) {
       if (m.origin !== "outlook_calendar" || !m.outlookEventId) continue;
       if (!returnedIds.has(m.outlookEventId)) {
-        await db.delete(events).where(eq(events.id, m.id));
+        await calendarDb.deleteEvent(m.id, userId);
       }
     }
   }
@@ -278,16 +256,16 @@ async function applyOutlookEventsToDb(
 async function applyOutlookEmailsToDb(
   messages: GraphMessage[],
   userId: string,
-  isSentFolder = false
+  isSentFolder: boolean,
+  outlookDb: OutlookDB,
+  storage: StorageClientInterface,
+  openaiClient: OpenAIClientInterface
 ): Promise<void> {
-  const existingEmails = await db
-    .select()
-    .from(outlookEmails)
-    .where(eq(outlookEmails.userId, userId));
+  const existingEmails = await outlookDb.getExistingEmailsForUser(userId);
 
   const existingMap = new Map(existingEmails.map((e) => [e.outlookId, e]));
 
-  const toInsert = [];
+  const toInsert: NewOutlookEmailRow[] = [];
   const toEmbed: Array<{
     outlookId: string;
     userId: string;
@@ -307,7 +285,7 @@ async function applyOutlookEmailsToDb(
     if (isRemoved) {
       const existing = existingMap.get(msg.id);
       if (existing) {
-        await db.delete(outlookEmails).where(eq(outlookEmails.id, existing.id));
+        await outlookDb.deleteEmail(existing.id);
       }
       continue;
     }
@@ -335,10 +313,7 @@ async function applyOutlookEmailsToDb(
       const hasChanged =
         existing.isRead !== isRead || existing.isStarred !== isStarred;
       if (hasChanged) {
-        await db
-          .update(outlookEmails)
-          .set({ isRead, isStarred })
-          .where(eq(outlookEmails.id, existing.id));
+        await outlookDb.updateEmail(existing.id, { isRead, isStarred });
       }
       continue;
     }
@@ -388,14 +363,26 @@ async function applyOutlookEmailsToDb(
   }
 
   if (toInsert.length > 0) {
-    await db.insert(outlookEmails).values(toInsert);
+    await outlookDb.insertEmails(toInsert);
   }
 
-  await indexEmailVectors(toEmbed);
+  await indexEmailVectors(toEmbed, storage, openaiClient);
 }
 
-export async function performFullSync(userId: string): Promise<void> {
-  const token = await getFreshOutlookAccessToken(userId);
+export async function performFullSync(
+  userId: string,
+  outlookDb: OutlookDB,
+  calendarDb: CalendarDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface,
+  storage: StorageClientInterface,
+  openaiClient: OpenAIClientInterface
+): Promise<void> {
+  const token = await getFreshOutlookAccessToken(
+    userId,
+    outlookDb,
+    graphAuthService
+  );
   if (!token) throw new Error(`No Outlook token for user ${userId}`);
 
   // Sync calendar events (last 30 days to +6 months window)
@@ -406,53 +393,60 @@ export async function performFullSync(userId: string): Promise<void> {
 
   const calendarUrl = `${GRAPH_BASE}/me/calendarView/delta?startDateTime=${timeMin.toISOString()}&endDateTime=${timeMax.toISOString()}&$select=${EVENT_SELECT}`;
   const { items: calendarEvents, deltaLink: calendarDeltaLink } =
-    await fetchAllPages<GraphEvent>(token, calendarUrl);
+    await fetchAllPages<GraphEvent>(graphMailService, token, calendarUrl);
 
-  await applyOutlookEventsToDb(calendarEvents, userId, true);
+  await applyOutlookEventsToDb(calendarEvents, userId, true, calendarDb);
 
   // Sync inbox emails (last 60 days) via folder-specific delta
   const inboxUrl = `${GRAPH_BASE}/me/mailFolders/inbox/messages/delta?$select=${EMAIL_SELECT}&$top=100`;
   const cutoff = new Date(Date.now() - 60 * 24 * 3600 * 1000);
   const { items: allInboxMessages, deltaLink: emailDeltaLink } =
-    await fetchAllPages<GraphMessage>(token, inboxUrl);
+    await fetchAllPages<GraphMessage>(graphMailService, token, inboxUrl);
   const inboxMessages = allInboxMessages.filter(
     (m) => !m.receivedDateTime || new Date(m.receivedDateTime) >= cutoff
   );
-  await applyOutlookEmailsToDb(inboxMessages, userId, false);
+  await applyOutlookEmailsToDb(
+    inboxMessages,
+    userId,
+    false,
+    outlookDb,
+    storage,
+    openaiClient
+  );
 
   // Sync sent items
   const sentUrl = `${GRAPH_BASE}/me/mailFolders/sentitems/messages/delta?$select=${EMAIL_SELECT}&$top=100`;
   const { items: allSentMessages, deltaLink: sentEmailDeltaLink } =
-    await fetchAllPages<GraphMessage>(token, sentUrl);
+    await fetchAllPages<GraphMessage>(graphMailService, token, sentUrl);
   const sentMessages = allSentMessages.filter(
     (m) => !m.receivedDateTime || new Date(m.receivedDateTime) >= cutoff
   );
-  await applyOutlookEmailsToDb(sentMessages, userId, true);
+  await applyOutlookEmailsToDb(
+    sentMessages,
+    userId,
+    true,
+    outlookDb,
+    storage,
+    openaiClient
+  );
 
-  await db
-    .insert(outlookSyncState)
-    .values({
-      userId,
-      calendarDeltaLink: calendarDeltaLink ?? null,
-      emailDeltaLink: emailDeltaLink ?? null,
-      sentEmailDeltaLink: sentEmailDeltaLink ?? null,
-    })
-    .onConflictDoUpdate({
-      target: outlookSyncState.userId,
-      set: {
-        calendarDeltaLink: calendarDeltaLink ?? null,
-        emailDeltaLink: emailDeltaLink ?? null,
-        sentEmailDeltaLink: sentEmailDeltaLink ?? null,
-      },
-    });
+  await outlookDb.upsertDeltaLinks(userId, {
+    calendarDeltaLink: calendarDeltaLink ?? null,
+    emailDeltaLink: emailDeltaLink ?? null,
+    sentEmailDeltaLink: sentEmailDeltaLink ?? null,
+  });
 }
 
-export async function performIncrementalSync(userId: string): Promise<void> {
-  const rows = await db
-    .select()
-    .from(outlookSyncState)
-    .where(eq(outlookSyncState.userId, userId))
-    .limit(1);
+export async function performIncrementalSync(
+  userId: string,
+  outlookDb: OutlookDB,
+  calendarDb: CalendarDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface,
+  storage: StorageClientInterface,
+  openaiClient: OpenAIClientInterface
+): Promise<void> {
+  const rows = await outlookDb.getSyncState(userId);
 
   if (
     !rows.length ||
@@ -460,11 +454,23 @@ export async function performIncrementalSync(userId: string): Promise<void> {
       !rows[0].emailDeltaLink &&
       !rows[0].sentEmailDeltaLink)
   ) {
-    await performFullSync(userId);
+    await performFullSync(
+      userId,
+      outlookDb,
+      calendarDb,
+      graphAuthService,
+      graphMailService,
+      storage,
+      openaiClient
+    );
     return;
   }
 
-  const token = await getFreshOutlookAccessToken(userId);
+  const token = await getFreshOutlookAccessToken(
+    userId,
+    outlookDb,
+    graphAuthService
+  );
   if (!token) throw new Error(`No Outlook token for user ${userId}`);
 
   const { calendarDeltaLink, emailDeltaLink, sentEmailDeltaLink } = rows[0];
@@ -475,16 +481,23 @@ export async function performIncrementalSync(userId: string): Promise<void> {
   if (calendarDeltaLink) {
     try {
       const { items, deltaLink } = await fetchAllPages<GraphEvent>(
+        graphMailService,
         token,
         calendarDeltaLink
       );
-      await applyOutlookEventsToDb(items, userId, false);
+      await applyOutlookEventsToDb(items, userId, false, calendarDb);
       newCalendarDeltaLink = deltaLink ?? calendarDeltaLink;
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response
-        ?.status;
-      if (status === 410) {
-        await performFullSync(userId);
+      if (axiosStatus(err) === 410) {
+        await performFullSync(
+          userId,
+          outlookDb,
+          calendarDb,
+          graphAuthService,
+          graphMailService,
+          storage,
+          openaiClient
+        );
         return;
       }
       throw err;
@@ -494,15 +507,21 @@ export async function performIncrementalSync(userId: string): Promise<void> {
   if (emailDeltaLink) {
     try {
       const { items, deltaLink } = await fetchAllPages<GraphMessage>(
+        graphMailService,
         token,
         emailDeltaLink
       );
-      await applyOutlookEmailsToDb(items, userId, false);
+      await applyOutlookEmailsToDb(
+        items,
+        userId,
+        false,
+        outlookDb,
+        storage,
+        openaiClient
+      );
       newEmailDeltaLink = deltaLink ?? emailDeltaLink;
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response
-        ?.status;
-      if (status === 410) {
+      if (axiosStatus(err) === 410) {
         newEmailDeltaLink = null;
       } else {
         throw err;
@@ -513,15 +532,21 @@ export async function performIncrementalSync(userId: string): Promise<void> {
   if (sentEmailDeltaLink) {
     try {
       const { items, deltaLink } = await fetchAllPages<GraphMessage>(
+        graphMailService,
         token,
         sentEmailDeltaLink
       );
-      await applyOutlookEmailsToDb(items, userId, true);
+      await applyOutlookEmailsToDb(
+        items,
+        userId,
+        true,
+        outlookDb,
+        storage,
+        openaiClient
+      );
       newSentEmailDeltaLink = deltaLink ?? sentEmailDeltaLink;
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response
-        ?.status;
-      if (status === 410) {
+      if (axiosStatus(err) === 410) {
         newSentEmailDeltaLink = null;
       } else {
         throw err;
@@ -529,18 +554,24 @@ export async function performIncrementalSync(userId: string): Promise<void> {
     }
   }
 
-  await db
-    .update(outlookSyncState)
-    .set({
-      calendarDeltaLink: newCalendarDeltaLink,
-      emailDeltaLink: newEmailDeltaLink,
-      sentEmailDeltaLink: newSentEmailDeltaLink,
-    })
-    .where(eq(outlookSyncState.userId, userId));
+  await outlookDb.updateDeltaLinks(userId, {
+    calendarDeltaLink: newCalendarDeltaLink,
+    emailDeltaLink: newEmailDeltaLink,
+    sentEmailDeltaLink: newSentEmailDeltaLink,
+  });
 }
 
-export async function setupSubscriptions(userId: string): Promise<void> {
-  const token = await getFreshOutlookAccessToken(userId);
+export async function setupSubscriptions(
+  userId: string,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface
+): Promise<void> {
+  const token = await getFreshOutlookAccessToken(
+    userId,
+    outlookDb,
+    graphAuthService
+  );
   if (!token) throw new Error(`No Outlook token for user ${userId}`);
 
   const env =
@@ -558,68 +589,53 @@ export async function setupSubscriptions(userId: string): Promise<void> {
   let emailSubscriptionId: string | null = null;
 
   try {
-    const calRes = await axios.post<{ id: string; expirationDateTime: string }>(
-      `${GRAPH_BASE}/subscriptions`,
-      {
-        changeType: "created,updated,deleted",
-        notificationUrl,
-        resource: "/me/events",
-        expirationDateTime: expiration.toISOString(),
-        clientState,
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    calendarSubscriptionId = calRes.data.id;
+    const calRes = await graphMailService.createSubscription(token, {
+      changeType: "created,updated,deleted",
+      notificationUrl,
+      resource: "/me/events",
+      expirationDateTime: expiration.toISOString(),
+      clientState,
+    });
+    calendarSubscriptionId = calRes.id;
   } catch (err) {
     console.error("[outlook_sync] Calendar subscription setup failed:", err);
   }
 
   try {
-    const mailRes = await axios.post<{ id: string }>(
-      `${GRAPH_BASE}/subscriptions`,
-      {
-        changeType: "created,updated,deleted",
-        notificationUrl,
-        resource: "/me/messages",
-        expirationDateTime: expiration.toISOString(),
-        clientState,
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    emailSubscriptionId = mailRes.data.id;
+    const mailRes = await graphMailService.createSubscription(token, {
+      changeType: "created,updated,deleted",
+      notificationUrl,
+      resource: "/me/messages",
+      expirationDateTime: expiration.toISOString(),
+      clientState,
+    });
+    emailSubscriptionId = mailRes.id;
   } catch (err) {
     console.error("[outlook_sync] Email subscription setup failed:", err);
   }
 
-  await db
-    .insert(outlookSyncState)
-    .values({
-      userId,
-      calendarSubscriptionId,
-      emailSubscriptionId,
-      clientState,
-      subscriptionExpiration: expiration.getTime(),
-    })
-    .onConflictDoUpdate({
-      target: outlookSyncState.userId,
-      set: {
-        calendarSubscriptionId,
-        emailSubscriptionId,
-        clientState,
-        subscriptionExpiration: expiration.getTime(),
-      },
-    });
+  await outlookDb.upsertSubscriptions(userId, {
+    calendarSubscriptionId,
+    emailSubscriptionId,
+    clientState,
+    subscriptionExpiration: expiration.getTime(),
+  });
 }
 
-export async function renewSubscriptions(userId: string): Promise<void> {
-  const token = await getFreshOutlookAccessToken(userId);
+export async function renewSubscriptions(
+  userId: string,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface
+): Promise<void> {
+  const token = await getFreshOutlookAccessToken(
+    userId,
+    outlookDb,
+    graphAuthService
+  );
   if (!token) return;
 
-  const rows = await db
-    .select()
-    .from(outlookSyncState)
-    .where(eq(outlookSyncState.userId, userId))
-    .limit(1);
+  const rows = await outlookDb.getSyncState(userId);
 
   if (!rows.length) return;
 
@@ -630,10 +646,10 @@ export async function renewSubscriptions(userId: string): Promise<void> {
   for (const subId of [calendarSubscriptionId, emailSubscriptionId]) {
     if (!subId) continue;
     try {
-      await axios.patch(
-        `${GRAPH_BASE}/subscriptions/${subId}`,
-        { expirationDateTime: newExpiration.toISOString() },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await graphMailService.renewSubscription(
+        token,
+        subId,
+        newExpiration.toISOString()
       );
     } catch (err) {
       console.error(
@@ -645,36 +661,41 @@ export async function renewSubscriptions(userId: string): Promise<void> {
   }
 
   if (anyFailed) {
-    await setupSubscriptions(userId);
+    await setupSubscriptions(
+      userId,
+      outlookDb,
+      graphAuthService,
+      graphMailService
+    );
     return;
   }
 
-  await db
-    .update(outlookSyncState)
-    .set({ subscriptionExpiration: newExpiration.getTime() })
-    .where(eq(outlookSyncState.userId, userId));
+  await outlookDb.updateSubscriptionExpiration(userId, newExpiration.getTime());
 }
 
-export async function removeSubscriptions(userId: string): Promise<void> {
-  const rows = await db
-    .select()
-    .from(outlookSyncState)
-    .where(eq(outlookSyncState.userId, userId))
-    .limit(1);
+export async function removeSubscriptions(
+  userId: string,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface
+): Promise<void> {
+  const rows = await outlookDb.getSyncState(userId);
 
   if (!rows.length) return;
 
   const { calendarSubscriptionId, emailSubscriptionId } = rows[0];
 
-  const token = await getFreshOutlookAccessToken(userId);
+  const token = await getFreshOutlookAccessToken(
+    userId,
+    outlookDb,
+    graphAuthService
+  );
 
   if (token) {
     for (const subId of [calendarSubscriptionId, emailSubscriptionId]) {
       if (!subId) continue;
       try {
-        await axios.delete(`${GRAPH_BASE}/subscriptions/${subId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await graphMailService.deleteSubscription(token, subId);
       } catch (err) {
         console.error(
           `[outlook_sync] Failed to delete subscription ${subId}:`,
@@ -683,6 +704,4 @@ export async function removeSubscriptions(userId: string): Promise<void> {
       }
     }
   }
-
-  await db.delete(outlookSyncState).where(eq(outlookSyncState.userId, userId));
 }

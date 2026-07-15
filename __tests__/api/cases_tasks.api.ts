@@ -1,15 +1,19 @@
 import { GET } from "@/app/api/cases/[id]/tasks/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
+import { getTasksByCase } from "@/lib/workspace/tasks";
+import { tasksDrizzle } from "@db/tasks_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@db/db", () => ({
-  db: {
-    select: vi.fn(),
-  },
+vi.mock("@/lib/workspace/tasks", () => ({
+  getTasksByCase: vi.fn(),
+}));
+
+vi.mock("@db/tasks_db", () => ({
+  // sentinel — the route must pass this exact instance into the lib fn
+  tasksDrizzle: { __sentinel: "tasksDrizzle" },
 }));
 
 function makeCtx(id: string) {
@@ -18,9 +22,16 @@ function makeCtx(id: string) {
   };
 }
 
+let consoleErrorSpy: MockInstance;
+
 describe("GET /api/cases/[id]/tasks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -30,6 +41,7 @@ describe("GET /api/cases/[id]/tasks", () => {
 
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: "Unauthorized" });
+    expect(getTasksByCase).not.toHaveBeenCalled();
   });
 
   it("returns 400 for invalid caseId", async () => {
@@ -39,25 +51,32 @@ describe("GET /api/cases/[id]/tasks", () => {
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: "Invalid caseId" });
+    expect(getTasksByCase).not.toHaveBeenCalled();
   });
 
-  it("returns tasks", async () => {
+  it("returns tasks from the lib fn wired with the db instance", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
     const rows = [
       { id: 1, title: "Task A" },
       { id: 2, title: "Task B" },
     ];
-
-    (db.select as Mock).mockReturnValue({
-      from: () => ({
-        where: () => Promise.resolve(rows),
-      }),
-    });
+    (getTasksByCase as Mock).mockResolvedValueOnce(rows);
 
     const res = await GET({} as never, makeCtx("10"));
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(rows);
+    expect(getTasksByCase).toHaveBeenCalledWith(10, tasksDrizzle);
+  });
+
+  it("returns 500 when the query fails", async () => {
+    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
+    (getTasksByCase as Mock).mockRejectedValueOnce(new Error("db down"));
+
+    const res = await GET({} as never, makeCtx("10"));
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: "Failed to fetch tasks" });
   });
 });

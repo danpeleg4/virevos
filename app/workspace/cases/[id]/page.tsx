@@ -52,13 +52,6 @@ import { TaskDetailModal } from "@/app/components/TaskDetailModal";
 import { task_percentage } from "@/lib/util/task_percentage";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  addFileMetadata,
-  addCaseNotes,
-  deleteCase,
-  deleteCaseFile,
-} from "@/lib/workspace/cases";
-import { deleteTask, updateTaskStatus } from "@/lib/workspace/tasks";
 import { Case, CaseFile, CaseNote } from "@/types/cases";
 import { Task } from "@/types/tasks";
 
@@ -185,7 +178,7 @@ export function CaseDetailView({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      await addFileMetadata({ caseId: aCase.id }, formData);
+      await axios.post(`/api/cases/${aCase.id}/files`, formData);
       await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
     } catch (err) {
       console.error("Upload failed:", err);
@@ -234,7 +227,7 @@ export function CaseDetailView({
       newNote: string;
       caseId: number;
     }) => {
-      await addCaseNotes(newNote, caseId);
+      await axios.post(`/api/cases/${caseId}/notes`, { note: newNote });
     },
     onSuccess: async () => {
       setNewNote("");
@@ -247,7 +240,7 @@ export function CaseDetailView({
 
   const deleteSomeTask = useMutation({
     mutationFn: async (taskId: number) => {
-      await deleteTask(taskId);
+      await axios.delete(`/api/tasks/${taskId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -258,7 +251,7 @@ export function CaseDetailView({
 
   const deleteSomeCase = useMutation({
     mutationFn: async (caseId: number) => {
-      await deleteCase(caseId);
+      await axios.delete(`/api/cases/${caseId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["cases"] });
@@ -274,7 +267,7 @@ export function CaseDetailView({
       status: string;
       taskId: number;
     }) => {
-      await updateTaskStatus(status, taskId);
+      await axios.patch(`/api/tasks/${taskId}`, { status });
     },
 
     onMutate: async ({ status, taskId }) => {
@@ -300,7 +293,7 @@ export function CaseDetailView({
 
   const deleteCaseFileMutation = useMutation({
     mutationFn: async (fileId: number) => {
-      await deleteCaseFile(fileId);
+      await axios.delete(`/api/files/${fileId}`);
     },
     onMutate: async (fileId) => {
       await queryClient.cancelQueries({ queryKey: ["files", aCase.id] });

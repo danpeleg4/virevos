@@ -1,37 +1,14 @@
 import React from "react";
-import { render } from "vitest-browser-react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { http, HttpResponse } from "msw";
+import { worker } from "../msw/worker";
+import { renderWithQueryClient } from "../_helpers/render";
+import { chatStreamBody } from "../msw/handlers/ai";
 
-vi.mock("axios", () => ({
-  default: {
-    get: vi.fn().mockResolvedValue({ data: [] }),
-    post: vi.fn().mockResolvedValue({ data: "" }),
-    isAxiosError: () => false,
-  },
-}));
-
-vi.mock("@/lib/portal_bookings", () => ({
-  acceptBookingWithCalendar: vi.fn(),
-  updateBookingStatus: vi.fn(),
-}));
-
-vi.mock("@/lib/document_requests", () => ({
-  approveDocumentRequest: vi.fn(),
-  declineDocumentRequest: vi.fn(),
-  updateDocumentRequest: vi.fn(),
-}));
-
-import axios from "axios";
 import { AIAssistant } from "@/app/components/AIAssistant";
 
 function renderAssistant() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <AIAssistant isOpen onClose={vi.fn()} pendingBookings={[]} />
-    </QueryClientProvider>
+  return renderWithQueryClient(
+    <AIAssistant isOpen onClose={vi.fn()} pendingBookings={[]} />
   );
 }
 
@@ -54,6 +31,20 @@ describe("AIAssistant", () => {
   });
 
   it("sends the prompt to /api/chat and renders it as a user message when a chip is clicked", async () => {
+    let sentBody: unknown;
+    worker.use(
+      http.post("/api/chat", async ({ request }) => {
+        sentBody = await request.json();
+        return HttpResponse.text(
+          chatStreamBody([
+            { type: "text_delta", delta: "Nothing due!" },
+            { type: "done", response_id: "resp_1" },
+          ]),
+          { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+        );
+      })
+    );
+
     const screen = await renderAssistant();
 
     await screen
@@ -61,22 +52,16 @@ describe("AIAssistant", () => {
       .click();
 
     await vi.waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith(
-        "/api/chat",
-        expect.objectContaining({
-          messages: [{ role: "user", content: "What's due this week?" }],
-        }),
-        expect.anything()
-      );
+      expect(sentBody).toMatchObject({
+        messages: [{ role: "user", content: "What's due this week?" }],
+      });
     });
 
     // The clicked prompt is now shown as the user's message, and the assistant
-    // placeholder shows the typing indicator.
+    // response streams in.
     await expect
       .element(screen.getByText(/what's due this week\?/i).first())
       .toBeInTheDocument();
-    await expect
-      .element(screen.getByLabelText(/assistant is typing/i))
-      .toBeInTheDocument();
+    await expect.element(screen.getByText(/nothing due!/i)).toBeInTheDocument();
   });
 });

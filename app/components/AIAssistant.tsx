@@ -58,16 +58,6 @@ import type {
   PendingDocRequest,
   DocumentRequestItemInput,
 } from "@/types/document_requests";
-import {
-  acceptBookingWithCalendar,
-  updateBookingStatus,
-} from "@/lib/portal_bookings";
-import {
-  approveDocumentRequest,
-  declineDocumentRequest,
-  updateDocumentRequest,
-} from "@/lib/document_requests";
-
 interface ChatRequestBody {
   messages?: ChatMessage[];
   previousResponseId?: string;
@@ -150,15 +140,23 @@ export function AIAssistant({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const acceptMutation = useMutation({
-    mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
+    mutationFn: async (bookingId: number) => {
+      await axios.patch(`/api/portal-bookings/${bookingId}`, {
+        type: "accept",
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
     },
   });
 
   const denyMutation = useMutation({
-    mutationFn: (bookingId: number) =>
-      updateBookingStatus(bookingId, "cancelled"),
+    mutationFn: async (bookingId: number) => {
+      await axios.patch(`/api/portal-bookings/${bookingId}`, {
+        type: "status",
+        data: { status: "cancelled" },
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
     },
@@ -889,7 +887,10 @@ function DocRequestCard({
       clientId?: number | null;
       items?: DocumentRequestItemInput[];
     }) => {
-      await updateDocumentRequest(request.id, patch);
+      await axios.patch(`/api/document-requests/${request.id}`, {
+        type: "update",
+        data: patch,
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -901,7 +902,9 @@ function DocRequestCard({
 
   const approveMutation = useMutation({
     mutationFn: async () => {
-      await approveDocumentRequest(request.id);
+      await axios.patch(`/api/document-requests/${request.id}`, {
+        type: "approve",
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -912,7 +915,9 @@ function DocRequestCard({
 
   const declineMutation = useMutation({
     mutationFn: async () => {
-      await declineDocumentRequest(request.id);
+      await axios.patch(`/api/document-requests/${request.id}`, {
+        type: "decline",
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

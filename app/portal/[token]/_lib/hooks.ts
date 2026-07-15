@@ -9,10 +9,6 @@ import type {
   TimeSlot,
 } from "@/types/portal";
 import type { DocumentRequestItem } from "@/types/document_requests";
-import { sendPortalChatMessage } from "@/lib/portal_chat";
-import { createPortalBooking } from "@/lib/portal_bookings";
-import { uploadDocumentRequestItem } from "@/lib/portal_document_uploads";
-import { uploadPortalFile } from "@/lib/portal_file_uploads";
 
 export const portalQueryKey = (token: string) => ["portal", token] as const;
 export const portalChatQueryKey = (token: string) =>
@@ -50,7 +46,12 @@ export function usePortalChat(token: string) {
   });
 
   const sendMessage = useMutation({
-    mutationFn: (body: string) => sendPortalChatMessage(token, body),
+    mutationFn: async (body: string) => {
+      const res = await axios.post(`/api/portal/${token}/chat`, {
+        message: body,
+      });
+      return res.data as PortalChatMessage;
+    },
     onMutate: async (body) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<{
@@ -113,7 +114,8 @@ export function useFileUpload(token: string) {
       const formData = new FormData();
       formData.append("file", file);
       if (caseId) formData.append("caseId", String(caseId));
-      return uploadPortalFile(token, formData);
+      const res = await axios.post(`/api/portal/${token}/files`, formData);
+      return res.data;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
@@ -133,10 +135,13 @@ export function useDocumentItemUpload(token: string) {
     mutationFn: async ({ itemId, file }: { itemId: number; file: File }) => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await uploadDocumentRequestItem(token, itemId, formData);
+      const res = await axios.post(
+        `/api/portal/${token}/document-requests/${itemId}/upload`,
+        formData
+      );
       return {
         fileName: file.name,
-        analysis: (res.analysis ?? null) as DocumentAnalysis | null,
+        analysis: (res.data.analysis ?? null) as DocumentAnalysis | null,
       };
     },
     onSettled: () => {
@@ -148,7 +153,10 @@ export function useDocumentItemUpload(token: string) {
 /** Books a pending meeting for the portal. */
 export function useBookMeeting(token: string, onConfirmed: () => void) {
   return useMutation({
-    mutationFn: (input: BookingInput) => createPortalBooking(token, input),
+    mutationFn: async (input: BookingInput) => {
+      const res = await axios.post(`/api/portal/${token}/bookings`, input);
+      return res.data;
+    },
     onSuccess: () => onConfirmed(),
   });
 }

@@ -1,17 +1,9 @@
-"use server";
-
 import { headers } from "next/headers";
-import { db } from "@db/db";
-import {
-  clientPortalTokens,
-  cases,
-  caseFiles,
-  meetingDocumentRequests,
-  documentRequestItems,
-  users,
-} from "@db/schema";
-import { eq, sql } from "drizzle-orm";
-import { uploadFile } from "@/lib/storage";
+import type { PortalUploadsDB } from "@db/portal_uploads_db";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
+import type { OpenAIClientInterface } from "@/api_client/openai_client";
+import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { BillingDB } from "@db/billing_db";
 import { FILES_BUCKET } from "@/lib/supabase/supabase";
 import { rateLimitHeaders } from "@/lib/util/rate_limit";
 import {
@@ -51,7 +43,12 @@ export interface UploadDocumentRequestItemResult {
 export async function uploadDocumentRequestItem(
   token: string,
   itemId: number,
-  formData: FormData
+  formData: FormData,
+  portalUploadsDb: PortalUploadsDB,
+  storage: StorageClientInterface,
+  openaiClient: OpenAIClientInterface,
+  planLimitsDb: PlanLimitsDB,
+  billingDb: BillingDB
 ): Promise<UploadDocumentRequestItemResult> {
   const limited = rateLimitHeaders(await headers(), {
     keyPrefix: "portal-doc-upload",
@@ -64,11 +61,7 @@ export async function uploadDocumentRequestItem(
   const parsedItemId = requireInt(itemId, "itemId");
 
   // Validate token
-  const tokenRows = await db
-    .select()
-    .from(clientPortalTokens)
-    .where(eq(clientPortalTokens.token, tokenValue))
-    .limit(1);
+  const tokenRows = await portalUploadsDb.getPortalTokenByToken(tokenValue);
 
   if (!tokenRows.length || !tokenRows[0].enabled) {
     throw new ValidationError("Portal not found or disabled", 404);
@@ -87,23 +80,8 @@ export async function uploadDocumentRequestItem(
   }
 
   // Look up the item joined to its parent request
-  const itemRows = await db
-    .select({
-      itemId: documentRequestItems.id,
-      itemName: documentRequestItems.name,
-      itemDescription: documentRequestItems.description,
-      itemStatus: documentRequestItems.status,
-      requestId: meetingDocumentRequests.id,
-      requestStatus: meetingDocumentRequests.status,
-      requestClientId: meetingDocumentRequests.clientId,
-    })
-    .from(documentRequestItems)
-    .innerJoin(
-      meetingDocumentRequests,
-      eq(documentRequestItems.requestId, meetingDocumentRequests.id)
-    )
-    .where(eq(documentRequestItems.id, parsedItemId))
-    .limit(1);
+  const itemRows =
+    await portalUploadsDb.getDocumentRequestItemWithRequest(parsedItemId);
 
   if (!itemRows.length) {
     throw new ValidationError("Item not found", 404);
@@ -144,11 +122,9 @@ export async function uploadDocumentRequestItem(
   }
 
   // Resolve a target case (first one for this client)
-  const clientCases = await db
-    .select({ id: cases.id })
-    .from(cases)
-    .where(eq(cases.clientId, portalToken.clientId))
-    .limit(1);
+  const clientCases = await portalUploadsDb.getFirstCaseForClient(
+    portalToken.clientId
+  );
 
   if (!clientCases.length) {
     throw new ValidationError("No cases found for this client", 400);
@@ -160,59 +136,53 @@ export async function uploadDocumentRequestItem(
   const filePath = `documents/${userId}/req-${item.requestId}/${Date.now()}-${safeName}`;
   const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-  await uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
+  await storage.uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
 
-  const [inserted] = await db
-    .insert(caseFiles)
-    .values({
-      caseId,
-      userId,
-      name: file.name,
-      path: filePath,
-      size: file.size,
-      mimeType: file.type,
-    })
-    .returning();
+  const inserted = await portalUploadsDb.insertCaseFile({
+    caseId,
+    userId,
+    name: file.name,
+    path: filePath,
+    size: file.size,
+    mimeType: file.type,
+  });
 
   let analysis: DocumentAnalysisResult | null;
   try {
-    await assertCanUseAI(userId);
-    analysis = await analyzeDocumentRequirement({
-      itemName: item.itemName,
-      itemDescription: item.itemDescription,
-      fileBuffer,
-      mimeType: file.type,
-      fileName: file.name,
-    });
+    await assertCanUseAI(userId, planLimitsDb, billingDb);
+    analysis = await analyzeDocumentRequirement(
+      {
+        itemName: item.itemName,
+        itemDescription: item.itemDescription,
+        fileBuffer,
+        mimeType: file.type,
+        fileName: file.name,
+      },
+      openaiClient
+    );
   } catch {
     analysis = null;
   }
 
   if (analysis && analysis.verdict !== "skipped") {
-    await db
-      .update(users)
-      .set({ aiCredits: sql`${users.aiCredits} + 1` })
-      .where(eq(users.userId, userId));
+    await portalUploadsDb.incrementAiCredits(userId);
   }
 
   const finalStatus =
     analysis?.verdict === "does_not_meet" ? "rejected" : "uploaded";
 
-  await db
-    .update(documentRequestItems)
-    .set({
-      status: finalStatus,
-      uploadedFileId: inserted.id,
-      uploadedAt: new Date(),
-      ...(analysis
-        ? {
-            aiVerdict: analysis.verdict,
-            aiReasoning: analysis.reasoning,
-            aiAnalyzedAt: new Date(),
-          }
-        : {}),
-    })
-    .where(eq(documentRequestItems.id, parsedItemId));
+  await portalUploadsDb.updateDocumentRequestItem(parsedItemId, {
+    status: finalStatus,
+    uploadedFileId: inserted.id,
+    uploadedAt: new Date(),
+    ...(analysis
+      ? {
+          aiVerdict: analysis.verdict,
+          aiReasoning: analysis.reasoning,
+          aiAnalyzedAt: new Date(),
+        }
+      : {}),
+  });
 
   return {
     itemId: parsedItemId,

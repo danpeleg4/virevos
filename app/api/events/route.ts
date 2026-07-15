@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { events } from "@db/schema";
-import { eq } from "drizzle-orm";
-import { deriveMeetingStatus } from "@/lib/meeting_status";
+import { addMeetingToCalendar, getEvents } from "@/lib/workspace/calendar";
+import { calendarDrizzle } from "@db/calendar_db";
+import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
+import { outlookDrizzle } from "@db/outlook_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -11,14 +13,45 @@ export async function GET() {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  // Return DB meetings
-  const rows = await db.query.events.findMany({
-    where: eq(events.userId, user.id),
-    with: {
-      attendees: true,
-    },
-  });
+  try {
+    const rows = await getEvents(calendarDrizzle);
+    return NextResponse.json(rows);
+  } catch (err) {
+    console.error("[api/events GET]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json(
+      { error: "Failed to fetch events" },
+      { status: 500 }
+    );
+  }
+}
 
-  const now = new Date();
-  return NextResponse.json(rows.map((row) => deriveMeetingStatus(row, now)));
+export async function POST(req: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const inserted = await addMeetingToCalendar(
+      body,
+      calendarDrizzle,
+      graphCalendarService,
+      outlookDrizzle,
+      graphAuthService
+    );
+    return NextResponse.json(inserted);
+  } catch (err) {
+    console.error("[api/events POST]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json(
+      { error: "Failed to create event" },
+      { status: 500 }
+    );
+  }
 }

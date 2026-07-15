@@ -1,47 +1,20 @@
 import React from "react";
-import { render } from "vitest-browser-react";
-
-const mockMutate = vi.fn();
-const mockUseQuery = vi.fn();
-const mockUseQueryClient = vi.fn(() => ({
-  cancelQueries: vi.fn(),
-  getQueryData: vi.fn(() => []),
-  setQueryData: vi.fn(),
-  invalidateQueries: vi.fn(),
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: () => ({
-    mutate: mockMutate,
-    isPending: false,
-  }),
-  useQueryClient: () => mockUseQueryClient(),
-}));
-
-vi.mock("axios");
-vi.mock("@/lib/workspace/tasks", () => ({
-  addCaseTasksAction: vi.fn(),
-  addProjectTasksAction: vi.fn(),
-}));
+import { http, HttpResponse } from "msw";
+import { worker } from "../../msw/worker";
+import { renderWithQueryClient } from "../../_helpers/render";
 
 import AddNewTask from "@/app/components/AddNewTask";
 
 describe("AddNewTask", () => {
-  beforeEach(() => {
-    mockMutate.mockClear();
-    mockUseQuery.mockReturnValue({ data: [], isLoading: false, error: null });
-  });
-
   it("renders 'New Task' button", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await expect
       .element(screen.getByRole("button", { name: /new task/i }))
       .toBeInTheDocument();
   });
 
   it("opens dialog when 'New Task' is clicked", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await expect
       .element(screen.getByText("Create New Task", { exact: true }))
@@ -49,7 +22,7 @@ describe("AddNewTask", () => {
   });
 
   it("renders title input inside dialog", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await expect
       .element(screen.getByPlaceholder(/review designs/i))
@@ -57,7 +30,7 @@ describe("AddNewTask", () => {
   });
 
   it("renders description textarea inside dialog", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await expect
       .element(screen.getByPlaceholder(/add more details/i))
@@ -65,7 +38,7 @@ describe("AddNewTask", () => {
   });
 
   it("shows case select when no caseId prop", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await expect
       .element(screen.getByText(/select a case/i))
@@ -73,7 +46,7 @@ describe("AddNewTask", () => {
   });
 
   it("hides case select when caseId prop is provided", async () => {
-    const screen = await render(<AddNewTask caseId={5} />);
+    const screen = await renderWithQueryClient(<AddNewTask caseId={5} />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await expect
       .element(screen.getByText(/select a case/i))
@@ -81,7 +54,7 @@ describe("AddNewTask", () => {
   });
 
   it("'Create Task' button is disabled when title is empty", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await expect
       .element(screen.getByRole("button", { name: /create task/i }))
@@ -89,7 +62,7 @@ describe("AddNewTask", () => {
   });
 
   it("enables 'Create Task' when title is filled", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await screen.getByPlaceholder(/review designs/i).fill("My task");
     await expect
@@ -97,14 +70,24 @@ describe("AddNewTask", () => {
       .not.toBeDisabled();
   });
 
-  it("calls mutation and closes dialog on submit", async () => {
-    const screen = await render(<AddNewTask />);
+  it("POSTs the new task and closes the dialog on submit", async () => {
+    let postBody: Record<string, unknown> | undefined;
+    worker.use(
+      http.post("/api/tasks", async ({ request }) => {
+        postBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...postBody, id: 99 });
+      })
+    );
+
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await screen.getByPlaceholder(/review designs/i).fill("Test Task");
     await screen.getByRole("button", { name: /create task/i }).click();
-    expect(mockMutate).toHaveBeenCalledTimes(1);
-    expect(mockMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Test Task", status: "in-progress" })
+
+    await vi.waitFor(() =>
+      expect(postBody).toEqual(
+        expect.objectContaining({ title: "Test Task", status: "in-progress" })
+      )
     );
     await expect
       .element(screen.getByText("Create New Task", { exact: true }))
@@ -112,7 +95,7 @@ describe("AddNewTask", () => {
   });
 
   it("closes dialog and resets form when Cancel is clicked", async () => {
-    const screen = await render(<AddNewTask />);
+    const screen = await renderWithQueryClient(<AddNewTask />);
     await screen.getByRole("button", { name: /new task/i }).click();
     await screen.getByPlaceholder(/review designs/i).fill("something");
     await screen.getByRole("button", { name: /cancel/i }).click();

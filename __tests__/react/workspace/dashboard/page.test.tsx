@@ -1,20 +1,5 @@
 import React from "react";
-import { render } from "vitest-browser-react";
-
-const mockUseQuery = vi.fn();
-const mockUseMutation = vi.fn();
-const mockUseQueryClient = vi.fn(() => ({
-  cancelQueries: vi.fn(),
-  getQueryData: vi.fn(() => []),
-  setQueryData: vi.fn(),
-  invalidateQueries: vi.fn(),
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (...args: unknown[]) => mockUseMutation(...args),
-  useQueryClient: () => mockUseQueryClient(),
-}));
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -31,82 +16,22 @@ vi.mock("next/link", () => ({
   }) => <a href={href}>{children}</a>,
 }));
 
-vi.mock("@/lib/workspace/tasks", () => ({
-  updateTaskStatus: vi.fn(),
-}));
-vi.mock("@/lib/util/task_percentage", () => ({
-  task_percentage: vi.fn(() => 50),
-}));
-
-const mockProjects = [
-  {
-    id: 1,
-    clientId: null,
-    name: "Alpha Project",
-    status: "active",
-    clientName: "TechCorp",
-    dueDate: "2026-06-01",
-    priority: "medium",
-    stats: { totalTasks: 4, completedTasks: 2, percentage: 50 },
-  },
-  {
-    id: 2,
-    clientId: null,
-    name: "Beta Project",
-    status: "active",
-    clientName: "StartupXYZ",
-    dueDate: "2026-07-01",
-    priority: "low",
-    stats: { totalTasks: 2, completedTasks: 2, percentage: 100 },
-  },
-];
-
-const mockTasks = [
-  {
-    id: 1,
-    title: "Fix login bug",
-    status: "todo",
-    priority: "high",
-    dueDate: null,
-    projectName: "Alpha Project",
-    completed: false,
-  },
-  {
-    id: 2,
-    title: "Update docs",
-    status: "in-progress",
-    priority: "medium",
-    dueDate: "2026-05-20",
-    projectName: "Beta Project",
-    completed: false,
-  },
-];
-
 import Dashboard from "@/app/workspace/dashboard/page";
 
-describe("Dashboard Page", () => {
-  beforeEach(() => {
-    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
-    mockUseQuery.mockImplementation(({ queryKey }: { queryKey: string[] }) => {
-      if (queryKey[0] === "clients")
-        return { data: [{ id: 1 }, { id: 2 }], isLoading: false };
-      if (queryKey[0] === "cases")
-        return { data: { cases: mockProjects }, isLoading: false };
-      if (queryKey[0] === "allTasks")
-        return { data: mockTasks, isLoading: false };
-      return { data: undefined, isLoading: false };
-    });
-  });
+// Default MSW fixtures serve 2 clients (clients.ts), "Estate Case" /
+// "Contract Review" (cases.ts), and "Design UI mockups" / "Review contract"
+// (tasks.ts).
 
+describe("Dashboard Page", () => {
   it("renders Dashboard heading", async () => {
-    const screen = await render(<Dashboard />);
+    const screen = await renderWithQueryClient(<Dashboard />);
     await expect
       .element(screen.getByText("Dashboard", { exact: true }))
       .toBeInTheDocument();
   });
 
   it("renders stat cards", async () => {
-    const screen = await render(<Dashboard />);
+    const screen = await renderWithQueryClient(<Dashboard />);
     await expect
       .element(screen.getByText("Active Clients"))
       .toBeInTheDocument();
@@ -120,32 +45,34 @@ describe("Dashboard Page", () => {
   });
 
   it("renders Recent Cases section", async () => {
-    const screen = await render(<Dashboard />);
+    const screen = await renderWithQueryClient(<Dashboard />);
     await expect.element(screen.getByText("Recent Cases")).toBeInTheDocument();
   });
 
   it("renders Upcoming Tasks section", async () => {
-    const screen = await render(<Dashboard />);
+    const screen = await renderWithQueryClient(<Dashboard />);
     await expect
       .element(screen.getByText("Upcoming Tasks"))
       .toBeInTheDocument();
   });
 
-  it("renders cases from query", async () => {
-    const screen = await render(<Dashboard />);
+  it("renders cases from the /api/cases/get-cases query", async () => {
+    const screen = await renderWithQueryClient(<Dashboard />);
     await expect
-      .element(screen.getByText("Alpha Project").first())
+      .element(screen.getByText("Estate Case").first())
       .toBeInTheDocument();
   });
 
-  it("renders tasks from query", async () => {
-    const screen = await render(<Dashboard />);
-    await expect.element(screen.getByText("Fix login bug")).toBeInTheDocument();
+  it("renders tasks from the /api/tasks query", async () => {
+    const screen = await renderWithQueryClient(<Dashboard />);
+    await expect
+      .element(screen.getByText("Design UI mockups"))
+      .toBeInTheDocument();
   });
 
-  it("shows client count", async () => {
-    const screen = await render(<Dashboard />);
-    // 2 clients in mock data - may appear in multiple stat cards
+  it("shows the client count from the /api/clients query", async () => {
+    const screen = await renderWithQueryClient(<Dashboard />);
+    // 2 clients in the default MSW fixture - may appear in multiple stat cards
     await expect
       .element(screen.getByText("2", { exact: true }).first())
       .toBeInTheDocument();

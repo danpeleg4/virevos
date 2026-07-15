@@ -34,7 +34,6 @@ import {
 } from "livekit-client";
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { startMeeting } from "@/lib/workspace/meetings";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 
 export default function InMeetingView() {
@@ -61,7 +60,9 @@ export default function InMeetingView() {
   });
 
   const startMeetingMutation = useMutation({
-    mutationFn: () => startMeeting(meetingId),
+    mutationFn: async () => {
+      await axios.patch(`/api/events/${meetingId}`, { type: "start" });
+    },
     onSuccess: () => setHasStarted(true),
   });
 

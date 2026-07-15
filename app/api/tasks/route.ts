@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { db } from "@db/db";
-import { cases, tasks } from "@db/schema";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { eq } from "drizzle-orm";
+import { addProjectTasksAction, getAllTasks } from "@/lib/workspace/tasks";
+import { tasksDrizzle } from "@db/tasks_db";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -10,14 +10,39 @@ export async function GET() {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const allTasks = await db
-    .select({
-      tasks: tasks,
-      caseName: cases.name,
-    })
-    .from(tasks)
-    .leftJoin(cases, eq(tasks.caseId, cases.id))
-    .where(eq(tasks.userId, user.id));
+  try {
+    const allTasks = await getAllTasks(tasksDrizzle);
+    return NextResponse.json(allTasks);
+  } catch (err) {
+    console.error("[api/tasks GET]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json(
+      { error: "Failed to fetch tasks" },
+      { status: 500 }
+    );
+  }
+}
 
-  return NextResponse.json(allTasks);
+export async function POST(req: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const task = await addProjectTasksAction(body, tasksDrizzle);
+    return NextResponse.json(task);
+  } catch (err) {
+    console.error("[api/tasks POST]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json(
+      { error: "Failed to create task" },
+      { status: 500 }
+    );
+  }
 }

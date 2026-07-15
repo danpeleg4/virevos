@@ -27,7 +27,7 @@ import {
   VerificationStepProps,
 } from "@/types/onboard";
 import PaymentStep from "./PaymentStep";
-import { registerFreePlan } from "@/lib/workspace/billing";
+import axios from "axios";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import Image from "next/image";
 
@@ -584,7 +584,7 @@ function VerificationStep({ formData, onNext }: VerificationStepProps) {
         onNext();
       } else {
         try {
-          await registerFreePlan();
+          await axios.post("/api/billing", { type: "register-free" });
         } catch (err) {
           console.error("registerFreePlan failed", err);
           setError(

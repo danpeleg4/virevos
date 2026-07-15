@@ -3,40 +3,42 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import {
   createScheduledEmail,
   deleteScheduledEmail,
+  getScheduledEmails,
   sendScheduledEmailNow,
 } from "@/lib/scheduled_emails";
-import { DrizzleInstance } from "@db/db";
-import { scheduledEmailService } from "@/api_client/axios_api_client";
+import { scheduledEmailsDrizzle } from "@db/scheduled_emails_db";
+import { scheduledEmailService } from "@/api_client/ms_graph/scheduled_email_service";
+import { outlookDrizzle } from "@db/outlook_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-const { orderBy } = vi.hoisted(() => ({ orderBy: vi.fn() }));
-
-vi.mock("@db/db", () => ({
-  __esModule: true,
-  db: {
-    select: vi.fn().mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({ orderBy }),
-      }),
-    }),
-  },
+vi.mock("@db/scheduled_emails_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
-  DrizzleInstance: { __sentinel: "DrizzleInstance" },
+  scheduledEmailsDrizzle: { __sentinel: "scheduledEmailsDrizzle" },
 }));
 
 vi.mock("@/lib/scheduled_emails", () => ({
   createScheduledEmail: vi.fn(),
   deleteScheduledEmail: vi.fn(),
+  getScheduledEmails: vi.fn(),
   sendScheduledEmailNow: vi.fn(),
 }));
 
-vi.mock("@/api_client/axios_api_client", () => ({
+vi.mock("@/api_client/ms_graph/scheduled_email_service", () => ({
   // sentinel — the route must pass this exact service into sendScheduledEmailNow
   scheduledEmailService: { __sentinel: "scheduledEmailService" },
+}));
+
+vi.mock("@db/outlook_db", () => ({
+  outlookDrizzle: { __sentinel: "outlookDrizzle" },
+}));
+
+vi.mock("@/api_client/ms_graph/graph_auth_service", () => ({
+  graphAuthService: { __sentinel: "graphAuthService" },
 }));
 
 const user = { id: "user_1" };
@@ -64,24 +66,36 @@ describe("GET /api/scheduled-emails", () => {
     const res = await GET();
 
     expect(res.status).toBe(401);
-    expect(orderBy).not.toHaveBeenCalled();
+    expect(getScheduledEmails).not.toHaveBeenCalled();
   });
 
-  it("should return scheduled emails for authenticated user", async () => {
+  it("returns scheduled emails from the lib fn wired with the db instance", async () => {
     const rows = [
       { id: 1, subject: "Quarterly review", status: "pending" },
       { id: 2, subject: "Kickoff call", status: "sent" },
     ];
-    orderBy.mockResolvedValueOnce(rows);
+    (getScheduledEmails as Mock).mockResolvedValueOnce(rows);
 
     const res = await GET();
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ scheduledEmails: rows });
+    expect(getScheduledEmails).toHaveBeenCalledWith(scheduledEmailsDrizzle);
+  });
+
+  it("propagates a ValidationError status from the lib fn", async () => {
+    (getScheduledEmails as Mock).mockRejectedValueOnce(
+      new ValidationError("Unauthorized", 401)
+    );
+
+    const res = await GET();
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "Unauthorized" });
   });
 
   it("returns 500 when the query fails", async () => {
-    orderBy.mockRejectedValueOnce(new Error("db down"));
+    (getScheduledEmails as Mock).mockRejectedValueOnce(new Error("db down"));
 
     const res = await GET();
 
@@ -112,8 +126,10 @@ describe("POST /api/scheduled-emails", () => {
     expect(sendScheduledEmailNow).toHaveBeenCalledTimes(1);
     expect(sendScheduledEmailNow).toHaveBeenCalledWith(
       7,
-      DrizzleInstance,
-      scheduledEmailService
+      scheduledEmailsDrizzle,
+      scheduledEmailService,
+      outlookDrizzle,
+      graphAuthService
     );
     expect(createScheduledEmail).not.toHaveBeenCalled();
   });
@@ -132,7 +148,10 @@ describe("POST /api/scheduled-emails", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ success: true });
     expect(createScheduledEmail).toHaveBeenCalledTimes(1);
-    expect(createScheduledEmail).toHaveBeenCalledWith(input, DrizzleInstance);
+    expect(createScheduledEmail).toHaveBeenCalledWith(
+      input,
+      scheduledEmailsDrizzle
+    );
     expect(sendScheduledEmailNow).not.toHaveBeenCalled();
   });
 
@@ -218,7 +237,10 @@ describe("DELETE /api/scheduled-emails", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ success: true });
     expect(deleteScheduledEmail).toHaveBeenCalledTimes(1);
-    expect(deleteScheduledEmail).toHaveBeenCalledWith(42, DrizzleInstance);
+    expect(deleteScheduledEmail).toHaveBeenCalledWith(
+      42,
+      scheduledEmailsDrizzle
+    );
   });
 
   it("returns 500 when the lib call throws", async () => {

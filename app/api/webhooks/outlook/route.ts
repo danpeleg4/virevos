@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@db/db";
-import { outlookSyncState } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { outlookDrizzle } from "@db/outlook_db";
+import { calendarDrizzle } from "@db/calendar_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
+import { openAIClient } from "@/api_client/openai_client";
 import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
 
 interface OutlookNotification {
@@ -47,23 +50,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!subscriptionId) continue;
 
     // Look up user by subscription ID and validate clientState
-    const calendarRows = await db
-      .select()
-      .from(outlookSyncState)
-      .where(eq(outlookSyncState.calendarSubscriptionId, subscriptionId))
-      .limit(1);
+    const syncStateRows =
+      await outlookDrizzle.findSyncStateBySubscriptionId(subscriptionId);
 
-    const emailRows = calendarRows.length
-      ? calendarRows
-      : await db
-          .select()
-          .from(outlookSyncState)
-          .where(eq(outlookSyncState.emailSubscriptionId, subscriptionId))
-          .limit(1);
+    if (!syncStateRows.length) continue;
 
-    if (!emailRows.length) continue;
-
-    const syncState = emailRows[0];
+    const syncState = syncStateRows[0];
 
     if (clientState && syncState.clientState !== clientState) {
       console.warn(
@@ -77,7 +69,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     processedUsers.add(userId);
 
     try {
-      await performIncrementalSync(userId);
+      await performIncrementalSync(
+        userId,
+        outlookDrizzle,
+        calendarDrizzle,
+        graphAuthService,
+        graphMailService,
+        supabaseStorageClient,
+        openAIClient
+      );
     } catch (err) {
       console.error(
         `[webhook/outlook] Incremental sync failed for ${userId}:`,

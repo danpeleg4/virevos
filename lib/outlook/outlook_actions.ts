@@ -1,13 +1,12 @@
-"use server";
-
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { outlookEmails } from "@db/schema";
-import { and, eq, InferSelectModel } from "drizzle-orm";
-import axios from "axios";
-import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
+import type { OutlookDB, OutlookEmailUpdateData } from "@db/outlook_db";
+import type { CalendarDB } from "@db/calendar_db";
+import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
+import type { GraphMailServiceInterface } from "@/api_client/ms_graph/graph_mail_service";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
+import type { OpenAIClientInterface } from "@/api_client/openai_client";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
-import { downloadFile } from "@/lib/storage";
+import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
 import { FILES_BUCKET } from "@/lib/supabase/supabase";
 import { sanitizeEmailHtml } from "@/lib/util/html_sanitizer";
 import {
@@ -25,7 +24,6 @@ import {
   requireString,
 } from "../util/validation";
 
-const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const LARGE_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;
 const UPLOAD_CHUNK_SIZE = 3 * 327_680;
 
@@ -72,11 +70,12 @@ function buildBodyHtml(html: string, urlAttachments: OutlookAttachmentInput[]) {
 }
 
 async function resolveBuffer(
-  att: OutlookAttachmentInput
+  att: OutlookAttachmentInput,
+  storage: StorageClientInterface
 ): Promise<Buffer | null> {
   if (att.data) return Buffer.from(att.data, "base64");
   if (att.path) {
-    const bytes = await downloadFile(FILES_BUCKET, att.path);
+    const bytes = await storage.downloadFile(FILES_BUCKET, att.path);
     return Buffer.from(bytes);
   }
   return null;
@@ -150,79 +149,125 @@ function validateSendInput(
   };
 }
 
-async function addSmallAttachment(
-  draftId: string,
-  token: string,
-  name: string,
-  contentType: string,
-  buffer: Buffer
-) {
-  await axios.post(
-    `${GRAPH_BASE}/me/messages/${draftId}/attachments`,
-    {
-      "@odata.type": "#microsoft.graph.fileAttachment",
-      name,
-      contentType,
-      contentBytes: buffer.toString("base64"),
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+export interface OutlookInboxMessage {
+  id: string;
+  outlookId: string;
+  conversationId: string;
+  type: "email";
+  from: string;
+  fromEmail: string | null;
+  initials: string;
+  subject: string | null;
+  preview: string;
+  body: string | null;
+  timestamp: Date | null;
+  unread: boolean;
+  starred: boolean;
+  archived: boolean;
+  sent: boolean;
+  hasAttachments: boolean;
+  client: string;
+  clientId: number | null;
 }
 
-async function addLargeAttachment(
-  draftId: string,
-  token: string,
-  name: string,
-  contentType: string,
-  buffer: Buffer
-) {
-  const sessionRes = await axios.post<{ uploadUrl: string }>(
-    `${GRAPH_BASE}/me/messages/${draftId}/attachments/createUploadSession`,
-    {
-      AttachmentItem: { attachmentType: "file", name, size: buffer.length },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-  const { uploadUrl } = sessionRes.data;
-
-  let offset = 0;
-  while (offset < buffer.length) {
-    const end = Math.min(offset + UPLOAD_CHUNK_SIZE, buffer.length);
-    const chunk = buffer.slice(offset, end);
-    await axios.put(uploadUrl, chunk, {
-      headers: {
-        "Content-Range": `bytes ${offset}-${end - 1}/${buffer.length}`,
-        "Content-Type": contentType,
-        "Content-Length": String(chunk.length),
-      },
-    });
-    offset = end;
-  }
+export interface ListOutlookEmailsResult {
+  messages: OutlookInboxMessage[];
+  page: number;
+  limit: number;
+  hasMore: boolean;
 }
 
-export async function syncOutlookInbox() {
+/** Reads previously-synced Outlook emails from the local cache (no Graph calls). */
+export async function listOutlookEmails(
+  userId: string,
+  options: {
+    page: number;
+    limit: number;
+    search: string;
+    filter: "all" | "unread" | "starred" | "sent" | "archived";
+  },
+  outlookDb: OutlookDB
+): Promise<ListOutlookEmailsResult> {
+  const offset = (options.page - 1) * options.limit;
+
+  // Fetch one extra row so we can tell if another page exists without a COUNT query.
+  const rows = await outlookDb.getEmailsForUser(userId, {
+    search: options.search,
+    filter: options.filter,
+    limit: options.limit + 1,
+    offset,
+  });
+
+  const hasMore = rows.length > options.limit;
+  const pageRows = hasMore ? rows.slice(0, options.limit) : rows;
+
+  const messages: OutlookInboxMessage[] = pageRows.map((email) => ({
+    id: String(email.id),
+    outlookId: email.outlookId,
+    conversationId: email.conversationId,
+    type: "email",
+    from: email.fromName || email.fromEmail || "Unknown",
+    fromEmail: email.fromEmail,
+    initials:
+      (email.fromName || email.fromEmail || "?")
+        .split(" ")
+        .slice(0, 2)
+        .map((w: string) => w[0]?.toUpperCase() || "")
+        .join("") || "?",
+    subject: email.subject,
+    preview: email.snippet || (email.bodyText?.slice(0, 150) ?? ""),
+    body: email.bodyHtml || email.bodyText,
+    timestamp: email.sentAt,
+    unread: !email.isRead,
+    starred: email.isStarred ?? false,
+    archived: email.isArchived ?? false,
+    sent: email.isSent ?? false,
+    hasAttachments: email.hasAttachments ?? false,
+    client: email.clientName || "",
+    clientId: email.clientId,
+  }));
+
+  return { messages, page: options.page, limit: options.limit, hasMore };
+}
+
+export async function syncOutlookInbox(
+  outlookDb: OutlookDB,
+  calendarDb: CalendarDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface,
+  storage: StorageClientInterface,
+  openaiClient: OpenAIClientInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
-  await performIncrementalSync(user.id);
+  await performIncrementalSync(
+    user.id,
+    outlookDb,
+    calendarDb,
+    graphAuthService,
+    graphMailService,
+    storage,
+    openaiClient
+  );
   return { success: true };
 }
 
-export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
+export async function sendOutlookEmail(
+  raw: Partial<SendOutlookEmailInput>,
+  outlookDb: OutlookDB,
+  storage: StorageClientInterface,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const input = validateSendInput(raw);
-  const token = await getFreshOutlookAccessToken(user.id);
+  const token = await getFreshOutlookAccessToken(
+    user.id,
+    outlookDb,
+    graphAuthService
+  );
   if (!token) throw new ValidationError("Outlook account not connected", 403);
 
   try {
@@ -232,11 +277,6 @@ export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
     const urlAttachments = (input.attachments ?? []).filter(
       (a) => a.url && !a.data && !a.path
     );
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
 
     const messagePayload = {
       subject: input.subject,
@@ -252,64 +292,62 @@ export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
 
     if (fileAttachments.length === 0) {
       if (input.replyToOutlookId) {
-        await axios.post(
-          `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/reply`,
-          { message: messagePayload },
-          { headers }
+        await graphMailService.replyMail(
+          token,
+          input.replyToOutlookId,
+          messagePayload
         );
       } else {
-        await axios.post(
-          `${GRAPH_BASE}/me/sendMail`,
-          { message: messagePayload, saveToSentItems: true },
-          { headers }
-        );
+        await graphMailService.sendMail(token, messagePayload);
       }
     } else {
       let draftId: string;
       if (input.replyToOutlookId) {
-        const res = await axios.post<{ id: string }>(
-          `${GRAPH_BASE}/me/messages/${input.replyToOutlookId}/createReply`,
-          { message: messagePayload },
-          { headers }
+        const res = await graphMailService.createReplyDraft(
+          token,
+          input.replyToOutlookId,
+          messagePayload
         );
-        draftId = res.data.id;
+        draftId = res.id;
       } else {
-        const res = await axios.post<{ id: string }>(
-          `${GRAPH_BASE}/me/messages`,
-          messagePayload,
-          { headers }
-        );
-        draftId = res.data.id;
+        const res = await graphMailService.createDraft(token, messagePayload);
+        draftId = res.id;
       }
 
       for (const att of fileAttachments) {
-        const buffer = await resolveBuffer(att);
+        const buffer = await resolveBuffer(att, storage);
         if (!buffer) continue;
         const contentType = att.mimeType ?? "application/octet-stream";
         if (buffer.length < LARGE_ATTACHMENT_THRESHOLD) {
-          await addSmallAttachment(
-            draftId,
-            token,
-            att.name,
+          await graphMailService.addSmallAttachment(token, draftId, {
+            name: att.name,
             contentType,
-            buffer
-          );
+            contentBytes: buffer.toString("base64"),
+          });
         } else {
-          await addLargeAttachment(
-            draftId,
+          const { uploadUrl } = await graphMailService.createUploadSession(
             token,
+            draftId,
             att.name,
-            contentType,
-            buffer
+            buffer.length
           );
+
+          let offset = 0;
+          while (offset < buffer.length) {
+            const end = Math.min(offset + UPLOAD_CHUNK_SIZE, buffer.length);
+            const chunk = buffer.slice(offset, end);
+            await graphMailService.uploadChunk(
+              uploadUrl,
+              chunk,
+              contentType,
+              `bytes ${offset}-${end - 1}/${buffer.length}`
+            );
+            offset = end;
+          }
         }
       }
 
-      await axios.post(
-        `${GRAPH_BASE}/me/messages/${draftId}/send`,
-        {},
-        { headers }
-      );
+      await graphMailService.sendDraft(token, draftId);
     }
   } catch (err) {
     console.error("[outlook_actions] sendOutlookEmail failed:", err);
@@ -319,14 +357,13 @@ export async function sendOutlookEmail(raw: Partial<SendOutlookEmailInput>) {
   return { success: true };
 }
 
-type EmailUpdate = Partial<
-  Pick<
-    InferSelectModel<typeof outlookEmails>,
-    "isStarred" | "isArchived" | "isRead"
-  >
->;
-
-export async function updateOutlookMessage(id: number, action: string) {
+export async function updateOutlookMessage(
+  id: number,
+  action: string,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
@@ -337,17 +374,11 @@ export async function updateOutlookMessage(id: number, action: string) {
     MESSAGE_ACTIONS
   );
 
-  const [email] = await db
-    .select()
-    .from(outlookEmails)
-    .where(
-      and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id))
-    )
-    .limit(1);
+  const [email] = await outlookDb.getEmailById(numericId, user.id);
 
   if (!email) throw new ValidationError("Not found", 404);
 
-  const dbUpdate: EmailUpdate = {};
+  const dbUpdate: OutlookEmailUpdateData = {};
   const graphUpdate: Record<string, unknown> = {};
 
   if (validAction === "star" || validAction === "unstar") {
@@ -366,10 +397,7 @@ export async function updateOutlookMessage(id: number, action: string) {
   }
 
   if (Object.keys(dbUpdate).length > 0) {
-    await db
-      .update(outlookEmails)
-      .set(dbUpdate)
-      .where(eq(outlookEmails.id, numericId));
+    await outlookDb.updateEmail(numericId, dbUpdate);
   }
 
   const graphFields = { ...graphUpdate };
@@ -377,27 +405,25 @@ export async function updateOutlookMessage(id: number, action: string) {
   const graphPatch = Object.keys(graphFields).length > 0 ? graphFields : null;
 
   try {
-    const token = await getFreshOutlookAccessToken(user.id);
+    const token = await getFreshOutlookAccessToken(
+      user.id,
+      outlookDb,
+      graphAuthService
+    );
     if (token) {
       if (graphPatch) {
-        await axios.patch(
-          `${GRAPH_BASE}/me/messages/${email.outlookId}`,
-          graphPatch,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await graphMailService.patchMessage(token, email.outlookId, graphPatch);
       }
       if (graphUpdate.flag) {
-        await axios.patch(
-          `${GRAPH_BASE}/me/messages/${email.outlookId}`,
-          { flag: graphUpdate.flag },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await graphMailService.patchMessage(token, email.outlookId, {
+          flag: graphUpdate.flag,
+        });
       }
       if (validAction === "archive" || validAction === "unarchive") {
-        await axios.post(
-          `${GRAPH_BASE}/me/messages/${email.outlookId}/move`,
-          { destinationId: graphUpdate.archive },
-          { headers: { Authorization: `Bearer ${token}` } }
+        await graphMailService.moveMessage(
+          token,
+          email.outlookId,
+          graphUpdate.archive as string
         );
       }
     }
@@ -408,30 +434,31 @@ export async function updateOutlookMessage(id: number, action: string) {
   return { success: true };
 }
 
-export async function deleteOutlookMessage(id: number) {
+export async function deleteOutlookMessage(
+  id: number,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface,
+  graphMailService: GraphMailServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const numericId = requireInt(id, "id");
 
-  const rows = await db
-    .select()
-    .from(outlookEmails)
-    .where(
-      and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, user.id))
-    )
-    .limit(1);
+  const rows = await outlookDb.getEmailById(numericId, user.id);
 
   if (!rows.length) throw new ValidationError("Not found", 404);
 
-  await db.delete(outlookEmails).where(eq(outlookEmails.id, numericId));
+  await outlookDb.deleteEmail(numericId);
 
   try {
-    const token = await getFreshOutlookAccessToken(user.id);
+    const token = await getFreshOutlookAccessToken(
+      user.id,
+      outlookDb,
+      graphAuthService
+    );
     if (token) {
-      await axios.delete(`${GRAPH_BASE}/me/messages/${rows[0].outlookId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await graphMailService.deleteMessage(token, rows[0].outlookId);
     }
   } catch (err) {
     console.error("[outlook_actions] Graph delete failed:", err);

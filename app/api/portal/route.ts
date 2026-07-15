@@ -1,40 +1,18 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@db/db";
-import { clientPortalTokens, clients, portalMeetingBookings } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { getPortalBookings } from "@/lib/portal_bookings";
+import { portalBookingsDrizzle } from "@db/portal_bookings_db";
+import { ValidationError } from "@/lib/util/validation";
 
 const bookingsType = async (userId: string) => {
   try {
-    const rows = await db
-      .select({
-        id: portalMeetingBookings.id,
-        portalId: portalMeetingBookings.portalId,
-        clientId: portalMeetingBookings.clientId,
-        clientName: portalMeetingBookings.clientName,
-        clientEmail: portalMeetingBookings.clientEmail,
-        dateTime: portalMeetingBookings.dateTime,
-        duration: portalMeetingBookings.duration,
-        status: portalMeetingBookings.status,
-        notes: portalMeetingBookings.notes,
-        meetingLink: portalMeetingBookings.meetingLink,
-        eventId: portalMeetingBookings.eventId,
-        createdAt: portalMeetingBookings.createdAt,
-        clientDisplayName: clients.name,
-      })
-      .from(portalMeetingBookings)
-      .leftJoin(clients, eq(portalMeetingBookings.clientId, clients.id))
-      .where(eq(portalMeetingBookings.userId, userId));
-
-    return NextResponse.json({
-      bookings: rows.map((r) => ({
-        ...r,
-        dateTime: r.dateTime.toISOString(),
-        createdAt: r.createdAt?.toISOString() ?? null,
-      })),
-    });
+    const bookings = await getPortalBookings(userId, portalBookingsDrizzle);
+    return NextResponse.json({ bookings });
   } catch (err) {
     console.error("[api/portal/bookings GET]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

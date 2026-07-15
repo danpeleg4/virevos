@@ -1,16 +1,8 @@
-"use server";
-
 import { headers } from "next/headers";
-import { db } from "@db/db";
-import {
-  clientPortalTokens,
-  clients,
-  cases,
-  caseFiles,
-  users,
-} from "@db/schema";
-import { and, eq, sql } from "drizzle-orm";
-import { uploadFile, deleteFile } from "@/lib/storage";
+import type { PortalUploadsDB } from "@db/portal_uploads_db";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
+import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { BillingDB } from "@db/billing_db";
 import { FILES_BUCKET } from "@/lib/supabase/supabase";
 import { rateLimitHeaders } from "@/lib/util/rate_limit";
 import { assertCanAddFile } from "@/lib/plan_limits";
@@ -41,7 +33,11 @@ export interface UploadPortalFileResult {
  */
 export async function uploadPortalFile(
   token: string,
-  formData: FormData
+  formData: FormData,
+  portalUploadsDb: PortalUploadsDB,
+  storage: StorageClientInterface,
+  planLimitsDb: PlanLimitsDB,
+  billingDb: BillingDB
 ): Promise<UploadPortalFileResult> {
   const limited = rateLimitHeaders(await headers(), {
     keyPrefix: "portal-upload",
@@ -53,11 +49,7 @@ export async function uploadPortalFile(
   const tokenValue = requireString(token, "token", MAX_NAME);
 
   // Validate token
-  const tokenRows = await db
-    .select()
-    .from(clientPortalTokens)
-    .where(eq(clientPortalTokens.token, tokenValue))
-    .limit(1);
+  const tokenRows = await portalUploadsDb.getPortalTokenByToken(tokenValue);
 
   if (!tokenRows.length || !tokenRows[0].enabled) {
     throw new ValidationError("Portal not found or disabled", 404);
@@ -79,11 +71,7 @@ export async function uploadPortalFile(
   const userId = portalToken.userId;
 
   // Fetch client
-  const clientRows = await db
-    .select()
-    .from(clients)
-    .where(eq(clients.id, portalToken.clientId))
-    .limit(1);
+  const clientRows = await portalUploadsDb.getClientById(portalToken.clientId);
 
   if (!clientRows.length) {
     throw new ValidationError("Client not found", 404);
@@ -109,7 +97,7 @@ export async function uploadPortalFile(
     throw new ValidationError("Invalid mime type", 400);
   }
 
-  await assertCanAddFile(userId, file.size);
+  await assertCanAddFile(userId, file.size, planLimitsDb, billingDb);
 
   // Resolve caseId
   let caseId: number;
@@ -120,13 +108,10 @@ export async function uploadPortalFile(
       throw new ValidationError("Invalid caseId", 400);
     }
     // Verify the case belongs to this client
-    const caseRows = await db
-      .select({ id: cases.id })
-      .from(cases)
-      .where(
-        and(eq(cases.id, parsedId), eq(cases.clientId, portalToken.clientId))
-      )
-      .limit(1);
+    const caseRows = await portalUploadsDb.getCaseForClient(
+      parsedId,
+      portalToken.clientId
+    );
 
     if (!caseRows.length) {
       throw new ValidationError(
@@ -137,11 +122,9 @@ export async function uploadPortalFile(
     caseId = parsedId;
   } else {
     // Use first case for this client
-    const clientCases = await db
-      .select({ id: cases.id })
-      .from(cases)
-      .where(eq(cases.clientId, portalToken.clientId))
-      .limit(1);
+    const clientCases = await portalUploadsDb.getFirstCaseForClient(
+      portalToken.clientId
+    );
 
     if (!clientCases.length) {
       throw new ValidationError("No cases found for this client", 400);
@@ -154,32 +137,22 @@ export async function uploadPortalFile(
   const filePath = `cases/${userId}/portal/${Date.now()}-${safeName}`;
   const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-  await uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
+  await storage.uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
 
   let inserted;
   try {
-    inserted = await db.transaction(async (tx) => {
-      const [row] = await tx
-        .insert(caseFiles)
-        .values({
-          caseId,
-          userId,
-          name: file.name,
-          path: filePath,
-          size: file.size,
-          mimeType: file.type,
-        })
-        .returning();
-      await tx
-        .update(users)
-        .set({ storage: sql`${users.storage} + ${file.size}` })
-        .where(eq(users.userId, userId));
-      return row;
+    inserted = await portalUploadsDb.insertCaseFileWithStorage({
+      caseId,
+      userId,
+      name: file.name,
+      path: filePath,
+      size: file.size,
+      mimeType: file.type,
     });
   } catch (dbErr) {
     // Best-effort cleanup so we don't leak orphaned files in storage.
     try {
-      await deleteFile(FILES_BUCKET, filePath);
+      await storage.deleteFile(FILES_BUCKET, filePath);
     } catch (cleanupErr) {
       console.error("Orphan file cleanup failed:", cleanupErr);
     }

@@ -1,21 +1,10 @@
 import React from "react";
-import { render } from "vitest-browser-react";
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => ({ get: vi.fn(() => null) }),
 }));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: vi.fn(() => ({ data: [], isLoading: false })),
-  useMutation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-  })),
-}));
-
-vi.mock("axios");
 
 // Mock heavy child components — render tabNav so the tab buttons appear in the DOM
 vi.mock("@/app/components/scheduling/CalendarView", () => ({
@@ -45,42 +34,42 @@ import CalendarPage from "@/app/workspace/calendar/page";
 
 describe("Calendar Page", () => {
   it("renders Calendar tab button", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await expect
       .element(screen.getByRole("button", { name: /^calendar$/i }))
       .toBeInTheDocument();
   });
 
   it("renders Meetings tab button", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await expect
       .element(screen.getByRole("button", { name: /^meetings$/i }))
       .toBeInTheDocument();
   });
 
   it("renders Meeting Notes tab button", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await expect
       .element(screen.getByRole("button", { name: /meeting notes/i }))
       .toBeInTheDocument();
   });
 
   it("renders Preferences tab button", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await expect
       .element(screen.getByRole("button", { name: /preferences/i }))
       .toBeInTheDocument();
   });
 
   it("shows CalendarView by default", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await expect
       .element(screen.getByTestId("calendar-view"))
       .toBeInTheDocument();
   });
 
   it("shows Meetings view when Meetings tab is clicked", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await screen.getByRole("button", { name: /^meetings$/i }).click();
     await expect
       .element(screen.getByTestId("meetings-view"))
@@ -88,7 +77,7 @@ describe("Calendar Page", () => {
   });
 
   it("shows Meeting Notes when notes tab is clicked", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await screen.getByRole("button", { name: /meeting notes/i }).click();
     await expect
       .element(screen.getByTestId("meeting-notes"))
@@ -96,7 +85,7 @@ describe("Calendar Page", () => {
   });
 
   it("shows Preferences when preferences tab is clicked", async () => {
-    const screen = await render(<CalendarPage />);
+    const screen = await renderWithQueryClient(<CalendarPage />);
     await screen.getByRole("button", { name: /preferences/i }).click();
     await expect
       .element(screen.getByTestId("video-preferences"))

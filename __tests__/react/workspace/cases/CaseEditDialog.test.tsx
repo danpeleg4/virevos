@@ -1,16 +1,7 @@
 import React from "react";
-import { render } from "vitest-browser-react";
-
-const mockMutate = vi.fn();
-
-vi.mock("@tanstack/react-query", () => ({
-  useMutation: () => ({ mutate: mockMutate, isPending: false }),
-  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-}));
-
-vi.mock("@/lib/workspace/cases", () => ({
-  updateCase: vi.fn(),
-}));
+import { http, HttpResponse } from "msw";
+import { worker } from "../../../msw/worker";
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 const mockCase = {
   id: 1,
@@ -42,12 +33,11 @@ describe("CaseEditDialog", () => {
   const onOpenChange = vi.fn();
 
   beforeEach(() => {
-    mockMutate.mockClear();
     onOpenChange.mockClear();
   });
 
   it("renders dialog when open=true", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -61,7 +51,7 @@ describe("CaseEditDialog", () => {
   });
 
   it("does not render content when open=false", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -75,7 +65,7 @@ describe("CaseEditDialog", () => {
   });
 
   it("pre-fills the case name", async () => {
-    await render(
+    await renderWithQueryClient(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -93,7 +83,7 @@ describe("CaseEditDialog", () => {
   });
 
   it("renders Save Changes button", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -106,8 +96,18 @@ describe("CaseEditDialog", () => {
       .toBeInTheDocument();
   });
 
-  it("calls mutation on save", async () => {
-    const screen = await render(
+  it("PATCHes the case on save and closes the dialog", async () => {
+    let patchedId: string | undefined;
+    let patchBody: unknown;
+    worker.use(
+      http.patch("/api/cases/:id", async ({ request, params }) => {
+        patchedId = String(params.id);
+        patchBody = await request.json();
+        return HttpResponse.json({ success: true, id: Number(params.id) });
+      })
+    );
+
+    const screen = await renderWithQueryClient(
       <CaseEditDialog
         aCase={mockCase}
         clients={mockClients}
@@ -116,6 +116,37 @@ describe("CaseEditDialog", () => {
       />
     );
     await screen.getByRole("button", { name: /save changes/i }).click();
-    expect(mockMutate).toHaveBeenCalledTimes(1);
+
+    await vi.waitFor(() => {
+      expect(patchedId).toBe("1");
+      expect(patchBody).toEqual(
+        expect.objectContaining({ name: "Existing Case", status: "active" })
+      );
+    });
+    await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  });
+
+  it("keeps the dialog open when the save fails", async () => {
+    worker.use(
+      http.patch("/api/cases/:id", () =>
+        HttpResponse.json({ error: "boom" }, { status: 500 })
+      )
+    );
+
+    const screen = await renderWithQueryClient(
+      <CaseEditDialog
+        aCase={mockCase}
+        clients={mockClients}
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    );
+    await screen.getByRole("button", { name: /save changes/i }).click();
+
+    // the failed mutation must not close the dialog
+    await expect
+      .element(screen.getByText("Edit Case", { exact: true }))
+      .toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 });

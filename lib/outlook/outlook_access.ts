@@ -1,23 +1,6 @@
-import axios from "axios";
-import { db } from "@db/db";
-import { outlookTokens } from "@db/schema";
-import { eq } from "drizzle-orm";
-
-const TOKEN_URL = `https://login.microsoftonline.com/common/oauth2/v2.0/token`;
-
-export const OUTLOOK_SCOPES = [
-  "openid",
-  "profile",
-  "email",
-  "offline_access",
-  "User.Read",
-  "Calendars.ReadWrite",
-  "Mail.ReadWrite",
-  "Mail.Send",
-  "MailboxSettings.Read",
-  "Calendars.Read",
-  "Mail.Read",
-].join(" ");
+import type { OutlookDB } from "@db/outlook_db";
+import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
+import { OUTLOOK_SCOPES } from "@/api_client/ms_graph/graph_auth_service";
 
 export function getOutlookAuthUrl(state: string): string {
   const params = new URLSearchParams({
@@ -33,42 +16,27 @@ export function getOutlookAuthUrl(state: string): string {
   return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
 }
 
-export async function exchangeOutlookCode(code: string): Promise<{
+export async function exchangeOutlookCode(
+  code: string,
+  graphAuthService: GraphAuthServiceInterface
+): Promise<{
   access_token: string;
   refresh_token: string;
   expires_at: number;
 }> {
-  const params = new URLSearchParams({
-    client_id: process.env.OUTLOOK_CLIENT_ID!,
-    client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
-    code,
-    grant_type: "authorization_code",
-    redirect_uri: process.env.OUTLOOK_REDIRECT_URI!,
-    scope: OUTLOOK_SCOPES,
-  });
-
-  const response = await axios.post<{
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-  }>(TOKEN_URL, params.toString(), {
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-  });
-
-  const { access_token, refresh_token, expires_in } = response.data;
+  const { access_token, refresh_token, expires_in } =
+    await graphAuthService.exchangeCode(code);
   const expires_at = Date.now() + expires_in * 1000;
 
-  return { access_token, refresh_token, expires_at };
+  return { access_token, refresh_token: refresh_token ?? "", expires_at };
 }
 
 export async function getFreshOutlookAccessToken(
-  userId: string
+  userId: string,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
 ): Promise<string | null> {
-  const rows = await db
-    .select()
-    .from(outlookTokens)
-    .where(eq(outlookTokens.userId, userId))
-    .limit(1);
+  const rows = await outlookDb.getTokenByUserId(userId);
 
   if (!rows.length) return null;
 
@@ -80,34 +48,16 @@ export async function getFreshOutlookAccessToken(
   }
 
   try {
-    const params = new URLSearchParams({
-      client_id: process.env.OUTLOOK_CLIENT_ID!,
-      client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
-      refresh_token: tokenData.refreshToken,
-      grant_type: "refresh_token",
-      scope: OUTLOOK_SCOPES,
-    });
-
-    const response = await axios.post<{
-      access_token: string;
-      refresh_token?: string;
-      expires_in: number;
-    }>(TOKEN_URL, params, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
-
-    const { access_token, refresh_token, expires_in } = response.data;
+    const { access_token, refresh_token, expires_in } =
+      await graphAuthService.refreshToken(tokenData.refreshToken);
     const expires_at = Date.now() + expires_in * 1000;
 
-    await db
-      .update(outlookTokens)
-      .set({
-        accessToken: access_token,
-        expiresIn: expires_at,
-        connected: true,
-        ...(refresh_token ? { refresh_token } : {}),
-      })
-      .where(eq(outlookTokens.userId, userId));
+    await outlookDb.updateToken(userId, {
+      accessToken: access_token,
+      expiresIn: expires_at,
+      connected: true,
+      ...(refresh_token ? { refreshToken: refresh_token } : {}),
+    });
 
     return access_token;
   } catch (error) {

@@ -1,20 +1,5 @@
 import React from "react";
-import { render } from "vitest-browser-react";
-
-vi.mock("@tanstack/react-query", () => ({
-  useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-}));
-
-vi.mock("@/lib/util/task_percentage", () => ({
-  task_percentage: vi.fn(() => 60),
-}));
-
-vi.mock("@/lib/workspace/cases", () => ({
-  createCase: vi.fn(),
-  updateCase: vi.fn(),
-  deleteCase: vi.fn(),
-}));
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 const mockCases = [
   {
@@ -63,7 +48,7 @@ describe("CaseList", () => {
   });
 
   it("renders case names", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     await expect.element(screen.getByText("Alpha Case")).toBeInTheDocument();
@@ -71,7 +56,7 @@ describe("CaseList", () => {
   });
 
   it("renders status badges", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     await expect
@@ -83,7 +68,7 @@ describe("CaseList", () => {
   });
 
   it("calls onSelect when a case row is clicked", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     await screen.getByText("Alpha Case").click();
@@ -91,7 +76,7 @@ describe("CaseList", () => {
   });
 
   it("renders 'New Case' button", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     await expect
@@ -100,7 +85,7 @@ describe("CaseList", () => {
   });
 
   it("renders search input", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <CaseList cases={mockCases} clients={mockClients} onSelect={onSelect} />
     );
     await expect

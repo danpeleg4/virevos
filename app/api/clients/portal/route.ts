@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { db } from "@db/db";
-import { clients, clientPortalTokens } from "@db/schema";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { eq, and } from "drizzle-orm";
+import { getPortalEnabledClients } from "@/lib/workspace/clients";
+import { clientsDrizzle } from "@db/clients_db";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {
   try {
@@ -11,25 +11,17 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const rows = await db
-      .select({
-        id: clients.id,
-        name: clients.name,
-        email: clients.email,
-      })
-      .from(clients)
-      .innerJoin(
-        clientPortalTokens,
-        and(
-          eq(clientPortalTokens.clientId, clients.id),
-          eq(clientPortalTokens.enabled, true)
-        )
-      )
-      .where(and(eq(clients.userId, user.id), eq(clients.status, "active")));
+    const rows = await getPortalEnabledClients(clientsDrizzle);
 
     return NextResponse.json(rows);
   } catch (error) {
     console.error("[api/clients/portal GET]", error);
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

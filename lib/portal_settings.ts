@@ -1,16 +1,8 @@
-"use server";
-
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { clientPortalTokens, clients } from "@db/schema";
-import { and, eq, InferSelectModel } from "drizzle-orm";
+import type { PortalDB, PortalSettingsData } from "@db/portal_db";
 import { ValidationError, requireInt } from "./util/validation";
 
-type DbPortalSettings = NonNullable<
-  InferSelectModel<typeof clientPortalTokens>["settings"]
->;
-
-export type PortalSettings = DbPortalSettings;
+export type PortalSettings = PortalSettingsData;
 
 export interface SavePortalSettingsInput {
   clientId: number;
@@ -18,32 +10,22 @@ export interface SavePortalSettingsInput {
   enabled?: boolean;
 }
 
-export async function savePortalSettings(input: SavePortalSettingsInput) {
+export async function savePortalSettings(
+  input: SavePortalSettingsInput,
+  portalDb: PortalDB
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
   const clientId = requireInt(input.clientId, "clientId");
 
-  const clientRows = await db
-    .select()
-    .from(clients)
-    .where(and(eq(clients.id, clientId), eq(clients.userId, user.id)))
-    .limit(1);
+  const clientRows = await portalDb.getClientOwnedByUser(clientId, user.id);
 
   if (!clientRows.length) {
     throw new ValidationError("Client not found", 404);
   }
 
-  const existing = await db
-    .select()
-    .from(clientPortalTokens)
-    .where(
-      and(
-        eq(clientPortalTokens.clientId, clientId),
-        eq(clientPortalTokens.userId, user.id)
-      )
-    )
-    .limit(1);
+  const existing = await portalDb.getPortalTokenByClient(clientId, user.id);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
 
@@ -53,25 +35,16 @@ export async function savePortalSettings(input: SavePortalSettingsInput) {
     if (input.settings !== undefined) updateData.settings = input.settings;
     if (input.enabled !== undefined) updateData.enabled = input.enabled;
 
-    const [updated] = await db
-      .update(clientPortalTokens)
-      .set(updateData)
-      .where(eq(clientPortalTokens.id, existing[0].id))
-      .returning();
-    record = updated;
+    record = await portalDb.updatePortalToken(existing[0].id, updateData);
   } else {
     const token = crypto.randomUUID();
-    const [inserted] = await db
-      .insert(clientPortalTokens)
-      .values({
-        clientId,
-        token,
-        enabled: input.enabled ?? true,
-        settings: input.settings || {},
-        userId: user.id,
-      })
-      .returning();
-    record = inserted;
+    record = await portalDb.insertPortalToken({
+      clientId,
+      token,
+      enabled: input.enabled ?? true,
+      settings: input.settings || {},
+      userId: user.id,
+    });
   }
 
   return {

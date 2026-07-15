@@ -1,28 +1,33 @@
 import { POST } from "@/app/api/chat/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
 import { NextRequest } from "next/server";
-import { openai, tools } from "@/lib/ai/ai_tools";
+import { openAIClient } from "@/api_client/openai_client";
+import { tools, executeTool } from "@/lib/ai/ai_tools";
+import { clientsDrizzle } from "@db/clients_db";
+import { casesDrizzle } from "@db/cases_db";
+import { tasksDrizzle } from "@db/tasks_db";
+import { calendarDrizzle } from "@db/calendar_db";
+import { meetingsDrizzle } from "@db/meetings_db";
+import { emailsDrizzle } from "@db/emails_db";
+import { outlookDrizzle } from "@db/outlook_db";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
+import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { planLimitsDrizzle } from "@db/plan_limits_db";
+import { billingDrizzle } from "@db/billing_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@db/db", () => ({
-  db: {
-    update: vi.fn(),
-  },
+vi.mock("@/api_client/openai_client", () => ({
+  openAIClient: { __sentinel: "openAIClient", streamResponse: vi.fn() },
 }));
 
 vi.mock("@/lib/ai/ai_tools", () => ({
-  openai: {
-    responses: {
-      stream: vi.fn(),
-    },
-  },
-  tools: [],
+  tools: [{ type: "function", name: "addClient" }],
   executeTool: vi.fn(),
-  MODEL: "gpt-4o",
+  MODEL: "gpt-5",
   MAX_STEPS: 5,
 }));
 
@@ -30,29 +35,61 @@ vi.mock("@/lib/plan_limits", () => ({
   assertCanUseAI: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@/lib/workspace/clients", () => ({
-  addAClient: vi.fn(),
-  updateExistingClient: vi.fn(),
+vi.mock("@db/clients_db", () => ({
+  clientsDrizzle: { __sentinel: "clientsDrizzle" },
+}));
+vi.mock("@db/cases_db", () => ({
+  casesDrizzle: { __sentinel: "casesDrizzle" },
+}));
+vi.mock("@db/tasks_db", () => ({
+  tasksDrizzle: { __sentinel: "tasksDrizzle" },
+}));
+vi.mock("@db/calendar_db", () => ({
+  calendarDrizzle: { __sentinel: "calendarDrizzle" },
+}));
+vi.mock("@db/meetings_db", () => ({
+  meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
+}));
+vi.mock("@db/emails_db", () => ({
+  emailsDrizzle: { __sentinel: "emailsDrizzle" },
+}));
+vi.mock("@db/outlook_db", () => ({
+  outlookDrizzle: { __sentinel: "outlookDrizzle" },
+}));
+vi.mock("@db/plan_limits_db", () => ({
+  planLimitsDrizzle: {
+    __sentinel: "planLimitsDrizzle",
+    incrementAiCredits: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+vi.mock("@db/billing_db", () => ({
+  billingDrizzle: { __sentinel: "billingDrizzle" },
+}));
+vi.mock("@/api_client/supabase_storage_client", () => ({
+  supabaseStorageClient: { __sentinel: "supabaseStorageClient" },
+}));
+vi.mock("@/api_client/ms_graph/graph_calendar_service", () => ({
+  graphCalendarService: { __sentinel: "graphCalendarService" },
+}));
+vi.mock("@/api_client/ms_graph/graph_auth_service", () => ({
+  graphAuthService: { __sentinel: "graphAuthService" },
 }));
 
-vi.mock("@/lib/workspace/meetings", () => ({
-  getPastMeetingTranscript: vi.fn(),
-}));
-
-vi.mock("@/lib/workspace/cases", () => ({
-  createCase: vi.fn(),
-  updateCase: vi.fn(),
-}));
-
-vi.mock("@/lib/workspace/tasks", () => ({
-  addProjectTasksAction: vi.fn(),
-  updateTask: vi.fn(),
-}));
-
-vi.mock("@/lib/workspace/calendar", () => ({
-  addMeetingToCalendar: vi.fn(),
-  updateEvent: vi.fn(),
-}));
+const expectedDeps = {
+  clientsDb: clientsDrizzle,
+  casesDb: casesDrizzle,
+  tasksDb: tasksDrizzle,
+  calendarDb: calendarDrizzle,
+  meetingsDb: meetingsDrizzle,
+  emailsDb: emailsDrizzle,
+  planLimitsDb: planLimitsDrizzle,
+  billingDb: billingDrizzle,
+  outlookDb: outlookDrizzle,
+  openaiClient: openAIClient,
+  storage: supabaseStorageClient,
+  graphCalendar: graphCalendarService,
+  graphAuthService: graphAuthService,
+};
 
 function createTextStreamMock(textContent: string, responseId = "resp_1") {
   async function* eventIterator() {
@@ -129,14 +166,10 @@ describe("POST /api/chat", () => {
     expect(await res.json()).toBe("No AI Credits");
   });
 
-  it("increments AI credits and streams a response", async () => {
+  it("increments AI credits and streams a response via the wired openAIClient", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
-    const updateWhere = vi.fn();
-    const updateSet = vi.fn(() => ({ where: updateWhere }));
-    (db.update as Mock).mockReturnValue({ set: updateSet });
-
-    (openai.responses.stream as Mock).mockReturnValue(
+    (openAIClient.streamResponse as Mock).mockReturnValue(
       createTextStreamMock("Hello!")
     );
 
@@ -144,10 +177,10 @@ describe("POST /api/chat", () => {
       mockRequest({ messages: [{ role: "user", content: "Hi" }] })
     );
 
-    expect(db.update).toHaveBeenCalled();
-    expect(openai.responses.stream).toHaveBeenCalledWith(
+    expect(planLimitsDrizzle.incrementAiCredits).toHaveBeenCalledWith("user_1");
+    expect(openAIClient.streamResponse).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "gpt-4o",
+        model: "gpt-5",
         tools,
       })
     );
@@ -163,11 +196,8 @@ describe("POST /api/chat", () => {
 
   it("uses previousResponseId from request for conversation chaining", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    const updateWhere = vi.fn();
-    const updateSet = vi.fn(() => ({ where: updateWhere }));
-    (db.update as Mock).mockReturnValue({ set: updateSet });
 
-    (openai.responses.stream as Mock).mockReturnValue(
+    (openAIClient.streamResponse as Mock).mockReturnValue(
       createTextStreamMock("Follow-up response.", "resp_2")
     );
 
@@ -178,7 +208,7 @@ describe("POST /api/chat", () => {
       })
     );
 
-    expect(openai.responses.stream).toHaveBeenCalledWith(
+    expect(openAIClient.streamResponse).toHaveBeenCalledWith(
       expect.objectContaining({ previous_response_id: "resp_1" })
     );
     expect(res.status).toBe(200);
@@ -199,9 +229,9 @@ describe("POST /api/chat", () => {
   };
   const toolTestCases: ToolTestCase[] = [
     {
-      toolName: "createProject",
-      args: { name: "Test Project" },
-      resultKind: "project_created",
+      toolName: "addClient",
+      args: { name: "Test Client" },
+      resultKind: "clients_updated",
     },
     {
       toolName: "updateClient",
@@ -209,9 +239,14 @@ describe("POST /api/chat", () => {
       resultKind: "client_updated",
     },
     {
-      toolName: "updateProject",
+      toolName: "createCase",
+      args: { name: "Test Case" },
+      resultKind: "case_created",
+    },
+    {
+      toolName: "updateCase",
       args: { id: 1, status: "completed" },
-      resultKind: "project_updated",
+      resultKind: "case_updated",
     },
     {
       toolName: "createTask",
@@ -240,22 +275,17 @@ describe("POST /api/chat", () => {
   ];
 
   it.each(toolTestCases)(
-    "executes $toolName tool and streams tool_result event",
+    "executes $toolName through the wired AiToolDeps and streams a tool_result event",
     async ({ toolName, args, resultKind }: ToolTestCase) => {
       (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-      const updateWhere = vi.fn();
-      const updateSet = vi.fn(() => ({ where: updateWhere }));
-      (db.update as Mock).mockReturnValue({ set: updateSet });
 
-      const { executeTool: mockExecuteTool } =
-        await import("@/lib/ai/ai_tools");
-      (mockExecuteTool as Mock).mockResolvedValueOnce({
+      (executeTool as Mock).mockResolvedValueOnce({
         kind: resultKind,
         message: "ok",
       });
 
       // First call returns tool call stream, second call returns a text completion
-      (openai.responses.stream as Mock)
+      (openAIClient.streamResponse as Mock)
         .mockReturnValueOnce(createToolCallStreamMock(toolName, args))
         .mockReturnValueOnce(createTextStreamMock("Done."));
 
@@ -268,7 +298,7 @@ describe("POST /api/chat", () => {
       const lines = text.trim().split("\n").filter(Boolean);
       const events = lines.map((l) => JSON.parse(l));
 
-      expect(mockExecuteTool).toHaveBeenCalledWith(toolName, args);
+      expect(executeTool).toHaveBeenCalledWith(toolName, args, expectedDeps);
       expect(events).toContainEqual(
         expect.objectContaining({ type: "tool_result", name: toolName })
       );
@@ -278,13 +308,8 @@ describe("POST /api/chat", () => {
 
   it("streams a form_request and pauses without executing a tool when requestUserInput is called", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    const updateWhere = vi.fn();
-    const updateSet = vi.fn(() => ({ where: updateWhere }));
-    (db.update as Mock).mockReturnValue({ set: updateSet });
 
-    const { executeTool: mockExecuteTool } = await import("@/lib/ai/ai_tools");
-
-    (openai.responses.stream as Mock).mockReturnValueOnce(
+    (openAIClient.streamResponse as Mock).mockReturnValueOnce(
       createToolCallStreamMock("requestUserInput", {
         title: "Set up your new case",
         fields: [
@@ -322,18 +347,15 @@ describe("POST /api/chat", () => {
       label: "Case name",
     });
     // The pending call is NOT executed, and the loop pauses (single stream call).
-    expect(mockExecuteTool).not.toHaveBeenCalled();
-    expect(openai.responses.stream).toHaveBeenCalledTimes(1);
+    expect(executeTool).not.toHaveBeenCalled();
+    expect(openAIClient.streamResponse).toHaveBeenCalledTimes(1);
     expect(events.at(-1)).toMatchObject({ type: "done" });
   });
 
   it("resumes a pending tool call by feeding form answers back as function_call_output", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    const updateWhere = vi.fn();
-    const updateSet = vi.fn(() => ({ where: updateWhere }));
-    (db.update as Mock).mockReturnValue({ set: updateSet });
 
-    (openai.responses.stream as Mock).mockReturnValue(
+    (openAIClient.streamResponse as Mock).mockReturnValue(
       createTextStreamMock("Created!", "resp_3")
     );
 
@@ -346,7 +368,7 @@ describe("POST /api/chat", () => {
     } as unknown as NextRequest);
 
     expect(res.status).toBe(200);
-    expect(openai.responses.stream).toHaveBeenCalledWith(
+    expect(openAIClient.streamResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         previous_response_id: "resp_1",
         input: expect.arrayContaining([

@@ -1,39 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { outlookEmails } from "@db/schema";
-import { and, eq } from "drizzle-orm";
-import axios from "axios";
-import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
-
-const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+import {
+  getOutlookAttachmentContent,
+  listOutlookAttachments,
+} from "@/lib/outlook/outlook_attachments";
+import { outlookDrizzle } from "@db/outlook_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
+import { ValidationError } from "@/lib/util/validation";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
-}
-
-export interface OutlookAttachmentMeta {
-  id: string;
-  name: string;
-  size: number;
-  contentType: string;
-}
-
-interface GraphFileAttachment {
-  contentBytes: string;
-  contentType: string;
-  name: string;
-}
-
-async function resolveEmail(numericId: number, userId: string) {
-  const [email] = await db
-    .select({ outlookId: outlookEmails.outlookId })
-    .from(outlookEmails)
-    .where(
-      and(eq(outlookEmails.id, numericId), eq(outlookEmails.userId, userId))
-    )
-    .limit(1);
-  return email ?? null;
 }
 
 /** GET /api/outlook/messages/[id]/attachments
@@ -43,79 +19,54 @@ async function resolveEmail(numericId: number, userId: string) {
  *     param rather than a URL path segment)
  **/
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const user = await getCurrentUser();
-  if (!user?.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   const { id } = await params;
   const numericId = parseInt(id, 10);
   if (isNaN(numericId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const email = await resolveEmail(numericId, user.id);
-  if (!email) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  const token = await getFreshOutlookAccessToken(user.id);
-  if (!token) {
-    return NextResponse.json(
-      { error: "Outlook account not connected" },
-      { status: 403 }
-    );
-  }
-
   const attachmentId = req.nextUrl.searchParams.get("attachmentId");
 
-  // ── Content mode ─────────────────────────────────────────────────────────────
-  if (attachmentId) {
-    try {
-      const { data } = await axios.get<GraphFileAttachment>(
-        `${GRAPH_BASE}/me/messages/${email.outlookId}/attachments/${encodeURIComponent(attachmentId)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  try {
+    if (attachmentId) {
+      const { bytes, contentType, fileName } =
+        await getOutlookAttachmentContent(
+          numericId,
+          attachmentId,
+          outlookDrizzle,
+          graphAuthService,
+          graphMailService
+        );
 
-      const bytes = Buffer.from(data.contentBytes, "base64");
-
-      const asciiFallback = data.name
+      const asciiFallback = fileName
         .replace(/[^\x20-\x7E]/g, "_")
         .replace(/["\\]/g, "_");
 
-      return new NextResponse(bytes, {
+      return new NextResponse(new Uint8Array(bytes), {
         status: 200,
         headers: {
-          "Content-Type": data.contentType,
-          "Content-Disposition": `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(data.name)}`,
+          "Content-Type": contentType,
+          "Content-Disposition": `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(fileName)}`,
           "Cache-Control": "private, max-age=3600",
         },
       });
-    } catch (err: unknown) {
-      const status =
-        (err as { response?: { status?: number } }).response?.status ?? 500;
-      console.error("[outlook/attachments content]", err);
-      return NextResponse.json(
-        { error: "Failed to fetch attachment content" },
-        { status }
-      );
     }
-  }
 
-  // ── List mode ────────────────────────────────────────────────────────────────
-  try {
-    const res = await axios.get<{ value: OutlookAttachmentMeta[] }>(
-      `${GRAPH_BASE}/me/messages/${email.outlookId}/attachments?$select=id,name,size,contentType`,
-      { headers: { Authorization: `Bearer ${token}` } }
+    const result = await listOutlookAttachments(
+      numericId,
+      outlookDrizzle,
+      graphAuthService,
+      graphMailService
     );
-    return NextResponse.json({ attachments: res.data.value });
-  } catch (err: unknown) {
-    const status =
-      (err as { response?: { status?: number } }).response?.status ?? 500;
-    console.error("[outlook/attachments list]", err);
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[outlook/attachments]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json(
-      { error: "Failed to fetch attachments" },
-      { status }
+      { error: "Failed to fetch attachment(s)" },
+      { status: 500 }
     );
   }
 }

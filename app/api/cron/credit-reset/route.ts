@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@db/db";
-import { users } from "@db/schema";
-import { or, isNull, lte } from "drizzle-orm";
+import { resetDueAiCredits } from "@/lib/plan_limits";
+import { planLimitsDrizzle } from "@db/plan_limits_db";
 
 export async function GET(req: Request) {
   const authHeader = req.headers
@@ -12,17 +11,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    const now = new Date();
-    const nextReset = new Date(now);
-    nextReset.setDate(nextReset.getDate() + 30);
+    const { reset } = await resetDueAiCredits(planLimitsDrizzle);
 
-    const result = await db
-      .update(users)
-      .set({ aiCredits: 0, creditsResetAt: nextReset })
-      .where(or(isNull(users.creditsResetAt), lte(users.creditsResetAt, now)))
-      .returning({ id: users.userId });
-
-    return NextResponse.json({ reset: result.length });
+    return NextResponse.json({ reset });
   } catch (err) {
     console.error("[cron/credit-reset]", err);
     return NextResponse.json({ error: "Cron failed" }, { status: 500 });

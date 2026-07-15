@@ -1,12 +1,9 @@
-"use server";
-
-import { db } from "@db/db";
-import { outlookEmails } from "@db/schema";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { and, desc, eq, inArray } from "drizzle-orm";
 import { MAX_MESSAGE, requireInt, requireString } from "./util/validation";
 import { EMAILS_BUCKET, EMAILS_INDEX, createEmbedding } from "./embeddings";
-import { supabaseAdmin } from "@/lib/supabase/supabase";
+import type { EmailsDB } from "@db/emails_db";
+import type { OpenAIClientInterface } from "@/api_client/openai_client";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
 
 interface EmailSearchHit {
   outlookId: string;
@@ -42,28 +39,24 @@ function buildBody(
     : text;
 }
 
-export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
+export async function getEmailData(
+  text: string,
+  emailsDb: EmailsDB,
+  openaiClient: OpenAIClientInterface,
+  storage: StorageClientInterface
+): Promise<EmailSearchHit[]> {
   const user = await getCurrentUser();
   if (!user?.id) return [];
 
   const validText = requireString(text, "text", MAX_MESSAGE);
-  const queryEmbedding = await createEmbedding(validText);
+  const queryEmbedding = await createEmbedding(validText, openaiClient);
 
-  const index = supabaseAdmin.storage.vectors
-    .from(EMAILS_BUCKET)
-    .index(EMAILS_INDEX);
-
-  const { data, error } = await index.queryVectors({
+  const hits = await storage.queryVectors(EMAILS_BUCKET, EMAILS_INDEX, {
     queryVector: { float32: queryEmbedding },
     topK: 10,
     filter: { userId: user.id },
     returnMetadata: true,
   });
-
-  if (error) {
-    console.error("[getEmailData] queryVectors error:", error);
-    return [];
-  }
 
   const outlookIds: string[] = [];
   type EmailMeta = {
@@ -74,7 +67,7 @@ export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
     is_sent?: boolean;
   };
   const metaByOutlookId = new Map<string, EmailMeta>();
-  for (const hit of data?.vectors ?? []) {
+  for (const hit of hits) {
     const meta = hit.metadata as EmailMeta | undefined;
     if (meta?.outlook_id) {
       outlookIds.push(meta.outlook_id);
@@ -83,23 +76,7 @@ export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
   }
   if (outlookIds.length === 0) return [];
 
-  const rows = await db
-    .select({
-      outlookId: outlookEmails.outlookId,
-      subject: outlookEmails.subject,
-      fromEmail: outlookEmails.fromEmail,
-      fromName: outlookEmails.fromName,
-      sentAt: outlookEmails.sentAt,
-      isSent: outlookEmails.isSent,
-      snippet: outlookEmails.snippet,
-    })
-    .from(outlookEmails)
-    .where(
-      and(
-        eq(outlookEmails.userId, user.id),
-        inArray(outlookEmails.outlookId, outlookIds)
-      )
-    );
+  const rows = await emailsDb.getEmailsByOutlookIds(user.id, outlookIds);
 
   const rowByOutlookId = new Map(rows.map((r) => [r.outlookId, r]));
 
@@ -135,7 +112,8 @@ export async function getEmailData(text: string): Promise<EmailSearchHit[]> {
 }
 
 export async function getRecentEmails(
-  limit: number
+  limit: number,
+  emailsDb: EmailsDB
 ): Promise<EmailRecentHit[]> {
   const user = await getCurrentUser();
   if (!user?.id) return [];
@@ -143,24 +121,7 @@ export async function getRecentEmails(
   const raw = requireInt(limit, "limit");
   const cap = Math.max(1, Math.min(25, raw));
 
-  const rows = await db
-    .select({
-      outlookId: outlookEmails.outlookId,
-      subject: outlookEmails.subject,
-      fromEmail: outlookEmails.fromEmail,
-      fromName: outlookEmails.fromName,
-      sentAt: outlookEmails.sentAt,
-      isSent: outlookEmails.isSent,
-      snippet: outlookEmails.snippet,
-      bodyText: outlookEmails.bodyText,
-      bodyHtml: outlookEmails.bodyHtml,
-    })
-    .from(outlookEmails)
-    .where(
-      and(eq(outlookEmails.userId, user.id), eq(outlookEmails.isSent, false))
-    )
-    .orderBy(desc(outlookEmails.sentAt))
-    .limit(cap);
+  const rows = await emailsDb.getRecentUnsentEmails(user.id, cap);
 
   return rows.map((r) => ({
     outlookId: r.outlookId,

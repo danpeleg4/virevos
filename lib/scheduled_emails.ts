@@ -1,7 +1,5 @@
-"use server";
-
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { DBDrizzle } from "@db/db";
+import type { ScheduledEmailsDB } from "@db/scheduled_emails_db";
 import {
   MAX_HTML_BODY,
   MAX_NAME,
@@ -17,7 +15,9 @@ import {
 } from "./util/validation";
 import { sanitizeEmailHtml } from "./util/html_sanitizer";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
-import { ScheduledEmailServiceInterface } from "@/api_client/axios_api_client";
+import { ScheduledEmailServiceInterface } from "@/api_client/ms_graph/scheduled_email_service";
+import type { OutlookDB } from "@db/outlook_db";
+import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 
 const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
 
@@ -41,8 +41,10 @@ export async function parseEmailAddress(raw: string): Promise<{
 
 export async function sendScheduledEmail(
   scheduledEmailId: number,
-  dbDrizzle: DBDrizzle,
-  apiClient: ScheduledEmailServiceInterface
+  dbDrizzle: ScheduledEmailsDB,
+  apiClient: ScheduledEmailServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
 ): Promise<SendScheduledEmailResult> {
   const claimed = await dbDrizzle.claimEmail(scheduledEmailId);
   if (!claimed.length) return { outcome: "skipped" }; // missing, already sent, or claimed by Send Now
@@ -50,7 +52,11 @@ export async function sendScheduledEmail(
   const userId = scheduledEmail.userId;
 
   try {
-    const accessToken = await getFreshOutlookAccessToken(userId);
+    const accessToken = await getFreshOutlookAccessToken(
+      userId,
+      outlookDb,
+      graphAuthService
+    );
     if (!accessToken) {
       await dbDrizzle.markAsFailed(scheduledEmailId);
       return { outcome: "failed", error: "Outlook not connected for user" };
@@ -143,6 +149,44 @@ export async function sendScheduledEmail(
   }
 }
 
+export async function getScheduledEmails(dbDrizzle: ScheduledEmailsDB) {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+  return dbDrizzle.getScheduledEmailsByUser(user.id);
+}
+
+export async function processDueScheduledEmails(
+  dbDrizzle: ScheduledEmailsDB,
+  apiClient: ScheduledEmailServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
+): Promise<{ processed: number }> {
+  const dueEmails = await dbDrizzle.getDueScheduledEmailIds();
+
+  const results = await Promise.allSettled(
+    dueEmails.map((e) =>
+      sendScheduledEmail(
+        e.id,
+        dbDrizzle,
+        apiClient,
+        outlookDb,
+        graphAuthService
+      )
+    )
+  );
+  results.forEach((r, i) => {
+    if (r.status === "rejected") {
+      console.error(
+        "[cron/process-scheduled-emails] failed for id",
+        dueEmails[i].id,
+        r.reason
+      );
+    }
+  });
+
+  return { processed: dueEmails.length };
+}
+
 export interface ScheduleEmailInput {
   toEmail: string;
   toName?: string | null;
@@ -157,7 +201,7 @@ export interface ScheduleEmailInput {
 
 export async function createScheduledEmail(
   input: ScheduleEmailInput,
-  dbDrizzle: DBDrizzle
+  dbDrizzle: ScheduledEmailsDB
 ) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
@@ -198,8 +242,10 @@ export async function createScheduledEmail(
 
 export async function sendScheduledEmailNow(
   id: number,
-  dbDrizzle: DBDrizzle,
-  apiClient: ScheduledEmailServiceInterface
+  dbDrizzle: ScheduledEmailsDB,
+  apiClient: ScheduledEmailServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
 ) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
@@ -212,7 +258,13 @@ export async function sendScheduledEmailNow(
     throw new ValidationError("Scheduled email not found", 404);
   }
 
-  const result = await sendScheduledEmail(numericId, dbDrizzle, apiClient);
+  const result = await sendScheduledEmail(
+    numericId,
+    dbDrizzle,
+    apiClient,
+    outlookDb,
+    graphAuthService
+  );
   if (result.outcome === "skipped") {
     throw new ValidationError(
       "Scheduled email was already sent or cancelled",
@@ -226,7 +278,10 @@ export async function sendScheduledEmailNow(
   return { success: true };
 }
 
-export async function deleteScheduledEmail(id: number, dbDrizzle: DBDrizzle) {
+export async function deleteScheduledEmail(
+  id: number,
+  dbDrizzle: ScheduledEmailsDB
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 

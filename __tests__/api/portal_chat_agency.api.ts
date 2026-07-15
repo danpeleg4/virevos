@@ -1,7 +1,30 @@
-import { GET } from "@/app/api/portal-chat/[id]/route";
+import { DELETE, GET, PATCH, POST } from "@/app/api/portal-chat/[id]/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
 import { NextRequest } from "next/server";
+import {
+  deletePortalChat,
+  getPortalChatThread,
+  sendAgencyChatMessage,
+  updatePortalChat,
+} from "@/lib/portal_chat";
+import { portalChatDrizzle } from "@db/portal_chat_db";
+import { ValidationError } from "@/lib/util/validation";
+
+vi.mock("@db/portal_chat_db", () => ({
+  // sentinel — the route must pass this exact instance into the lib fns
+  portalChatDrizzle: { __sentinel: "portalChatDrizzle" },
+}));
+
+vi.mock("@/lib/portal_chat", () => ({
+  deletePortalChat: vi.fn(),
+  getPortalChatThread: vi.fn(),
+  sendAgencyChatMessage: vi.fn(),
+  updatePortalChat: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/auth", () => ({
+  getCurrentUser: vi.fn(),
+}));
 
 let consoleErrorSpy: MockInstance;
 
@@ -13,51 +36,12 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@/lib/supabase/auth", () => ({
-  getCurrentUser: vi.fn(),
-}));
-
-vi.mock("@db/db", () => ({
-  db: {
-    select: vi.fn(),
-    update: vi.fn(),
-  },
-}));
-
 const makeGetRequest = (clientId: string) =>
   new NextRequest(`http://localhost/api/portal-chat/${clientId}`);
 
 const makeParams = (clientId: string) => Promise.resolve({ id: clientId });
 
 const mockUser = { id: "user_1" };
-
-const mockPortal = {
-  id: 1,
-  clientId: 10,
-  userId: "user_1",
-  token: "tok",
-  enabled: true,
-};
-
-function mockPortalLookup(rows: object[]) {
-  const mockLimit = vi.fn().mockResolvedValue(rows);
-  const mockWhere = vi.fn(() => ({ limit: mockLimit }));
-  const mockFrom = vi.fn(() => ({ where: mockWhere }));
-  (db.select as Mock).mockReturnValueOnce({ from: mockFrom });
-}
-
-function mockMessagesSelect(rows: object[]) {
-  const mockOrderBy = vi.fn().mockResolvedValue(rows);
-  const mockWhere = vi.fn(() => ({ orderBy: mockOrderBy }));
-  const mockFrom = vi.fn(() => ({ where: mockWhere }));
-  (db.select as Mock).mockReturnValueOnce({ from: mockFrom });
-}
-
-function mockUpdateChain() {
-  const mockWhere = vi.fn().mockResolvedValue(undefined);
-  const mockSet = vi.fn(() => ({ where: mockWhere }));
-  (db.update as Mock).mockReturnValueOnce({ set: mockSet });
-}
 
 describe("GET /api/portal-chat/[clientId]", () => {
   beforeEach(() => {
@@ -80,31 +64,234 @@ describe("GET /api/portal-chat/[clientId]", () => {
 
   it("returns 404 when no portal exists for this client/user", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockPortalLookup([]);
+    (getPortalChatThread as Mock).mockRejectedValueOnce(
+      new ValidationError("Portal not found", 404)
+    );
     const res = await GET(makeGetRequest("10"), { params: makeParams("10") });
     expect(res.status).toBe(404);
   });
 
-  it("returns messages and marks client messages read", async () => {
+  it("returns the thread from the wired portalChatDrizzle instance", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockPortalLookup([mockPortal]);
-    const created = new Date("2026-05-01T10:00:00Z");
-    mockMessagesSelect([
-      {
-        id: 1,
-        senderType: "client",
-        body: "From client",
-        readAt: null,
-        createdAt: created,
-      },
-    ]);
-    mockUpdateChain();
+    const thread = {
+      portalId: 1,
+      messages: [
+        {
+          id: 1,
+          senderType: "client",
+          body: "From client",
+          readAt: null,
+          createdAt: "2026-05-01T10:00:00.000Z",
+        },
+      ],
+    };
+    (getPortalChatThread as Mock).mockResolvedValueOnce(thread);
 
     const res = await GET(makeGetRequest("10"), { params: makeParams("10") });
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.portalId).toBe(1);
-    expect(json.messages).toHaveLength(1);
-    expect(db.update).toHaveBeenCalledTimes(1);
+    expect(json).toEqual(thread);
+    expect(getPortalChatThread).toHaveBeenCalledWith(10, portalChatDrizzle);
+  });
+
+  it("returns 500 when the query fails", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    (getPortalChatThread as Mock).mockRejectedValueOnce(new Error("db down"));
+    const res = await GET(makeGetRequest("10"), { params: makeParams("10") });
+    expect(res.status).toBe(500);
+  });
+});
+
+const makePostRequest = (clientId: string, body: unknown) =>
+  new NextRequest(`http://localhost/api/portal-chat/${clientId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+describe("POST /api/portal-chat/[clientId]", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    const res = await POST(makePostRequest("10", { message: "hi" }), {
+      params: makeParams("10"),
+    });
+    expect(res.status).toBe(401);
+    expect(sendAgencyChatMessage).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when clientId is not numeric", async () => {
+    const res = await POST(makePostRequest("abc", { message: "hi" }), {
+      params: makeParams("abc"),
+    });
+    expect(res.status).toBe(400);
+    expect(sendAgencyChatMessage).not.toHaveBeenCalled();
+  });
+
+  it("sends the message via the wired portalChatDrizzle instance", async () => {
+    const message = { id: 1, senderType: "agency", body: "hi" };
+    (sendAgencyChatMessage as Mock).mockResolvedValueOnce(message);
+
+    const res = await POST(makePostRequest("10", { message: "hi" }), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(message);
+    expect(sendAgencyChatMessage).toHaveBeenCalledWith(
+      10,
+      "hi",
+      portalChatDrizzle
+    );
+  });
+
+  it("propagates a ValidationError status", async () => {
+    (sendAgencyChatMessage as Mock).mockRejectedValueOnce(
+      new ValidationError("Portal not found", 404)
+    );
+
+    const res = await POST(makePostRequest("10", { message: "hi" }), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "Portal not found" });
+  });
+
+  it("returns 500 when the lib call throws", async () => {
+    (sendAgencyChatMessage as Mock).mockRejectedValueOnce(new Error("boom"));
+
+    const res = await POST(makePostRequest("10", { message: "hi" }), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: "Failed to send message" });
+  });
+});
+
+const makePatchRequest = (clientId: string, body: unknown) =>
+  new NextRequest(`http://localhost/api/portal-chat/${clientId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+describe("PATCH /api/portal-chat/[clientId]", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    const res = await PATCH(makePatchRequest("10", { action: "star" }), {
+      params: makeParams("10"),
+    });
+    expect(res.status).toBe(401);
+    expect(updatePortalChat).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when clientId is not numeric", async () => {
+    const res = await PATCH(makePatchRequest("abc", { action: "star" }), {
+      params: makeParams("abc"),
+    });
+    expect(res.status).toBe(400);
+    expect(updatePortalChat).not.toHaveBeenCalled();
+  });
+
+  it("updates the chat via the wired portalChatDrizzle instance", async () => {
+    (updatePortalChat as Mock).mockResolvedValueOnce({ success: true });
+
+    const res = await PATCH(makePatchRequest("10", { action: "star" }), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true });
+    expect(updatePortalChat).toHaveBeenCalledWith(
+      10,
+      "star",
+      portalChatDrizzle
+    );
+  });
+
+  it("propagates a ValidationError status", async () => {
+    (updatePortalChat as Mock).mockRejectedValueOnce(
+      new ValidationError("action must be one of ...", 400)
+    );
+
+    const res = await PATCH(makePatchRequest("10", { action: "bogus" }), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 500 when the lib call throws", async () => {
+    (updatePortalChat as Mock).mockRejectedValueOnce(new Error("boom"));
+
+    const res = await PATCH(makePatchRequest("10", { action: "star" }), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: "Failed to update chat" });
+  });
+});
+
+const makeDeleteRequest = (clientId: string) =>
+  new NextRequest(`http://localhost/api/portal-chat/${clientId}`, {
+    method: "DELETE",
+  });
+
+describe("DELETE /api/portal-chat/[clientId]", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    const res = await DELETE(makeDeleteRequest("10"), {
+      params: makeParams("10"),
+    });
+    expect(res.status).toBe(401);
+    expect(deletePortalChat).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when clientId is not numeric", async () => {
+    const res = await DELETE(makeDeleteRequest("abc"), {
+      params: makeParams("abc"),
+    });
+    expect(res.status).toBe(400);
+    expect(deletePortalChat).not.toHaveBeenCalled();
+  });
+
+  it("deletes the chat via the wired portalChatDrizzle instance", async () => {
+    (deletePortalChat as Mock).mockResolvedValueOnce({ success: true });
+
+    const res = await DELETE(makeDeleteRequest("10"), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true });
+    expect(deletePortalChat).toHaveBeenCalledWith(10, portalChatDrizzle);
+  });
+
+  it("returns 500 when the lib call throws", async () => {
+    (deletePortalChat as Mock).mockRejectedValueOnce(new Error("boom"));
+
+    const res = await DELETE(makeDeleteRequest("10"), {
+      params: makeParams("10"),
+    });
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: "Failed to delete chat" });
   });
 });

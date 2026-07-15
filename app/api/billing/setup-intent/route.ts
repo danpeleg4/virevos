@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createSetupIntent } from "@/lib/workspace/billing";
+import { billingDrizzle } from "@db/billing_db";
+import { userDrizzle } from "@db/user_db";
+import { stripeApiClient } from "@/api_client/stripe_client";
 
 export async function GET(): Promise<NextResponse> {
   const user = await getCurrentUser();
@@ -9,7 +12,11 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
-    const clientSecret = await createSetupIntent();
+    const clientSecret = await createSetupIntent(
+      billingDrizzle,
+      stripeApiClient,
+      userDrizzle
+    );
     return NextResponse.json({ clientSecret });
   } catch (err) {
     console.error("[api/billing/setup-intent] Error:", err);

@@ -1,4 +1,4 @@
-import type { Claimed, InsertSchEmail } from "@db/db";
+import type { Claimed } from "@db/scheduled_emails_db";
 
 const mockGetFreshOutlookAccessToken = vi.fn();
 const mockGetCurrentUser = vi.fn();
@@ -19,73 +19,25 @@ vi.mock("@/lib/util/html_sanitizer", () => ({
 import {
   createScheduledEmail,
   deleteScheduledEmail,
+  getScheduledEmails,
   parseEmailAddress,
+  processDueScheduledEmails,
   ScheduleEmailInput,
   sendScheduledEmail,
   sendScheduledEmailNow,
 } from "@/lib/scheduled_emails";
-import { ScheduledEmailServiceInterface } from "@/api_client/axios_api_client";
+import {
+  canonicalScheduledEmail,
+  makeFakeScheduledEmailsDb,
+} from "../fakes/fake_scheduled_emails_db";
+import { makeFakeScheduledEmailService } from "../fakes/fake_scheduled_email_service";
+import { makeFakeOutlookDb } from "../fakes/fake_outlook_db";
+import { makeFakeGraphAuthService } from "../fakes/fake_graph_auth_service";
 
-const fakeClass = {
-  claimEmail: vi.fn(async (_id: number): Promise<Claimed | []> => {
-    return [
-      {
-        id: 5,
-        userId: "user_1",
-        status: "sent",
-        toEmail: "client@example.com",
-        toName: "Jane Client",
-        subject: "Quarterly review",
-        bodyHtml: "<p>Hello</p>",
-        bodyText: "Hello",
-        clientId: 1,
-        scheduledAt: new Date(),
-        timezone: "UTC",
-        recurring: "",
-        sentAt: new Date(),
-        errorMessage: null,
-        createdAt: new Date(),
-      },
-    ];
-  }),
-  markAsFailed: async (_id: number): Promise<void> => {},
-  getUserRows: async (_userId: string) => [
-    { name: "Dan", email: "dan@example.com" },
-  ],
-  getAllClients: async (_userId: string) => [
-    { id: 1, email: "client@example.com" },
-  ],
-  insertOutlookEmail: vi.fn(async () => {}),
-  catchFailedInsertOutlookEmail: vi.fn(async () => {}),
-  insertScheduledEmail: async (input: InsertSchEmail) => {
-    return {
-      ...input,
-      id: 1,
-      status: "pending",
-      sentAt: null,
-      errorMessage: null,
-      createdAt: new Date(),
-    };
-  },
-  getScheduledEmailById: async (scheduledEmailId: number, userId: string) => {
-    if (scheduledEmailId === 5 && userId === "user_1") {
-      return [{ id: 5 }];
-    }
-    return [];
-  },
-  deleteScheduledEmailById: vi.fn(
-    async (_scheduledEmailId: number, _userId: string) => [{ id: 5 }]
-  ),
-};
-
-const fakeScheduledEmailService = {
-  getProfile: vi.fn(async () => ({ mail: "me@example.com" })),
-  draftMessage: vi.fn(async () => ({
-    id: "outlook-1",
-    conversationId: "conv-1",
-  })),
-  sendDraftMessage: vi.fn(async () => {}),
-} satisfies ScheduledEmailServiceInterface;
+const fakeClass = makeFakeScheduledEmailsDb();
+const fakeScheduledEmailService = makeFakeScheduledEmailService();
+const outlookDb = makeFakeOutlookDb();
+const graphAuthService = makeFakeGraphAuthService();
 
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
@@ -127,7 +79,9 @@ describe("sendScheduledEmail", () => {
     const result = await sendScheduledEmail(
       5,
       noPending,
-      fakeScheduledEmailService
+      fakeScheduledEmailService,
+      outlookDb,
+      graphAuthService
     );
     expect(result).toEqual({ outcome: "skipped" });
   });
@@ -135,7 +89,13 @@ describe("sendScheduledEmail", () => {
   it("marks the email failed when Outlook is not connected", async () => {
     mockGetFreshOutlookAccessToken.mockResolvedValue(null);
     await expect(
-      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).resolves.toEqual({
       outcome: "failed",
       error: "Outlook not connected for user",
@@ -152,7 +112,13 @@ describe("sendScheduledEmail", () => {
       .mockImplementation(() => {});
 
     await expect(
-      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).resolves.toEqual({
       outcome: "sent",
     });
@@ -173,7 +139,13 @@ describe("sendScheduledEmail", () => {
     );
 
     await expect(
-      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).resolves.toEqual({
       outcome: "failed",
       error: "InvalidAuthenticationToken",
@@ -188,7 +160,13 @@ describe("sendScheduledEmail", () => {
 
   it("sends via Graph and records the sent email", async () => {
     await expect(
-      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).resolves.toEqual({
       outcome: "sent",
     });
@@ -212,7 +190,13 @@ describe("sendScheduledEmail", () => {
     fakeClass.insertOutlookEmail.mockRejectedValueOnce(new Error("db down"));
 
     await expect(
-      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).resolves.toEqual({ outcome: "sent" });
 
     // the claimed row must stay "sent" — no failed flip after delivery
@@ -231,7 +215,13 @@ describe("sendScheduledEmail", () => {
     );
 
     await expect(
-      sendScheduledEmail(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).resolves.toEqual({
       outcome: "failed",
       error: "graph down",
@@ -293,7 +283,13 @@ describe("sendScheduledEmailNow", () => {
     mockGetCurrentUser.mockResolvedValue(null);
 
     await expect(
-      sendScheduledEmailNow(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmailNow(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).rejects.toThrow("Unauthorized");
   });
 
@@ -302,14 +298,22 @@ describe("sendScheduledEmailNow", () => {
       sendScheduledEmailNow(
         "nope" as unknown as number,
         fakeClass,
-        fakeScheduledEmailService
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
       )
     ).rejects.toThrow("id must be a number");
   });
 
   it("throws 404 when the email does not exist or belongs to another user", async () => {
     await expect(
-      sendScheduledEmailNow(999, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmailNow(
+        999,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).rejects.toThrow("Scheduled email not found", 404);
   });
 
@@ -320,7 +324,13 @@ describe("sendScheduledEmailNow", () => {
     });
     fakeScheduledEmailService.sendDraftMessage.mockResolvedValue();
     await expect(
-      sendScheduledEmailNow(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmailNow(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).resolves.toEqual({
       success: true,
     });
@@ -334,7 +344,13 @@ describe("sendScheduledEmailNow", () => {
       claimEmail: async (): Promise<Claimed | []> => [],
     };
     await expect(
-      sendScheduledEmailNow(5, alreadySentFake, fakeScheduledEmailService)
+      sendScheduledEmailNow(
+        5,
+        alreadySentFake,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).rejects.toThrow("Scheduled email was already sent or cancelled");
   });
 
@@ -343,7 +359,13 @@ describe("sendScheduledEmailNow", () => {
     fakeScheduledEmailService.draftMessage.mockRejectedValueOnce("boom");
 
     await expect(
-      sendScheduledEmailNow(5, fakeClass, fakeScheduledEmailService)
+      sendScheduledEmailNow(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
     ).rejects.toThrow("Send failed");
   });
 });
@@ -379,5 +401,73 @@ describe("deleteScheduledEmail", () => {
       message: "Scheduled email was already sent and cannot be deleted",
       status: 409,
     });
+  });
+});
+
+describe("getScheduledEmails", () => {
+  it("throws Unauthorized when there is no user", async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+
+    await expect(getScheduledEmails(fakeClass)).rejects.toThrow("Unauthorized");
+    expect(fakeClass.getScheduledEmailsByUser).not.toHaveBeenCalled();
+  });
+
+  it("returns the current user's scheduled emails", async () => {
+    await expect(getScheduledEmails(fakeClass)).resolves.toEqual([
+      canonicalScheduledEmail,
+    ]);
+    expect(fakeClass.getScheduledEmailsByUser).toHaveBeenCalledWith("user_1");
+  });
+});
+
+describe("processDueScheduledEmails", () => {
+  it("sends every due email and reports the processed count", async () => {
+    const result = await processDueScheduledEmails(
+      fakeClass,
+      fakeScheduledEmailService,
+      outlookDb,
+      graphAuthService
+    );
+
+    expect(result).toEqual({ processed: 1 });
+    expect(fakeClass.claimEmail).toHaveBeenCalledWith(5);
+    expect(fakeScheduledEmailService.sendDraftMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns processed: 0 when nothing is due", async () => {
+    fakeClass.getDueScheduledEmailIds.mockResolvedValueOnce([]);
+
+    const result = await processDueScheduledEmails(
+      fakeClass,
+      fakeScheduledEmailService,
+      outlookDb,
+      graphAuthService
+    );
+
+    expect(result).toEqual({ processed: 0 });
+    expect(fakeClass.claimEmail).not.toHaveBeenCalled();
+  });
+
+  it("logs and keeps going when a single send rejects unexpectedly", async () => {
+    fakeClass.getDueScheduledEmailIds.mockResolvedValueOnce([
+      { id: 5 },
+      { id: 6 },
+    ]);
+    fakeClass.claimEmail.mockRejectedValueOnce(new Error("db down")); // id 5 blows up
+
+    const result = await processDueScheduledEmails(
+      fakeClass,
+      fakeScheduledEmailService,
+      outlookDb,
+      graphAuthService
+    );
+
+    // the batch still completes; the rejection is logged per email
+    expect(result).toEqual({ processed: 2 });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[cron/process-scheduled-emails] failed for id",
+      5,
+      expect.any(Error)
+    );
   });
 });
