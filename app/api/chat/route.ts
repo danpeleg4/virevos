@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { users } from "@db/schema";
-import { db } from "@db/db";
-import { eq, sql } from "drizzle-orm";
-import OpenAI from "openai";
+import type OpenAI from "openai";
 import {
-  openai,
   tools,
   executeTool,
   MODEL,
   MAX_STEPS,
+  type AiToolDeps,
 } from "@/lib/ai/ai_tools";
 import type {
   ChatMessage,
@@ -18,12 +15,41 @@ import type {
   AIFormField,
 } from "@/types/ai";
 import { assertCanUseAI } from "@/lib/plan_limits";
+import { planLimitsDrizzle } from "@db/plan_limits_db";
+import { billingDrizzle } from "@db/billing_db";
+import { clientsDrizzle } from "@db/clients_db";
+import { casesDrizzle } from "@db/cases_db";
+import { tasksDrizzle } from "@db/tasks_db";
+import { calendarDrizzle } from "@db/calendar_db";
+import { meetingsDrizzle } from "@db/meetings_db";
+import { emailsDrizzle } from "@db/emails_db";
+import { outlookDrizzle } from "@db/outlook_db";
+import { openAIClient } from "@/api_client/openai_client";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
+import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import {
   MAX_CHAT_HISTORY,
   MAX_HTML_BODY,
   MAX_SHORT,
 } from "@/lib/util/validation";
 import { rateLimit } from "@/lib/util/rate_limit";
+
+const aiToolDeps: AiToolDeps = {
+  clientsDb: clientsDrizzle,
+  casesDb: casesDrizzle,
+  tasksDb: tasksDrizzle,
+  calendarDb: calendarDrizzle,
+  meetingsDb: meetingsDrizzle,
+  emailsDb: emailsDrizzle,
+  planLimitsDb: planLimitsDrizzle,
+  billingDb: billingDrizzle,
+  outlookDb: outlookDrizzle,
+  openaiClient: openAIClient,
+  storage: supabaseStorageClient,
+  graphCalendar: graphCalendarService,
+  graphAuthService: graphAuthService,
+};
 
 const SYSTEM_INSTRUCTIONS =
   "You are a helpful AI assistant for Virevos, a business management platform. You help users manage clients, tasks, and workflows. " +
@@ -175,16 +201,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await assertCanUseAI(user.id);
+    await assertCanUseAI(user.id, planLimitsDrizzle, billingDrizzle);
   } catch {
     return NextResponse.json("No AI Credits", { status: 401 });
   }
 
   // Update AI credits
-  await db
-    .update(users)
-    .set({ aiCredits: sql`${users.aiCredits} + 1` })
-    .where(eq(users.userId, user.id));
+  await planLimitsDrizzle.incrementAiCredits(user.id);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -213,7 +236,7 @@ export async function POST(req: NextRequest) {
         let currentResponseId: string | undefined = previousResponseId;
 
         for (let step = 0; step < MAX_STEPS; step++) {
-          const responseStream = openai.responses.stream({
+          const responseStream = openAIClient.streamResponse({
             model: MODEL,
             instructions: SYSTEM_INSTRUCTIONS,
             input: currentInput,
@@ -270,7 +293,8 @@ export async function POST(req: NextRequest) {
           for (const call of toolCalls) {
             const output = await executeTool(
               call.name,
-              JSON.parse(call.arguments) as Record<string, unknown>
+              JSON.parse(call.arguments) as Record<string, unknown>,
+              aiToolDeps
             );
             send({
               type: "tool_result",

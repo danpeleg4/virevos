@@ -1,14 +1,11 @@
 import { analyzeDocumentRequirement } from "@/lib/ai/document_analysis";
+import { makeFakeOpenAIClient } from "../fakes/fake_openai_client";
 
-// eslint-disable-next-line no-var
-var mockCreate: Mock;
-vi.mock("@/lib/ai/ai_tools", () => {
-  mockCreate = vi.fn();
-  return {
-    openai: { responses: { create: mockCreate } },
-    MODEL: "gpt-test",
-  };
-});
+vi.mock("@/lib/ai/ai_tools", () => ({
+  MODEL: "gpt-test",
+}));
+
+const openaiClient = makeFakeOpenAIClient();
 
 let consoleErrorSpy: MockInstance;
 
@@ -31,38 +28,44 @@ function withVerdict(
   verdict: "meets" | "does_not_meet" | "needs_review",
   reasoning = "ok"
 ) {
-  mockCreate.mockResolvedValueOnce({
+  openaiClient.createResponse.mockResolvedValueOnce({
     output_text: JSON.stringify({ verdict, reasoning }),
-  });
+  } as never);
 }
 
 describe("analyzeDocumentRequirement", () => {
   it("returns 'skipped' for unsupported mime types without calling OpenAI", async () => {
-    const res = await analyzeDocumentRequirement({
-      ...baseInput,
-      fileBuffer: Buffer.from("plain text"),
-      mimeType: "text/plain",
-    });
+    const res = await analyzeDocumentRequirement(
+      {
+        ...baseInput,
+        fileBuffer: Buffer.from("plain text"),
+        mimeType: "text/plain",
+      },
+      openaiClient
+    );
 
     expect(res.verdict).toBe("skipped");
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(openaiClient.createResponse).not.toHaveBeenCalled();
   });
 
   it("sends an input_image content part for image uploads", async () => {
     withVerdict("meets", "matches the requirement");
 
-    const res = await analyzeDocumentRequirement({
-      ...baseInput,
-      fileBuffer: Buffer.from([1, 2, 3]),
-      mimeType: "image/png",
-      fileName: "scan.png",
-    });
+    const res = await analyzeDocumentRequirement(
+      {
+        ...baseInput,
+        fileBuffer: Buffer.from([1, 2, 3]),
+        mimeType: "image/png",
+        fileName: "scan.png",
+      },
+      openaiClient
+    );
 
     expect(res).toEqual({
       verdict: "meets",
       reasoning: "matches the requirement",
     });
-    const call = mockCreate.mock.calls[0][0];
+    const call = openaiClient.createResponse.mock.calls[0][0];
     const content = call.input[0].content;
     expect(content[0].type).toBe("input_text");
     expect(content[1].type).toBe("input_image");
@@ -74,40 +77,54 @@ describe("analyzeDocumentRequirement", () => {
   it("sends an input_file content part for PDF uploads", async () => {
     withVerdict("does_not_meet", "wrong document");
 
-    const res = await analyzeDocumentRequirement({
-      ...baseInput,
-      fileBuffer: Buffer.from([1, 2, 3]),
-      mimeType: "application/pdf",
-    });
+    const res = await analyzeDocumentRequirement(
+      {
+        ...baseInput,
+        fileBuffer: Buffer.from([1, 2, 3]),
+        mimeType: "application/pdf",
+      },
+      openaiClient
+    );
 
     expect(res.verdict).toBe("does_not_meet");
-    const content = mockCreate.mock.calls[0][0].input[0].content;
+    const content =
+      openaiClient.createResponse.mock.calls[0][0].input[0].content;
     expect(content[1].type).toBe("input_file");
     expect(content[1].filename).toBe("doc.pdf");
     expect(content[1].file_data).toMatch(/^data:application\/pdf;base64,/);
   });
 
   it("returns 'error' verdict and does not throw when OpenAI fails", async () => {
-    mockCreate.mockRejectedValueOnce(new Error("network blew up"));
+    openaiClient.createResponse.mockRejectedValueOnce(
+      new Error("network blew up")
+    );
 
-    const res = await analyzeDocumentRequirement({
-      ...baseInput,
-      fileBuffer: Buffer.from([1]),
-      mimeType: "image/jpeg",
-    });
+    const res = await analyzeDocumentRequirement(
+      {
+        ...baseInput,
+        fileBuffer: Buffer.from([1]),
+        mimeType: "image/jpeg",
+      },
+      openaiClient
+    );
 
     expect(res.verdict).toBe("error");
     expect(res.reasoning).toMatch(/could not be completed/i);
   });
 
   it("returns 'error' when output_text is empty", async () => {
-    mockCreate.mockResolvedValueOnce({ output_text: "" });
+    openaiClient.createResponse.mockResolvedValueOnce({
+      output_text: "",
+    } as never);
 
-    const res = await analyzeDocumentRequirement({
-      ...baseInput,
-      fileBuffer: Buffer.from([1]),
-      mimeType: "image/jpeg",
-    });
+    const res = await analyzeDocumentRequirement(
+      {
+        ...baseInput,
+        fileBuffer: Buffer.from([1]),
+        mimeType: "image/jpeg",
+      },
+      openaiClient
+    );
 
     expect(res.verdict).toBe("error");
   });
@@ -116,11 +133,14 @@ describe("analyzeDocumentRequirement", () => {
     const longReason = "x".repeat(900);
     withVerdict("meets", longReason);
 
-    const res = await analyzeDocumentRequirement({
-      ...baseInput,
-      fileBuffer: Buffer.from([1]),
-      mimeType: "image/jpeg",
-    });
+    const res = await analyzeDocumentRequirement(
+      {
+        ...baseInput,
+        fileBuffer: Buffer.from([1]),
+        mimeType: "image/jpeg",
+      },
+      openaiClient
+    );
 
     expect(res.verdict).toBe("meets");
     expect(res.reasoning.length).toBeLessThanOrEqual(500);

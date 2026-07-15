@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { outlookTokens, users } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { outlookDrizzle } from "@db/outlook_db";
+import { calendarDrizzle } from "@db/calendar_db";
+import { userDrizzle } from "@db/user_db";
+import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
+import { openAIClient } from "@/api_client/openai_client";
 import { exchangeOutlookCode } from "@/lib/outlook/outlook_access";
 import {
   performFullSync,
   setupSubscriptions,
 } from "@/lib/outlook/outlook_sync";
+import { ensureUserRow } from "@/lib/user";
 import { OUTLOOK_STATE_COOKIE } from "@/app/api/outlook/route";
 
 function readCookie(req: Request, name: string): string | null {
@@ -39,36 +44,24 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await db
-    .insert(users)
-    .values({
-      userId: user.id,
-      email: user.email ?? "",
-      name: (user.user_metadata?.name as string | undefined) ?? null,
-    })
-    .onConflictDoNothing({ target: users.userId });
+  await ensureUserRow(userDrizzle);
 
-  const { access_token, refresh_token, expires_at } =
-    await exchangeOutlookCode(code);
+  const { access_token, refresh_token, expires_at } = await exchangeOutlookCode(
+    code,
+    graphAuthService
+  );
 
-  const existingToken = await db
-    .select()
-    .from(outlookTokens)
-    .where(eq(outlookTokens.userId, user.id))
-    .limit(1);
+  const existingToken = await outlookDrizzle.getTokenByUserId(user.id);
 
   if (existingToken.length > 0) {
-    await db
-      .update(outlookTokens)
-      .set({
-        accessToken: access_token,
-        refreshToken: refresh_token || existingToken[0].refreshToken,
-        expiresIn: expires_at,
-        connected: true,
-      })
-      .where(eq(outlookTokens.userId, user.id));
+    await outlookDrizzle.updateToken(user.id, {
+      accessToken: access_token,
+      refreshToken: refresh_token || existingToken[0].refreshToken,
+      expiresIn: expires_at,
+      connected: true,
+    });
   } else {
-    await db.insert(outlookTokens).values({
+    await outlookDrizzle.insertToken({
       userId: user.id,
       accessToken: access_token,
       refreshToken: refresh_token,
@@ -78,13 +71,26 @@ export async function GET(req: Request) {
   }
 
   try {
-    await performFullSync(user.id);
+    await performFullSync(
+      user.id,
+      outlookDrizzle,
+      calendarDrizzle,
+      graphAuthService,
+      graphMailService,
+      supabaseStorageClient,
+      openAIClient
+    );
   } catch (err) {
     console.error("[outlook/callback] Initial full sync failed:", err);
   }
 
   try {
-    await setupSubscriptions(user.id);
+    await setupSubscriptions(
+      user.id,
+      outlookDrizzle,
+      graphAuthService,
+      graphMailService
+    );
   } catch (err) {
     console.error("[outlook/callback] Subscription setup failed:", err);
   }

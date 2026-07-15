@@ -6,107 +6,79 @@ import {
   updateDocumentRequest,
 } from "@/lib/document_requests";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { buildSelectChain } from "../_helpers/drizzle";
+import {
+  canonicalPendingRequest,
+  canonicalRequestItem,
+  makeFakeDocumentRequestsDb,
+} from "../fakes/fake_document_requests_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-const mockUpdateWhere = vi.fn();
-const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
-const mockDeleteWhere = vi.fn();
-const mockInsertValues = vi.fn();
+const documentRequestsDb = makeFakeDocumentRequestsDb();
 
-vi.mock("@db/db", () => ({
-  db: {
-    select: vi.fn(),
-    update: vi.fn(() => ({ set: mockUpdateSet })),
-    delete: vi.fn(() => ({ where: mockDeleteWhere })),
-    insert: vi.fn(() => ({ values: mockInsertValues })),
-    transaction: vi.fn(),
-  },
-}));
-
-import { db } from "@db/db";
+const mockUser = { id: "user_1" };
 
 let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
   vi.clearAllMocks();
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-  mockUpdateWhere.mockResolvedValue(undefined);
-  mockUpdateSet.mockReturnValue({ where: mockUpdateWhere });
-  mockDeleteWhere.mockResolvedValue(undefined);
-  mockInsertValues.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-const mockUser = { id: "user_1" };
-
 // ─── listPendingDocumentRequests ─────────────────────────────────────────────
 
 describe("listPendingDocumentRequests", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(listPendingDocumentRequests(mockUser.id)).rejects.toThrow(
-      "Unauthorized"
-    );
+    await expect(
+      listPendingDocumentRequests(mockUser.id, documentRequestsDb)
+    ).rejects.toThrow("Unauthorized");
   });
 
   it("returns empty array when no pending requests exist", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    (db.select as Mock).mockReturnValue(buildSelectChain([]));
+    documentRequestsDb.getPendingRequests.mockResolvedValueOnce([]);
 
-    const result = await listPendingDocumentRequests(mockUser.id);
+    const result = await listPendingDocumentRequests(
+      mockUser.id,
+      documentRequestsDb
+    );
     expect(result).toEqual([]);
+    expect(documentRequestsDb.getItemsByRequestIds).not.toHaveBeenCalled();
   });
 
   it("returns mapped requests with their items", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    documentRequestsDb.getPendingRequests.mockResolvedValueOnce([
+      { ...canonicalPendingRequest },
+    ]);
+    documentRequestsDb.getItemsByRequestIds.mockResolvedValueOnce([
+      { ...canonicalRequestItem },
+    ]);
 
-    const requestRow = {
-      id: 7,
-      eventId: "evt_1",
-      clientId: 3,
-      status: "pending_approval",
-      createdAt: new Date("2026-04-01T12:00:00.000Z"),
-      eventTitle: "Initial OPT consult",
-      eventDateTime: new Date("2026-03-30T10:00:00.000Z"),
-    };
-    const itemRow = {
-      id: 100,
-      requestId: 7,
-      name: "Passport",
-      description: "Bio page only",
-      sortOrder: 0,
-      status: "pending",
-      uploadedFileId: null,
-      uploadedAt: null,
-    };
-
-    (db.select as Mock)
-      .mockReturnValueOnce(buildSelectChain([requestRow]))
-      .mockReturnValueOnce(buildSelectChain([itemRow]));
-
-    const result = await listPendingDocumentRequests(mockUser.id);
+    const result = await listPendingDocumentRequests(
+      mockUser.id,
+      documentRequestsDb
+    );
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
-      id: 7,
-      eventId: "evt_1",
-      eventTitle: "Initial OPT consult",
-      clientId: 3,
+      id: canonicalPendingRequest.id,
+      eventId: canonicalPendingRequest.eventId,
+      eventTitle: canonicalPendingRequest.eventTitle,
+      clientId: canonicalPendingRequest.clientId,
       status: "pending_approval",
     });
-    expect(result[0].eventDateTime).toBe("2026-03-30T10:00:00.000Z");
     expect(result[0].items).toHaveLength(1);
     expect(result[0].items[0]).toMatchObject({
-      id: 100,
+      id: canonicalRequestItem.id,
       name: "Passport",
-      description: "Bio page only",
       status: "pending",
     });
   });
@@ -117,58 +89,38 @@ describe("listPendingDocumentRequests", () => {
 describe("updateDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(updateDocumentRequest(1, { clientId: 5 })).rejects.toThrow(
-      "Unauthorized"
-    );
+    await expect(
+      updateDocumentRequest(1, { clientId: 5 }, documentRequestsDb)
+    ).rejects.toThrow("Unauthorized");
   });
 
   it("throws when the request is not owned by the user", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    (db.select as Mock).mockReturnValue(buildSelectChain([]));
+    documentRequestsDb.getRequestOwner.mockResolvedValueOnce([]);
 
-    await expect(updateDocumentRequest(1, { clientId: 5 })).rejects.toThrow(
-      "Document request not found"
-    );
+    await expect(
+      updateDocumentRequest(1, { clientId: 5 }, documentRequestsDb)
+    ).rejects.toThrow("Document request not found");
+    expect(documentRequestsDb.applyRequestPatch).not.toHaveBeenCalled();
   });
 
-  it("runs a transaction that updates clientId and diffs items", async () => {
+  it("applies the patch atomically once ownership is confirmed", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    (db.select as Mock).mockReturnValue(buildSelectChain([{ id: 1 }]));
 
-    const txUpdateWhere = vi.fn().mockResolvedValue(undefined);
-    const txUpdateSet = vi.fn(() => ({ where: txUpdateWhere }));
-    const txDeleteWhere = vi.fn().mockResolvedValue(undefined);
-    const txInsertValues = vi.fn().mockResolvedValue(undefined);
-    const txExistingItems = [{ id: 11 }, { id: 12 }];
-    const txSelectWhere = vi.fn().mockResolvedValue(txExistingItems);
-    const txSelectFrom = vi.fn(() => ({ where: txSelectWhere }));
-
-    const tx = {
-      update: vi.fn(() => ({ set: txUpdateSet })),
-      delete: vi.fn(() => ({ where: txDeleteWhere })),
-      insert: vi.fn(() => ({ values: txInsertValues })),
-      select: vi.fn(() => ({ from: txSelectFrom })),
-    };
-
-    (db.transaction as Mock).mockImplementation(
-      async (fn: (t: unknown) => Promise<void>) => fn(tx)
-    );
-
-    await updateDocumentRequest(1, {
+    const patch = {
       clientId: 99,
       items: [
         { id: 11, name: "Passport", description: null, sortOrder: 0 },
         { name: "Form I-94", description: "Latest", sortOrder: 1 },
       ],
-    });
+    };
+    await updateDocumentRequest(1, patch, documentRequestsDb);
 
-    expect(tx.update).toHaveBeenCalled();
-    expect(txUpdateSet).toHaveBeenCalledWith({ clientId: 99 });
-    expect(tx.delete).toHaveBeenCalled();
-    expect(tx.insert).toHaveBeenCalled();
-    expect(txInsertValues).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Form I-94", sortOrder: 1 })
+    expect(documentRequestsDb.getRequestOwner).toHaveBeenCalledWith(
+      1,
+      "user_1"
     );
+    expect(documentRequestsDb.applyRequestPatch).toHaveBeenCalledWith(1, patch);
   });
 });
 
@@ -177,39 +129,43 @@ describe("updateDocumentRequest", () => {
 describe("approveDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(approveDocumentRequest(1)).rejects.toThrow("Unauthorized");
+    await expect(approveDocumentRequest(1, documentRequestsDb)).rejects.toThrow(
+      "Unauthorized"
+    );
   });
 
   it("throws when the request is not found", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    (db.select as Mock).mockReturnValue(buildSelectChain([]));
+    documentRequestsDb.getRequestClientId.mockResolvedValueOnce([]);
 
-    await expect(approveDocumentRequest(1)).rejects.toThrow(
+    await expect(approveDocumentRequest(1, documentRequestsDb)).rejects.toThrow(
       "Document request not found"
     );
   });
 
   it("throws when clientId is null", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    (db.select as Mock).mockReturnValue(buildSelectChain([{ clientId: null }]));
+    documentRequestsDb.getRequestClientId.mockResolvedValueOnce([
+      { clientId: null },
+    ]);
 
-    await expect(approveDocumentRequest(1)).rejects.toThrow(
+    await expect(approveDocumentRequest(1, documentRequestsDb)).rejects.toThrow(
       "Client must be selected before approval"
     );
   });
 
   it("sets status to approved with approvedAt when clientId is set", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    (db.select as Mock).mockReturnValue(buildSelectChain([{ clientId: 42 }]));
+    documentRequestsDb.getRequestClientId.mockResolvedValueOnce([
+      { clientId: 42 },
+    ]);
 
-    await approveDocumentRequest(1);
+    await approveDocumentRequest(1, documentRequestsDb);
 
-    expect(db.update).toHaveBeenCalled();
-    expect(mockUpdateSet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: "approved",
-        approvedAt: expect.any(Date),
-      })
+    expect(documentRequestsDb.setRequestStatus).toHaveBeenCalledWith(
+      1,
+      "approved",
+      expect.any(Date)
     );
   });
 });
@@ -219,16 +175,29 @@ describe("approveDocumentRequest", () => {
 describe("declineDocumentRequest", () => {
   it("throws Unauthorized when no user is authenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(declineDocumentRequest(1)).rejects.toThrow("Unauthorized");
+    await expect(declineDocumentRequest(1, documentRequestsDb)).rejects.toThrow(
+      "Unauthorized"
+    );
+  });
+
+  it("throws when the request is not owned by the user", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    documentRequestsDb.getRequestOwner.mockResolvedValueOnce([]);
+
+    await expect(declineDocumentRequest(1, documentRequestsDb)).rejects.toThrow(
+      "Document request not found"
+    );
   });
 
   it("sets status to declined for an owned request", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    (db.select as Mock).mockReturnValue(buildSelectChain([{ id: 1 }]));
 
-    await declineDocumentRequest(1);
+    await declineDocumentRequest(1, documentRequestsDb);
 
-    expect(mockUpdateSet).toHaveBeenCalledWith({ status: "declined" });
+    expect(documentRequestsDb.setRequestStatus).toHaveBeenCalledWith(
+      1,
+      "declined"
+    );
   });
 });
 
@@ -236,37 +205,43 @@ describe("declineDocumentRequest", () => {
 
 describe("listApprovedRequestsForClient", () => {
   it("returns empty when no approved requests exist", async () => {
-    (db.select as Mock).mockReturnValue(buildSelectChain([]));
+    documentRequestsDb.getApprovedRequestsForClient.mockResolvedValueOnce([]);
 
-    const result = await listApprovedRequestsForClient(5);
+    const result = await listApprovedRequestsForClient(5, documentRequestsDb);
     expect(result).toEqual([]);
+    expect(
+      documentRequestsDb.getItemsWithFilesByRequestIds
+    ).not.toHaveBeenCalled();
   });
 
   it("groups items under their request and includes uploaded file info", async () => {
-    const requestRow = {
-      id: 1,
-      approvedAt: new Date("2026-04-05T10:00:00.000Z"),
-      eventTitle: "Strategy meeting",
-      eventDateTime: new Date("2026-04-04T10:00:00.000Z"),
-    };
-    const itemRow = {
-      id: 50,
-      requestId: 1,
-      name: "Passport",
-      description: null,
-      sortOrder: 0,
-      status: "uploaded",
-      uploadedFileId: 200,
-      uploadedAt: new Date("2026-04-06T10:00:00.000Z"),
-      uploadedFileName: "passport.pdf",
-      uploadedFilePath: "documents/u/req-1/passport.pdf",
-    };
+    documentRequestsDb.getApprovedRequestsForClient.mockResolvedValueOnce([
+      {
+        id: 1,
+        approvedAt: new Date("2026-04-05T10:00:00.000Z"),
+        eventTitle: "Strategy meeting",
+        eventDateTime: new Date("2026-04-04T10:00:00.000Z"),
+      },
+    ]);
+    documentRequestsDb.getItemsWithFilesByRequestIds.mockResolvedValueOnce([
+      {
+        id: 50,
+        requestId: 1,
+        name: "Passport",
+        description: null,
+        sortOrder: 0,
+        status: "uploaded",
+        uploadedFileId: 200,
+        uploadedAt: new Date("2026-04-06T10:00:00.000Z"),
+        aiVerdict: null,
+        aiReasoning: null,
+        aiAnalyzedAt: null,
+        uploadedFileName: "passport.pdf",
+        uploadedFilePath: "documents/u/req-1/passport.pdf",
+      },
+    ]);
 
-    (db.select as Mock)
-      .mockReturnValueOnce(buildSelectChain([requestRow]))
-      .mockReturnValueOnce(buildSelectChain([itemRow]));
-
-    const result = await listApprovedRequestsForClient(7);
+    const result = await listApprovedRequestsForClient(7, documentRequestsDb);
 
     expect(result).toHaveLength(1);
     expect(result[0].eventTitle).toBe("Strategy meeting");

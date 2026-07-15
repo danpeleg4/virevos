@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { getSignedUrl } from "@/lib/storage";
-import { RECORDINGS_BUCKET } from "@/lib/supabase/supabase";
-import { db } from "@db/db";
-import { events } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { getRecordingUrl } from "@/lib/workspace/meetings";
+import { meetingsDrizzle } from "@db/meetings_db";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function GET(
   _req: NextRequest,
@@ -20,22 +19,21 @@ export async function GET(
     return NextResponse.json({ error: "Invalid meetingId" }, { status: 400 });
   }
 
-  const [meeting] = await db
-    .select({ id: events.id })
-    .from(events)
-    .where(and(eq(events.id, id), eq(events.userId, user.id)));
-
-  if (!meeting) {
-    return new NextResponse("Not Found", { status: 404 });
-  }
-
-  const filePath = `recordings/${user.id}/${id}/composite.mp4`;
-
   try {
-    const url = await getSignedUrl(RECORDINGS_BUCKET, filePath, 3600);
-    return NextResponse.json({ url });
+    const result = await getRecordingUrl(
+      id,
+      meetingsDrizzle,
+      supabaseStorageClient
+    );
+    if (!result) {
+      return new NextResponse("Not Found", { status: 404 });
+    }
+    return NextResponse.json(result);
   } catch (err) {
     console.error("Storage error:", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: "Recording not found" }, { status: 404 });
   }
 }

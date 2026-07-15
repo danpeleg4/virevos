@@ -1,16 +1,7 @@
 import React from "react";
-import { render } from "vitest-browser-react";
-
-const mockMutate = vi.fn();
-
-vi.mock("@tanstack/react-query", () => ({
-  useMutation: () => ({ mutate: mockMutate, isPending: false }),
-  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-}));
-
-vi.mock("@/lib/workspace/cases", () => ({
-  createCase: vi.fn(),
-}));
+import { http, HttpResponse } from "msw";
+import { worker } from "../../../msw/worker";
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 const mockClients = [
   {
@@ -29,19 +20,19 @@ const mockClients = [
 import { CaseCreateDialog } from "@/app/workspace/cases/CaseCreateDialog";
 
 describe("CaseCreateDialog", () => {
-  beforeEach(() => {
-    mockMutate.mockClear();
-  });
-
   it("renders 'New Case' trigger button", async () => {
-    const screen = await render(<CaseCreateDialog clients={mockClients} />);
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
     await expect
       .element(screen.getByRole("button", { name: /new case/i }))
       .toBeInTheDocument();
   });
 
   it("opens dialog when button is clicked", async () => {
-    const screen = await render(<CaseCreateDialog clients={mockClients} />);
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
     await screen.getByRole("button", { name: /new case/i }).click();
     await expect
       .element(screen.getByText("Create New Case", { exact: true }))
@@ -49,25 +40,46 @@ describe("CaseCreateDialog", () => {
   });
 
   it("renders case name input in dialog", async () => {
-    const screen = await render(<CaseCreateDialog clients={mockClients} />);
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
     await screen.getByRole("button", { name: /new case/i }).click();
     await expect
       .element(screen.getByText("Case Name", { exact: true }))
       .toBeInTheDocument();
   });
 
-  it("calls mutation on form submit", async () => {
-    const screen = await render(<CaseCreateDialog clients={mockClients} />);
+  it("POSTs the new case on form submit", async () => {
+    let postBody: Record<string, unknown> | undefined;
+    worker.use(
+      http.post("/api/cases", async ({ request }) => {
+        postBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          ...postBody,
+          id: 99,
+          stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
+        });
+      })
+    );
+
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
     await screen.getByRole("button", { name: /new case/i }).click();
     await screen.getByPlaceholder(/website redesign/i).fill("New Campaign");
     await screen.getByRole("button", { name: /create case/i }).click();
-    expect(mockMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "New Campaign", status: "active" })
+
+    await vi.waitFor(() =>
+      expect(postBody).toEqual(
+        expect.objectContaining({ name: "New Campaign", status: "active" })
+      )
     );
   });
 
   it("disables the Create Case button and shows a message when name is empty", async () => {
-    const screen = await render(<CaseCreateDialog clients={mockClients} />);
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
     await screen.getByRole("button", { name: /new case/i }).click();
     await expect
       .element(screen.getByRole("button", { name: /create case/i }))
@@ -78,7 +90,9 @@ describe("CaseCreateDialog", () => {
   });
 
   it("enables the Create Case button once a name is entered", async () => {
-    const screen = await render(<CaseCreateDialog clients={mockClients} />);
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
     await screen.getByRole("button", { name: /new case/i }).click();
     await screen.getByPlaceholder(/website redesign/i).fill("New Campaign");
     await expect
@@ -89,8 +103,18 @@ describe("CaseCreateDialog", () => {
       .not.toBeInTheDocument();
   });
 
-  it("does not mutate when name is only whitespace", async () => {
-    const screen = await render(<CaseCreateDialog clients={mockClients} />);
+  it("does not POST when name is only whitespace", async () => {
+    let postCalled = false;
+    worker.use(
+      http.post("/api/cases", () => {
+        postCalled = true;
+        return HttpResponse.json({ id: 99 });
+      })
+    );
+
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
     await screen.getByRole("button", { name: /new case/i }).click();
     const nameInput = screen.getByPlaceholder(/website redesign/i);
     await nameInput.fill("New Campaign");
@@ -105,6 +129,6 @@ describe("CaseCreateDialog", () => {
     await screen
       .getByRole("button", { name: /create case/i })
       .click({ force: true });
-    expect(mockMutate).not.toHaveBeenCalled();
+    expect(postCalled).toBe(false);
   });
 });

@@ -1,21 +1,9 @@
 import React from "react";
-import { render } from "vitest-browser-react";
 import { page, type Locator } from "vitest/browser";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { http, HttpResponse } from "msw";
+import { worker } from "../../../msw/worker";
+import { renderWithQueryClient } from "../../../_helpers/render";
 import type { ScheduledEmail } from "@/types/communications";
-
-const mockAxiosGet = vi.fn();
-const mockAxiosPost = vi.fn();
-const mockAxiosDelete = vi.fn();
-
-vi.mock("axios", () => {
-  const axios = {
-    get: (...args: unknown[]) => mockAxiosGet(...args),
-    post: (...args: unknown[]) => mockAxiosPost(...args),
-    delete: (...args: unknown[]) => mockAxiosDelete(...args),
-  };
-  return { default: axios, ...axios };
-});
 
 // itemsPerPage is derived from measured viewport height; pin it so the
 // pagination tests are deterministic regardless of the browser window size
@@ -49,6 +37,9 @@ const pendingEmail: ScheduledEmail = {
 
 let scheduledEmails: ScheduledEmail[];
 let navContainer: HTMLDivElement | null = null;
+let emailsFetchCount = 0;
+let lastPostBody: unknown;
+let postCallCount = 0;
 
 const createNavContainer = () => {
   navContainer = document.createElement("div");
@@ -56,23 +47,20 @@ const createNavContainer = () => {
   return navContainer;
 };
 
-const emailsFetchCount = () =>
-  mockAxiosGet.mock.calls.filter(
-    (call: unknown[]) => call[0] === "/api/scheduled-emails"
-  ).length;
-
-const makeQueryClient = () =>
-  new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-const renderComponent = (nav: HTMLDivElement | null = null) => {
-  const queryClient = makeQueryClient();
-  const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+function setupDefaultHandlers() {
+  worker.use(
+    http.get("/api/integrations/outlook", () =>
+      HttpResponse.json({ connected: true })
+    ),
+    http.get("/api/scheduled-emails", () => {
+      emailsFetchCount += 1;
+      return HttpResponse.json({ scheduledEmails });
+    })
   );
-  return render(<ScheduledMessages navContainer={nav} />, {
-    wrapper: Wrapper,
-  });
-};
+}
+
+const renderComponent = (nav: HTMLDivElement | null = null) =>
+  renderWithQueryClient(<ScheduledMessages navContainer={nav} />);
 
 const openScheduleDialog = async () => {
   const nav = createNavContainer();
@@ -101,18 +89,12 @@ const fillScheduleForm = async (dialog: Locator) => {
 };
 
 beforeEach(() => {
-  vi.resetAllMocks();
   calcWindow.itemsPerPage = 10;
   scheduledEmails = [pendingEmail];
-  mockAxiosGet.mockImplementation((url: string) => {
-    if (url === "/api/integrations/outlook") {
-      return Promise.resolve({ data: { connected: true } });
-    }
-    if (url === "/api/scheduled-emails") {
-      return Promise.resolve({ data: { scheduledEmails } });
-    }
-    return Promise.resolve({ data: {} });
-  });
+  emailsFetchCount = 0;
+  lastPostBody = undefined;
+  postCallCount = 0;
+  setupDefaultHandlers();
 });
 
 afterEach(() => {
@@ -137,11 +119,15 @@ describe("ScheduledMessages — Send Now", () => {
 
   it("optimistically marks the message as sent and posts a send-now request", async () => {
     let resolveSend!: () => void;
-    mockAxiosPost.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
+    worker.use(
+      http.post("/api/scheduled-emails", async ({ request }) => {
+        postCallCount += 1;
+        lastPostBody = await request.json();
+        await new Promise<void>((resolve) => {
           resolveSend = resolve;
-        })
+        });
+        return HttpResponse.json({ success: true });
+      })
     );
 
     const screen = await renderComponent();
@@ -156,21 +142,18 @@ describe("ScheduledMessages — Send Now", () => {
       .element(screen.getByRole("button", { name: /send now/i }))
       .not.toBeInTheDocument();
 
-    expect(mockAxiosPost).toHaveBeenCalledTimes(1);
-    expect(mockAxiosPost).toHaveBeenCalledWith("/api/scheduled-emails", {
-      data: 1,
-      type: "send-now",
-    });
+    await vi.waitFor(() => expect(postCallCount).toBe(1));
+    expect(lastPostBody).toEqual({ data: 1, type: "send-now" });
 
     // Server confirms; refetch on settle returns the sent version
     scheduledEmails = [
       { ...pendingEmail, status: "sent", sentAt: "2026-07-03T10:00:00.000Z" },
     ];
-    const fetchesBeforeSettle = emailsFetchCount();
+    const fetchesBeforeSettle = emailsFetchCount;
     resolveSend();
 
     await vi.waitFor(() => {
-      expect(emailsFetchCount()).toBeGreaterThan(fetchesBeforeSettle);
+      expect(emailsFetchCount).toBeGreaterThan(fetchesBeforeSettle);
     });
     await expect
       .element(screen.getByText("Sent", { exact: true }))
@@ -181,14 +164,19 @@ describe("ScheduledMessages — Send Now", () => {
   });
 
   it("rolls back the optimistic update when sending fails", async () => {
-    mockAxiosPost.mockRejectedValue(new Error("smtp down"));
+    worker.use(
+      http.post("/api/scheduled-emails", () => {
+        postCallCount += 1;
+        return HttpResponse.json({ error: "smtp down" }, { status: 500 });
+      })
+    );
 
     const screen = await renderComponent();
 
     await screen.getByRole("button", { name: /send now/i }).click();
 
     await vi.waitFor(() => {
-      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
+      expect(postCallCount).toBe(1);
     });
 
     // Rolled back: still pending, button available again
@@ -207,17 +195,19 @@ describe("ScheduledMessages — Send Now", () => {
     scheduledEmails = [
       { ...pendingEmail, id: 2, toName: null, bodyText: null },
     ];
-    mockAxiosPost.mockResolvedValue({ data: { success: true } });
+    worker.use(
+      http.post("/api/scheduled-emails", async ({ request }) => {
+        lastPostBody = await request.json();
+        return HttpResponse.json({ success: true });
+      })
+    );
 
     const screen = await renderComponent();
 
     await screen.getByRole("button", { name: /send now/i }).click();
 
     await vi.waitFor(() => {
-      expect(mockAxiosPost).toHaveBeenCalledWith("/api/scheduled-emails", {
-        data: 2,
-        type: "send-now",
-      });
+      expect(lastPostBody).toEqual({ data: 2, type: "send-now" });
     });
   });
 });
@@ -225,11 +215,15 @@ describe("ScheduledMessages — Send Now", () => {
 describe("ScheduledMessages — Schedule New Message", () => {
   it("optimistically adds the message to the list before the server responds", async () => {
     let resolveCreate!: () => void;
-    mockAxiosPost.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
+    worker.use(
+      http.post("/api/scheduled-emails", async ({ request }) => {
+        postCallCount += 1;
+        lastPostBody = await request.json();
+        await new Promise<void>((resolve) => {
           resolveCreate = resolve;
-        })
+        });
+        return HttpResponse.json({ success: true });
+      })
     );
 
     const { screen, dialog } = await openScheduleDialog();
@@ -241,18 +235,19 @@ describe("ScheduledMessages — Schedule New Message", () => {
     await expect.element(screen.getByText("Kickoff call")).toBeInTheDocument();
     await expect.element(screen.getByText("New Person")).toBeInTheDocument();
 
-    expect(mockAxiosPost).toHaveBeenCalledTimes(1);
-    expect(mockAxiosPost).toHaveBeenCalledWith("/api/scheduled-emails", {
-      type: "schedule",
-      data: {
-        toEmail: "new@example.com",
-        toName: "New Person",
-        subject: "Kickoff call",
-        bodyHtml: "<p>See you soon</p>",
-        bodyText: "See you soon",
-        scheduledAt: new Date("2026-07-15T09:00").toISOString(),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
+    await vi.waitFor(() => {
+      expect(lastPostBody).toEqual({
+        type: "schedule",
+        data: {
+          toEmail: "new@example.com",
+          toName: "New Person",
+          subject: "Kickoff call",
+          bodyHtml: "<p>See you soon</p>",
+          bodyText: "See you soon",
+          scheduledAt: new Date("2026-07-15T09:00").toISOString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      });
     });
 
     // Server confirms; refetch on settle returns the persisted version
@@ -269,18 +264,20 @@ describe("ScheduledMessages — Schedule New Message", () => {
       },
       pendingEmail,
     ];
-    const fetchesBeforeSettle = emailsFetchCount();
+    const fetchesBeforeSettle = emailsFetchCount;
     resolveCreate();
 
     await vi.waitFor(() => {
-      expect(emailsFetchCount()).toBeGreaterThan(fetchesBeforeSettle);
+      expect(emailsFetchCount).toBeGreaterThan(fetchesBeforeSettle);
     });
     await expect.element(screen.getByText("Kickoff call")).toBeInTheDocument();
   });
 
   it("hides the Send Now and delete buttons on the optimistic entry until the server confirms", async () => {
     scheduledEmails = [];
-    mockAxiosPost.mockImplementation(() => new Promise(() => {}));
+    worker.use(
+      http.post("/api/scheduled-emails", () => new Promise<never>(() => {}))
+    );
 
     const { screen, dialog } = await openScheduleDialog();
     await fillScheduleForm(dialog);
@@ -293,14 +290,19 @@ describe("ScheduledMessages — Schedule New Message", () => {
   });
 
   it("rolls back the optimistic message when scheduling fails", async () => {
-    mockAxiosPost.mockRejectedValue(new Error("db down"));
+    worker.use(
+      http.post("/api/scheduled-emails", () => {
+        postCallCount += 1;
+        return HttpResponse.json({ error: "db down" }, { status: 500 });
+      })
+    );
 
     const { screen, dialog } = await openScheduleDialog();
     await fillScheduleForm(dialog);
     await dialog.getByRole("button", { name: /schedule message/i }).click();
 
     await vi.waitFor(() => {
-      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
+      expect(postCallCount).toBe(1);
     });
 
     // Rolled back: the optimistic message is gone, original list intact
@@ -313,11 +315,19 @@ describe("ScheduledMessages — Schedule New Message", () => {
   });
 
   it("validates required fields before mutating", async () => {
+    let called = false;
+    worker.use(
+      http.post("/api/scheduled-emails", () => {
+        called = true;
+        return HttpResponse.json({ success: true });
+      })
+    );
+
     const { screen, dialog } = await openScheduleDialog();
 
     await dialog.getByRole("button", { name: /schedule message/i }).click();
 
-    expect(mockAxiosPost).not.toHaveBeenCalled();
+    expect(called).toBe(false);
     // Dialog stays open so the user can fix the form
     await expect.element(screen.getByRole("dialog")).toBeInTheDocument();
   });

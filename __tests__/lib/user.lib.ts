@@ -5,11 +5,14 @@ import {
   uploadAvatar,
   getAvatarUrl,
   getUserProfile,
+  getProductUpdatesPreference,
+  updateProductUpdatesPreference,
   updateProfile,
 } from "@/lib/user";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { uploadFile, getSignedUrl, deleteFile } from "@/lib/storage";
+import { canonicalUserRow, makeFakeUserDb } from "../fakes/fake_user_db";
+import { makeFakeStorageClient } from "../fakes/fake_storage_client";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -21,30 +24,8 @@ vi.mock("@/lib/supabase/server", () => ({
   createServerSupabase: vi.fn(),
 }));
 
-vi.mock("@/lib/storage", () => ({
-  uploadFile: vi.fn(),
-  getSignedUrl: vi.fn(),
-  deleteFile: vi.fn(),
-}));
-
-const mockUpdateWhere = vi.fn();
-const mockSet = vi.fn(() => ({ where: mockUpdateWhere }));
-const mockSelectWhere = vi.fn();
-const mockSelectFrom = vi.fn(() => ({ where: mockSelectWhere }));
-const mockSelect = vi.fn(() => ({ from: mockSelectFrom }));
-const mockOnConflictDoNothing = vi.fn();
-const mockInsertValues = vi.fn(() => ({
-  onConflictDoNothing: mockOnConflictDoNothing,
-}));
-const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
-
-vi.mock("@db/db", () => ({
-  db: {
-    select: (...args: never[]) => mockSelect(...args),
-    update: vi.fn(() => ({ set: mockSet })),
-    insert: (...args: never[]) => mockInsert(...args),
-  },
-}));
+const userDb = makeFakeUserDb();
+const storage = makeFakeStorageClient();
 
 const mockUser = { id: "user_1" };
 
@@ -53,16 +34,6 @@ let consoleErrorSpy: MockInstance;
 beforeEach(() => {
   vi.clearAllMocks();
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-  mockUpdateWhere.mockResolvedValue(undefined);
-  mockSet.mockReturnValue({ where: mockUpdateWhere });
-  mockSelectWhere.mockResolvedValue([{ recordingStatus: false }]);
-  mockSelectFrom.mockReturnValue({ where: mockSelectWhere });
-  mockSelect.mockReturnValue({ from: mockSelectFrom });
-  mockOnConflictDoNothing.mockResolvedValue(undefined);
-  mockInsertValues.mockReturnValue({
-    onConflictDoNothing: mockOnConflictDoNothing,
-  });
-  mockInsert.mockReturnValue({ values: mockInsertValues });
   mockUpdateUser.mockResolvedValue({ data: {}, error: null });
   mockSignInWithPassword.mockResolvedValue({ data: {}, error: null });
   (createServerSupabase as Mock).mockResolvedValue({
@@ -77,32 +48,79 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
+// ─── product updates preference ───────────────────────────────────────────
+
+describe("getProductUpdatesPreference", () => {
+  it("returns false when unauthenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    await expect(getProductUpdatesPreference(userDb)).resolves.toBe(false);
+    expect(userDb.getProductUpdates).not.toHaveBeenCalled();
+  });
+
+  it("returns the stored preference", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    userDb.getProductUpdates.mockResolvedValueOnce([{ productUpdates: true }]);
+    await expect(getProductUpdatesPreference(userDb)).resolves.toBe(true);
+    expect(userDb.getProductUpdates).toHaveBeenCalledWith("user_1");
+  });
+});
+
+describe("updateProductUpdatesPreference", () => {
+  it("throws when unauthenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    await expect(updateProductUpdatesPreference(true, userDb)).rejects.toThrow(
+      "No user"
+    );
+    expect(userDb.setProductUpdates).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-boolean value", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    await expect(
+      updateProductUpdatesPreference("yes" as unknown as boolean, userDb)
+    ).rejects.toThrow("enabled must be a boolean");
+    expect(userDb.setProductUpdates).not.toHaveBeenCalled();
+  });
+
+  it("persists the preference and echoes it back", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    await expect(updateProductUpdatesPreference(true, userDb)).resolves.toEqual(
+      { enabled: true }
+    );
+    expect(userDb.setProductUpdates).toHaveBeenCalledWith("user_1", true);
+  });
+});
+
 // ─── changeRecordingStatus ────────────────────────────────────────────────
 
 describe("changeRecordingStatus", () => {
   it("throws when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(changeRecordingStatus()).rejects.toThrow("No user");
+    await expect(changeRecordingStatus(userDb)).rejects.toThrow("No user");
   });
 
   it("sets recordingStatus to false when it was true", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([{ recordingStatus: true }]);
-    await changeRecordingStatus();
-    expect(mockSet).toHaveBeenCalledWith({ recordingStatus: false });
+    userDb.getUserRow.mockResolvedValueOnce([
+      { ...canonicalUserRow, recordingStatus: true },
+    ]);
+    await changeRecordingStatus(userDb);
+    expect(userDb.setRecordingStatus).toHaveBeenCalledWith("user_1", false);
   });
 
   it("sets recordingStatus to true when it was false", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([{ recordingStatus: false }]);
-    await changeRecordingStatus();
-    expect(mockSet).toHaveBeenCalledWith({ recordingStatus: true });
+    userDb.getUserRow.mockResolvedValueOnce([
+      { ...canonicalUserRow, recordingStatus: false },
+    ]);
+    await changeRecordingStatus(userDb);
+    expect(userDb.setRecordingStatus).toHaveBeenCalledWith("user_1", true);
   });
 
   it("silently swallows errors (does not re-throw)", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockRejectedValueOnce(new Error("DB error"));
-    await changeRecordingStatus(); // should not throw
+    userDb.getUserRow.mockRejectedValueOnce(new Error("DB error"));
+    await changeRecordingStatus(userDb); // should not throw
   });
 });
 
@@ -185,8 +203,8 @@ describe("changePassword", () => {
 describe("ensureUserRow", () => {
   it("does nothing when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await ensureUserRow();
-    expect(mockInsert).not.toHaveBeenCalled();
+    await ensureUserRow(userDb);
+    expect(userDb.insertUserIfMissing).not.toHaveBeenCalled();
   });
 
   it("inserts a row with user data from the session", async () => {
@@ -196,26 +214,21 @@ describe("ensureUserRow", () => {
       user_metadata: { name: "Test User" },
     });
 
-    await ensureUserRow();
+    await ensureUserRow(userDb);
 
-    expect(mockInsertValues).toHaveBeenCalledWith({
-      userId: "user_1",
-      email: "test@example.com",
-      name: "Test User",
-    });
-    expect(mockOnConflictDoNothing).toHaveBeenCalled();
+    expect(userDb.insertUserIfMissing).toHaveBeenCalledWith(
+      "user_1",
+      "test@example.com",
+      "Test User"
+    );
   });
 
   it("falls back to empty strings when email/name are missing", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
 
-    await ensureUserRow();
+    await ensureUserRow(userDb);
 
-    expect(mockInsertValues).toHaveBeenCalledWith({
-      userId: "user_1",
-      email: "",
-      name: "",
-    });
+    expect(userDb.insertUserIfMissing).toHaveBeenCalledWith("user_1", "", "");
   });
 
   it("propagates DB errors", async () => {
@@ -223,9 +236,9 @@ describe("ensureUserRow", () => {
       id: "user_1",
       email: "x@y.com",
     });
-    mockOnConflictDoNothing.mockRejectedValueOnce(new Error("DB down"));
+    userDb.insertUserIfMissing.mockRejectedValueOnce(new Error("DB down"));
 
-    await expect(ensureUserRow()).rejects.toThrow("DB down");
+    await expect(ensureUserRow(userDb)).rejects.toThrow("DB down");
   });
 });
 
@@ -244,83 +257,85 @@ function makeImage(type = "image/png", size = 1024): File {
 }
 
 describe("uploadAvatar", () => {
-  beforeEach(() => {
-    (getSignedUrl as Mock).mockResolvedValue("https://cdn/signed-url");
-    (uploadFile as Mock).mockResolvedValue(undefined);
-    (deleteFile as Mock).mockResolvedValue(undefined);
-    // No previous avatar by default.
-    mockSelectWhere.mockResolvedValue([{ avatarPath: null }]);
-  });
-
   it("throws when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(uploadAvatar(makeFormData(makeImage()))).rejects.toThrow(
-      "No user"
-    );
+    await expect(
+      uploadAvatar(makeFormData(makeImage()), userDb, storage)
+    ).rejects.toThrow("No user");
   });
 
   it("rejects when no file is provided", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    await expect(uploadAvatar(makeFormData())).rejects.toThrow(
+    await expect(uploadAvatar(makeFormData(), userDb, storage)).rejects.toThrow(
       "An image file is required"
     );
-    expect(uploadFile).not.toHaveBeenCalled();
+    expect(storage.uploadFile).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported file types", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const pdf = new File(["x"], "doc.pdf", { type: "application/pdf" });
-    await expect(uploadAvatar(makeFormData(pdf))).rejects.toThrow(
-      "Unsupported image type"
-    );
-    expect(uploadFile).not.toHaveBeenCalled();
+    await expect(
+      uploadAvatar(makeFormData(pdf), userDb, storage)
+    ).rejects.toThrow("Unsupported image type");
+    expect(storage.uploadFile).not.toHaveBeenCalled();
   });
 
   it("rejects files larger than 2MB", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     const big = makeImage("image/png", 2 * 1024 * 1024 + 1);
-    await expect(uploadAvatar(makeFormData(big))).rejects.toThrow(
-      "Image must be 2MB or smaller"
-    );
-    expect(uploadFile).not.toHaveBeenCalled();
+    await expect(
+      uploadAvatar(makeFormData(big), userDb, storage)
+    ).rejects.toThrow("Image must be 2MB or smaller");
+    expect(storage.uploadFile).not.toHaveBeenCalled();
   });
 
   it("uploads to the users bucket, persists the path, and returns a signed URL", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    const result = await uploadAvatar(makeFormData(makeImage()));
+    const result = await uploadAvatar(
+      makeFormData(makeImage()),
+      userDb,
+      storage
+    );
 
-    expect(uploadFile).toHaveBeenCalledTimes(1);
-    const [bucket, path, body, contentType] = (uploadFile as Mock).mock
-      .calls[0];
+    expect(storage.uploadFile).toHaveBeenCalledTimes(1);
+    const [bucket, path, body, contentType] = storage.uploadFile.mock.calls[0];
     expect(bucket).toBe("users");
     expect(path).toMatch(/^user_1\/avatar-\d+\.png$/);
     expect(Buffer.isBuffer(body)).toBe(true);
     expect(contentType).toBe("image/png");
 
-    expect(mockSet).toHaveBeenCalledWith({ avatarPath: path });
-    expect(getSignedUrl).toHaveBeenCalledWith("users", path, 60 * 60);
+    expect(userDb.setAvatarPath).toHaveBeenCalledWith("user_1", path);
+    expect(storage.getSignedUrl).toHaveBeenCalledWith("users", path, 60 * 60);
     expect(result).toEqual({ url: "https://cdn/signed-url" });
   });
 
   it("deletes the previous avatar after a successful upload", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([
+    userDb.getAvatarPath.mockResolvedValueOnce([
       { avatarPath: "user_1/avatar-old.png" },
     ]);
 
-    await uploadAvatar(makeFormData(makeImage()));
+    await uploadAvatar(makeFormData(makeImage()), userDb, storage);
 
-    expect(deleteFile).toHaveBeenCalledWith("users", "user_1/avatar-old.png");
+    expect(storage.deleteFile).toHaveBeenCalledWith(
+      "users",
+      "user_1/avatar-old.png"
+    );
   });
 
   it("still succeeds if deleting the previous avatar fails", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([
+    userDb.getAvatarPath.mockResolvedValueOnce([
       { avatarPath: "user_1/avatar-old.png" },
     ]);
-    (deleteFile as Mock).mockRejectedValueOnce(new Error("delete boom"));
+    storage.deleteFile.mockRejectedValueOnce(new Error("delete boom"));
 
-    const result = await uploadAvatar(makeFormData(makeImage()));
+    const result = await uploadAvatar(
+      makeFormData(makeImage()),
+      userDb,
+      storage
+    );
     expect(result).toEqual({ url: "https://cdn/signed-url" });
   });
 });
@@ -328,32 +343,32 @@ describe("uploadAvatar", () => {
 // ─── getAvatarUrl ─────────────────────────────────────────────────────────
 
 describe("getAvatarUrl", () => {
-  beforeEach(() => {
-    (getSignedUrl as Mock).mockResolvedValue("https://cdn/signed-url");
-  });
-
   it("returns null when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(getAvatarUrl()).resolves.toEqual({ url: null });
-    expect(getSignedUrl).not.toHaveBeenCalled();
+    await expect(getAvatarUrl(userDb, storage)).resolves.toEqual({
+      url: null,
+    });
+    expect(storage.getSignedUrl).not.toHaveBeenCalled();
   });
 
   it("returns null when the user has no avatar", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([{ avatarPath: null }]);
-    await expect(getAvatarUrl()).resolves.toEqual({ url: null });
-    expect(getSignedUrl).not.toHaveBeenCalled();
+    userDb.getAvatarPath.mockResolvedValueOnce([{ avatarPath: null }]);
+    await expect(getAvatarUrl(userDb, storage)).resolves.toEqual({
+      url: null,
+    });
+    expect(storage.getSignedUrl).not.toHaveBeenCalled();
   });
 
   it("returns a signed URL for the stored avatar path", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([
+    userDb.getAvatarPath.mockResolvedValueOnce([
       { avatarPath: "user_1/avatar-123.png" },
     ]);
-    await expect(getAvatarUrl()).resolves.toEqual({
+    await expect(getAvatarUrl(userDb, storage)).resolves.toEqual({
       url: "https://cdn/signed-url",
     });
-    expect(getSignedUrl).toHaveBeenCalledWith(
+    expect(storage.getSignedUrl).toHaveBeenCalledWith(
       "users",
       "user_1/avatar-123.png",
       60 * 60
@@ -374,21 +389,12 @@ describe("getUserProfile", () => {
 
   it("returns empty fields when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(getUserProfile()).resolves.toEqual(EMPTY);
+    await expect(getUserProfile(userDb)).resolves.toEqual(EMPTY);
   });
 
   it("returns all stored profile fields", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    mockSelectWhere.mockResolvedValueOnce([
-      {
-        name: "Jane Doe",
-        email: "jane@example.com",
-        jobTitle: "Attorney",
-        company: "Virevos LLC",
-        bio: "Hello",
-      },
-    ]);
-    await expect(getUserProfile()).resolves.toEqual({
+    await expect(getUserProfile(userDb)).resolves.toEqual({
       name: "Jane Doe",
       email: "jane@example.com",
       jobTitle: "Attorney",
@@ -403,7 +409,7 @@ describe("getUserProfile", () => {
       email: "auth@example.com",
       user_metadata: { name: "Auth Name" },
     });
-    mockSelectWhere.mockResolvedValueOnce([
+    userDb.getProfileRow.mockResolvedValueOnce([
       {
         name: null,
         email: null,
@@ -412,7 +418,7 @@ describe("getUserProfile", () => {
         bio: null,
       },
     ]);
-    await expect(getUserProfile()).resolves.toEqual({
+    await expect(getUserProfile(userDb)).resolves.toEqual({
       name: "Auth Name",
       email: "auth@example.com",
       jobTitle: "",
@@ -427,15 +433,17 @@ describe("getUserProfile", () => {
 describe("updateProfile", () => {
   it("throws when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
-    await expect(updateProfile({ name: "Jane" })).rejects.toThrow("No user");
+    await expect(updateProfile({ name: "Jane" }, userDb)).rejects.toThrow(
+      "No user"
+    );
   });
 
   it("rejects an empty name", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    await expect(updateProfile({ name: "   " })).rejects.toThrow(
+    await expect(updateProfile({ name: "   " }, userDb)).rejects.toThrow(
       "name is required"
     );
-    expect(mockSet).not.toHaveBeenCalled();
+    expect(userDb.updateProfileRow).not.toHaveBeenCalled();
   });
 
   it("trims, persists all fields, and mirrors the name to auth metadata", async () => {
@@ -444,14 +452,17 @@ describe("updateProfile", () => {
       email: "jane@example.com",
     });
 
-    const result = await updateProfile({
-      name: "  Jane Doe  ",
-      jobTitle: "Attorney",
-      company: "Virevos LLC",
-      bio: "Hi there",
-    });
+    const result = await updateProfile(
+      {
+        name: "  Jane Doe  ",
+        jobTitle: "Attorney",
+        company: "Virevos LLC",
+        bio: "Hi there",
+      },
+      userDb
+    );
 
-    expect(mockSet).toHaveBeenCalledWith({
+    expect(userDb.updateProfileRow).toHaveBeenCalledWith("user_1", {
       name: "Jane Doe",
       jobTitle: "Attorney",
       company: "Virevos LLC",
@@ -470,9 +481,9 @@ describe("updateProfile", () => {
   it("stores nulls for omitted optional fields", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
 
-    await updateProfile({ name: "Jane Doe" });
+    await updateProfile({ name: "Jane Doe" }, userDb);
 
-    expect(mockSet).toHaveBeenCalledWith({
+    expect(userDb.updateProfileRow).toHaveBeenCalledWith("user_1", {
       name: "Jane Doe",
       jobTitle: null,
       company: null,
@@ -486,7 +497,7 @@ describe("updateProfile", () => {
       data: {},
       error: { message: "auth boom" },
     });
-    await expect(updateProfile({ name: "Jane Doe" })).rejects.toThrow(
+    await expect(updateProfile({ name: "Jane Doe" }, userDb)).rejects.toThrow(
       "Failed to update profile: auth boom"
     );
   });

@@ -8,8 +8,6 @@ import { CheckCircle } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { changeRecordingStatus } from "@/lib/user";
-import { disconnectOutlook } from "@/lib/integrations";
 import type { ComponentType, SVGProps } from "react";
 import type { Integration } from "@/types/integrations";
 import { Separator } from "@/app/components/ui/separator";
@@ -28,9 +26,25 @@ export function VideoMeetingPreferences() {
 
   const changeRecordingStatusMutation = useMutation({
     mutationFn: async () => {
-      await changeRecordingStatus();
+      await axios.patch("/api/user", { type: "recording-status" });
     },
-    onSuccess: async () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["recordingStatus"] });
+      const previous = queryClient.getQueryData<{
+        recording_status: boolean;
+      }>(["recordingStatus"]);
+      queryClient.setQueryData<{ recording_status: boolean }>(
+        ["recordingStatus"],
+        (old) => ({ recording_status: !(old?.recording_status ?? false) })
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["recordingStatus"], context.previous);
+      }
+    },
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["recordingStatus"] });
     },
   });
@@ -104,7 +118,7 @@ export function IntegrationSettings({
       action: "disconnect" | "connect";
     }) => {
       if (id === "outlook" && action === "disconnect") {
-        await disconnectOutlook();
+        await axios.delete("/api/integrations/outlook");
       }
     },
     onSuccess: async () => {

@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { tasks } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import { getTasksByCase } from "@/lib/workspace/tasks";
+import { tasksDrizzle } from "@db/tasks_db";
+import { ValidationError } from "@/lib/util/validation";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -19,10 +19,17 @@ export async function GET(
     return NextResponse.json({ error: "Invalid caseId" }, { status: 400 });
   }
 
-  const data = await db
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.userId, user.id), eq(tasks.caseId, caseId)));
-
-  return NextResponse.json(data);
+  try {
+    const data = await getTasksByCase(caseId, tasksDrizzle);
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error("[api/cases/[id]/tasks GET]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json(
+      { error: "Failed to fetch tasks" },
+      { status: 500 }
+    );
+  }
 }

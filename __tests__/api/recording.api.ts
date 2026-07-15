@@ -1,37 +1,26 @@
 import { GET } from "@/app/api/recording/[id]/route";
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
+import { getRecordingUrl } from "@/lib/workspace/meetings";
+import { meetingsDrizzle } from "@db/meetings_db";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-// eslint-disable-next-line no-var
-var mockDbWhere: Mock;
-
-vi.mock("@db/db", () => {
-  mockDbWhere = vi.fn();
-  return {
-    db: {
-      select: () => ({ from: () => ({ where: mockDbWhere }) }),
-    },
-  };
-});
-
-vi.mock("@db/schema", () => ({ events: {} }));
-vi.mock("drizzle-orm", () => ({ and: vi.fn(), eq: vi.fn() }));
-
-vi.mock("@/lib/supabase/supabase", () => ({
-  RECORDINGS_BUCKET: "recording",
+vi.mock("@/lib/workspace/meetings", () => ({
+  getRecordingUrl: vi.fn(),
 }));
 
-// eslint-disable-next-line no-var
-var mockGetSignedUrl: Mock;
+vi.mock("@db/meetings_db", () => ({
+  // sentinel — the route must pass this exact instance into the lib fn
+  meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
+}));
 
-vi.mock("@/lib/storage", () => {
-  mockGetSignedUrl = vi.fn();
-  return { getSignedUrl: mockGetSignedUrl };
-});
+vi.mock("@/api_client/supabase_storage_client", () => ({
+  supabaseStorageClient: { __sentinel: "supabaseStorageClient" },
+}));
 
 function mockCtx(id: string) {
   return { params: Promise.resolve({ id }) };
@@ -39,8 +28,7 @@ function mockCtx(id: string) {
 
 describe("GET /api/recording/[id]", () => {
   beforeEach(() => {
-    vi.resetAllMocks();
-    mockDbWhere.mockResolvedValue([{ id: "meeting_1" }]);
+    vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -54,6 +42,7 @@ describe("GET /api/recording/[id]", () => {
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 
     expect(res.status).toBe(401);
+    expect(getRecordingUrl).not.toHaveBeenCalled();
   });
 
   it("returns 400 if id is empty", async () => {
@@ -65,41 +54,39 @@ describe("GET /api/recording/[id]", () => {
     expect(await res.json()).toEqual({ error: "Invalid meetingId" });
   });
 
-  it("returns 404 if recording not found in storage", async () => {
+  it("returns 404 when the meeting is not found", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    mockGetSignedUrl.mockRejectedValueOnce(new Error("not found"));
+    (getRecordingUrl as Mock).mockResolvedValueOnce(null);
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 
     expect(res.status).toBe(404);
   });
 
-  it("returns 404 if getSignedUrl throws", async () => {
+  it("returns 404 when the storage lookup fails", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    mockGetSignedUrl.mockRejectedValueOnce(new Error("storage error"));
+    (getRecordingUrl as Mock).mockRejectedValueOnce(new Error("storage error"));
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
 
     expect(res.status).toBe(404);
   });
 
-  it("returns signed url on success", async () => {
+  it("returns the signed url from the wired deps", async () => {
     (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    mockGetSignedUrl.mockResolvedValueOnce("https://signed-url");
+    (getRecordingUrl as Mock).mockResolvedValueOnce({
+      url: "https://signed-url",
+    });
 
     const res = await GET({} as NextRequest, mockCtx("meeting_1"));
     const json = await res.json();
 
     expect(res.status).toBe(200);
     expect(json.url).toBe("https://signed-url");
-  });
-
-  it("returns 404 if event not found in db", async () => {
-    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-    mockDbWhere.mockResolvedValue([]);
-
-    const res = await GET({} as NextRequest, mockCtx("meeting_1"));
-
-    expect(res.status).toBe(404);
+    expect(getRecordingUrl).toHaveBeenCalledWith(
+      "meeting_1",
+      meetingsDrizzle,
+      supabaseStorageClient
+    );
   });
 });

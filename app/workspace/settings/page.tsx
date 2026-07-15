@@ -3,15 +3,11 @@
 import { useRef, useState } from "react";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  uploadAvatar,
-  updateProfile,
-  updateProductUpdatesPreference,
-  changePassword,
-} from "@/lib/user";
+import { apiErrorMessage } from "@/lib/util/api_error";
 import {
   type UserProfile,
   type UpdateProfileInput,
+  type ChangePasswordInput,
 } from "@/types/user_profile";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
@@ -151,7 +147,19 @@ function ProfileTab() {
   }
 
   const saveMutation = useMutation({
-    mutationFn: (input: UpdateProfileInput) => updateProfile(input),
+    mutationFn: async (input: UpdateProfileInput) => {
+      try {
+        const res = await axios.patch<UserProfile>("/api/user", {
+          type: "profile",
+          data: input,
+        });
+        return res.data;
+      } catch (err) {
+        throw new Error(
+          apiErrorMessage(err, "Couldn't save. Please try again.")
+        );
+      }
+    },
     onMutate: async (input) => {
       setSaveError(null);
       await queryClient.cancelQueries({ queryKey: ["userProfile"] });
@@ -206,7 +214,17 @@ function ProfileTab() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
-      return uploadAvatar(formData);
+      try {
+        const res = await axios.post<{ url: string }>(
+          "/api/user/avatar",
+          formData
+        );
+        return res.data;
+      } catch (err) {
+        throw new Error(
+          apiErrorMessage(err, "Upload failed. Please try again.")
+        );
+      }
     },
     onSuccess: (data) => {
       setAvatarError(null);
@@ -353,7 +371,19 @@ function NotificationsTab({ productUpdates }: { productUpdates?: boolean }) {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const productUpdatesMutation = useMutation({
-    mutationFn: (enabled: boolean) => updateProductUpdatesPreference(enabled),
+    mutationFn: async (enabled: boolean) => {
+      try {
+        const res = await axios.patch<{ enabled: boolean }>("/api/user", {
+          type: "product-updates",
+          data: { enabled },
+        });
+        return res.data;
+      } catch (err) {
+        throw new Error(
+          apiErrorMessage(err, "Couldn't save. Please try again.")
+        );
+      }
+    },
     onMutate: async (enabled) => {
       setSaveError(null);
       await queryClient.cancelQueries({ queryKey: ["productUpdates"] });
@@ -402,7 +432,17 @@ function SecurityTab() {
   const MIN_PASSWORD_LENGTH = 8;
 
   const changePasswordMutation = useMutation({
-    mutationFn: changePassword,
+    mutationFn: async (input: ChangePasswordInput) => {
+      try {
+        const res = await axios.patch<{ success: true }>("/api/user", {
+          type: "password",
+          data: input,
+        });
+        return res.data;
+      } catch (err) {
+        throw new Error(apiErrorMessage(err, "Couldn't update password."));
+      }
+    },
     onMutate: () => setPasswordError(null),
     onSuccess: () => {
       setCurrentPassword("");

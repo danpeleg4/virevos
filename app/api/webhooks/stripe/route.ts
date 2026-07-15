@@ -4,8 +4,9 @@ import {
   handleInvoicePaymentSucceeded,
   handleSubscriptionDeleted,
   handleSubscriptionUpsert,
-  stripe,
-} from "@/lib/stripe";
+} from "@/lib/workspace/billing";
+import { billingDrizzle } from "@db/billing_db";
+import { stripeApiClient } from "@/api_client/stripe_client";
 import type Stripe from "stripe";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
+    event = stripeApiClient.constructWebhookEvent(
       body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -33,23 +34,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       case "customer.subscription.created":
       case "customer.subscription.updated":
         await handleSubscriptionUpsert(
-          event.data.object as Stripe.Subscription
+          event.data.object as Stripe.Subscription,
+          billingDrizzle
         );
         break;
 
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(
-          event.data.object as Stripe.Subscription
+          event.data.object as Stripe.Subscription,
+          billingDrizzle
         );
         break;
 
       case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        await handleInvoicePaymentFailed(
+          event.data.object as Stripe.Invoice,
+          billingDrizzle
+        );
         break;
 
       case "invoice.payment_succeeded":
         await handleInvoicePaymentSucceeded(
-          event.data.object as Stripe.Invoice
+          event.data.object as Stripe.Invoice,
+          billingDrizzle
         );
         break;
 

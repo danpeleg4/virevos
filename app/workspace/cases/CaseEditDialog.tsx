@@ -18,8 +18,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/app/components/ui/select";
+import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateCase } from "@/lib/workspace/cases";
 import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";
 
@@ -80,8 +80,7 @@ function CaseEditForm({
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      await updateCase({
-        id: aCase.id,
+      await axios.patch(`/api/cases/${aCase.id}`, {
         name,
         dueDate: dueDate || undefined,
         priority,

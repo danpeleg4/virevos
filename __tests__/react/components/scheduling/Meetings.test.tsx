@@ -1,44 +1,11 @@
 import React from "react";
-import { render } from "vitest-browser-react";
-
-const mockUseQuery = vi.fn();
-const mockUseQueryClient = vi.fn(() => ({
-  invalidateQueries: vi.fn(),
-  cancelQueries: vi.fn(),
-  getQueryData: vi.fn(),
-  setQueryData: vi.fn(),
-}));
-
-const mockDeleteMutate = vi.fn();
-const mockMutationFactory = vi.fn((..._args: unknown[]) => ({
-  mutate: vi.fn(),
-  isPending: false,
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (...args: unknown[]) => mockMutationFactory(...args),
-  useQueryClient: () => mockUseQueryClient(),
-}));
-
-vi.mock("axios");
+import { http, HttpResponse } from "msw";
+import { worker } from "../../../msw/worker";
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/workspace/calendar",
-}));
-
-vi.mock("@/lib/workspace/meetings", () => ({
-  createInstantMeeting: vi.fn(),
-}));
-
-vi.mock("@/lib/workspace/calendar", () => ({
-  deleteEventFromCalendar: vi.fn(),
-}));
-
-vi.mock("@/lib/util/date_utils", () => ({
-  formatDateOnly: vi.fn(() => "2026-05-10"),
-  formatTimeOnly: vi.fn(() => "10:00 AM"),
 }));
 
 const mockMeetings = [
@@ -66,23 +33,17 @@ const mockMeetings = [
 
 import { Meetings } from "@/app/components/scheduling/Meetings";
 
+function useMeetingsHandler(data = mockMeetings) {
+  worker.use(http.get("/api/events", () => HttpResponse.json(data)));
+}
+
 describe("Meetings", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockDeleteMutate.mockReset();
-    mockMutationFactory.mockImplementation(() => ({
-      mutate: vi.fn(),
-      isPending: false,
-    }));
-    mockUseQuery.mockReturnValue({
-      data: mockMeetings,
-      isLoading: false,
-      error: null,
-    });
+    useMeetingsHandler();
   });
 
   it("renders the meetings table with data", async () => {
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
     await expect
       .element(screen.getByText("Sprint Planning"))
       .toBeInTheDocument();
@@ -90,14 +51,17 @@ describe("Meetings", () => {
   });
 
   it("renders search input", async () => {
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
     await expect
       .element(screen.getByPlaceholder(/search/i))
       .toBeInTheDocument();
   });
 
   it("filters meetings by search query", async () => {
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
+    await expect
+      .element(screen.getByText("Sprint Planning"))
+      .toBeInTheDocument();
     await screen.getByPlaceholder(/search/i).fill("sprint");
     await expect
       .element(screen.getByText("Sprint Planning"))
@@ -108,14 +72,14 @@ describe("Meetings", () => {
   });
 
   it("renders 'New Meeting' button", async () => {
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
     await expect
       .element(screen.getByRole("button", { name: /new meeting/i }))
       .toBeInTheDocument();
   });
 
   it("opens Start Meeting modal when button is clicked", async () => {
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
     await screen.getByRole("button", { name: /new meeting/i }).click();
     await expect
       .element(screen.getByText(/start new meeting/i))
@@ -123,28 +87,18 @@ describe("Meetings", () => {
   });
 
   it("shows empty state when no meetings loaded", async () => {
-    mockUseQuery.mockReturnValue({ data: [], isLoading: false, error: null });
-    const screen = await render(<Meetings />);
+    useMeetingsHandler([]);
+    const screen = await renderWithQueryClient(<Meetings />);
     await expect
       .element(screen.getByText("Sprint Planning"))
       .not.toBeInTheDocument();
   });
 
-  it("shows loading state while fetching", async () => {
-    mockUseQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-    });
-    const screen = await render(<Meetings />);
-    // Still renders the layout
-    await expect
-      .element(screen.getByPlaceholder(/search/i))
-      .toBeInTheDocument();
-  });
-
   it("renders a delete button for each meeting row", async () => {
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
+    await expect
+      .element(screen.getByText("Sprint Planning"))
+      .toBeInTheDocument();
     const deleteButtons = screen.getByRole("button", {
       name: /delete meeting/i,
     });
@@ -153,7 +107,10 @@ describe("Meetings", () => {
   });
 
   it("opens the delete confirmation dialog when the delete button is clicked", async () => {
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
+    await expect
+      .element(screen.getByText("Sprint Planning"))
+      .toBeInTheDocument();
     await screen
       .getByRole("button", { name: /delete meeting/i })
       .first()
@@ -169,30 +126,47 @@ describe("Meetings", () => {
       .toBeInTheDocument();
   });
 
-  it("calls deleteMeeting.mutate with the meeting id when the user confirms", async () => {
-    // Track the mutate function passed to the delete mutation specifically.
-    // The component calls useMutation three times: createMeeting, deleteMeeting,
-    // and (in CalendarView pattern only) no others — so deleteMeeting is the
-    // 2nd useMutation call.
-    const mutateFns: Mock[] = [];
-    mockMutationFactory.mockImplementation(() => {
-      const mutate = vi.fn();
-      mutateFns.push(mutate);
-      return { mutate, isPending: false };
-    });
+  it("DELETEs the meeting when the user confirms", async () => {
+    let deletedId: string | undefined;
+    worker.use(
+      http.delete("/api/events/:id", ({ params }) => {
+        deletedId = String(params.id);
+        return HttpResponse.json({ success: true });
+      })
+    );
 
-    const screen = await render(<Meetings />);
+    const screen = await renderWithQueryClient(<Meetings />);
+    await expect
+      .element(screen.getByText("Sprint Planning"))
+      .toBeInTheDocument();
     await screen
       .getByRole("button", { name: /delete meeting/i })
       .first()
       .click();
     await screen.getByRole("button", { name: /^delete$/i }).click();
 
-    const calledMutates = mutateFns.filter((m) => m.mock.calls.length > 0);
-    expect(calledMutates).toHaveLength(1);
-    expect(calledMutates[0]).toHaveBeenCalledWith(
-      "m1",
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await vi.waitFor(() => expect(deletedId).toBe("m1"));
+  });
+
+  it("POSTs a new instant meeting when starting one", async () => {
+    let postBody: Record<string, unknown> | undefined;
+    worker.use(
+      http.post("/api/meetings", async ({ request }) => {
+        postBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          id: "new-meeting",
+          link: "https://virevos.com/meet/new-meeting",
+        });
+      })
+    );
+
+    const screen = await renderWithQueryClient(<Meetings />);
+    await screen.getByRole("button", { name: /new meeting/i }).click();
+    await screen.getByPlaceholder("Team Standup").fill("Kickoff");
+    await screen.getByRole("button", { name: /^start meeting$/i }).click();
+
+    await vi.waitFor(() =>
+      expect(postBody).toEqual(expect.objectContaining({ title: "Kickoff" }))
     );
   });
 });

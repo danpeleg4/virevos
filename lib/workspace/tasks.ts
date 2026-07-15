@@ -1,9 +1,5 @@
-"use server";
-
-import { db } from "@db/db";
-import { cases, tasks } from "@db/schema";
-import { and, eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/supabase/auth";
+import type { TasksDB, TaskUpdateData } from "@db/tasks_db";
 import { Task } from "@/types/tasks";
 import {
   MAX_NOTES,
@@ -17,70 +13,84 @@ import {
 const TASK_PRIORITIES = ["low", "medium", "high"] as const;
 const TASK_STATUSES = ["in-progress", "completed"] as const;
 
-export async function deleteTask(taskId: number) {
+export async function getAllTasks(tasksDb: TasksDB) {
   const user = await getCurrentUser();
-  if (!user?.id) throw new Error("No user");
-  await db
-    .delete(tasks)
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+  return tasksDb.getAllTasksWithCaseName(user.id);
 }
 
-export async function updateTaskStatus(status: string, taskId: number) {
+export async function getTasksByCase(caseId: number, tasksDb: TasksDB) {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+  return tasksDb.getTasksByCase(user.id, caseId);
+}
+
+export async function deleteTask(taskId: number, tasksDb: TasksDB) {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new Error("No user");
+  await tasksDb.deleteTask(taskId, user.id);
+}
+
+export async function updateTaskStatus(
+  status: string,
+  taskId: number,
+  tasksDb: TasksDB
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   const validStatus = requireOneOf(status, "status", TASK_STATUSES);
 
   // get existing task
-  const existing = await db.query.tasks.findFirst({
-    where: eq(tasks.id, taskId),
-  });
+  const existing = await tasksDb.findTaskById(taskId);
 
   if (!existing) {
     throw new Error("Task not found");
   }
 
-  await db
-    .update(tasks)
-    .set({ status: validStatus, completed: validStatus === "completed" })
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
+  await tasksDb.updateTask(taskId, user.id, {
+    status: validStatus,
+    completed: validStatus === "completed",
+  });
 
   return { success: true, id: taskId, status: validStatus };
 }
 
-export async function changePriorityStatus(taskId: number, priority: string) {
+export async function changePriorityStatus(
+  taskId: number,
+  priority: string,
+  tasksDb: TasksDB
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   const validPriority = requireOneOf(priority, "priority", TASK_PRIORITIES);
-  await db
-    .update(tasks)
-    .set({ priority: validPriority })
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
+  await tasksDb.updateTask(taskId, user.id, { priority: validPriority });
 }
 
 export async function updateTaskDueDate(
   taskId: number,
-  dueDate: string | null
+  dueDate: string | null,
+  tasksDb: TasksDB
 ) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
-  await db
-    .update(tasks)
-    .set({ dueDate: dueDate })
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
+  await tasksDb.updateTask(taskId, user.id, { dueDate: dueDate });
 }
 
-export async function updateTask(input: {
-  id: number;
-  title?: string;
-  description?: string;
-  priority?: string;
-  status?: string;
-  dueDate?: string | null;
-}) {
+export async function updateTask(
+  input: {
+    id: number;
+    title?: string;
+    description?: string;
+    priority?: string;
+    status?: string;
+    dueDate?: string | null;
+  },
+  tasksDb: TasksDB
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
-  const updateData: Record<string, unknown> = {};
+  const updateData: TaskUpdateData = {};
   if (input.title !== undefined) {
     updateData.title = requireString(input.title, "title", MAX_TITLE);
   }
@@ -107,10 +117,7 @@ export async function updateTask(input: {
 
   if (Object.keys(updateData).length === 0) return;
 
-  await db
-    .update(tasks)
-    .set(updateData)
-    .where(and(eq(tasks.id, input.id), eq(tasks.userId, user.id)));
+  await tasksDb.updateTask(input.id, user.id, updateData);
 }
 
 type AddTaskInput = Partial<Task> & {
@@ -120,7 +127,8 @@ type AddTaskInput = Partial<Task> & {
 async function resolveCaseId(
   userId: string,
   caseName: string | number | null | undefined,
-  fallbackCaseId: number | null | undefined
+  fallbackCaseId: number | null | undefined,
+  tasksDb: TasksDB
 ): Promise<number | null> {
   if (
     caseName === undefined ||
@@ -132,7 +140,7 @@ async function resolveCaseId(
 
   const maybeId = Number(caseName);
   if (!Number.isNaN(maybeId)) {
-    const byId = await db.select().from(cases).where(eq(cases.id, maybeId));
+    const byId = await tasksDb.getCaseById(maybeId);
     if (!byId.length) throw new ValidationError("Case not found");
     if (byId[0].userId !== userId) {
       throw new ValidationError("Unauthorized case", 403);
@@ -140,10 +148,7 @@ async function resolveCaseId(
     return maybeId;
   }
 
-  const byName = await db
-    .select()
-    .from(cases)
-    .where(eq(cases.name, String(caseName)));
+  const byName = await tasksDb.getCaseByName(String(caseName));
   if (!byName.length) throw new ValidationError("Case not found");
   if (byName[0].userId !== userId) {
     throw new ValidationError("Unauthorized case", 403);
@@ -151,7 +156,10 @@ async function resolveCaseId(
   return byName[0].id;
 }
 
-export async function addProjectTasksAction(task: AddTaskInput): Promise<Task> {
+export async function addProjectTasksAction(
+  task: AddTaskInput,
+  tasksDb: TasksDB
+): Promise<Task> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
@@ -165,7 +173,12 @@ export async function addProjectTasksAction(task: AddTaskInput): Promise<Task> {
     ? requireOneOf(task.priority, "priority", TASK_PRIORITIES)
     : undefined;
 
-  const caseId = await resolveCaseId(user.id, task.caseName, task.caseId);
+  const caseId = await resolveCaseId(
+    user.id,
+    task.caseName,
+    task.caseId,
+    tasksDb
+  );
 
   const dueDate =
     task.dueDate && String(task.dueDate).trim() !== ""
@@ -183,6 +196,5 @@ export async function addProjectTasksAction(task: AddTaskInput): Promise<Task> {
     dueDate,
   };
 
-  const newTask = await db.insert(tasks).values(values).returning();
-  return newTask[0];
+  return tasksDb.insertTask(values);
 }

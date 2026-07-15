@@ -1,11 +1,7 @@
-"use server";
-
 import { getCurrentUser } from "./supabase/auth";
 import { createServerSupabase } from "./supabase/server";
-import { db } from "@db/db";
-import { users } from "@db/schema";
-import { eq } from "drizzle-orm";
-import { uploadFile, getSignedUrl, deleteFile } from "./storage";
+import type { UserDB } from "@db/user_db";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
 import {
   ValidationError,
   requireString,
@@ -40,51 +36,38 @@ const AVATAR_EXTENSIONS: Record<(typeof ALLOWED_AVATAR_TYPES)[number], string> =
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB
 const AVATAR_URL_TTL = 60 * 60; // signed URL valid for 1 hour
 
-export async function getProductUpdatesPreference() {
+export async function getProductUpdatesPreference(userDb: UserDB) {
   const user = await getCurrentUser();
   if (!user?.id) return false;
 
-  const [row] = await db
-    .select({
-      productUpdates: users.productUpdates,
-    })
-    .from(users)
-    .where(eq(users.userId, user.id));
+  const [row] = await userDb.getProductUpdates(user.id);
 
   return row.productUpdates;
 }
 
-export async function updateProductUpdatesPreference(enabled: boolean) {
+export async function updateProductUpdatesPreference(
+  enabled: boolean,
+  userDb: UserDB
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
   if (typeof enabled !== "boolean") {
     throw new ValidationError("enabled must be a boolean");
   }
 
-  await db
-    .update(users)
-    .set({ productUpdates: enabled })
-    .where(eq(users.userId, user.id));
+  await userDb.setProductUpdates(user.id, enabled);
 
   return { enabled };
 }
 
-export async function changeRecordingStatus() {
+export async function changeRecordingStatus(userDb: UserDB) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
 
   try {
-    const [userData] = await db
-      .select()
-      .from(users)
-      .where(eq(users.userId, user.id));
+    const [userData] = await userDb.getUserRow(user.id);
     const recordingStatus = userData.recordingStatus;
-    await db
-      .update(users)
-      .set({
-        recordingStatus: !recordingStatus,
-      })
-      .where(eq(users.userId, user.id));
+    await userDb.setRecordingStatus(user.id, !recordingStatus);
   } catch (err) {
     console.error(err);
   }
@@ -95,7 +78,9 @@ export async function changeRecordingStatus() {
  * bucket, persists its path, and returns a freshly signed URL for display.
  */
 export async function uploadAvatar(
-  formData: FormData
+  formData: FormData,
+  userDb: UserDB,
+  storage: StorageClientInterface
 ): Promise<{ url: string }> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
@@ -119,52 +104,50 @@ export async function uploadAvatar(
   }
 
   // Look up any existing avatar so we can clean it up after a successful upload.
-  const [existing] = await db
-    .select({ avatarPath: users.avatarPath })
-    .from(users)
-    .where(eq(users.userId, user.id));
+  const [existing] = await userDb.getAvatarPath(user.id);
 
   const buffer = Buffer.from(await file.arrayBuffer());
   // A unique filename per upload sidesteps any CDN caching of a reused path.
   const path = `${user.id}/avatar-${Date.now()}.${AVATAR_EXTENSIONS[type]}`;
 
-  await uploadFile(AVATAR_BUCKET, path, buffer, file.type);
-  await db
-    .update(users)
-    .set({ avatarPath: path })
-    .where(eq(users.userId, user.id));
+  await storage.uploadFile(AVATAR_BUCKET, path, buffer, file.type);
+  await userDb.setAvatarPath(user.id, path);
 
   if (existing?.avatarPath && existing.avatarPath !== path) {
     try {
-      await deleteFile(AVATAR_BUCKET, existing.avatarPath);
+      await storage.deleteFile(AVATAR_BUCKET, existing.avatarPath);
     } catch (err) {
       // A leftover old avatar is harmless; don't fail the upload over it.
       console.error("Failed to remove previous avatar", err);
     }
   }
 
-  const url = await getSignedUrl(AVATAR_BUCKET, path, AVATAR_URL_TTL);
+  const url = await storage.getSignedUrl(AVATAR_BUCKET, path, AVATAR_URL_TTL);
   return { url };
 }
 
 /** Returns a signed URL for the current user's avatar, or null if none set. */
-export async function getAvatarUrl(): Promise<{ url: string | null }> {
+export async function getAvatarUrl(
+  userDb: UserDB,
+  storage: StorageClientInterface
+): Promise<{ url: string | null }> {
   const user = await getCurrentUser();
   if (!user?.id) return { url: null };
 
-  const [row] = await db
-    .select({ avatarPath: users.avatarPath })
-    .from(users)
-    .where(eq(users.userId, user.id));
+  const [row] = await userDb.getAvatarPath(user.id);
 
   if (!row?.avatarPath) return { url: null };
 
-  const url = await getSignedUrl(AVATAR_BUCKET, row.avatarPath, AVATAR_URL_TTL);
+  const url = await storage.getSignedUrl(
+    AVATAR_BUCKET,
+    row.avatarPath,
+    AVATAR_URL_TTL
+  );
   return { url };
 }
 
 /** Returns the current user's editable profile fields. */
-export async function getUserProfile(): Promise<UserProfile> {
+export async function getUserProfile(userDb: UserDB): Promise<UserProfile> {
   const user = await getCurrentUser();
   const empty: UserProfile = {
     name: "",
@@ -175,16 +158,7 @@ export async function getUserProfile(): Promise<UserProfile> {
   };
   if (!user?.id) return empty;
 
-  const [row] = await db
-    .select({
-      name: users.name,
-      email: users.email,
-      jobTitle: users.jobTitle,
-      company: users.company,
-      bio: users.bio,
-    })
-    .from(users)
-    .where(eq(users.userId, user.id));
+  const [row] = await userDb.getProfileRow(user.id);
 
   return {
     name: row?.name ?? (user.user_metadata?.name as string | undefined) ?? "",
@@ -201,7 +175,8 @@ export async function getUserProfile(): Promise<UserProfile> {
  * everywhere the authenticated user is read (e.g. the app header).
  */
 export async function updateProfile(
-  input: UpdateProfileInput
+  input: UpdateProfileInput,
+  userDb: UserDB
 ): Promise<UserProfile> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
@@ -212,10 +187,7 @@ export async function updateProfile(
   const company = optionalString(input.company, "company", MAX_SHORT) ?? null;
   const bio = optionalString(input.bio, "bio", MAX_BIO) ?? null;
 
-  await db
-    .update(users)
-    .set({ name, jobTitle, company, bio })
-    .where(eq(users.userId, user.id));
+  await userDb.updateProfileRow(user.id, { name, jobTitle, company, bio });
 
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.updateUser({ data: { name } });
@@ -286,15 +258,12 @@ export async function changePassword(
   return { success: true };
 }
 
-export async function ensureUserRow() {
+export async function ensureUserRow(userDb: UserDB) {
   const user = await getCurrentUser();
   if (!user?.id) return;
 
   const email = user.email ?? "";
   const name = (user.user_metadata?.name as string | undefined) ?? "";
 
-  await db
-    .insert(users)
-    .values({ userId: user.id, email, name })
-    .onConflictDoNothing({ target: users.userId });
+  await userDb.insertUserIfMissing(user.id, email, name);
 }

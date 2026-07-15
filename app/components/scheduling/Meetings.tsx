@@ -49,8 +49,6 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Event } from "@/types/meeting";
-import { createInstantMeeting } from "@/lib/workspace/meetings";
-import { deleteEventFromCalendar } from "@/lib/workspace/calendar";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 
@@ -115,7 +113,10 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   });
 
   const createMeeting = useMutation({
-    mutationFn: async () => createInstantMeeting(meetingName),
+    mutationFn: async () => {
+      const res = await axios.post("/api/meetings", { title: meetingName });
+      return res.data;
+    },
     onSuccess: (data) => {
       if (!data?.id || !data?.link) return;
       setMeetingLink(data.link);
@@ -124,7 +125,10 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   });
 
   const deleteMeeting = useMutation({
-    mutationFn: async (id: string) => deleteEventFromCalendar(id),
+    mutationFn: async (id: string) => {
+      const res = await axios.delete(`/api/events/${id}`);
+      return res.data;
+    },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["meetings"] });
       const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);

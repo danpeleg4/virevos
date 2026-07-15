@@ -1,21 +1,49 @@
-import OpenAI from "openai";
+import type OpenAI from "openai";
 import { CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { addAClient, updateExistingClient } from "@/lib/workspace/clients";
+import type { ClientsDB } from "@db/clients_db";
 import { meetingTranscriptSemanticSearch } from "@/lib/workspace/meetings";
+import type { MeetingsDB } from "@db/meetings_db";
+import type { OpenAIClientInterface } from "@/api_client/openai_client";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
 import { createCase, updateCase } from "@/lib/workspace/cases";
+import type { CasesDB } from "@db/cases_db";
+import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { BillingDB } from "@db/billing_db";
 import { addProjectTasksAction, updateTask } from "@/lib/workspace/tasks";
+import type { TasksDB } from "@db/tasks_db";
 import { addMeetingToCalendar, updateEvent } from "@/lib/workspace/calendar";
+import type { CalendarDB } from "@db/calendar_db";
+import type { GraphCalendarServiceInterface } from "@/api_client/ms_graph/graph_calendar_service";
+import type { OutlookDB } from "@db/outlook_db";
+import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import { getEmailData, getRecentEmails } from "@/lib/emails";
+import type { EmailsDB } from "@db/emails_db";
 import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { Event } from "@/types/meeting";
 
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export const MODEL = "gpt-5";
 export const MAX_STEPS = 5;
+
+/** Dependency bundle for executeTool — positional threading isn't practical
+ *  across this many tool branches, so callers assemble this once from
+ *  singletons and pass it through. */
+export interface AiToolDeps {
+  clientsDb: ClientsDB;
+  casesDb: CasesDB;
+  tasksDb: TasksDB;
+  calendarDb: CalendarDB;
+  meetingsDb: MeetingsDB;
+  emailsDb: EmailsDB;
+  planLimitsDb: PlanLimitsDB;
+  billingDb: BillingDB;
+  outlookDb: OutlookDB;
+  openaiClient: OpenAIClientInterface;
+  storage: StorageClientInterface;
+  graphCalendar: GraphCalendarServiceInterface;
+  graphAuthService: GraphAuthServiceInterface;
+}
 
 export const tools: OpenAI.Responses.Tool[] = [
   {
@@ -301,10 +329,16 @@ export const tools: OpenAI.Responses.Tool[] = [
 
 export async function executeTool(
   name: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  deps: AiToolDeps
 ): Promise<unknown> {
   if (name === "addClient") {
-    const res = await addAClient(args as unknown as CreateClientInput);
+    const res = await addAClient(
+      args as unknown as CreateClientInput,
+      deps.clientsDb,
+      deps.planLimitsDb,
+      deps.billingDb
+    );
     return {
       kind: "clients_updated",
       client: res,
@@ -312,14 +346,24 @@ export async function executeTool(
     };
   }
   if (name === "meetingTranscriptSemanticSearch") {
-    const res = await meetingTranscriptSemanticSearch(args.text as string);
+    const res = await meetingTranscriptSemanticSearch(
+      args.text as string,
+      deps.meetingsDb,
+      deps.openaiClient,
+      deps.storage
+    );
     return {
       kind: "meeting_data",
       message: res.join("\n"),
     };
   }
   if (name === "createCase") {
-    const res = await createCase(args as unknown as Case);
+    const res = await createCase(
+      args as unknown as Case,
+      deps.casesDb,
+      deps.planLimitsDb,
+      deps.billingDb
+    );
     return {
       kind: "case_created",
       case: res,
@@ -327,7 +371,10 @@ export async function executeTool(
     };
   }
   if (name === "updateClient") {
-    await updateExistingClient(args as unknown as UpdateClientInput);
+    await updateExistingClient(
+      args as unknown as UpdateClientInput,
+      deps.clientsDb
+    );
     return {
       kind: "client_updated",
       message: "Client updated successfully",
@@ -342,7 +389,8 @@ export async function executeTool(
         status?: string;
         dueDate?: string;
         priority?: string;
-      }
+      },
+      deps.casesDb
     );
     return {
       kind: "case_updated",
@@ -350,7 +398,10 @@ export async function executeTool(
     };
   }
   if (name === "createTask") {
-    const res = await addProjectTasksAction(args as unknown as Task);
+    const res = await addProjectTasksAction(
+      args as unknown as Task,
+      deps.tasksDb
+    );
     return {
       kind: "task_created",
       task: res,
@@ -366,7 +417,8 @@ export async function executeTool(
         priority?: string;
         status?: string;
         dueDate?: string | null;
-      }
+      },
+      deps.tasksDb
     );
     return {
       kind: "task_updated",
@@ -374,7 +426,13 @@ export async function executeTool(
     };
   }
   if (name === "createEvent") {
-    const res = await addMeetingToCalendar(args as unknown as Event);
+    const res = await addMeetingToCalendar(
+      args as unknown as Event,
+      deps.calendarDb,
+      deps.graphCalendar,
+      deps.outlookDb,
+      deps.graphAuthService
+    );
     return {
       kind: "event_created",
       event: res,
@@ -390,7 +448,11 @@ export async function executeTool(
         dateTime?: string;
         duration?: number;
         status?: string;
-      }
+      },
+      deps.calendarDb,
+      deps.graphCalendar,
+      deps.outlookDb,
+      deps.graphAuthService
     );
     return {
       kind: "event_updated",
@@ -398,7 +460,12 @@ export async function executeTool(
     };
   }
   if (name === "getEmailData") {
-    const hits = await getEmailData(args.text as string);
+    const hits = await getEmailData(
+      args.text as string,
+      deps.emailsDb,
+      deps.openaiClient,
+      deps.storage
+    );
     return {
       kind: "email_data",
       emails: hits,
@@ -409,7 +476,7 @@ export async function executeTool(
     };
   }
   if (name === "getRecentEmails") {
-    const hits = await getRecentEmails(args.limit as number);
+    const hits = await getRecentEmails(args.limit as number, deps.emailsDb);
     return {
       kind: "recent_emails",
       emails: hits,

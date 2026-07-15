@@ -59,14 +59,6 @@ import type {
   ScheduleDetails,
 } from "@/types/communications";
 import type { PortalChatConversation } from "@/types/portal";
-import {
-  deleteOutlookMessage,
-  sendOutlookEmail,
-  syncOutlookInbox,
-  updateOutlookMessage,
-} from "@/lib/outlook/outlook_actions";
-import { deletePortalChat, updatePortalChat } from "@/lib/portal_chat";
-import { createScheduledEmail } from "@/lib/scheduled_emails";
 
 function formatTimestamp(ts: Date | string): string {
   const date = typeof ts === "string" ? new Date(ts) : ts;
@@ -290,7 +282,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      await syncOutlookInbox();
+      await axios.post("/api/outlook/sync");
       await refetch();
     } catch (err) {
       console.error("Sync failed:", err);
@@ -358,7 +350,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       }
 
       try {
-        await updatePortalChat(clientId, action);
+        await axios.patch(`/api/portal-chat/${clientId}`, { action });
         // Mark Unread: drop selection so the chat pane GET doesn't immediately
         // re-mark as read on its next poll.
         if (action === "markUnread" && selectedMessage?.id === id) {
@@ -394,7 +386,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     }
 
     try {
-      await updateOutlookMessage(Number(id), action);
+      await axios.patch(`/api/outlook/messages/${id}`, { action });
     } catch {
       // Revert optimistic update on failure
       queryClient.setQueryData(emailsQueryKey, previousData);
@@ -430,7 +422,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       );
       if (!confirmed) return;
       try {
-        await deletePortalChat(clientId);
+        await axios.delete(`/api/portal-chat/${clientId}`);
         if (selectedMessage?.id === id) setSelectedMessage(null);
         await queryClient.invalidateQueries({
           queryKey: ["portal-chat-conversations"],
@@ -444,7 +436,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       return;
     }
     try {
-      await deleteOutlookMessage(Number(id));
+      await axios.delete(`/api/outlook/messages/${id}`);
       removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
     } catch (err) {
@@ -477,7 +469,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         setPendingAttachments([]);
         setPendingSchedule(null);
       } else {
-        await sendOutlookEmail({
+        await axios.post("/api/outlook/messages", {
           to: selectedMessage.fromEmail || selectedMessage.from,
           subject: `Re: ${selectedMessage.subject || ""}`,
           bodyHtml: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
@@ -1294,7 +1286,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   onSend={async (replyHtml: string) => {
                     setIsSending(true);
                     try {
-                      await sendOutlookEmail({
+                      await axios.post("/api/outlook/messages", {
                         to: selectedMessage.fromEmail || selectedMessage.from,
                         subject: `Re: ${selectedMessage.subject || ""}`,
                         bodyHtml: replyHtml,

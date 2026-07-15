@@ -1,37 +1,29 @@
 import { POST } from "@/app/api/webhooks/stripe/route";
 import { NextRequest } from "next/server";
+import {
+  handleInvoicePaymentFailed,
+  handleInvoicePaymentSucceeded,
+  handleSubscriptionDeleted,
+  handleSubscriptionUpsert,
+} from "@/lib/workspace/billing";
+import { billingDrizzle } from "@db/billing_db";
 
-const mockUpdatePlanLimits = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/lib/workspace/billing", () => ({
-  updatePlanLimits: (...args: unknown[]) => mockUpdatePlanLimits(...args),
-  PLAN_RANK: { starter: 0, professional: 1, business: 2 },
+  handleInvoicePaymentFailed: vi.fn(),
+  handleInvoicePaymentSucceeded: vi.fn(),
+  handleSubscriptionDeleted: vi.fn(),
+  handleSubscriptionUpsert: vi.fn(),
 }));
 
-const mockDbWhere = vi.fn().mockResolvedValue(undefined);
-const mockDbSet = vi.fn(() => ({ where: mockDbWhere }));
-const mockDbLimit = vi.fn().mockResolvedValue([{ userId: "user_1" }]);
-const mockDbSelectWhere = vi.fn(() => ({ limit: mockDbLimit }));
-const mockDbFrom = vi.fn(() => ({ where: mockDbSelectWhere }));
-
-vi.mock("@db/db", () => ({
-  db: {
-    update: vi.fn(() => ({ set: mockDbSet })),
-    select: vi.fn(() => ({ from: mockDbFrom })),
-  },
+vi.mock("@db/billing_db", () => ({
+  // sentinel — the route must pass this exact instance into the handlers
+  billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 
 const mockConstructEvent = vi.fn();
-const mockSubscriptionsRetrieve = vi.fn();
-
-vi.mock("@/lib/stripe", async () => ({
-  ...(await vi.importActual<typeof import("@/lib/stripe")>("@/lib/stripe")),
-  stripe: {
-    webhooks: {
-      constructEvent: (...args: unknown[]) => mockConstructEvent(...args),
-    },
-    subscriptions: {
-      retrieve: (...args: unknown[]) => mockSubscriptionsRetrieve(...args),
-    },
+vi.mock("@/api_client/stripe_client", () => ({
+  stripeApiClient: {
+    constructWebhookEvent: (...args: unknown[]) => mockConstructEvent(...args),
   },
 }));
 
@@ -55,7 +47,6 @@ const baseSubscription = {
   customer: "cus_123",
   status: "active",
   items: { data: [{ price: { id: "price_pro" } }] },
-  current_period_end: Math.floor(Date.now() / 1000) + 86400 * 30,
   cancel_at_period_end: false,
 };
 
@@ -63,11 +54,7 @@ let consoleErrorSpy: MockInstance;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY = "price_pro";
-  process.env.STRIPE_PRICE_BUSINESS_MONTHLY = "price_biz";
-  mockDbSet.mockReturnValue({ where: mockDbWhere });
-  mockDbLimit.mockResolvedValue([{ userId: "user_1" }]);
-  mockUpdatePlanLimits.mockResolvedValue(undefined);
+  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -79,6 +66,7 @@ describe("POST /api/webhooks/stripe", () => {
   it("returns 400 when stripe-signature header is missing", async () => {
     const res = await POST(makeRequest("{}", null));
     expect(res.status).toBe(400);
+    expect(mockConstructEvent).not.toHaveBeenCalled();
   });
 
   it("returns 400 when signature verification fails", async () => {
@@ -87,61 +75,94 @@ describe("POST /api/webhooks/stripe", () => {
     });
     const res = await POST(makeRequest("{}", "bad-sig"));
     expect(res.status).toBe(400);
+    expect(handleSubscriptionUpsert).not.toHaveBeenCalled();
   });
 
-  it("handles customer.subscription.created and updates DB", async () => {
+  it("verifies the signature against the webhook secret", async () => {
+    mockConstructEvent.mockReturnValue({
+      type: "payment_intent.created",
+      data: { object: {} },
+    });
+
+    await POST(makeRequest("payload-body"));
+
+    expect(mockConstructEvent).toHaveBeenCalledWith(
+      "payload-body",
+      "valid-sig",
+      "whsec_test"
+    );
+  });
+
+  it("dispatches subscription.created to handleSubscriptionUpsert with the wired db", async () => {
     mockConstructEvent.mockReturnValue({
       type: "customer.subscription.created",
       data: { object: baseSubscription },
     });
+
     const res = await POST(makeRequest("{}"));
+
     expect(res.status).toBe(200);
-    expect(mockDbSet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        plan: "professional",
-        status: "active",
-        stripeSubscriptionId: "sub_123",
-      })
+    expect(handleSubscriptionUpsert).toHaveBeenCalledWith(
+      baseSubscription,
+      billingDrizzle
     );
   });
 
-  it("handles customer.subscription.updated and updates DB", async () => {
+  it("dispatches subscription.updated to handleSubscriptionUpsert", async () => {
     mockConstructEvent.mockReturnValue({
       type: "customer.subscription.updated",
-      data: { object: { ...baseSubscription, status: "past_due" } },
+      data: { object: baseSubscription },
     });
-    const res = await POST(makeRequest("{}"));
-    expect(res.status).toBe(200);
-    expect(mockDbSet).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "past_due" })
+
+    await POST(makeRequest("{}"));
+
+    expect(handleSubscriptionUpsert).toHaveBeenCalledWith(
+      baseSubscription,
+      billingDrizzle
     );
   });
 
-  it("handles customer.subscription.deleted and resets plan to starter", async () => {
+  it("dispatches subscription.deleted to handleSubscriptionDeleted", async () => {
     mockConstructEvent.mockReturnValue({
       type: "customer.subscription.deleted",
       data: { object: baseSubscription },
     });
-    const res = await POST(makeRequest("{}"));
-    expect(res.status).toBe(200);
-    expect(mockDbSet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        plan: "starter",
-        status: "canceled",
-        stripeSubscriptionId: null,
-      })
+
+    await POST(makeRequest("{}"));
+
+    expect(handleSubscriptionDeleted).toHaveBeenCalledWith(
+      baseSubscription,
+      billingDrizzle
     );
   });
 
-  it("handles invoice.payment_failed and sets status to past_due", async () => {
+  it("dispatches invoice.payment_failed to handleInvoicePaymentFailed", async () => {
+    const invoice = { customer: "cus_123" };
     mockConstructEvent.mockReturnValue({
       type: "invoice.payment_failed",
-      data: { object: { customer: "cus_123" } },
+      data: { object: invoice },
     });
-    const res = await POST(makeRequest("{}"));
-    expect(res.status).toBe(200);
-    expect(mockDbSet).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "past_due" })
+
+    await POST(makeRequest("{}"));
+
+    expect(handleInvoicePaymentFailed).toHaveBeenCalledWith(
+      invoice,
+      billingDrizzle
+    );
+  });
+
+  it("dispatches invoice.payment_succeeded to handleInvoicePaymentSucceeded", async () => {
+    const invoice = { customer: "cus_123" };
+    mockConstructEvent.mockReturnValue({
+      type: "invoice.payment_succeeded",
+      data: { object: invoice },
+    });
+
+    await POST(makeRequest("{}"));
+
+    expect(handleInvoicePaymentSucceeded).toHaveBeenCalledWith(
+      invoice,
+      billingDrizzle
     );
   });
 
@@ -150,53 +171,25 @@ describe("POST /api/webhooks/stripe", () => {
       type: "payment_intent.created",
       data: { object: {} },
     });
+
     const res = await POST(makeRequest("{}"));
+
     expect(res.status).toBe(200);
-    expect(mockDbSet).not.toHaveBeenCalled();
+    expect(handleSubscriptionUpsert).not.toHaveBeenCalled();
+    expect(handleSubscriptionDeleted).not.toHaveBeenCalled();
   });
 
-  it("calls updatePlanLimits with correct plan on subscription.created", async () => {
+  it("still returns 200 when a handler throws (Stripe retries otherwise)", async () => {
     mockConstructEvent.mockReturnValue({
       type: "customer.subscription.created",
       data: { object: baseSubscription },
     });
-    await POST(makeRequest("{}"));
-    expect(mockUpdatePlanLimits).toHaveBeenCalledWith("user_1", "professional");
-  });
-
-  it("calls updatePlanLimits with starter on subscription.deleted", async () => {
-    mockConstructEvent.mockReturnValue({
-      type: "customer.subscription.deleted",
-      data: { object: baseSubscription },
-    });
-    await POST(makeRequest("{}"));
-    expect(mockUpdatePlanLimits).toHaveBeenCalledWith("user_1", "starter");
-  });
-
-  it("does not call updatePlanLimits when userId not found", async () => {
-    mockDbLimit.mockResolvedValue([]);
-    mockConstructEvent.mockReturnValue({
-      type: "customer.subscription.deleted",
-      data: { object: baseSubscription },
-    });
-    await POST(makeRequest("{}"));
-    expect(mockUpdatePlanLimits).not.toHaveBeenCalled();
-  });
-
-  it("derives business plan from business price ID", async () => {
-    mockConstructEvent.mockReturnValue({
-      type: "customer.subscription.created",
-      data: {
-        object: {
-          ...baseSubscription,
-          items: { data: [{ price: { id: "price_biz" } }] },
-        },
-      },
-    });
-    const res = await POST(makeRequest("{}"));
-    expect(res.status).toBe(200);
-    expect(mockDbSet).toHaveBeenCalledWith(
-      expect.objectContaining({ plan: "business" })
+    (handleSubscriptionUpsert as Mock).mockRejectedValueOnce(
+      new Error("db down")
     );
+
+    const res = await POST(makeRequest("{}"));
+
+    expect(res.status).toBe(200);
   });
 });

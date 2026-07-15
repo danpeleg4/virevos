@@ -21,11 +21,6 @@ import { EventDetailsDialog } from "./EventDetailsDialog";
 import { BookEventDialog } from "@/app/components/BookEventDialog";
 import type { Event } from "@/types/meeting";
 import axios from "axios";
-import {
-  addMeetingToCalendar,
-  deleteEventFromCalendar,
-  updateEventDateTime,
-} from "@/lib/workspace/calendar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -94,7 +89,10 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
   });
 
   const addMeetingMutation = useMutation({
-    mutationFn: async (meeting: Event) => addMeetingToCalendar(meeting),
+    mutationFn: async (meeting: Event) => {
+      const res = await axios.post("/api/events", meeting);
+      return res.data;
+    },
     onMutate: async (newMeeting) => {
       await queryClient.cancelQueries({ queryKey: ["meetings"] });
       const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
@@ -119,13 +117,21 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
   });
 
   const deleteEvent = useMutation({
-    mutationFn: async (id: string) => deleteEventFromCalendar(id),
+    mutationFn: async (id: string) => {
+      const res = await axios.delete(`/api/events/${id}`);
+      return res.data;
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
   });
 
   const updateEvent = useMutation({
-    mutationFn: async ({ id, dateTime }: { id: string; dateTime: Date }) =>
-      updateEventDateTime(id, dateTime),
+    mutationFn: async ({ id, dateTime }: { id: string; dateTime: Date }) => {
+      const res = await axios.patch(`/api/events/${id}`, {
+        type: "reschedule",
+        data: { dateTime: dateTime.toISOString() },
+      });
+      return res.data;
+    },
     onMutate: async ({ id, dateTime }) => {
       await queryClient.cancelQueries({ queryKey: ["meetings"] });
       const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);

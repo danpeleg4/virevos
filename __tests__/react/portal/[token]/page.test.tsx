@@ -1,16 +1,8 @@
 import React from "react";
-import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-function renderWithClient(ui: React.ReactElement) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
-  });
-  return render(
-    <QueryClientProvider client={client}>{ui}</QueryClientProvider>
-  );
-}
+import { http, HttpResponse, delay } from "msw";
+import { worker } from "../../../msw/worker";
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ token: "test-token-abc" }),
@@ -20,70 +12,7 @@ vi.mock("@/lib/util/date_utils", () => ({
   parseDateOnlyString: vi.fn((s: string) => new Date(s)),
 }));
 
-// Server actions pull in the DB layer, which is unavailable in the browser — stub them.
-vi.mock("@/lib/portal_chat", () => ({
-  sendPortalChatMessage: vi.fn(() =>
-    Promise.resolve({
-      id: 1,
-      senderType: "client",
-      body: "x",
-      readAt: null,
-      createdAt: new Date().toISOString(),
-    })
-  ),
-}));
-
-vi.mock("@/lib/portal_bookings", () => ({
-  createPortalBooking: vi.fn(() =>
-    Promise.resolve({ success: true, bookingId: 1 })
-  ),
-}));
-
-vi.mock("@/lib/portal_file_uploads", () => ({
-  uploadPortalFile: vi.fn(() =>
-    Promise.resolve({
-      id: 1,
-      name: "report.pdf",
-      size: 4,
-      mimeType: "application/pdf",
-      path: "p",
-      createdAt: new Date().toISOString(),
-      caseId: 7,
-    })
-  ),
-}));
-
-vi.mock("@/lib/portal_document_uploads", () => ({
-  uploadDocumentRequestItem: vi.fn(() =>
-    Promise.resolve({
-      itemId: 1,
-      status: "uploaded",
-      file: {
-        id: 1,
-        name: "doc.pdf",
-        size: 4,
-        mimeType: "application/pdf",
-        path: "p",
-      },
-    })
-  ),
-}));
-
-vi.mock("axios", () => {
-  const axios = {
-    get: vi.fn(),
-    post: vi.fn(() => Promise.resolve({ data: {}, status: 200 })),
-    isAxiosError: vi.fn(() => false),
-  };
-  return { default: axios, ...axios };
-});
-
-import axios from "axios";
-import { sendPortalChatMessage } from "@/lib/portal_chat";
-import { uploadPortalFile } from "@/lib/portal_file_uploads";
 import PortalPage from "@/app/portal/[token]/page";
-
-const mockedAxiosGet = axios.get as Mock;
 
 interface PortalOverrides {
   cases?: unknown[];
@@ -98,10 +27,9 @@ interface PortalOverrides {
     createdAt: string;
   }>;
   documentRequests?: unknown[];
-  failPortal?: boolean;
 }
 
-function setupAxiosRoutes(overrides: PortalOverrides = {}) {
+function setupPortalHandlers(overrides: PortalOverrides = {}) {
   const portalPayload = {
     client: {
       id: 1,
@@ -114,36 +42,41 @@ function setupAxiosRoutes(overrides: PortalOverrides = {}) {
     bookings: overrides.bookings ?? [],
     documentRequests: overrides.documentRequests ?? [],
   };
-  mockedAxiosGet.mockImplementation(
-    (url: string, config?: { params?: { type?: string } }) => {
-      if (url.endsWith("/chat") || config?.params?.type === "chat") {
-        return Promise.resolve({
-          data: { messages: overrides.chatMessages ?? [] },
-        });
+
+  worker.use(
+    http.get("/api/portal/:token", ({ request }) => {
+      const url = new URL(request.url);
+      const type = url.searchParams.get("type");
+      if (type === "chat") {
+        return HttpResponse.json({ messages: overrides.chatMessages ?? [] });
       }
-      if (overrides.failPortal) {
-        return Promise.reject(new Error("network"));
+      if (type === "availability") {
+        return HttpResponse.json({ slots: [] });
       }
-      return Promise.resolve({ data: portalPayload });
-    }
+      return HttpResponse.json(portalPayload);
+    })
   );
 }
 
 describe("Portal Page", () => {
   beforeEach(() => {
-    mockedAxiosGet.mockReset();
-    setupAxiosRoutes();
+    setupPortalHandlers();
   });
 
   it("renders without crashing", async () => {
-    const { container } = await renderWithClient(<PortalPage />);
+    const { container } = await renderWithQueryClient(<PortalPage />);
     await expect.element(container).toBeInTheDocument();
   });
 
   it("renders loading state initially", async () => {
     // keep the portal query pending so the loading state stays visible
-    mockedAxiosGet.mockImplementation(() => new Promise(() => {}));
-    const screen = await renderWithClient(<PortalPage />);
+    worker.use(
+      http.get("/api/portal/:token", async () => {
+        await delay("infinite");
+        return HttpResponse.json({});
+      })
+    );
+    const screen = await renderWithQueryClient(<PortalPage />);
     await expect
       .element(screen.getByText(/loading your portal/i))
       .toBeInTheDocument();
@@ -158,7 +91,7 @@ describe("Portal Page", () => {
   };
 
   it("renders the workspace-style tab pill buttons after data loads", async () => {
-    const screen = await renderWithClient(<PortalPage />);
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await expect
       .element(tabBar.getByRole("button", { name: /^overview$/i }))
@@ -175,7 +108,7 @@ describe("Portal Page", () => {
   });
 
   it("hides the schedule tab when meeting scheduling is disabled", async () => {
-    const screen = await renderWithClient(<PortalPage />);
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await expect
       .element(tabBar.getByRole("button", { name: /schedule meeting/i }))
@@ -183,13 +116,13 @@ describe("Portal Page", () => {
   });
 
   it("shows the schedule tab when meeting scheduling is enabled", async () => {
-    setupAxiosRoutes({
+    setupPortalHandlers({
       settings: {
         meetingSchedulingEnabled: true,
         availability: { meetingDurations: [30] },
       },
     });
-    const screen = await renderWithClient(<PortalPage />);
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await expect
       .element(tabBar.getByRole("button", { name: /schedule meeting/i }))
@@ -197,7 +130,7 @@ describe("Portal Page", () => {
   });
 
   it("shows count badges on cases, messages and files tabs", async () => {
-    setupAxiosRoutes({
+    setupPortalHandlers({
       cases: [
         {
           id: 1,
@@ -250,7 +183,7 @@ describe("Portal Page", () => {
         },
       ],
     });
-    const screen = await renderWithClient(<PortalPage />);
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await expect
       .element(tabBar.getByRole("button", { name: /^cases\s*2$/i }))
@@ -264,7 +197,7 @@ describe("Portal Page", () => {
   });
 
   it("switches the active tab when a tab pill is clicked", async () => {
-    setupAxiosRoutes({
+    setupPortalHandlers({
       cases: [
         {
           id: 1,
@@ -276,7 +209,7 @@ describe("Portal Page", () => {
         },
       ],
     });
-    const screen = await renderWithClient(<PortalPage />);
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
 
     // Overview tab default: shows "Active Cases" toolbar header
@@ -294,32 +227,45 @@ describe("Portal Page", () => {
   });
 
   it("renders the not-found state when portal data fails to load", async () => {
-    setupAxiosRoutes({ failPortal: true });
-    const screen = await renderWithClient(<PortalPage />);
+    worker.use(
+      http.get("/api/portal/:token", () =>
+        HttpResponse.json({ error: "Portal not found" }, { status: 404 })
+      )
+    );
+    const screen = await renderWithQueryClient(<PortalPage />);
     await expect
       .element(screen.getByText(/portal not found/i))
       .toBeInTheDocument();
   });
 
-  it("sends a chat message via the server action", async () => {
-    setupAxiosRoutes();
-    const screen = await renderWithClient(<PortalPage />);
+  it("sends a chat message via the chat route", async () => {
+    let sentBody: unknown;
+    worker.use(
+      http.post("/api/portal/:token/chat", async ({ request }) => {
+        sentBody = await request.json();
+        return HttpResponse.json({
+          id: 1,
+          senderType: "client",
+          body: (sentBody as { message: string }).message,
+          readAt: null,
+          createdAt: new Date().toISOString(),
+        });
+      })
+    );
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await tabBar.getByRole("button", { name: /^messages$/i }).click();
 
     await screen.getByPlaceholder(/write a message/i).fill("Hello there");
     await screen.getByRole("button", { name: /send/i }).click();
 
-    await vi.waitFor(() =>
-      expect(sendPortalChatMessage).toHaveBeenCalledWith(
-        "test-token-abc",
-        "Hello there"
-      )
-    );
+    await vi.waitFor(() => {
+      expect(sentBody).toEqual({ message: "Hello there" });
+    });
   });
 
   it("uploads a file through the upload mutation", async () => {
-    setupAxiosRoutes({
+    setupPortalHandlers({
       cases: [
         {
           id: 7,
@@ -331,7 +277,26 @@ describe("Portal Page", () => {
         },
       ],
     });
-    const screen = await renderWithClient(<PortalPage />);
+
+    let uploadedToken: string | undefined;
+    let receivedFormData: FormData | undefined;
+    worker.use(
+      http.post("/api/portal/:token/files", async ({ request, params }) => {
+        uploadedToken = String(params.token);
+        receivedFormData = await request.formData();
+        return HttpResponse.json({
+          id: 1,
+          name: "report.pdf",
+          size: 4,
+          mimeType: "application/pdf",
+          path: "p",
+          createdAt: new Date().toISOString(),
+          caseId: 7,
+        });
+      })
+    );
+
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await tabBar.getByRole("button", { name: /^files/i }).click();
 
@@ -342,15 +307,13 @@ describe("Portal Page", () => {
     await fileInput.upload(file);
 
     await vi.waitFor(() => {
-      expect(uploadPortalFile).toHaveBeenCalledWith(
-        "test-token-abc",
-        expect.any(FormData)
-      );
+      expect(uploadedToken).toBe("test-token-abc");
+      expect(receivedFormData?.get("file")).toBeInstanceOf(File);
     });
   });
 
   it("shows the documents-needed tab when requests exist", async () => {
-    setupAxiosRoutes({
+    setupPortalHandlers({
       documentRequests: [
         {
           id: 1,
@@ -375,7 +338,7 @@ describe("Portal Page", () => {
         },
       ],
     });
-    const screen = await renderWithClient(<PortalPage />);
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await tabBar.getByRole("button", { name: /documents needed/i }).click();
     await expect
@@ -384,13 +347,45 @@ describe("Portal Page", () => {
   });
 
   it("shows the date prompt before any availability is requested on the schedule tab", async () => {
-    setupAxiosRoutes({
+    setupPortalHandlers({
       settings: {
         meetingSchedulingEnabled: true,
         availability: { meetingDurations: [30, 60] },
       },
     });
-    const screen = await renderWithClient(<PortalPage />);
+
+    let availabilityCalled = false;
+    worker.use(
+      http.get("/api/portal/:token", ({ request }) => {
+        const url = new URL(request.url);
+        const type = url.searchParams.get("type");
+        if (type === "availability") {
+          availabilityCalled = true;
+          return HttpResponse.json({ slots: [] });
+        }
+        if (type === "chat") {
+          return HttpResponse.json({ messages: [] });
+        }
+        return HttpResponse.json({
+          client: {
+            id: 1,
+            name: "Portal Client",
+            email: "client@example.com",
+          },
+          settings: {
+            title: "Portal",
+            meetingSchedulingEnabled: true,
+            availability: { meetingDurations: [30, 60] },
+          },
+          cases: [],
+          files: [],
+          bookings: [],
+          documentRequests: [],
+        });
+      })
+    );
+
+    const screen = await renderWithQueryClient(<PortalPage />);
     const tabBar = await findTabBar(screen);
     await tabBar.getByRole("button", { name: /schedule meeting/i }).click();
 
@@ -398,14 +393,6 @@ describe("Portal Page", () => {
       .element(screen.getByText(/choose a date to see available slots/i))
       .toBeInTheDocument();
     // The availability query stays disabled until a date is picked
-    const availabilityCall = (axios.get as Mock).mock.calls.find(
-      (args: unknown[]) => {
-        const cfg = args[1];
-        return cfg && typeof cfg === "object" && "params" in cfg
-          ? (cfg.params as { type?: string })?.type === "availability"
-          : false;
-      }
-    );
-    expect(availabilityCall).toBeFalsy();
+    expect(availabilityCalled).toBe(false);
   });
 });

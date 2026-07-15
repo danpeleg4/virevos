@@ -1,54 +1,23 @@
 import React from "react";
-import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
+import { http, HttpResponse } from "msw";
+import { worker } from "../../../msw/worker";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-const mockAxiosPost = vi.fn();
-const mockAxiosGet = vi.fn().mockResolvedValue({ data: [] });
-
-vi.mock("axios", () => {
-  const axios = {
-    post: (...args: unknown[]) => mockAxiosPost(...args),
-    get: (...args: unknown[]) => mockAxiosGet(...args),
-  };
-  return { default: axios, ...axios };
-});
-
-const mockSendOutlookEmail = vi.fn();
-const mockSendAgencyChatMessage = vi.fn();
-
-vi.mock("@/lib/outlook/outlook_actions", () => ({
-  sendOutlookEmail: (...args: unknown[]) => mockSendOutlookEmail(...args),
-}));
-
-vi.mock("@/lib/portal_chat", () => ({
-  sendAgencyChatMessage: (...args: unknown[]) =>
-    mockSendAgencyChatMessage(...args),
-}));
+import { renderWithQueryClient } from "../../../_helpers/render";
 
 import { ComposeMessageDialog } from "@/app/components/communications/ComposeMessageDialog";
 
 const makeQueryClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
-const renderDialog = (
-  open = true,
-  onOpenChange = vi.fn(),
-  onSent = vi.fn()
-) => {
-  const queryClient = makeQueryClient();
-  const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-  return render(
+const renderDialog = (open = true, onOpenChange = vi.fn(), onSent = vi.fn()) =>
+  renderWithQueryClient(
     <ComposeMessageDialog
       open={open}
       onOpenChange={onOpenChange}
       onSent={onSent}
-    />,
-    { wrapper: Wrapper }
+    />
   );
-};
 
 const fileInput = () =>
   page.elementLocator(
@@ -62,10 +31,6 @@ describe("ComposeMessageDialog", () => {
   beforeEach(() => {
     onOpenChange.mockClear();
     onSent.mockClear();
-    mockAxiosPost.mockClear();
-    mockAxiosGet.mockClear();
-    mockSendOutlookEmail.mockReset();
-    mockSendAgencyChatMessage.mockReset();
   });
 
   it("renders dialog when open=true", async () => {
@@ -115,8 +80,15 @@ describe("ComposeMessageDialog", () => {
       .toBeDisabled();
   });
 
-  it("calls sendOutlookEmail server action on email send", async () => {
-    mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
+  it("posts to /api/outlook/messages on email send", async () => {
+    let sentBody: unknown;
+    worker.use(
+      http.post("/api/outlook/messages", async ({ request }) => {
+        sentBody = await request.json();
+        return HttpResponse.json({ success: true });
+      })
+    );
+
     const screen = await renderDialog(true, onOpenChange, onSent);
     await screen
       .getByPlaceholder("recipient@example.com")
@@ -124,14 +96,11 @@ describe("ComposeMessageDialog", () => {
     await screen.getByPlaceholder("Write your message...").fill("Hello there");
     await screen.getByRole("button", { name: /send/i }).click();
     await vi.waitFor(() => {
-      expect(mockSendOutlookEmail).toHaveBeenCalledWith(
-        expect.objectContaining({ to: "test@example.com" })
-      );
+      expect(sentBody).toMatchObject({ to: "test@example.com" });
     });
   });
 
   it("calls onSent after successful email", async () => {
-    mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
     const screen = await renderDialog(true, onOpenChange, onSent);
     await screen
       .getByPlaceholder("recipient@example.com")
@@ -142,7 +111,6 @@ describe("ComposeMessageDialog", () => {
   });
 
   it("calls onOpenChange(false) after successful send", async () => {
-    mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
     const screen = await renderDialog(true, onOpenChange, onSent);
     await screen
       .getByPlaceholder("recipient@example.com")
@@ -218,8 +186,15 @@ describe("ComposeMessageDialog", () => {
       await expect.element(screen.getByRole("list")).not.toBeInTheDocument();
     });
 
-    it("includes attachments in the sendOutlookEmail payload", async () => {
-      mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
+    it("includes attachments in the /api/outlook/messages payload", async () => {
+      let sentBody: { attachments?: unknown[] } | undefined;
+      worker.use(
+        http.post("/api/outlook/messages", async ({ request }) => {
+          sentBody = (await request.json()) as { attachments?: unknown[] };
+          return HttpResponse.json({ success: true });
+        })
+      );
+
       const screen = await renderDialog(true, onOpenChange, onSent);
 
       const file = new File(["hello"], "invoice.pdf", {
@@ -238,22 +213,25 @@ describe("ComposeMessageDialog", () => {
       await screen.getByRole("button", { name: /send/i }).click();
 
       await vi.waitFor(() => {
-        expect(mockSendOutlookEmail).toHaveBeenCalledWith(
+        expect(sentBody?.attachments).toEqual([
           expect.objectContaining({
-            attachments: expect.arrayContaining([
-              expect.objectContaining({
-                name: "invoice.pdf",
-                mimeType: "application/pdf",
-                data: expect.any(String),
-              }),
-            ]),
-          })
-        );
+            name: "invoice.pdf",
+            mimeType: "application/pdf",
+            data: expect.any(String),
+          }),
+        ]);
       });
     });
 
     it("sends without attachments key when no files selected", async () => {
-      mockSendOutlookEmail.mockResolvedValueOnce({ success: true });
+      let sentBody: { attachments?: unknown[] } | undefined;
+      worker.use(
+        http.post("/api/outlook/messages", async ({ request }) => {
+          sentBody = (await request.json()) as { attachments?: unknown[] };
+          return HttpResponse.json({ success: true });
+        })
+      );
+
       const screen = await renderDialog(true, onOpenChange, onSent);
       await screen
         .getByPlaceholder("recipient@example.com")
@@ -262,11 +240,7 @@ describe("ComposeMessageDialog", () => {
       await screen.getByRole("button", { name: /send/i }).click();
 
       await vi.waitFor(() => {
-        const payload = mockSendOutlookEmail.mock.calls[0][0] as Record<
-          string,
-          unknown
-        >;
-        expect(payload.attachments).toBeUndefined();
+        expect(sentBody?.attachments).toBeUndefined();
       });
     });
 

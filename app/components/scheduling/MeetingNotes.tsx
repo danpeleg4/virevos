@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { addProjectTasksAction } from "@/lib/workspace/tasks";
-import { markActionItemAdded } from "@/lib/workspace/meetings";
 import {
   Dialog,
   DialogContent,
@@ -151,7 +149,7 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
   ) {
     setAddingItems((prev) => new Set(prev).add(index));
     try {
-      await addProjectTasksAction({
+      await axios.post("/api/tasks", {
         id: 0,
         userId: "",
         title: item.task,
@@ -163,7 +161,10 @@ export function MeetingNotes({ tabNav }: { tabNav?: React.ReactNode }) {
         createdAt: null,
         updatedAt: null,
       });
-      await markActionItemAdded(selectedNote!.id, index);
+      await axios.patch(`/api/events/${selectedNote!.id}`, {
+        type: "mark-action-item",
+        data: { itemIndex: index },
+      });
       setAddedItems((prev) => new Set(prev).add(index));
       await queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {

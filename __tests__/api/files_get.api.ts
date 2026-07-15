@@ -1,75 +1,113 @@
 import { GET } from "@/app/api/files/[id]/route";
-import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
+import { GET as GET_USER_FILES } from "@/app/api/files/user-files/route";
 import { NextRequest } from "next/server";
-
-// The get-files route was consolidated into [id]/route.ts behind `?type=get-files`.
-function getFilesReq(id = "1") {
-  return new NextRequest(`http://localhost/api/files/${id}?type=get-files`);
-}
+import { getCurrentUser } from "@/lib/supabase/auth";
+import { getCaseFiles, getUserFiles } from "@/lib/workspace/cases";
+import { casesDrizzle } from "@db/cases_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@db/db", () => ({
-  db: {
-    select: vi.fn(),
-  },
+vi.mock("@/lib/workspace/cases", () => ({
+  deleteCaseFile: vi.fn(),
+  downloadCaseFile: vi.fn(),
+  getCaseFiles: vi.fn(),
+  getUserFiles: vi.fn(),
 }));
 
-// The consolidated [id] route imports the storage layer at module load, which
-// builds a Supabase client — stub it so import doesn't require live env vars.
-vi.mock("@/lib/storage", () => ({ downloadFile: vi.fn() }));
+vi.mock("@db/cases_db", () => ({
+  // sentinel — the routes must pass this exact instance into the lib fns
+  casesDrizzle: { __sentinel: "casesDrizzle" },
+}));
 
-vi.mock("@/lib/supabase/supabase", () => ({ FILES_BUCKET: "projectFiles" }));
+vi.mock("@/api_client/supabase_storage_client", () => ({
+  supabaseStorageClient: { __sentinel: "supabaseStorageClient" },
+}));
+
+function makeCtx(id: string) {
+  return { params: Promise.resolve({ id }) };
+}
+
+const getFilesRequest = (id: string) =>
+  new NextRequest(`http://localhost/api/files/${id}?type=get-files`);
+
+let consoleErrorSpy: MockInstance;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
+});
 
 describe("GET /api/files/[id]?type=get-files", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  function mockCtx(id: string) {
-    return {
-      params: Promise.resolve({ id }),
-    };
-  }
-
-  it("returns 401 if user is not authenticated", async () => {
+  it("returns 401 when unauthenticated", async () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
 
-    const res = await GET(getFilesReq(), mockCtx("1"));
+    const res = await GET(getFilesRequest("5"), makeCtx("5"));
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ error: "Unauthorized" });
+    expect(getCaseFiles).not.toHaveBeenCalled();
   });
 
-  it("returns 400 if caseId is invalid", async () => {
-    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
-
-    const res = await GET(getFilesReq("abc"), mockCtx("abc"));
+  it("returns 400 for an invalid id", async () => {
+    const res = await GET(getFilesRequest("abc"), makeCtx("abc"));
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Invalid fileId" });
   });
 
-  it("returns files for a valid caseId", async () => {
-    (getCurrentUser as Mock).mockResolvedValue({ id: "user_1" });
+  it("returns 400 when no type is provided", async () => {
+    const res = await GET(
+      new NextRequest("http://localhost/api/files/5"),
+      makeCtx("5")
+    );
 
-    const mockFiles = [
-      { id: 1, projectId: 10, name: "file1.pdf" },
-      { id: 2, projectId: 10, name: "file2.pdf" },
-    ];
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "No type found" });
+  });
 
-    (db.select as Mock).mockReturnValue({
-      from: () => ({
-        where: () => Promise.resolve(mockFiles),
-      }),
-    });
+  it("returns the case files from the wired db", async () => {
+    const files = [{ id: 7, name: "contract.pdf", caseId: 5 }];
+    (getCaseFiles as Mock).mockResolvedValueOnce(files);
 
-    const res = await GET(getFilesReq("10"), mockCtx("10"));
+    const res = await GET(getFilesRequest("5"), makeCtx("5"));
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual(mockFiles);
+    expect(await res.json()).toEqual(files);
+    expect(getCaseFiles).toHaveBeenCalledWith(5, casesDrizzle);
+  });
+});
+
+describe("GET /api/files/user-files", () => {
+  it("returns 401 when unauthenticated", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+
+    const res = await GET_USER_FILES();
+
+    expect(res.status).toBe(401);
+    expect(getUserFiles).not.toHaveBeenCalled();
+  });
+
+  it("returns the user's files from the wired db", async () => {
+    const files = [{ id: 7, name: "contract.pdf", caseName: "Estate Case" }];
+    (getUserFiles as Mock).mockResolvedValueOnce(files);
+
+    const res = await GET_USER_FILES();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ files });
+    expect(getUserFiles).toHaveBeenCalledWith(casesDrizzle);
+  });
+
+  it("returns 500 when the query fails", async () => {
+    (getUserFiles as Mock).mockRejectedValueOnce(new Error("db down"));
+
+    const res = await GET_USER_FILES();
+
+    expect(res.status).toBe(500);
   });
 });

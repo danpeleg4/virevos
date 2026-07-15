@@ -19,7 +19,6 @@ import { task_percentage } from "@/lib/util/task_percentage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
-import { updateTaskStatus } from "@/lib/workspace/tasks";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
 export default function Dashboard() {
@@ -83,7 +82,7 @@ export default function Dashboard() {
       status: string;
       taskId: number;
     }) => {
-      await updateTaskStatus(status, taskId);
+      await axios.patch(`/api/tasks/${taskId}`, { status });
     },
 
     onMutate: async ({ status, taskId }) => {

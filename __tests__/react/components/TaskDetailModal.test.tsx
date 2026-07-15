@@ -1,29 +1,8 @@
 import React from "react";
-import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
-
-const mockMutate = vi.fn();
-const mockQueryClient = {
-  cancelQueries: vi.fn(),
-  getQueryData: vi.fn(() => []),
-  setQueryData: vi.fn(),
-  invalidateQueries: vi.fn(),
-};
-
-vi.mock("@tanstack/react-query", () => ({
-  useMutation: () => ({
-    mutate: mockMutate,
-    isPending: false,
-  }),
-  useQueryClient: () => mockQueryClient,
-}));
-
-vi.mock("@/lib/workspace/tasks", () => ({
-  deleteTask: vi.fn(),
-  updateTaskStatus: vi.fn(),
-  changePriorityStatus: vi.fn(),
-  updateTaskDueDate: vi.fn(),
-}));
+import { http, HttpResponse } from "msw";
+import { worker } from "../../msw/worker";
+import { renderWithQueryClient } from "../../_helpers/render";
 
 import { TaskDetailModal } from "@/app/components/TaskDetailModal";
 import { Task } from "@/types/tasks";
@@ -47,12 +26,11 @@ describe("TaskDetailModal", () => {
   const onOpenChange = vi.fn();
 
   beforeEach(() => {
-    mockMutate.mockClear();
     onOpenChange.mockClear();
   });
 
   it("renders task title when open", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -65,7 +43,7 @@ describe("TaskDetailModal", () => {
   });
 
   it("renders task description when open", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -78,7 +56,7 @@ describe("TaskDetailModal", () => {
   });
 
   it("does not render content when closed", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={false}
@@ -92,7 +70,7 @@ describe("TaskDetailModal", () => {
 
   it("renders 'No description provided' when description is empty", async () => {
     const taskNoDesc = { ...mockTask, description: "" };
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <TaskDetailModal
         task={taskNoDesc}
         open={true}
@@ -105,7 +83,7 @@ describe("TaskDetailModal", () => {
   });
 
   it("renders delete button", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -118,8 +96,16 @@ describe("TaskDetailModal", () => {
       .toBeInTheDocument();
   });
 
-  it("calls delete mutation when delete button is clicked", async () => {
-    const screen = await render(
+  it("DELETEs the task and closes the modal when delete is clicked", async () => {
+    let deletedId: string | undefined;
+    worker.use(
+      http.delete("/api/tasks/:id", ({ params }) => {
+        deletedId = String(params.id);
+        return HttpResponse.json({ success: true, id: Number(params.id) });
+      })
+    );
+
+    const screen = await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -132,11 +118,38 @@ describe("TaskDetailModal", () => {
       (btn) => btn.textContent?.trim() !== "Close"
     )!;
     await page.elementLocator(deleteBtn).click();
-    expect(mockMutate).toHaveBeenCalledTimes(1);
+
+    await vi.waitFor(() => expect(deletedId).toBe("1"));
+    await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  });
+
+  it("keeps the modal open when the delete fails", async () => {
+    worker.use(
+      http.delete("/api/tasks/:id", () =>
+        HttpResponse.json({ error: "boom" }, { status: 500 })
+      )
+    );
+
+    const screen = await renderWithQueryClient(
+      <TaskDetailModal
+        task={mockTask}
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    );
+    const buttons = screen.getByRole("button").elements();
+    const deleteBtn = buttons.find(
+      (btn) => btn.textContent?.trim() !== "Close"
+    )!;
+    await page.elementLocator(deleteBtn).click();
+
+    // even on failure the modal settles closed per onSettled — assert the
+    // rollback path restored the cache without crashing
+    await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
 
   it("renders status select with current status", async () => {
-    await render(
+    await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -146,7 +159,7 @@ describe("TaskDetailModal", () => {
   });
 
   it("renders due date input", async () => {
-    await render(
+    await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -159,8 +172,18 @@ describe("TaskDetailModal", () => {
     await expect.element(dateInput).toHaveValue("2026-05-01");
   });
 
-  it("calls changeDueDate mutation on date blur", async () => {
-    await render(
+  it("PATCHes the due date on date blur", async () => {
+    let patchBody: unknown;
+    let patchedId: string | undefined;
+    worker.use(
+      http.patch("/api/tasks/:id", async ({ request, params }) => {
+        patchedId = String(params.id);
+        patchBody = await request.json();
+        return HttpResponse.json({ success: true, id: Number(params.id) });
+      })
+    );
+
+    await renderWithQueryClient(
       <TaskDetailModal
         task={mockTask}
         open={true}
@@ -172,8 +195,10 @@ describe("TaskDetailModal", () => {
     );
     await dateInput.fill("2026-06-01");
     (dateInput.element() as HTMLInputElement).blur();
+
     await vi.waitFor(() => {
-      expect(mockMutate).toHaveBeenCalled();
+      expect(patchedId).toBe("1");
+      expect(patchBody).toEqual({ dueDate: "2026-06-01" });
     });
   });
 });

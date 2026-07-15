@@ -1,5 +1,6 @@
 import OpenAI from "openai";
-import { openai, MODEL } from "@/lib/ai/ai_tools";
+import { MODEL } from "@/lib/ai/ai_tools";
+import type { OpenAIClientInterface } from "@/api_client/openai_client";
 import type { DocumentRequestItemAiVerdict } from "@/types/document_requests";
 
 export interface AnalyzeDocumentRequirementInput {
@@ -51,7 +52,8 @@ function trimReasoning(text: string): string {
 }
 
 export async function analyzeDocumentRequirement(
-  input: AnalyzeDocumentRequirementInput
+  input: AnalyzeDocumentRequirementInput,
+  openaiClient: OpenAIClientInterface
 ): Promise<DocumentAnalysisResult> {
   const { itemName, itemDescription, fileBuffer, mimeType, fileName } = input;
 
@@ -96,7 +98,7 @@ export async function analyzeDocumentRequirement(
   ];
 
   try {
-    const response = await openai.responses.create({
+    const response = await openaiClient.createResponse({
       model: MODEL,
       input: inputItems,
       text: {

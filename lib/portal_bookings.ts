@@ -1,10 +1,10 @@
-"use server";
-
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { clientPortalTokens, portalMeetingBookings } from "@db/schema";
-import { and, eq } from "drizzle-orm";
+import type { PortalBookingsDB } from "@db/portal_bookings_db";
+import type { CalendarDB } from "@db/calendar_db";
+import type { GraphCalendarServiceInterface } from "@/api_client/ms_graph/graph_calendar_service";
+import type { OutlookDB } from "@db/outlook_db";
+import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import type { BookingInput, PortalMeetingBooking } from "@/types/portal";
 import { addMeetingToCalendar } from "@/lib/workspace/calendar";
 import {
@@ -26,7 +26,8 @@ import { rateLimitHeaders } from "@/lib/util/rate_limit";
  */
 export async function createPortalBooking(
   token: string,
-  input: BookingInput
+  input: BookingInput,
+  portalBookingsDb: PortalBookingsDB
 ): Promise<{ success: true; bookingId: number }> {
   const limited = rateLimitHeaders(await headers(), {
     keyPrefix: "portal-book",
@@ -42,11 +43,7 @@ export async function createPortalBooking(
   const duration = requireInt(input.duration, "duration");
   const notes = optionalString(input.notes, "notes", MAX_NOTES);
 
-  const tokenRows = await db
-    .select()
-    .from(clientPortalTokens)
-    .where(eq(clientPortalTokens.token, tokenValue))
-    .limit(1);
+  const tokenRows = await portalBookingsDb.getPortalByToken(tokenValue);
 
   if (!tokenRows.length || !tokenRows[0].enabled) {
     throw new ValidationError("Portal not found", 404);
@@ -64,38 +61,37 @@ export async function createPortalBooking(
     throw new ValidationError("Invalid duration", 400);
   }
 
-  const [booking] = await db
-    .insert(portalMeetingBookings)
-    .values({
-      portalId: portalRecord.id,
-      clientId: portalRecord.clientId,
-      userId: portalRecord.userId,
-      clientName,
-      clientEmail,
-      dateTime: parsedDate,
-      duration,
-      status: "pending",
-      notes: notes ?? null,
-      meetingLink: null,
-      eventId: null,
-    })
-    .returning();
+  const booking = await portalBookingsDb.insertBooking({
+    portalId: portalRecord.id,
+    clientId: portalRecord.clientId,
+    userId: portalRecord.userId,
+    clientName,
+    clientEmail,
+    dateTime: parsedDate,
+    duration,
+    status: "pending",
+    notes: notes ?? null,
+    meetingLink: null,
+    eventId: null,
+  });
 
   return { success: true, bookingId: booking.id };
 }
 
+export type PortalMeetingBookingWithClient = PortalMeetingBooking & {
+  clientDisplayName: string | null;
+};
+
 export async function getPortalBookings(
-  userId: string
-): Promise<PortalMeetingBooking[]> {
+  userId: string,
+  portalBookingsDb: PortalBookingsDB
+): Promise<PortalMeetingBookingWithClient[]> {
   const user = await getCurrentUser();
   if (!user?.id || user.id !== userId) {
     throw new Error("Unauthorized");
   }
 
-  const rows = await db
-    .select()
-    .from(portalMeetingBookings)
-    .where(eq(portalMeetingBookings.userId, userId));
+  const rows = await portalBookingsDb.getBookingsForUserWithClientName(userId);
 
   return rows.map((r) => ({
     id: r.id,
@@ -111,74 +107,64 @@ export async function getPortalBookings(
     meetingLink: r.meetingLink,
     eventId: r.eventId,
     createdAt: r.createdAt?.toISOString() ?? null,
+    clientDisplayName: r.clientDisplayName,
   }));
 }
 
 export async function updateBookingStatus(
   bookingId: number,
-  status: "confirmed" | "cancelled"
+  status: "confirmed" | "cancelled",
+  portalBookingsDb: PortalBookingsDB
 ): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
 
-  await db
-    .update(portalMeetingBookings)
-    .set({ status })
-    .where(
-      and(
-        eq(portalMeetingBookings.id, bookingId),
-        eq(portalMeetingBookings.userId, user.id)
-      )
-    );
+  await portalBookingsDb.setBookingStatus(bookingId, user.id, status);
 }
 
 export async function acceptBookingWithCalendar(
-  bookingId: number
+  bookingId: number,
+  portalBookingsDb: PortalBookingsDB,
+  calendarDb: CalendarDB,
+  graphCalendar: GraphCalendarServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
 ): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const rows = await db
-    .select()
-    .from(portalMeetingBookings)
-    .where(
-      and(
-        eq(portalMeetingBookings.id, bookingId),
-        eq(portalMeetingBookings.userId, user.id)
-      )
-    )
-    .limit(1);
+  const rows = await portalBookingsDb.getBookingForUser(bookingId, user.id);
 
   if (!rows.length) throw new Error("Booking not found");
   const booking = rows[0];
 
-  await db
-    .update(portalMeetingBookings)
-    .set({ status: "confirmed" })
-    .where(
-      and(
-        eq(portalMeetingBookings.id, bookingId),
-        eq(portalMeetingBookings.userId, user.id)
-      )
-    );
+  await portalBookingsDb.setBookingStatus(bookingId, user.id, "confirmed");
 
   try {
-    const calEvent = await addMeetingToCalendar({
-      id: "",
-      title: `Meeting with ${booking.clientName}`,
-      description: booking.notes || `${booking.duration}-minute client meeting`,
-      dateTime: booking.dateTime,
-      duration: booking.duration,
-      isMeeting: true,
-    });
+    const calEvent = await addMeetingToCalendar(
+      {
+        id: "",
+        title: `Meeting with ${booking.clientName}`,
+        description:
+          booking.notes || `${booking.duration}-minute client meeting`,
+        dateTime: booking.dateTime,
+        duration: booking.duration,
+        isMeeting: true,
+      },
+      calendarDb,
+      graphCalendar,
+      outlookDb,
+      graphAuthService
+    );
 
     if (calEvent?.id) {
-      await db
-        .update(portalMeetingBookings)
-        .set({ eventId: calEvent.id, meetingLink: calEvent.link ?? null })
-        .where(eq(portalMeetingBookings.id, bookingId));
+      await portalBookingsDb.setBookingEventInfo(
+        bookingId,
+        calEvent.id,
+        calEvent.link ?? null
+      );
     }
   } catch (err) {
     console.error("[acceptBookingWithCalendar] calendar sync failed:", err);

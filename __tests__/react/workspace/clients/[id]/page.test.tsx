@@ -1,32 +1,12 @@
 import React from "react";
-import { render } from "vitest-browser-react";
+import { delay, http, HttpResponse } from "msw";
+import { worker } from "../../../../msw/worker";
+import { renderWithQueryClient } from "../../../../_helpers/render";
 
 const mockPush = vi.fn();
-const mockUseQuery = vi.fn();
-const mockUseMutation = vi.fn();
-const mockUseQueryClient = vi.fn(() => ({
-  invalidateQueries: vi.fn(),
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (...args: unknown[]) => mockUseMutation(...args),
-  useQueryClient: () => mockUseQueryClient(),
-}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
-}));
-
-vi.mock("axios", () => ({
-  __esModule: true,
-  default: { get: vi.fn() },
-  get: vi.fn(),
-  isAxiosError: () => false,
-}));
-
-vi.mock("@/lib/workspace/clients", () => ({
-  deleteClient: vi.fn(),
 }));
 
 vi.mock("@/app/components/clients/ClientPortalSettings", () => ({
@@ -97,72 +77,61 @@ function fulfilledParams<T>(value: T): Promise<T> {
   return p;
 }
 
-function setupQueries(
+function useClientHandlers(
   overrides: Partial<{
-    clientLoading: boolean;
+    clientPending: boolean;
     clientError: boolean;
-    client: typeof mockClient | null;
-    cases: typeof mockCases;
-    emails: typeof mockEmails;
   }> = {}
 ) {
-  const {
-    clientLoading = false,
-    clientError = false,
-    client = mockClient,
-    cases = mockCases,
-    emails = mockEmails,
-  } = overrides;
-
-  mockUseQuery.mockImplementation((opts: { queryKey: string[] }) => {
-    const key = opts.queryKey[0];
-    if (key === "client") {
-      return {
-        data: clientError ? undefined : { client, portal: null },
-        isLoading: clientLoading,
-        isError: clientError,
-      };
-    }
-    if (key === "clientCases") {
-      return { data: cases, isLoading: false, isError: false };
-    }
-    if (key === "clientOutlookEmails") {
-      return { data: emails, isLoading: false, isError: false };
-    }
-    return { data: undefined, isLoading: false, isError: false };
-  });
+  worker.use(
+    http.get("/api/clients/:id", async ({ request }) => {
+      const type = new URL(request.url).searchParams.get("type");
+      if (type === "main") {
+        if (overrides.clientPending) {
+          await delay("infinite");
+        }
+        if (overrides.clientError) {
+          return HttpResponse.json({ error: "boom" }, { status: 500 });
+        }
+        return HttpResponse.json({ client: mockClient, portal: null });
+      }
+      if (type === "cases") return HttpResponse.json({ cases: mockCases });
+      if (type === "outlook-emails")
+        return HttpResponse.json({ emails: mockEmails });
+      if (type === "portal") return HttpResponse.json({ portal: null });
+      return HttpResponse.json({ error: "Invalid type" }, { status: 400 });
+    })
+  );
 }
+
+const renderPage = () =>
+  renderWithQueryClient(
+    <ClientDetailPage params={fulfilledParams({ id: "42" })} />
+  );
 
 describe("Client Detail Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseMutation.mockReturnValue({ mutate: vi.fn(), isPending: false });
   });
 
   it("shows a loader while client query is loading", async () => {
-    setupQueries({ clientLoading: true });
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers({ clientPending: true });
+    const screen = await renderPage();
     // Loader2 has role of presentation; assert no client name yet
     await expect.element(screen.getByText("Acme Corp")).not.toBeInTheDocument();
   });
 
   it("shows an error when client fails to load", async () => {
-    setupQueries({ clientError: true });
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers({ clientError: true });
+    const screen = await renderPage();
     await expect
       .element(screen.getByText(/failed to load client/i))
       .toBeInTheDocument();
   });
 
   it("renders the client header with name, email, and phone", async () => {
-    setupQueries();
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers();
+    const screen = await renderPage();
     await expect.element(screen.getByText("Acme Corp")).toBeInTheDocument();
     await expect
       .element(screen.getByText("contact@acme.com"))
@@ -171,10 +140,8 @@ describe("Client Detail Page", () => {
   });
 
   it("renders all three section tabs", async () => {
-    setupQueries();
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers();
+    const screen = await renderPage();
     await expect
       .element(screen.getByRole("button", { name: /portal/i }))
       .toBeInTheDocument();
@@ -187,20 +154,16 @@ describe("Client Detail Page", () => {
   });
 
   it("shows the Portal settings by default", async () => {
-    setupQueries();
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers();
+    const screen = await renderPage();
     await expect
       .element(screen.getByTestId("portal-settings"))
       .toBeInTheDocument();
   });
 
   it("switches to Cases tab and shows cases", async () => {
-    setupQueries();
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers();
+    const screen = await renderPage();
     await screen.getByRole("button", { name: /cases/i }).click();
     await expect.element(screen.getByTestId("cases-tab")).toBeInTheDocument();
     await expect
@@ -209,20 +172,16 @@ describe("Client Detail Page", () => {
   });
 
   it("switches to Communications tab and shows chat + emails", async () => {
-    setupQueries();
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers();
+    const screen = await renderPage();
     await screen.getByRole("button", { name: /communications/i }).click();
     await expect.element(screen.getByTestId("chat-pane")).toBeInTheDocument();
     await expect.element(screen.getByText("Hello")).toBeInTheDocument();
   });
 
   it("clicking back navigates to the clients list", async () => {
-    setupQueries();
-    const screen = await render(
-      <ClientDetailPage params={fulfilledParams({ id: "42" })} />
-    );
+    useClientHandlers();
+    const screen = await renderPage();
     await screen.getByRole("button", { name: /back to clients/i }).click();
     expect(mockPush).toHaveBeenCalledWith("/workspace/clients");
   });

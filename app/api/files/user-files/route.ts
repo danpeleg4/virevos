@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { caseFiles, cases } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { getUserFiles } from "@/lib/workspace/cases";
+import { casesDrizzle } from "@db/cases_db";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {
   try {
@@ -11,25 +11,14 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const rows = await db
-      .select({
-        id: caseFiles.id,
-        name: caseFiles.name,
-        path: caseFiles.path,
-        size: caseFiles.size,
-        mimeType: caseFiles.mimeType,
-        createdAt: caseFiles.createdAt,
-        caseId: caseFiles.caseId,
-        caseName: cases.name,
-      })
-      .from(caseFiles)
-      .leftJoin(cases, eq(caseFiles.caseId, cases.id))
-      .where(eq(caseFiles.userId, user.id))
-      .limit(100);
+    const rows = await getUserFiles(casesDrizzle);
 
     return NextResponse.json({ files: rows });
   } catch (err) {
     console.error("[api/files/user-files GET]", err);
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json(
       { error: "Failed to fetch files" },
       { status: 500 }

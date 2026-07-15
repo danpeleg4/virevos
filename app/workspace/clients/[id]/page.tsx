@@ -25,7 +25,6 @@ import { Badge } from "@/app/components/ui/badge";
 import { ClientPortalSettings } from "@/app/components/clients/ClientPortalSettings";
 import { PortalChatPane } from "@/app/components/communications/PortalChatPane";
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
-import { deleteClient } from "@/lib/workspace/clients";
 import type { clients } from "@/types/clients";
 
 type Section = "portal" | "cases" | "communications";
@@ -156,7 +155,7 @@ export default function ClientDetailPage({
 
   const deleteMutation = useMutation({
     mutationFn: async (clientId: number) => {
-      await deleteClient({ id: clientId });
+      await axios.delete(`/api/clients/${clientId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["clients"] });

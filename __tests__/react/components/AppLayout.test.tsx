@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "vitest-browser-react";
+import { renderWithQueryClient } from "../../_helpers/render";
 
 const mockPush = vi.fn();
 const mockUseAuthUser = vi.fn();
@@ -24,17 +24,6 @@ vi.mock("next-themes", () => ({
   useTheme: vi.fn(() => ({ resolvedTheme: "light", setTheme: vi.fn() })),
 }));
 
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: vi.fn(() => ({ data: undefined, isLoading: false })),
-}));
-
-vi.mock("axios", () => {
-  const axios = {
-    get: vi.fn(() => Promise.resolve({ data: { bookings: [] } })),
-  };
-  return { default: axios, ...axios };
-});
-
 vi.mock("@/app/components/AIAssistant", () => ({
   AIAssistant: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="ai-assistant" /> : null,
@@ -56,7 +45,7 @@ describe("AppLayout", () => {
   });
 
   it("renders children", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AppLayout>
         <div data-testid="child-content">Hello</div>
       </AppLayout>
@@ -68,7 +57,7 @@ describe("AppLayout", () => {
 
   it("shows loading spinner when user not loaded", async () => {
     mockUseAuthUser.mockReturnValue({ data: null, isPending: true });
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AppLayout>
         <div />
       </AppLayout>
@@ -82,7 +71,7 @@ describe("AppLayout", () => {
   });
 
   it("renders all 8 nav items in the desktop sidebar", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AppLayout>
         <div />
       </AppLayout>
@@ -105,7 +94,7 @@ describe("AppLayout", () => {
   });
 
   it("renders user email in sidebar", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AppLayout>
         <div />
       </AppLayout>
@@ -116,7 +105,7 @@ describe("AppLayout", () => {
   });
 
   it("opens AI assistant when AI Assistant button is clicked", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AppLayout>
         <div />
       </AppLayout>
@@ -134,7 +123,7 @@ describe("AppLayout", () => {
   });
 
   it("opens mobile sidebar when menu button is clicked", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AppLayout>
         <div />
       </AppLayout>

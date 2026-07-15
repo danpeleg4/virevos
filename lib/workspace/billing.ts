@@ -1,11 +1,8 @@
-"use server";
-
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { ensureUserRow } from "../user";
-import { db } from "@db/db";
-import { subscriptions, users } from "@db/schema";
-import { eq } from "drizzle-orm";
-import { stripe } from "../stripe";
+import type { UserDB } from "@db/user_db";
+import type { BillingDB } from "@db/billing_db";
+import type { StripeClientInterface } from "@/api_client/stripe_client";
 import type Stripe from "stripe";
 
 function getPriceId(planId: string): string | undefined {
@@ -16,26 +13,28 @@ function getPriceId(planId: string): string | undefined {
   return map[planId];
 }
 
+export function getPlanFromPriceId(priceId: string): PlanId {
+  if (priceId === process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY)
+    return "professional";
+  if (priceId === process.env.STRIPE_PRICE_BUSINESS_MONTHLY) return "business";
+  return "starter";
+}
+
 export async function getOrCreateStripeCustomer(
   userId: string,
-  email: string
+  email: string,
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface
 ): Promise<string> {
-  const existing = await db
-    .select({ stripeCustomerId: subscriptions.stripeCustomerId })
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
+  const existing = await billingDb.getStripeCustomerId(userId);
 
   if (existing.length > 0) {
     return existing[0].stripeCustomerId;
   }
 
-  const customer = await stripe.customers.create({
-    email,
-    metadata: { userId },
-  });
+  const customer = await stripeClient.createCustomer(email, userId);
 
-  await db.insert(subscriptions).values({
+  await billingDb.insertSubscription({
     userId,
     stripeCustomerId: customer.id,
     plan: "starter",
@@ -45,70 +44,79 @@ export async function getOrCreateStripeCustomer(
   return customer.id;
 }
 
-export async function createSetupIntent(): Promise<string> {
+export async function createSetupIntent(
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface,
+  userDb: UserDB
+): Promise<string> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  await ensureUserRow();
+  await ensureUserRow(userDb);
 
   const email = user.email ?? "";
-  const customerId = await getOrCreateStripeCustomer(user.id, email);
+  const customerId = await getOrCreateStripeCustomer(
+    user.id,
+    email,
+    billingDb,
+    stripeClient
+  );
 
-  const setupIntent = await stripe.setupIntents.create({
-    customer: customerId,
-    payment_method_types: ["card"],
-  });
+  const setupIntent = await stripeClient.createSetupIntent(customerId);
 
-  return setupIntent.client_secret!;
+  return setupIntent.clientSecret;
 }
 
 export async function createSubscription(
-  input: CreateSubscriptionInput
+  input: CreateSubscriptionInput,
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface,
+  userDb: UserDB
 ): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  await ensureUserRow();
+  await ensureUserRow(userDb);
 
   const email = user.email ?? "";
-  const customerId = await getOrCreateStripeCustomer(user.id, email);
+  const customerId = await getOrCreateStripeCustomer(
+    user.id,
+    email,
+    billingDb,
+    stripeClient
+  );
 
-  await stripe.paymentMethods.attach(input.paymentMethodId, {
-    customer: customerId,
-  });
+  await stripeClient.attachPaymentMethod(input.paymentMethodId, customerId);
 
-  await stripe.customers.update(customerId, {
-    invoice_settings: { default_payment_method: input.paymentMethodId },
-  });
+  await stripeClient.setDefaultPaymentMethod(customerId, input.paymentMethodId);
 
   const priceId = getPriceId(input.planId);
   if (!priceId) throw new Error(`Unknown plan: ${input.planId}`);
 
-  await stripe.subscriptions.create({
-    customer: customerId,
-    items: [{ price: priceId }],
-    default_payment_method: input.paymentMethodId,
-  });
+  await stripeClient.createSubscription(
+    customerId,
+    priceId,
+    input.paymentMethodId
+  );
 }
 
-export async function registerFreePlan(): Promise<void> {
+export async function registerFreePlan(userDb: UserDB): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  await ensureUserRow();
+  await ensureUserRow(userDb);
 }
 
-export async function getBillingOverview(): Promise<BillingOverview> {
+export async function getBillingOverview(
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface
+): Promise<BillingOverview> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const subscription = await getUserSubscriptionByUserId(user.id);
+  const subscription = await getUserSubscriptionByUserId(user.id, billingDb);
 
-  const [userRow] = await db
-    .select({ ai_credits: users.aiCredits, storage: users.storage })
-    .from(users)
-    .where(eq(users.userId, user.id))
-    .limit(1);
+  const [userRow] = await billingDb.getUserCredits(user.id);
 
   const aiCredits = userRow?.ai_credits ?? 0;
   const storage = userRow?.storage ?? 1;
@@ -124,16 +132,13 @@ export async function getBillingOverview(): Promise<BillingOverview> {
   }
 
   const [invoiceList, customer] = await Promise.all([
-    stripe.invoices.list({
-      customer: subscription.stripeCustomerId,
-      limit: 10,
-    }),
-    stripe.customers.retrieve(subscription.stripeCustomerId, {
-      expand: ["invoice_settings.default_payment_method"],
-    }),
+    stripeClient.listInvoices(subscription.stripeCustomerId, 10),
+    stripeClient.retrieveCustomerWithDefaultPaymentMethod(
+      subscription.stripeCustomerId
+    ),
   ]);
 
-  const invoices: StripeInvoiceSummary[] = invoiceList.data.map((inv) => ({
+  const invoices: StripeInvoiceSummary[] = invoiceList.map((inv) => ({
     id: inv.id,
     number: inv.number,
     amountPaid: inv.amount_paid,
@@ -171,23 +176,29 @@ const PLAN_RANK: Record<string, number> = {
 
 export async function updatePlanLimits(
   userId: string,
-  _planId: string
+  _planId: string,
+  billingDb: BillingDB
 ): Promise<void> {
-  await db.update(users).set({ aiCredits: 0 }).where(eq(users.userId, userId));
+  await billingDb.resetAiCredits(userId);
 }
 
-export async function changePlan(input: ChangePlanInput): Promise<void> {
+export async function changePlan(
+  input: ChangePlanInput,
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface
+): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscriptionByUserId(user.id);
+  const sub = await getUserSubscriptionByUserId(user.id, billingDb);
 
   // Downgrade to starter: cancel at period end — limits deferred until subscription.deleted fires
   if (input.planId === "starter") {
     if (!sub.stripeSubscriptionId) return; // already on starter free plan
-    await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-      cancel_at_period_end: true,
-    });
+    await stripeClient.setSubscriptionCancelAtPeriodEnd(
+      sub.stripeSubscriptionId,
+      true
+    );
     return;
   }
 
@@ -198,29 +209,25 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
 
   // No existing subscription — create one using the customer's default payment method
   if (!sub.stripeSubscriptionId) {
-    const customer = await stripe.customers.retrieve(sub.stripeCustomerId, {
-      expand: ["invoice_settings.default_payment_method"],
-    });
-    const deletedCheck = customer as import("stripe").default.DeletedCustomer;
+    const customer =
+      await stripeClient.retrieveCustomerWithDefaultPaymentMethod(
+        sub.stripeCustomerId
+      );
+    const deletedCheck = customer as Stripe.DeletedCustomer;
     if (deletedCheck.deleted) throw new Error("Stripe customer deleted");
-    const stripeCustomer = customer as import("stripe").default.Customer;
-    const pm = stripeCustomer.invoice_settings?.default_payment_method as
-      | import("stripe").default.PaymentMethod
-      | null;
+    const stripeCustomer = customer as Stripe.Customer;
+    const pm = stripeCustomer.invoice_settings
+      ?.default_payment_method as Stripe.PaymentMethod | null;
     if (!pm?.id)
       throw new Error(
         "No payment method on file. Please add a payment method first."
       );
-    await stripe.subscriptions.create({
-      customer: sub.stripeCustomerId,
-      items: [{ price: priceId }],
-      default_payment_method: pm.id,
-    });
-    await updatePlanLimits(user.id, input.planId);
+    await stripeClient.createSubscription(sub.stripeCustomerId, priceId, pm.id);
+    await updatePlanLimits(user.id, input.planId, billingDb);
     return;
   }
 
-  const stripeSub = await stripe.subscriptions.retrieve(
+  const stripeSub = await stripeClient.retrieveSubscription(
     sub.stripeSubscriptionId
   );
   const itemId = stripeSub.items.data[0]?.id;
@@ -228,71 +235,80 @@ export async function changePlan(input: ChangePlanInput): Promise<void> {
 
   const isUpgrade = (PLAN_RANK[input.planId] ?? 0) > (PLAN_RANK[sub.plan] ?? 0);
 
-  await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-    items: [{ id: itemId, price: priceId }],
-    proration_behavior: "create_prorations",
-  });
+  await stripeClient.updateSubscriptionPrice(
+    sub.stripeSubscriptionId,
+    itemId,
+    priceId
+  );
 
   // Only update limits immediately for upgrades; downgrades are deferred to subscription.updated webhook
   if (isUpgrade) {
-    await updatePlanLimits(user.id, input.planId);
+    await updatePlanLimits(user.id, input.planId, billingDb);
   }
 }
 
-export async function cancelSubscription(): Promise<void> {
+export async function cancelSubscription(
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface
+): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscriptionByUserId(user.id);
+  const sub = await getUserSubscriptionByUserId(user.id, billingDb);
   if (!sub.stripeSubscriptionId) throw new Error("No active subscription");
 
-  await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-    cancel_at_period_end: true,
-  });
+  await stripeClient.setSubscriptionCancelAtPeriodEnd(
+    sub.stripeSubscriptionId,
+    true
+  );
 }
 
-export async function resubscribe(): Promise<void> {
+export async function resubscribe(
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface
+): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscriptionByUserId(user.id);
+  const sub = await getUserSubscriptionByUserId(user.id, billingDb);
   if (!sub.stripeSubscriptionId)
     throw new Error("No subscription to reactivate");
 
-  await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-    cancel_at_period_end: false,
-  });
+  await stripeClient.setSubscriptionCancelAtPeriodEnd(
+    sub.stripeSubscriptionId,
+    false
+  );
 }
 
-export async function updatePaymentMethod(pmId: string): Promise<void> {
+export async function updatePaymentMethod(
+  pmId: string,
+  billingDb: BillingDB,
+  stripeClient: StripeClientInterface
+): Promise<void> {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const sub = await getUserSubscriptionByUserId(user.id);
+  const sub = await getUserSubscriptionByUserId(user.id, billingDb);
   if (!sub.stripeCustomerId) throw new Error("No Stripe customer");
 
-  await stripe.paymentMethods.attach(pmId, { customer: sub.stripeCustomerId });
-  await stripe.customers.update(sub.stripeCustomerId, {
-    invoice_settings: { default_payment_method: pmId },
-  });
+  await stripeClient.attachPaymentMethod(pmId, sub.stripeCustomerId);
+  await stripeClient.setDefaultPaymentMethod(sub.stripeCustomerId, pmId);
 
   if (sub.stripeSubscriptionId) {
-    await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-      default_payment_method: pmId,
-    });
+    await stripeClient.setSubscriptionDefaultPaymentMethod(
+      sub.stripeSubscriptionId,
+      pmId
+    );
   }
 }
 
 export async function getUserSubscriptionByUserId(
-  userId: string
+  userId: string,
+  billingDb: BillingDB
 ): Promise<UserSubscription> {
-  const [userRow] = await db
-    .select({ id: users.userId })
-    .from(users)
-    .where(eq(users.userId, userId))
-    .limit(1);
+  const userRows = await billingDb.getUserIdRow(userId);
 
-  if (!userRow) {
+  if (userRows.length === 0) {
     return {
       plan: "starter",
       status: "active",
@@ -304,11 +320,7 @@ export async function getUserSubscriptionByUserId(
     };
   }
 
-  const rows = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
+  const rows = await billingDb.getSubscriptionByUserId(userId);
 
   if (rows.length === 0) {
     return {
@@ -332,4 +344,104 @@ export async function getUserSubscriptionByUserId(
     currentPeriodEnd: row.currentPeriodEnd ?? null,
     cancelAtPeriodEnd: row.cancelAtPeriodEnd,
   };
+}
+
+// ─── Stripe webhook handlers (moved from lib/stripe.ts) ────────────────────
+
+export async function handleSubscriptionUpsert(
+  sub: Stripe.Subscription,
+  billingDb: BillingDB
+): Promise<void> {
+  const priceId = sub.items.data[0]?.price.id ?? "";
+  const plan = getPlanFromPriceId(priceId);
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+
+  const periodEnd = sub.items.data[0].current_period_end
+    ? new Date(sub.items.data[0].current_period_end * 1000)
+    : null;
+
+  const [existing] =
+    await billingDb.getSubscriptionOwnerByCustomerId(customerId);
+
+  await billingDb.updateSubscriptionByCustomerId(customerId, {
+    stripeSubscriptionId: sub.id,
+    stripePriceId: priceId,
+    plan,
+    status: sub.status as string,
+    currentPeriodEnd: periodEnd,
+    cancelAtPeriodEnd: sub.cancel_at_period_end,
+    updatedAt: new Date(),
+  });
+
+  // Update plan limits — for downgrades this is the deferred update;
+  // for upgrades it's idempotent (already applied immediately in changePlan)
+  if (existing?.userId) {
+    await updatePlanLimits(existing.userId, plan, billingDb);
+  }
+}
+
+export async function handleSubscriptionDeleted(
+  sub: Stripe.Subscription,
+  billingDb: BillingDB
+): Promise<void> {
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+
+  const [existing] =
+    await billingDb.getSubscriptionOwnerByCustomerId(customerId);
+
+  await billingDb.updateSubscriptionByCustomerId(customerId, {
+    stripeSubscriptionId: null,
+    stripePriceId: null,
+    plan: "starter",
+    status: "canceled",
+    cancelAtPeriodEnd: false,
+    updatedAt: new Date(),
+  });
+
+  // Reset limits to starter now that the subscription has actually ended
+  if (existing?.userId) {
+    await updatePlanLimits(existing.userId, "starter", billingDb);
+  }
+}
+
+export async function handleInvoicePaymentFailed(
+  invoice: Stripe.Invoice,
+  billingDb: BillingDB
+): Promise<void> {
+  const customerId =
+    typeof invoice.customer === "string"
+      ? invoice.customer
+      : (invoice.customer?.id ?? "");
+
+  if (!customerId) return;
+
+  await billingDb.updateSubscriptionByCustomerId(customerId, {
+    status: "past_due",
+    updatedAt: new Date(),
+  });
+}
+
+export async function handleInvoicePaymentSucceeded(
+  invoice: Stripe.Invoice,
+  billingDb: BillingDB
+): Promise<void> {
+  const customerId =
+    typeof invoice.customer === "string"
+      ? invoice.customer
+      : (invoice.customer?.id ?? "");
+
+  if (!customerId) return;
+
+  const [existing] =
+    await billingDb.getSubscriptionOwnerByCustomerId(customerId);
+
+  if (existing?.userId) {
+    await updatePlanLimits(
+      existing.userId,
+      existing.plan ?? "starter",
+      billingDb
+    );
+  }
 }

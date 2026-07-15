@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { events, meetingTranscripts } from "@db/schema";
-import { and, asc, eq } from "drizzle-orm";
+import { getTranscript } from "@/lib/workspace/meetings";
+import { meetingsDrizzle } from "@db/meetings_db";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function GET(
   _req: NextRequest,
@@ -18,36 +18,22 @@ export async function GET(
     return NextResponse.json({ error: "Invalid meetingId" }, { status: 400 });
   }
 
-  const [meeting] = await db
-    .select({
-      id: events.id,
-      meetingStartTimeEpoch: events.meetingStartTimeEpoch,
-    })
-    .from(events)
-    .where(and(eq(events.id, id), eq(events.userId, user.id)));
-
-  if (!meeting || !meeting.meetingStartTimeEpoch) {
-    return new NextResponse("Not Found", { status: 404 });
+  try {
+    const result = await getTranscript(id, meetingsDrizzle);
+    if (!result || result.chunks.length === 0) {
+      return NextResponse.json(
+        { error: "No transcript found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(result);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json(
+      { error: "Failed to fetch transcript" },
+      { status: 500 }
+    );
   }
-
-  const chunks = await db
-    .select({
-      speaker: meetingTranscripts.speakerIdentity,
-      text: meetingTranscripts.text,
-      createdAt: meetingTranscripts.createdAt,
-    })
-    .from(meetingTranscripts)
-    .where(eq(meetingTranscripts.meetingId, id))
-    .orderBy(asc(meetingTranscripts.createdAt));
-
-  if (chunks.length === 0) {
-    return NextResponse.json({ error: "No transcript found" }, { status: 404 });
-  }
-
-  const meetingStartTimeEpoch = meeting.meetingStartTimeEpoch;
-
-  return NextResponse.json({
-    chunks: chunks,
-    meetingStartTimeEpoch: meetingStartTimeEpoch,
-  });
 }

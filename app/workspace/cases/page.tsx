@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Case } from "@/types/cases";
 import { useRouter } from "next/navigation";
-import { changeCaseStatus } from "@/lib/workspace/cases";
 
 export default function CasesPage() {
   const [search] = useState("");
@@ -30,7 +29,7 @@ export default function CasesPage() {
       aCase: Case;
       newStatus: string;
     }) => {
-      await changeCaseStatus(aCase, newStatus);
+      await axios.patch(`/api/cases/${aCase.id}`, { status: newStatus });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["cases"] });

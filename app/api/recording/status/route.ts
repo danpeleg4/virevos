@@ -1,8 +1,6 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { NextResponse } from "next/server";
-import { db } from "@db/db";
-import { users } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { userDrizzle } from "@db/user_db";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -10,10 +8,7 @@ export async function GET() {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const [recordingStatus] = await db
-    .select()
-    .from(users)
-    .where(eq(users.userId, user.id));
+  const [recordingStatus] = await userDrizzle.getUserRow(user.id);
   return NextResponse.json({
     recording_status: recordingStatus.recordingStatus,
   });

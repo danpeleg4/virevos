@@ -1,3 +1,25 @@
+import { worker } from "./__tests__/msw/worker";
+
+beforeAll(async () => {
+  await worker.start({
+    quiet: true,
+    onUnhandledRequest(request, print) {
+      // only app-API traffic must be handled; ignore Vite module/asset requests
+      if (new URL(request.url).pathname.startsWith("/api")) {
+        print.error();
+      }
+    },
+  });
+});
+
+afterEach(() => {
+  worker.resetHandlers();
+});
+
+afterAll(() => {
+  worker.stop();
+});
+
 vi.spyOn(console, "error").mockImplementation(() => {});
 vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
   const msg = typeof args[0] === "string" ? args[0] : "";

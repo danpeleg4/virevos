@@ -1,16 +1,42 @@
-"use server";
-
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { db } from "@db/db";
-import { events } from "@db/schema";
-import { eq, and } from "drizzle-orm";
+import type { CalendarDB, EventUpdateData } from "@db/calendar_db";
+import type { GraphCalendarServiceInterface } from "@/api_client/ms_graph/graph_calendar_service";
+import type { OutlookDB } from "@db/outlook_db";
+import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import { Event } from "@/types/meeting";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
-import axios from "axios";
+import { deriveMeetingStatus } from "@/lib/meeting_status";
+import { ValidationError } from "../util/validation";
 
-const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+export async function getEvents(calendarDb: CalendarDB) {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
-export async function addMeetingToCalendar(meeting: Event) {
+  const rows = await calendarDb.getEventsWithAttendees(user.id);
+
+  const now = new Date();
+  return rows.map((row) => deriveMeetingStatus(row, now));
+}
+
+export async function getEventWithHost(id: string, calendarDb: CalendarDB) {
+  const user = await getCurrentUser();
+  if (!user?.id) throw new ValidationError("Unauthorized", 401);
+
+  const [meeting] = await calendarDb.getEventByIdUnscoped(id);
+  if (!meeting) return null;
+
+  const isHost = user.id === meeting.userId;
+
+  return { meeting: deriveMeetingStatus(meeting), isHost };
+}
+
+export async function addMeetingToCalendar(
+  meeting: Event,
+  calendarDb: CalendarDB,
+  graphCalendar: GraphCalendarServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
@@ -20,28 +46,23 @@ export async function addMeetingToCalendar(meeting: Event) {
   const meetingId = crypto.randomUUID();
 
   let outlookEventId: string | null = null;
-  const outlookToken = await getFreshOutlookAccessToken(user.id);
+  const outlookToken = await getFreshOutlookAccessToken(
+    user.id,
+    outlookDb,
+    graphAuthService
+  );
 
   if (outlookToken) {
     const endDate = new Date(startDate.getTime() + meeting.duration * 60000);
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     try {
-      const res = await axios.post<{ id: string }>(
-        `${GRAPH_BASE}/me/events`,
-        {
-          subject: meeting.title,
-          body: { contentType: "Text", content: meeting.description ?? "" },
-          start: { dateTime: startDate.toISOString(), timeZone: tz },
-          end: { dateTime: endDate.toISOString(), timeZone: tz },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${outlookToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      outlookEventId = res.data.id;
+      const res = await graphCalendar.createEvent(outlookToken, {
+        subject: meeting.title,
+        body: { contentType: "Text", content: meeting.description ?? "" },
+        start: { dateTime: startDate.toISOString(), timeZone: tz },
+        end: { dateTime: endDate.toISOString(), timeZone: tz },
+      });
+      outlookEventId = res.id;
     } catch (error) {
       console.error("Outlook Calendar error:", error);
     }
@@ -67,27 +88,27 @@ export async function addMeetingToCalendar(meeting: Event) {
     outlookEventId,
   };
 
-  const [inserted] = await db
-    .insert(events)
-    .values({
-      ...payload,
-    })
-    .returning();
-  return inserted;
+  return calendarDb.insertEvent(payload);
 }
 
-export async function updateEvent(input: {
-  id: string;
-  title?: string;
-  description?: string;
-  dateTime?: string;
-  duration?: number;
-  status?: string;
-}) {
+export async function updateEvent(
+  input: {
+    id: string;
+    title?: string;
+    description?: string;
+    dateTime?: string;
+    duration?: number;
+    status?: string;
+  },
+  calendarDb: CalendarDB,
+  graphCalendar: GraphCalendarServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const updateData: Record<string, unknown> = {};
+  const updateData: EventUpdateData = {};
   if (input.title !== undefined) updateData.title = input.title;
   if (input.description !== undefined)
     updateData.description = input.description;
@@ -98,29 +119,27 @@ export async function updateEvent(input: {
 
   if (Object.keys(updateData).length === 0) return;
 
-  await db
-    .update(events)
-    .set(updateData)
-    .where(and(eq(events.id, input.id), eq(events.userId, user.id)));
+  await calendarDb.updateEvent(input.id, user.id, updateData);
 
   const hasExternalFields =
     input.title !== undefined ||
     input.description !== undefined ||
     input.dateTime !== undefined;
   if (hasExternalFields) {
-    const [eventRow] = await db
-      .select()
-      .from(events)
-      .where(and(eq(events.id, input.id), eq(events.userId, user.id)))
-      .limit(1);
+    const [eventRow] = await calendarDb.getEventById(input.id, user.id);
 
     if (eventRow) {
-      const outlookToken = await getFreshOutlookAccessToken(user.id);
+      const outlookToken = await getFreshOutlookAccessToken(
+        user.id,
+        outlookDb,
+        graphAuthService
+      );
       if (outlookToken && eventRow.outlookEventId) {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         try {
-          await axios.patch(
-            `${GRAPH_BASE}/me/events/${eventRow.outlookEventId}`,
+          await graphCalendar.updateEvent(
+            outlookToken,
+            eventRow.outlookEventId,
             {
               ...(input.title ? { subject: input.title } : {}),
               ...(input.description
@@ -134,12 +153,6 @@ export async function updateEvent(input: {
                     },
                   }
                 : {}),
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${outlookToken}`,
-                "Content-Type": "application/json",
-              },
             }
           );
         } catch (error) {
@@ -150,76 +163,73 @@ export async function updateEvent(input: {
   }
 }
 
-export async function deleteEventFromCalendar(id: string) {
+export async function deleteEventFromCalendar(
+  id: string,
+  calendarDb: CalendarDB,
+  graphCalendar: GraphCalendarServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) {
     throw new Error("Unauthorized");
   }
 
-  const meetingRow = await db
-    .select()
-    .from(events)
-    .where(and(eq(events.id, id), eq(events.userId, user.id)))
-    .limit(1);
+  const meetingRow = await calendarDb.getEventById(id, user.id);
 
   if (meetingRow.length === 0) {
     return { success: false, error: "Meeting not found" };
   }
 
   const meeting = meetingRow[0];
-  const outlookToken = await getFreshOutlookAccessToken(user.id);
+  const outlookToken = await getFreshOutlookAccessToken(
+    user.id,
+    outlookDb,
+    graphAuthService
+  );
   if (outlookToken && meeting.outlookEventId) {
     try {
-      await axios.delete(`${GRAPH_BASE}/me/events/${meeting.outlookEventId}`, {
-        headers: { Authorization: `Bearer ${outlookToken}` },
-      });
+      await graphCalendar.deleteEvent(outlookToken, meeting.outlookEventId);
     } catch (error) {
       console.error("Error deleting from Outlook Calendar:", error);
     }
   }
 
   // Delete from DB
-  await db
-    .delete(events)
-    .where(and(eq(events.id, id), eq(events.userId, user.id)));
+  await calendarDb.deleteEvent(id, user.id);
   return { success: true };
 }
 
-export async function updateEventDateTime(id: string, newDateTime: Date) {
+export async function updateEventDateTime(
+  id: string,
+  newDateTime: Date,
+  calendarDb: CalendarDB,
+  graphCalendar: GraphCalendarServiceInterface,
+  outlookDb: OutlookDB,
+  graphAuthService: GraphAuthServiceInterface
+) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const [eventRow] = await db
-    .select()
-    .from(events)
-    .where(and(eq(events.id, id), eq(events.userId, user.id)))
-    .limit(1);
+  const [eventRow] = await calendarDb.getEventById(id, user.id);
 
   if (!eventRow) throw new Error("Event not found");
 
-  await db
-    .update(events)
-    .set({ dateTime: newDateTime })
-    .where(and(eq(events.id, id), eq(events.userId, user.id)));
+  await calendarDb.updateEvent(id, user.id, { dateTime: newDateTime });
 
   const newEnd = new Date(newDateTime.getTime() + eventRow.duration * 60000);
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const outlookToken = await getFreshOutlookAccessToken(user.id);
+  const outlookToken = await getFreshOutlookAccessToken(
+    user.id,
+    outlookDb,
+    graphAuthService
+  );
   if (outlookToken && eventRow.outlookEventId) {
     try {
-      await axios.patch(
-        `${GRAPH_BASE}/me/events/${eventRow.outlookEventId}`,
-        {
-          start: { dateTime: newDateTime.toISOString(), timeZone: tz },
-          end: { dateTime: newEnd.toISOString(), timeZone: tz },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${outlookToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      await graphCalendar.updateEvent(outlookToken, eventRow.outlookEventId, {
+        start: { dateTime: newDateTime.toISOString(), timeZone: tz },
+        end: { dateTime: newEnd.toISOString(), timeZone: tz },
+      });
     } catch (error) {
       console.error("Outlook Calendar reschedule error:", error);
     }

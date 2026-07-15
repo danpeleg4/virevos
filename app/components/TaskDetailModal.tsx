@@ -16,12 +16,7 @@ import {
 import { Separator } from "./ui/separator";
 import { Calendar, Flag, Trash2, AlignLeft, Clock } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  changePriorityStatus,
-  deleteTask,
-  updateTaskDueDate,
-  updateTaskStatus,
-} from "@/lib/workspace/tasks";
+import axios from "axios";
 import { Task, TaskDetailModalProps } from "@/types/tasks";
 
 const STATUS_CONFIG = {
@@ -72,7 +67,7 @@ export function TaskDetailModal({
 
   const deleteSomeTask = useMutation({
     mutationFn: async () => {
-      await deleteTask(task.id);
+      await axios.delete(`/api/tasks/${task.id}`);
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey });
@@ -104,8 +99,15 @@ export function TaskDetailModal({
   });
 
   const changeTaskStatus = useMutation({
-    mutationFn: ({ status, taskId }: { status: string; taskId: number }) =>
-      updateTaskStatus(status, taskId),
+    mutationFn: async ({
+      status,
+      taskId,
+    }: {
+      status: string;
+      taskId: number;
+    }) => {
+      await axios.patch(`/api/tasks/${taskId}`, { status });
+    },
     onMutate: async ({ status, taskId }) => {
       await queryClient.cancelQueries({ queryKey });
       await queryClient.cancelQueries({ queryKey: ["allTasks"] });
@@ -141,7 +143,9 @@ export function TaskDetailModal({
     }: {
       priority: string;
       taskId: number;
-    }) => changePriorityStatus(taskId, priority),
+    }) => {
+      await axios.patch(`/api/tasks/${taskId}`, { priority });
+    },
     onMutate: async ({ priority, taskId }) => {
       await queryClient.cancelQueries({ queryKey });
       await queryClient.cancelQueries({ queryKey: ["allTasks"] });
@@ -171,13 +175,15 @@ export function TaskDetailModal({
   });
 
   const changeDueDate = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       taskId,
       dueDate,
     }: {
       taskId: number;
       dueDate: string | null;
-    }) => updateTaskDueDate(taskId, dueDate),
+    }) => {
+      await axios.patch(`/api/tasks/${taskId}`, { dueDate });
+    },
     onMutate: async ({ taskId, dueDate }) => {
       await queryClient.cancelQueries({ queryKey });
       await queryClient.cancelQueries({ queryKey: ["allTasks"] });

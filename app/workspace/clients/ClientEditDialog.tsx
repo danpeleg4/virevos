@@ -19,8 +19,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/app/components/ui/select";
+import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateExistingClient } from "@/lib/workspace/clients";
 import type { clients, UpdateClientInput } from "@/types/clients";
 
 type ClientStatus = "active" | "inactive";
@@ -83,7 +83,7 @@ function ClientEditForm({
 
   const updateMutation = useMutation({
     mutationFn: async (input: UpdateClientInput) => {
-      await updateExistingClient(input);
+      await axios.patch(`/api/clients/${input.id}`, input);
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ["clients"] });

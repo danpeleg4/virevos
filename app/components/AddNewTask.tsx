@@ -22,7 +22,6 @@ import {
 } from "@/app/components/ui/select";
 import { Separator } from "@/app/components/ui/separator";
 import { useState } from "react";
-import { addProjectTasksAction } from "@/lib/workspace/tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Case } from "@/types/cases";
@@ -50,7 +49,7 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
 
   const addTask = useMutation({
     mutationFn: async (task: Task) => {
-      await addProjectTasksAction(task);
+      await axios.post("/api/tasks", task);
     },
     onMutate: async (newTask: Task) => {
       await queryClient.cancelQueries({

@@ -27,8 +27,6 @@ import {
 } from "lucide-react";
 import { Event, RawChunk, TranscribedChunk } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
-import { addProjectTasksAction } from "@/lib/workspace/tasks";
-import { markActionItemAdded } from "@/lib/workspace/meetings";
 import axios from "axios";
 
 interface MeetingDetailsDialogProps {
@@ -62,7 +60,7 @@ export function EventDetailsDialog({
   ) {
     setAddingItems((prev) => new Set(prev).add(index));
     try {
-      await addProjectTasksAction({
+      await axios.post("/api/tasks", {
         id: 0,
         userId: "",
         title: item.task,
@@ -74,7 +72,10 @@ export function EventDetailsDialog({
         createdAt: null,
         updatedAt: null,
       });
-      await markActionItemAdded(event.id, index);
+      await axios.patch(`/api/events/${event.id}`, {
+        type: "mark-action-item",
+        data: { itemIndex: index },
+      });
       setAddedItems((prev) => new Set(prev).add(index));
       await queryClient.invalidateQueries({ queryKey: ["meetings"] });
     } finally {

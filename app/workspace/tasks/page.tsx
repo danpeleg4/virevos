@@ -28,7 +28,6 @@ import { TaskDetailModal } from "../../components/TaskDetailModal";
 import axios from "axios";
 import AddNewTask from "@/app/components/AddNewTask";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateTaskStatus } from "@/lib/workspace/tasks";
 import { parseDateOnlyString } from "@/lib/util/date_utils";
 import { Task } from "@/types/tasks";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
@@ -115,7 +114,7 @@ export default function Tasks() {
       status: string;
       taskId: number;
     }) => {
-      await updateTaskStatus(status, taskId);
+      await axios.patch(`/api/tasks/${taskId}`, { status });
     },
     onMutate: async ({ status, taskId }) => {
       await queryClient.cancelQueries({ queryKey: ["allTasks"] });

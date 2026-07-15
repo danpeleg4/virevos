@@ -1,22 +1,16 @@
 import React from "react";
-import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
+import { http, HttpResponse } from "msw";
+import { worker } from "../../../msw/worker";
+import { renderWithQueryClient } from "../../../_helpers/render";
 
-const { pushMock, axiosPostMock } = vi.hoisted(() => ({
+const { pushMock } = vi.hoisted(() => ({
   pushMock: vi.fn(),
-  axiosPostMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
   useParams: () => ({ roomId: "test-room-123" }),
-}));
-
-vi.mock("axios", () => ({
-  default: {
-    get: vi.fn(),
-    post: axiosPostMock,
-  },
 }));
 
 vi.mock("livekit-client", () => ({
@@ -61,85 +55,77 @@ Object.defineProperty(navigator, "mediaDevices", {
   },
 });
 
-vi.mock("@/lib/workspace/meetings", () => ({
-  startMeeting: vi.fn(),
-}));
-
-// Mock TanStack Query — return a resolved active meeting so the name-input renders
-const { mockUseQuery } = vi.hoisted(() => ({
-  mockUseQuery: vi.fn(() => ({
-    data: {
-      meeting: {
-        status: "active",
-        dateTime: new Date().toISOString(),
-        title: "Test Meeting",
-      },
-      isHost: true,
-    },
-    isLoading: false,
-  })),
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: mockUseQuery,
-  useMutation: vi.fn(() => ({
-    mutate: vi.fn(),
-    isPending: false,
-  })),
-}));
-
 import InMeetingView from "@/app/meet/[roomId]/page";
 
+function useMeetingInfoHandler(
+  meeting: {
+    status: string;
+    dateTime: string;
+    title: string;
+  },
+  isHost = true
+) {
+  worker.use(
+    http.get("/api/events/:id", () => HttpResponse.json({ meeting, isHost }))
+  );
+}
+
+const activeMeeting = {
+  status: "active",
+  dateTime: new Date().toISOString(),
+  title: "Test Meeting",
+};
+
 describe("InMeetingView Page", () => {
+  beforeEach(() => {
+    useMeetingInfoHandler(activeMeeting);
+  });
+
   it("renders name input before joining", async () => {
-    const screen = await render(<InMeetingView />);
+    const screen = await renderWithQueryClient(<InMeetingView />);
     await expect.element(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
   it("renders 'Join' button", async () => {
-    const screen = await render(<InMeetingView />);
+    const screen = await renderWithQueryClient(<InMeetingView />);
     await expect
       .element(screen.getByRole("button", { name: /join/i }))
       .toBeInTheDocument();
   });
 
   it("renders audio/video controls in pre-join UI", async () => {
-    const screen = await render(<InMeetingView />);
+    const screen = await renderWithQueryClient(<InMeetingView />);
     await expect
       .element(screen.getByRole("button").first())
       .toBeInTheDocument();
   });
 
   it("renders 'Ready to join?' heading", async () => {
-    const screen = await render(<InMeetingView />);
+    const screen = await renderWithQueryClient(<InMeetingView />);
     await expect
       .element(screen.getByText(/ready to join/i))
       .toBeInTheDocument();
   });
 
   it("renders loading state when meeting info is loading", async () => {
-    mockUseQuery.mockReturnValueOnce({
-      data: undefined,
-      isLoading: true,
-    });
-    const screen = await render(<InMeetingView />);
+    worker.use(
+      http.get("/api/events/:id", async () => {
+        await new Promise(() => {}); // never resolves
+        return HttpResponse.json({});
+      })
+    );
+    const screen = await renderWithQueryClient(<InMeetingView />);
     // Loading spinner is a div, not a heading/button
     expect(screen.container.querySelector(".animate-pulse")).not.toBeNull();
   });
 
   it("renders pre-meeting screen for upcoming meetings", async () => {
-    mockUseQuery.mockReturnValueOnce({
-      data: {
-        meeting: {
-          status: "upcoming",
-          dateTime: new Date().toISOString(),
-          title: "Team Sync",
-        },
-        isHost: true,
-      },
-      isLoading: false,
+    useMeetingInfoHandler({
+      status: "upcoming",
+      dateTime: new Date().toISOString(),
+      title: "Team Sync",
     });
-    const screen = await render(<InMeetingView />);
+    const screen = await renderWithQueryClient(<InMeetingView />);
     await expect
       .element(screen.getByText(/start meeting now/i))
       .toBeInTheDocument();
@@ -150,11 +136,17 @@ describe("InMeetingView Page", () => {
 
   describe("leave behavior", () => {
     const completeJoinAndLeave = async () => {
-      axiosPostMock.mockResolvedValueOnce({
-        data: { token: "t", meetingTitle: "Test", url: "wss://x" },
-      });
+      worker.use(
+        http.post("/api/token", () =>
+          HttpResponse.json({
+            token: "t",
+            meetingTitle: "Test",
+            url: "wss://x",
+          })
+        )
+      );
 
-      const screen = await render(<InMeetingView />);
+      const screen = await renderWithQueryClient(<InMeetingView />);
       await screen.getByRole("textbox").fill("Tester");
       await screen.getByRole("button", { name: /join meeting/i }).click();
 
@@ -170,17 +162,7 @@ describe("InMeetingView Page", () => {
     };
 
     it("redirects host to /workspace/dashboard on leave", async () => {
-      mockUseQuery.mockReturnValue({
-        data: {
-          meeting: {
-            status: "active",
-            dateTime: new Date().toISOString(),
-            title: "Test Meeting",
-          },
-          isHost: true,
-        },
-        isLoading: false,
-      });
+      useMeetingInfoHandler(activeMeeting, true);
 
       await completeJoinAndLeave();
 
@@ -189,17 +171,7 @@ describe("InMeetingView Page", () => {
     });
 
     it("redirects non-host to / on leave", async () => {
-      mockUseQuery.mockReturnValue({
-        data: {
-          meeting: {
-            status: "active",
-            dateTime: new Date().toISOString(),
-            title: "Test Meeting",
-          },
-          isHost: false,
-        },
-        isLoading: false,
-      });
+      useMeetingInfoHandler(activeMeeting, false);
 
       await completeJoinAndLeave();
 

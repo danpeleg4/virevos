@@ -1,8 +1,5 @@
-"use server";
-
-import { db } from "@db/db";
-import { clients, cases, users } from "@db/schema";
-import { eq, count } from "drizzle-orm";
+import type { BillingDB } from "@db/billing_db";
+import type { PlanLimitsDB } from "@db/plan_limits_db";
 import { getUserSubscriptionByUserId } from "./workspace/billing";
 
 const AI_CREDIT_LIMITS: Record<PlanId, number> = {
@@ -29,20 +26,24 @@ const PLAN_LIMITS: Record<
   business: { maxClients: null, maxCases: null },
 };
 
-export async function getUserPlan(userId: string): Promise<PlanId> {
-  const sub = await getUserSubscriptionByUserId(userId);
+export async function getUserPlan(
+  userId: string,
+  billingDb: BillingDB
+): Promise<PlanId> {
+  const sub = await getUserSubscriptionByUserId(userId, billingDb);
   return sub.plan;
 }
 
-export async function assertCanAddClient(userId: string): Promise<void> {
-  const plan = await getUserPlan(userId);
+export async function assertCanAddClient(
+  userId: string,
+  planLimitsDb: PlanLimitsDB,
+  billingDb: BillingDB
+): Promise<void> {
+  const plan = await getUserPlan(userId, billingDb);
   const limit = PLAN_LIMITS[plan].maxClients;
   if (limit === null) return;
 
-  const [result] = await db
-    .select({ count: count() })
-    .from(clients)
-    .where(eq(clients.userId, userId));
+  const [result] = await planLimitsDb.countClients(userId);
 
   if (result.count >= limit) {
     throw new Error(
@@ -51,15 +52,16 @@ export async function assertCanAddClient(userId: string): Promise<void> {
   }
 }
 
-export async function assertCanAddCase(userId: string): Promise<void> {
-  const plan = await getUserPlan(userId);
+export async function assertCanAddCase(
+  userId: string,
+  planLimitsDb: PlanLimitsDB,
+  billingDb: BillingDB
+): Promise<void> {
+  const plan = await getUserPlan(userId, billingDb);
   const limit = PLAN_LIMITS[plan].maxCases;
   if (limit === null) return;
 
-  const [result] = await db
-    .select({ count: count() })
-    .from(cases)
-    .where(eq(cases.userId, userId));
+  const [result] = await planLimitsDb.countCases(userId);
 
   if (result.count >= limit) {
     throw new Error(
@@ -68,14 +70,15 @@ export async function assertCanAddCase(userId: string): Promise<void> {
   }
 }
 
-export async function assertCanUseAI(userId: string): Promise<void> {
-  const plan = await getUserPlan(userId);
+export async function assertCanUseAI(
+  userId: string,
+  planLimitsDb: PlanLimitsDB,
+  billingDb: BillingDB
+): Promise<void> {
+  const plan = await getUserPlan(userId, billingDb);
   const limit = AI_CREDIT_LIMITS[plan];
 
-  const [userRow] = await db
-    .select({ ai_credits: users.aiCredits })
-    .from(users)
-    .where(eq(users.userId, userId));
+  const [userRow] = await planLimitsDb.getAiCredits(userId);
 
   if (!userRow || userRow.ai_credits >= limit) {
     throw new Error(
@@ -86,15 +89,14 @@ export async function assertCanUseAI(userId: string): Promise<void> {
 
 export async function assertCanAddFile(
   userId: string,
-  fileSize: number
+  fileSize: number,
+  planLimitsDb: PlanLimitsDB,
+  billingDb: BillingDB
 ): Promise<void> {
-  const plan = await getUserPlan(userId);
+  const plan = await getUserPlan(userId, billingDb);
   const limitBytes = STORAGE_LIMIT_BYTES[plan];
 
-  const [userRow] = await db
-    .select({ storage: users.storage })
-    .from(users)
-    .where(eq(users.userId, userId));
+  const [userRow] = await planLimitsDb.getStorage(userId);
 
   const currentStorage = userRow?.storage ?? 0;
   if (currentStorage + fileSize > limitBytes) {
@@ -103,4 +105,16 @@ export async function assertCanAddFile(
       `Storage limit reached. The ${plan} plan includes ${limitGb}GB of storage. Please upgrade for more.`
     );
   }
+}
+
+/** Resets AI credits for every user whose reset date is due (cron). */
+export async function resetDueAiCredits(
+  planLimitsDb: PlanLimitsDB
+): Promise<{ reset: number }> {
+  const now = new Date();
+  const nextReset = new Date(now);
+  nextReset.setDate(nextReset.getDate() + 30);
+
+  const result = await planLimitsDb.resetDueCredits(now, nextReset);
+  return { reset: result.length };
 }

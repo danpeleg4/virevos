@@ -42,12 +42,6 @@ import type {
   PortalAvailability,
   PortalMeetingBooking,
 } from "@/types/portal";
-import {
-  acceptBookingWithCalendar,
-  updateBookingStatus,
-} from "@/lib/portal_bookings";
-import { savePortalSettings } from "@/lib/portal_settings";
-
 interface ClientPortalSettingsProps {
   clientId: number;
 }
@@ -156,8 +150,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await savePortalSettings({
-        clientId,
+      await axios.post(`/api/clients/${clientId}/portal`, {
         enabled: portalEnabled,
         settings: {
           title,
@@ -201,15 +194,23 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
     bookingsQuery.data?.filter((b) => b.portalId === currentPortalId) ?? [];
 
   const confirmBooking = useMutation({
-    mutationFn: (bookingId: number) => acceptBookingWithCalendar(bookingId),
+    mutationFn: async (bookingId: number) => {
+      await axios.patch(`/api/portal-bookings/${bookingId}`, {
+        type: "accept",
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
     },
   });
 
   const cancelBooking = useMutation({
-    mutationFn: (bookingId: number) =>
-      updateBookingStatus(bookingId, "cancelled"),
+    mutationFn: async (bookingId: number) => {
+      await axios.patch(`/api/portal-bookings/${bookingId}`, {
+        type: "status",
+        data: { status: "cancelled" },
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
     },

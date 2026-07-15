@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "../components/ui/button";
 import { Shield, Info } from "lucide-react";
 import type { PaymentStepProps } from "@/types/onboard";
-import { createSubscription } from "@/lib/workspace/billing";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -66,9 +65,12 @@ function CheckoutForm({ planId }: { planId: string }) {
         return;
       }
 
-      await createSubscription({
-        planId: planId as "professional" | "business",
-        paymentMethodId: pmId,
+      await axios.post("/api/billing", {
+        type: "create-subscription",
+        data: {
+          planId: planId as "professional" | "business",
+          paymentMethodId: pmId,
+        },
       });
 
       router.push("/workspace/dashboard");

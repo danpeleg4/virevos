@@ -1,44 +1,13 @@
 import React from "react";
-import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
-
-const mockQueryClient = {
-  setQueryData: vi.fn(),
-  invalidateQueries: vi.fn(),
-};
-
-vi.mock("@tanstack/react-query", () => ({
-  useQueryClient: () => mockQueryClient,
-  useMutation: vi.fn(() => ({
-    mutate: vi.fn(),
-    isPending: false,
-    variables: undefined,
-  })),
-  useQuery: vi.fn(() => ({
-    data: undefined,
-    isLoading: false,
-    isError: false,
-  })),
-}));
+import { http, HttpResponse } from "msw";
+import { worker } from "../../msw/worker";
+import { renderWithQueryClient } from "../../_helpers/render";
 
 vi.mock("react-markdown", () => ({
   __esModule: true,
   default: ({ children }: { children: string }) => <p>{children}</p>,
 }));
-
-vi.mock("@/lib/portal_bookings", () => ({
-  acceptBookingWithCalendar: vi.fn(),
-  updateBookingStatus: vi.fn(),
-}));
-
-vi.mock("@/lib/document_requests", () => ({
-  approveDocumentRequest: vi.fn(),
-  declineDocumentRequest: vi.fn(),
-  updateDocumentRequest: vi.fn(),
-}));
-
-// Mock fetch for streaming
-globalThis.fetch = vi.fn();
 
 import { AIAssistant } from "@/app/components/AIAssistant";
 
@@ -47,18 +16,17 @@ describe("AIAssistant", () => {
 
   beforeEach(() => {
     onClose.mockClear();
-    (globalThis.fetch as unknown as Mock).mockClear();
   });
 
   it("renders panel when isOpen=true", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     await expect.element(screen.getByText(/virevos ai/i)).toBeInTheDocument();
   });
 
   it("does not render panel when isOpen=false", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={false} onClose={onClose} pendingBookings={[]} />
     );
     await expect
@@ -67,7 +35,7 @@ describe("AIAssistant", () => {
   });
 
   it("renders input field when open", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     await expect
@@ -76,7 +44,7 @@ describe("AIAssistant", () => {
   });
 
   it("send button is disabled when input is empty", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     // Find the button that is disabled when input is empty (the Send icon button)
@@ -86,7 +54,7 @@ describe("AIAssistant", () => {
   });
 
   it("close button calls onClose", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     // The X button is the close button in the header
@@ -95,7 +63,7 @@ describe("AIAssistant", () => {
   });
 
   it("input accepts text", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     await screen.getByPlaceholder(/plan, search, build/i).fill("Hello AI");
@@ -123,7 +91,7 @@ describe("AIAssistant", () => {
         clientDisplayName: "Alice Corp",
       },
     ];
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
     await expect
@@ -137,7 +105,7 @@ describe("AIAssistant", () => {
   });
 
   it("does not show meeting request section when there are no pending bookings", async () => {
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     await expect
@@ -164,7 +132,7 @@ describe("AIAssistant", () => {
 
   it("shows all bookings inline and disables the toggle when count <= 2", async () => {
     const pending = [makeBooking(1, "Alice Corp"), makeBooking(2, "Bob Inc")];
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
     await expect.element(screen.getByText(/alice corp/i)).toBeInTheDocument();
@@ -180,7 +148,7 @@ describe("AIAssistant", () => {
       makeBooking(2, "Bob Inc"),
       makeBooking(3, "Carol LLC"),
     ];
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
     const toggle = screen.getByRole("button", { name: /3 meeting requests/i });
@@ -200,7 +168,7 @@ describe("AIAssistant", () => {
       makeBooking(2, "Bob Inc"),
       makeBooking(3, "Carol LLC"),
     ];
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
     const toggle = screen.getByRole("button", { name: /meeting request/i });
@@ -217,7 +185,7 @@ describe("AIAssistant", () => {
       makeBooking(2, "Bob Inc"),
       makeBooking(3, "Carol LLC"),
     ];
-    const screen = await render(
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={pending} />
     );
     const toggle = screen.getByRole("button", { name: /meeting request/i });
@@ -230,20 +198,27 @@ describe("AIAssistant", () => {
     await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("shows error message when fetch fails", async () => {
-    (globalThis.fetch as unknown as Mock).mockRejectedValueOnce(
-      new Error("Network error")
+  it("shows an error message when the /api/chat request fails", async () => {
+    worker.use(
+      http.post("/api/chat", () =>
+        HttpResponse.json({ error: "boom" }, { status: 500 })
+      )
     );
-    const screen = await render(
+
+    const screen = await renderWithQueryClient(
       <AIAssistant isOpen={true} onClose={onClose} pendingBookings={[]} />
     );
     await screen.getByPlaceholder(/plan, search, build/i).fill("Hello");
     // Click the send button (last button in the component)
     const buttons = screen.getByRole("button").elements();
     await page.elementLocator(buttons[buttons.length - 1]).click();
-    // After submitting, the user message should appear in the chat
+    // The user message appears immediately...
     await expect
       .element(screen.getByText("Hello", { exact: true }).first())
+      .toBeInTheDocument();
+    // ...and the assistant reply surfaces the error once the request settles.
+    await expect
+      .element(screen.getByText(/something went wrong/i))
       .toBeInTheDocument();
   });
 });

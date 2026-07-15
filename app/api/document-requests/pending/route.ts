@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listPendingDocumentRequests } from "@/lib/document_requests";
+import { documentRequestsDrizzle } from "@db/document_requests_db";
 import { getCurrentUser } from "@/lib/supabase/auth";
 
 export async function GET() {
@@ -8,7 +9,10 @@ export async function GET() {
     if (!user?.id) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
-    const requests = await listPendingDocumentRequests(user.id);
+    const requests = await listPendingDocumentRequests(
+      user.id,
+      documentRequestsDrizzle
+    );
     return NextResponse.json(requests);
   } catch (err) {
     if (err instanceof Error && err.message === "Unauthorized") {
