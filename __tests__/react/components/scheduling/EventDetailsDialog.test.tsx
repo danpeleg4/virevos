@@ -198,6 +198,37 @@ describe("EventDetailsDialog", () => {
     }
   });
 
+  it("does not throw when adding a task fails", async () => {
+    worker.use(
+      http.post("/api/tasks", () =>
+        HttpResponse.json({ error: "boom" }, { status: 500 })
+      )
+    );
+
+    const event: Event = {
+      ...baseEvent,
+      hasNotes: true,
+      action_items: [
+        {
+          task: "Fix bug",
+          owner: "You",
+          dueDate: null,
+          completed: false,
+          added: false,
+        },
+      ],
+    };
+    const screen = await renderWithQueryClient(
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
+    );
+    await screen.getByRole("button", { name: /^add$/i }).click();
+
+    // the item stays un-added and the button re-enables instead of hanging
+    await expect
+      .element(screen.getByRole("button", { name: /^add$/i }))
+      .not.toBeDisabled();
+  });
+
   it("disables 'Add All to Tasks' when all items already added", async () => {
     const event: Event = {
       ...baseEvent,
@@ -290,6 +321,21 @@ describe("EventDetailsDialog", () => {
     await expect
       .element(screen.getByText(/loading transcript/i))
       .toBeInTheDocument();
+  });
+
+  it("clears the loading state without throwing when the transcript fetch fails", async () => {
+    worker.use(
+      http.get("/api/transcript/:id", () =>
+        HttpResponse.json({ error: "boom" }, { status: 500 })
+      )
+    );
+    const event: Event = { ...baseEvent, hasTranscript: true };
+    const screen = await renderWithQueryClient(
+      <EventDetailsDialog event={event} open={true} onOpenChange={vi.fn()} />
+    );
+    await expect
+      .element(screen.getByText(/loading transcript/i))
+      .not.toBeInTheDocument();
   });
 
   it("does not fetch transcript when dialog is closed", async () => {

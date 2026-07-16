@@ -532,6 +532,21 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 }).enableRLS();
 
+export const demoRequests = pgTable(
+  "demo_requests",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    company: text("company"),
+    message: text("message"),
+    status: text("status").notNull().default("pending"),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => [index("demo_requests_created_at_idx").on(t.createdAt)]
+).enableRLS();
+
 // RELATIONS
 export const usersRelations = relations(users, ({ many, one }) => ({
   clients: many(clients),

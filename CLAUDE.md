@@ -24,6 +24,11 @@ Define proper interfaces/types for API responses, inputs, and server actions.
 
 Prefer generics in TanStack Query for strongly-typed queries and mutations.
 
+## **Database migrations**
+
+Do not run any drizzle commands, always just generate schema changes code in schema.ts
+and the developer will run the commands afterwards.
+
 ## **Testing Requirements**
 
 Use Vitest for all testing.

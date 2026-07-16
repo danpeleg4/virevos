@@ -78,6 +78,8 @@ export function EventDetailsDialog({
       });
       setAddedItems((prev) => new Set(prev).add(index));
       await queryClient.invalidateQueries({ queryKey: ["meetings"] });
+    } catch (err) {
+      console.error("Failed to add task from action item:", err);
     } finally {
       setAddingItems((prev) => {
         const s = new Set(prev);
@@ -107,6 +109,8 @@ export function EventDetailsDialog({
           endTime: 0,
         }));
         setFormattedData(formatted);
+      } catch (err) {
+        console.error("Failed to fetch transcript:", err);
       } finally {
         setTranscriptLoading(false);
       }
