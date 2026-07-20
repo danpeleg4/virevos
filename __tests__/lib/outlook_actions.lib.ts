@@ -46,7 +46,7 @@ const baseInput: SendOutlookEmailInput = {
   bodyText: "Hi there",
 };
 
-const send = (input: Partial<SendOutlookEmailInput>) =>
+const send = (input: SendOutlookEmailInput) =>
   sendOutlookEmail(
     input,
     outlookDb,
