@@ -35,6 +35,7 @@ export async function sendPortalChatMessage(
     max: 30,
   });
   if (limited) throw new ValidationError("Too many requests", 429);
+  if (!token) throw new ValidationError("Missing token", 400);
 
   const tokenValue = requireString(token, "token", MAX_SHORT);
   const body = requireString(message, "message", MAX_MESSAGE);

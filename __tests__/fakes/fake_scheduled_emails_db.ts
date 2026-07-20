@@ -40,6 +40,7 @@ export function makeFakeScheduledEmailsDb(
     claimEmail: vi.fn(async (_id: number): Promise<Claimed | []> => {
       return [{ ...canonicalScheduledEmail }];
     }),
+    unclaimEmail: vi.fn(async (_id: number): Promise<void> => {}),
     markAsFailed: vi.fn(async (_id: number): Promise<void> => {}),
     getUserRows: vi.fn(async (_userId: string) => [
       { name: "Dan", email: "dan@example.com" },

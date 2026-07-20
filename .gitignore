@@ -40,12 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-/.idea/inspectionProfiles/Project_Default.xml
-/.idea/vcs.xml
-/.idea/workspace.xml
+/.idea/
 .turbo
 web/.next/
-/.idea/compiler.xml
 /.claude/scheduled_tasks.lock
 /livekit/dist/
 /.vitest-attachments/

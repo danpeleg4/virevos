@@ -86,6 +86,52 @@ describe("sendScheduledEmail", () => {
     expect(result).toEqual({ outcome: "skipped" });
   });
 
+  it("releases the claim back to pending on a transient token-refresh error", async () => {
+    mockGetFreshOutlookAccessToken.mockRejectedValueOnce(
+      new Error("ECONNRESET")
+    );
+
+    await expect(
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
+    ).resolves.toEqual({
+      outcome: "retry",
+      error: "ECONNRESET",
+    });
+
+    expect(fakeClass.unclaimEmail).toHaveBeenCalledWith(5);
+    expect(fakeClass.markAsFailed).not.toHaveBeenCalled();
+    expect(fakeClass.catchFailedInsertOutlookEmail).not.toHaveBeenCalled();
+    expect(fakeScheduledEmailService.draftMessage).not.toHaveBeenCalled();
+  });
+
+  it("releases the claim back to pending on a transient user-lookup error", async () => {
+    fakeClass.getUserRows.mockRejectedValueOnce(new Error("db down"));
+
+    await expect(
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
+    ).resolves.toEqual({
+      outcome: "retry",
+      error: "db down",
+    });
+
+    expect(fakeClass.unclaimEmail).toHaveBeenCalledWith(5);
+    expect(fakeClass.markAsFailed).not.toHaveBeenCalled();
+    expect(fakeClass.catchFailedInsertOutlookEmail).not.toHaveBeenCalled();
+    expect(fakeScheduledEmailService.draftMessage).not.toHaveBeenCalled();
+  });
+
   it("marks the email failed when Outlook is not connected", async () => {
     mockGetFreshOutlookAccessToken.mockResolvedValue(null);
     await expect(
@@ -352,6 +398,27 @@ describe("sendScheduledEmailNow", () => {
         graphAuthService
       )
     ).rejects.toThrow("Scheduled email was already sent or cancelled");
+  });
+
+  it("throws 503 when a transient pre-send error leaves the row pending for retry", async () => {
+    mockGetFreshOutlookAccessToken.mockRejectedValueOnce(
+      new Error("ECONNRESET")
+    );
+
+    await expect(
+      sendScheduledEmailNow(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService
+      )
+    ).rejects.toMatchObject({
+      message: "ECONNRESET",
+      status: 503,
+    });
+
+    expect(fakeClass.unclaimEmail).toHaveBeenCalledWith(5);
   });
 
   it("falls back to a generic message when the failure has no error text", async () => {

@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { ScheduledEmailsDB } from "@db/scheduled_emails_db";
+import type { ScheduledEmailsDB, UserRows } from "@db/scheduled_emails_db";
 import {
   MAX_HTML_BODY,
   MAX_NAME,
@@ -24,6 +24,7 @@ const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
 export type SendScheduledEmailResult =
   | { outcome: "sent" }
   | { outcome: "skipped" } // claim miss: missing, already sent, or cancelled
+  | { outcome: "retry"; error: string } // transient pre-send error; row reset to pending
   | { outcome: "failed"; error: string }; // row marked failed + errorMessage
 
 export async function parseEmailAddress(raw: string): Promise<{
@@ -51,24 +52,42 @@ export async function sendScheduledEmail(
   const scheduledEmail = claimed[0];
   const userId = scheduledEmail.userId;
 
+  // Token refresh and the user lookup can fail transiently (network/DB
+  // blips) — keep them out of the catch-to-failed block below so a blip
+  // doesn't permanently mark the row "failed"; instead release the claim
+  // back to "pending" so the cron retries it on the next tick.
+  let accessToken: string | null;
+  let userRows: UserRows;
   try {
-    const accessToken = await getFreshOutlookAccessToken(
+    accessToken = await getFreshOutlookAccessToken(
       userId,
       outlookDb,
       graphAuthService
     );
-    if (!accessToken) {
-      await dbDrizzle.markAsFailed(scheduledEmailId);
-      return { outcome: "failed", error: "Outlook not connected for user" };
-    }
+    userRows = accessToken ? await dbDrizzle.getUserRows(userId) : [];
+  } catch (lookupErr: unknown) {
+    const errMsg =
+      lookupErr instanceof Error ? lookupErr.message : "Pre-send lookup failed";
+    console.error(
+      "[process_scheduled_emails] transient pre-send error for",
+      scheduledEmailId,
+      lookupErr
+    );
+    await dbDrizzle.unclaimEmail(scheduledEmailId);
+    return { outcome: "retry", error: errMsg };
+  }
 
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    };
+  if (!accessToken) {
+    await dbDrizzle.markAsFailed(scheduledEmailId);
+    return { outcome: "failed", error: "Outlook not connected for user" };
+  }
 
-    const userRows = await dbDrizzle.getUserRows(userId);
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
 
+  try {
     const fromName = userRows[0]?.name || "";
     let fromEmail = userRows[0]?.email || "";
     const toEmailAddr =
@@ -162,7 +181,6 @@ export async function processDueScheduledEmails(
   graphAuthService: GraphAuthServiceInterface
 ): Promise<{ processed: number }> {
   const dueEmails = await dbDrizzle.getDueScheduledEmailIds();
-
   const results = await Promise.allSettled(
     dueEmails.map((e) =>
       sendScheduledEmail(
@@ -269,6 +287,12 @@ export async function sendScheduledEmailNow(
     throw new ValidationError(
       "Scheduled email was already sent or cancelled",
       409
+    );
+  }
+  if (result.outcome === "retry") {
+    throw new ValidationError(
+      result.error || "Temporary error, please try again",
+      503
     );
   }
   if (result.outcome === "failed") {
