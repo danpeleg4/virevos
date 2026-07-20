@@ -213,7 +213,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   };
 
   const handleSchedule = () => {
-    if (!formToEmail || !formSubject || !formBody || !formDate) {
+    if (!formToEmail || !formSubject || !formBody || !formDate || !formTime) {
       return;
     }
 
@@ -393,7 +393,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-foreground">Time</label>
+                <label className="text-sm text-foreground">Time *</label>
                 <Input
                   type="time"
                   value={formTime}
