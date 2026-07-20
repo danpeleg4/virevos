@@ -61,6 +61,7 @@ export interface ScheduledEmailsDB {
   getScheduledEmailsByUser(userId: string): Promise<ScheEmail[]>;
   getDueScheduledEmailIds(): Promise<{ id: number }[]>;
   claimEmail(scheduledEmailId: number): Promise<Claimed>;
+  unclaimEmail(scheduledEmailId: number): Promise<void>;
   markAsFailed(scheduledEmailId: number): Promise<void>;
   getUserRows(userId: string): Promise<UserRows>;
   getAllClients(
@@ -124,6 +125,15 @@ export class ScheduledEmailsDrizzle implements ScheduledEmailsDB {
         )
       )
       .returning();
+  }
+
+  async unclaimEmail(scheduledEmailId: number): Promise<void> {
+    // Reverts a transient pre-send failure back to "pending" so the cron
+    // picks it up again on the next tick instead of leaving it stuck.
+    await this.db
+      .update(scheduledEmails)
+      .set({ status: "pending", sentAt: null })
+      .where(eq(scheduledEmails.id, scheduledEmailId));
   }
 
   async markAsFailed(scheduledEmailId: number): Promise<void> {
