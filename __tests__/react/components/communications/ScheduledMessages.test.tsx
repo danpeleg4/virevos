@@ -331,6 +331,29 @@ describe("ScheduledMessages — Schedule New Message", () => {
     // Dialog stays open so the user can fix the form
     await expect.element(screen.getByRole("dialog")).toBeInTheDocument();
   });
+
+  it("does not crash and skips the mutation when the Time field is cleared (issue #247)", async () => {
+    let called = false;
+    worker.use(
+      http.post("/api/scheduled-emails", () => {
+        called = true;
+        return HttpResponse.json({ success: true });
+      })
+    );
+
+    const { screen, dialog } = await openScheduleDialog();
+    await fillScheduleForm(dialog);
+
+    const timeInput =
+      document.querySelector<HTMLInputElement>('input[type="time"]');
+    await page.elementLocator(timeInput!).fill("");
+
+    await dialog.getByRole("button", { name: /schedule message/i }).click();
+
+    expect(called).toBe(false);
+    // Dialog stays open — no uncaught RangeError from an invalid Date
+    await expect.element(screen.getByRole("dialog")).toBeInTheDocument();
+  });
 });
 
 describe("ScheduledMessages — Pagination", () => {

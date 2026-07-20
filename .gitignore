@@ -48,3 +48,4 @@ web/.next/
 /.idea/compiler.xml
 /.claude/scheduled_tasks.lock
 /livekit/dist/
+/.vitest-attachments/
