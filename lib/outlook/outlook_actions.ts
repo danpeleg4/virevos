@@ -99,9 +99,7 @@ function validateAttachment(
   return { name, mimeType, url, path, data: att.data };
 }
 
-function validateSendInput(
-  raw: Partial<SendOutlookEmailInput>
-): SendOutlookEmailInput {
+function validateSendInput(raw: SendOutlookEmailInput): SendOutlookEmailInput {
   const to = requireEmail(raw.to, "to");
   const toName = optionalString(raw.toName, "toName", MAX_NAME);
   const subject = requireString(raw.subject, "subject", MAX_TITLE);
@@ -253,7 +251,7 @@ export async function syncOutlookInbox(
 }
 
 export async function sendOutlookEmail(
-  raw: Partial<SendOutlookEmailInput>,
+  raw: SendOutlookEmailInput,
   outlookDb: OutlookDB,
   storage: StorageClientInterface,
   graphAuthService: GraphAuthServiceInterface,
