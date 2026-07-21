@@ -12,8 +12,6 @@ export const OUTLOOK_SCOPES = [
   "Mail.ReadWrite",
   "Mail.Send",
   "MailboxSettings.Read",
-  "Calendars.Read",
-  "Mail.Read",
 ].join(" ");
 
 export interface GraphTokenResponse {
@@ -51,7 +49,6 @@ export class GraphAuthService implements GraphAuthServiceInterface {
       client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
       refresh_token: refreshToken,
       grant_type: "refresh_token",
-      scope: OUTLOOK_SCOPES,
     });
 
     return this.api.post<GraphTokenResponse>(TOKEN_URL, params.toString(), {
