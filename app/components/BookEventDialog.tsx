@@ -19,7 +19,7 @@ import {
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import type { Event } from "@/types/meeting";
 import { Switch } from "./ui/switch";
@@ -42,8 +42,6 @@ export function BookEventDialog({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState(""); // "HH:MM"
   const [duration, setDuration] = useState("");
-
-  const [timeOpen, setTimeOpen] = useState(false);
 
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
     const h = Math.floor(i / 2);
@@ -118,7 +116,6 @@ export function BookEventDialog({
                       !date && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
                     {date ? date.toLocaleDateString() : "Select date"}
                   </Button>
                 </PopoverTrigger>
@@ -137,43 +134,18 @@ export function BookEventDialog({
 
             <div>
               <Label>Time</Label>
-              <Popover open={timeOpen} onOpenChange={setTimeOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "mt-2 w-full justify-start text-left font-normal",
-                      !time && "text-muted-foreground"
-                    )}
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    {time || "Select time"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-32 p-0 h-60 overflow-y-auto overscroll-contain"
-                  align="start"
-                  onWheel={(e) => e.stopPropagation()}
-                >
-                  <div className="flex flex-col p-1">
-                    {timeOptions.map((t) => (
-                      <Button
-                        key={t}
-                        type="button"
-                        variant={time === t ? "default" : "ghost"}
-                        size="sm"
-                        className="w-full shrink-0 justify-start font-normal"
-                        onClick={() => {
-                          setTime(t);
-                          setTimeOpen(false);
-                        }}
-                      >
-                        {t}
-                      </Button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <Select value={time} onValueChange={setTime}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {timeOptions.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
