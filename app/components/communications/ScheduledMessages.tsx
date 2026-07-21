@@ -234,7 +234,16 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       return;
     }
 
-    const scheduledAt = new Date(`${formDate}T${formTime}`).toISOString();
+    const [hours, minutes] = formTime.split(":").map(Number);
+    const scheduledAt = new Date(
+      formDate.getFullYear(),
+      formDate.getMonth(),
+      formDate.getDate(),
+      hours,
+      minutes,
+      0,
+      0
+    ).toISOString();
     setIsCreating(false);
     scheduleMutation.mutate({
       toEmail: formToEmail,
@@ -294,6 +303,22 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         : statusFilter === "sent"
           ? "Sent"
           : "Failed";
+
+  const now = new Date();
+  const isFormDateToday =
+    !!formDate && formDate.toDateString() === now.toDateString();
+  const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes()
+  ).padStart(2, "0")}`;
+
+  const handleSelectDate = (d: Date | undefined) => {
+    setFormDate(d);
+    const selectedIsToday = !!d && d.toDateString() === now.toDateString();
+    if (selectedIsToday && formTime < currentTimeStr) {
+      const nextAvailable = timeOptions.find((t) => t >= currentTimeStr);
+      if (nextAvailable) setFormTime(nextAvailable);
+    }
+  };
 
   const navActions = (
     <>
@@ -407,6 +432,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                   <PopoverTrigger asChild>
                     <button
                       type="button"
+                      aria-label="Select date"
                       className={cn(
                         "border-input data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] mt-2 h-9 cursor-pointer",
                         !formDate && "text-muted-foreground"
@@ -421,7 +447,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                     <Calendar
                       mode="single"
                       selected={formDate}
-                      onSelect={setFormDate}
+                      onSelect={handleSelectDate}
                       disabled={(d) =>
                         d < new Date(new Date().setHours(0, 0, 0, 0))
                       }
@@ -438,7 +464,11 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
                     {timeOptions.map((t) => (
-                      <SelectItem key={t} value={t}>
+                      <SelectItem
+                        key={t}
+                        value={t}
+                        disabled={isFormDateToday && t < currentTimeStr}
+                      >
                         {t}
                       </SelectItem>
                     ))}

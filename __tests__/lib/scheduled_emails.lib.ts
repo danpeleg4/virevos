@@ -288,7 +288,7 @@ describe("createScheduledEmail", () => {
     subject: "Test Email",
     bodyHtml: "<p>Hello</p>",
     bodyText: "Hello",
-    scheduledAt: new Date().toISOString(),
+    scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     timezone: "UTC",
     recurring: null,
     clientId: null,
@@ -321,6 +321,17 @@ describe("createScheduledEmail", () => {
       errorMessage: null,
       createdAt: expect.any(Date),
     });
+  });
+
+  it("throws error when scheduledAt is a date in the past", async () => {
+    const res = createScheduledEmail(
+      {
+        ...fakeInput,
+        scheduledAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      },
+      fakeClass
+    );
+    await expect(res).rejects.toThrow("Scheduled date must be in the future");
   });
 });
 

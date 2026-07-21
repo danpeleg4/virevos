@@ -10,8 +10,11 @@ vi.mock("@/app/components/ui/select", async () => {
     {} as { onValueChange?: (v: string) => void; placeholder?: React.ReactNode }
   );
 
-  const SelectValueMock = ({ placeholder }: { placeholder?: React.ReactNode }) =>
-    ReactMod.createElement("span", null, placeholder);
+  const SelectValueMock = ({
+    placeholder,
+  }: {
+    placeholder?: React.ReactNode;
+  }) => ReactMod.createElement("span", null, placeholder);
 
   // Find the SelectValue placeholder nested under this Select's children
   // (it lives inside SelectTrigger), so each Select gets its own accessible

@@ -24,7 +24,7 @@ import { useState } from "react";
 import type { Event } from "@/types/meeting";
 import { Switch } from "./ui/switch";
 import { cn } from "./ui/utils";
-import {timeOptions} from "@/lib/util/utils";
+import { timeOptions } from "@/lib/util/utils";
 
 interface BookMeetingDialogProps {
   dialogOpen: boolean;
@@ -43,7 +43,6 @@ export function BookEventDialog({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState(""); // "HH:MM"
   const [duration, setDuration] = useState("");
-
 
   function toUTC(d: Date, timeStr: string) {
     const [hours, minutes] = timeStr.split(":").map(Number);
