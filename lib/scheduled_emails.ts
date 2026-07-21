@@ -244,7 +244,7 @@ export async function createScheduledEmail(
       : null;
 
   if (scheduledAt < new Date()) {
-    throw new Error("Scheduled date must be in the future");
+    throw new ValidationError("Scheduled date must be in the future");
   }
 
   return dbDrizzle.insertScheduledEmail({
