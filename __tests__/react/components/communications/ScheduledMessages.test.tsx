@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { worker } from "../../../msw/worker";
 import { renderWithQueryClient } from "../../../_helpers/render";
 import type { ScheduledEmail } from "@/types/communications";
+import { timeOptions } from "@/lib/util/utils";
 
 // itemsPerPage is derived from measured viewport height; pin it so the
 // pagination tests are deterministic regardless of the browser window size
@@ -15,6 +16,81 @@ vi.mock("@/app/hooks/useCalcWindow", () => ({
     tableRef: { current: null },
   }),
 }));
+
+// Swap Radix Select for a native <select> so the Time field can be driven
+// deterministically in tests.
+vi.mock("@/app/components/ui/select", async () => {
+  const ReactMod = await import("react");
+  const SelectCtx = ReactMod.createContext(
+    {} as { onValueChange?: (v: string) => void; placeholder?: React.ReactNode }
+  );
+
+  const SelectValueMock = ({
+    placeholder,
+  }: {
+    placeholder?: React.ReactNode;
+  }) => ReactMod.createElement("span", null, placeholder);
+
+  // Find the SelectValue placeholder nested under this Select's children
+  // (it lives inside SelectTrigger), so each Select gets its own accessible
+  // name instead of a single hardcoded label shared by every instance.
+  function findPlaceholder(node: React.ReactNode): React.ReactNode {
+    let found: React.ReactNode;
+    ReactMod.Children.forEach(node, (child) => {
+      if (found !== undefined || !ReactMod.isValidElement(child)) return;
+      const el = child as React.ReactElement<{
+        placeholder?: React.ReactNode;
+        children?: React.ReactNode;
+      }>;
+      if (el.type === SelectValueMock) {
+        found = el.props.placeholder;
+      } else if (el.props && "children" in el.props) {
+        found = findPlaceholder(el.props.children);
+      }
+    });
+    return found;
+  }
+
+  return {
+    Select: ({
+      children,
+      onValueChange,
+    }: {
+      children: React.ReactNode;
+      onValueChange?: (v: string) => void;
+    }) =>
+      ReactMod.createElement(
+        SelectCtx.Provider,
+        { value: { onValueChange, placeholder: findPlaceholder(children) } },
+        children
+      ),
+    SelectTrigger: ({ children }: { children: React.ReactNode }) =>
+      ReactMod.createElement("div", null, children),
+    SelectValue: SelectValueMock,
+    SelectContent: ({ children }: { children: React.ReactNode }) => {
+      const { onValueChange, placeholder } = ReactMod.useContext(SelectCtx);
+      return ReactMod.createElement(
+        "select",
+        {
+          "aria-label": placeholder,
+          onChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+            onValueChange?.(e.target.value),
+        },
+        ReactMod.createElement("option", { value: "" }, "Select"),
+        children
+      );
+    },
+    SelectItem: ({
+      value,
+      children,
+      disabled,
+    }: {
+      value: string;
+      children: React.ReactNode;
+      disabled?: boolean;
+    }) => ReactMod.createElement("option", { value, disabled }, children),
+  };
+});
 
 import { ScheduledMessages } from "@/app/components/communications/ScheduledMessages";
 
@@ -76,16 +152,68 @@ const openScheduleDialog = async () => {
   return { screen, dialog };
 };
 
-const fillScheduleForm = async (dialog: Locator) => {
+// The Calendar disables past days, so tests pick "today" rather than a
+// fixed date — keep this in sync with the day clicked in fillScheduleForm.
+const scheduleTargetDate = new Date();
+const scheduleTargetDay = scheduleTargetDate.getDate().toString();
+
+// fillScheduleForm never touches the Time field, so it keeps the form's
+// "09:00" default — unless the auto-adjust-on-today logic (ScheduledMessages
+// handleSelectDate) bumps it forward because "now" is already past 9am.
+const defaultFormTime = "09:00";
+const currentTimeStr = `${String(scheduleTargetDate.getHours()).padStart(
+  2,
+  "0"
+)}:${String(scheduleTargetDate.getMinutes()).padStart(2, "0")}`;
+const expectedDefaultFormTime =
+  defaultFormTime < currentTimeStr
+    ? (timeOptions.find((t) => t >= currentTimeStr) ?? defaultFormTime)
+    : defaultFormTime;
+
+const expectedScheduledAt = (time: string) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return new Date(
+    scheduleTargetDate.getFullYear(),
+    scheduleTargetDate.getMonth(),
+    scheduleTargetDate.getDate(),
+    hours,
+    minutes,
+    0,
+    0
+  ).toISOString();
+};
+
+const fillScheduleForm = async (
+  screen: Awaited<ReturnType<typeof renderWithQueryClient>>,
+  dialog: Locator
+) => {
   await dialog
     .getByPlaceholder("recipient@example.com")
     .fill("new@example.com");
   await dialog.getByPlaceholder("John Doe").fill("New Person");
   await dialog.getByPlaceholder("Email subject...").fill("Kickoff call");
   await dialog.getByPlaceholder("Type your message...").fill("See you soon");
-  const dateInput =
-    document.querySelector<HTMLInputElement>('input[type="date"]');
-  await page.elementLocator(dateInput!).fill("2026-07-15");
+
+  // Popover/Calendar portal outside the dialog, so search at the page level
+  await dialog.getByRole("button", { name: /select date/i }).click();
+  await vi.waitFor(() => {
+    expect(screen.getByRole("gridcell").elements().length).toBeGreaterThan(0);
+  });
+  const dayCells = screen.getByRole("gridcell").elements();
+  const targetCell = dayCells
+    .map((c) => c.querySelector("button"))
+    .find(
+      (btn) =>
+        btn &&
+        btn.textContent === scheduleTargetDay &&
+        !btn.hasAttribute("disabled")
+    );
+  if (targetCell) await page.elementLocator(targetCell).click();
+  // Escape would close the outer Dialog too — both it and the Popover attach
+  // their own document-level Escape listener with no stacking awareness.
+  // Clicking elsewhere inside the dialog dismisses only the popover via
+  // onPointerDownOutside.
+  await dialog.getByPlaceholder("Type your message...").click();
 };
 
 beforeEach(() => {
@@ -142,8 +270,11 @@ describe("ScheduledMessages — Send Now", () => {
       .element(screen.getByRole("button", { name: /send now/i }))
       .not.toBeInTheDocument();
 
-    await vi.waitFor(() => expect(postCallCount).toBe(1));
-    expect(lastPostBody).toEqual({ data: 1, type: "send-now" });
+    // waitFor on lastPostBody directly — postCallCount increments before the
+    // request body is awaited, so checking it first is a race
+    await vi.waitFor(() => {
+      expect(lastPostBody).toEqual({ data: 1, type: "send-now" });
+    });
 
     // Server confirms; refetch on settle returns the sent version
     scheduledEmails = [
@@ -227,7 +358,7 @@ describe("ScheduledMessages — Schedule New Message", () => {
     );
 
     const { screen, dialog } = await openScheduleDialog();
-    await fillScheduleForm(dialog);
+    await fillScheduleForm(screen, dialog);
     await dialog.getByRole("button", { name: /schedule message/i }).click();
 
     // Optimistic: dialog closes and the new message shows up immediately
@@ -244,7 +375,7 @@ describe("ScheduledMessages — Schedule New Message", () => {
           subject: "Kickoff call",
           bodyHtml: "<p>See you soon</p>",
           bodyText: "See you soon",
-          scheduledAt: new Date("2026-07-15T09:00").toISOString(),
+          scheduledAt: expectedScheduledAt(expectedDefaultFormTime),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
       });
@@ -260,7 +391,7 @@ describe("ScheduledMessages — Schedule New Message", () => {
         subject: "Kickoff call",
         bodyHtml: "<p>See you soon</p>",
         bodyText: "See you soon",
-        scheduledAt: new Date("2026-07-15T09:00").toISOString(),
+        scheduledAt: expectedScheduledAt(expectedDefaultFormTime),
       },
       pendingEmail,
     ];
@@ -280,7 +411,7 @@ describe("ScheduledMessages — Schedule New Message", () => {
     );
 
     const { screen, dialog } = await openScheduleDialog();
-    await fillScheduleForm(dialog);
+    await fillScheduleForm(screen, dialog);
     await dialog.getByRole("button", { name: /schedule message/i }).click();
 
     await expect.element(screen.getByText("Kickoff call")).toBeInTheDocument();
@@ -298,7 +429,7 @@ describe("ScheduledMessages — Schedule New Message", () => {
     );
 
     const { screen, dialog } = await openScheduleDialog();
-    await fillScheduleForm(dialog);
+    await fillScheduleForm(screen, dialog);
     await dialog.getByRole("button", { name: /schedule message/i }).click();
 
     await vi.waitFor(() => {
@@ -342,17 +473,114 @@ describe("ScheduledMessages — Schedule New Message", () => {
     );
 
     const { screen, dialog } = await openScheduleDialog();
-    await fillScheduleForm(dialog);
+    await fillScheduleForm(screen, dialog);
 
-    const timeInput =
-      document.querySelector<HTMLInputElement>('input[type="time"]');
-    await page.elementLocator(timeInput!).fill("");
+    // The Select has no blank item in the real UI, but selecting the mock's
+    // injected "" option still exercises the formTime-cleared guard.
+    await dialog
+      .getByRole("combobox", { name: /select time/i })
+      .selectOptions("");
 
     await dialog.getByRole("button", { name: /schedule message/i }).click();
 
     expect(called).toBe(false);
     // Dialog stays open — no uncaught RangeError from an invalid Date
     await expect.element(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("disables time slots already passed today, but not on a future date", async () => {
+    const { screen, dialog } = await openScheduleDialog();
+
+    // fillScheduleForm picks today's date via the calendar
+    await fillScheduleForm(screen, dialog);
+
+    const timeSelect = dialog.getByRole("combobox", {
+      name: /select time/i,
+    });
+    const optionsToday = (
+      timeSelect.elements()[0] as HTMLSelectElement
+    ).querySelectorAll("option");
+    const midnightToday = Array.from(optionsToday).find(
+      (o) => o.value === "00:00"
+    ) as HTMLOptionElement;
+    const lateToday = Array.from(optionsToday).find(
+      (o) => o.value === "23:30"
+    ) as HTMLOptionElement;
+    expect(midnightToday.disabled).toBe(true);
+    expect(lateToday.disabled).toBe(false);
+
+    // Switch to a day next month — nothing there should be disabled,
+    // regardless of the current clock time
+    await dialog.getByRole("button", { name: /select date/i }).click();
+    await screen.getByRole("button", { name: /next month/i }).click();
+    await vi.waitFor(() => {
+      expect(screen.getByRole("gridcell").elements().length).toBeGreaterThan(0);
+    });
+    const dayCells = screen.getByRole("gridcell").elements();
+    const futureCell = dayCells
+      .map((c) => c.querySelector("button"))
+      .find((btn) => btn && !btn.hasAttribute("disabled"));
+    if (futureCell) await page.elementLocator(futureCell).click();
+    await dialog.getByPlaceholder("Type your message...").click();
+
+    const optionsFuture = (
+      timeSelect.elements()[0] as HTMLSelectElement
+    ).querySelectorAll("option");
+    const midnightFuture = Array.from(optionsFuture).find(
+      (o) => o.value === "00:00"
+    ) as HTMLOptionElement;
+    expect(midnightFuture.disabled).toBe(false);
+  });
+
+  it("auto-adjusts a past preselected time when today is chosen as the date", async () => {
+    worker.use(
+      http.post("/api/scheduled-emails", async ({ request }) => {
+        lastPostBody = await request.json();
+        return HttpResponse.json({ success: true });
+      })
+    );
+
+    const { screen, dialog } = await openScheduleDialog();
+    await dialog
+      .getByPlaceholder("recipient@example.com")
+      .fill("new@example.com");
+    await dialog.getByPlaceholder("Email subject...").fill("Kickoff call");
+    await dialog.getByPlaceholder("Type your message...").fill("See you soon");
+
+    // Force a time that's already in the past relative to "now"
+    await dialog
+      .getByRole("combobox", { name: /select time/i })
+      .selectOptions("00:00");
+
+    // Picking today should bump the time off the now-disabled "00:00" slot
+    await dialog.getByRole("button", { name: /select date/i }).click();
+    await vi.waitFor(() => {
+      expect(screen.getByRole("gridcell").elements().length).toBeGreaterThan(0);
+    });
+    const dayCells = screen.getByRole("gridcell").elements();
+    const todayCell = dayCells
+      .map((c) => c.querySelector("button"))
+      .find(
+        (btn) =>
+          btn &&
+          btn.textContent === scheduleTargetDay &&
+          !btn.hasAttribute("disabled")
+      );
+    if (todayCell) await page.elementLocator(todayCell).click();
+    await dialog.getByPlaceholder("Type your message...").click();
+
+    await dialog.getByRole("button", { name: /schedule message/i }).click();
+
+    const nextAvailable = timeOptions.find((t) => t >= currentTimeStr);
+
+    await vi.waitFor(() => {
+      expect(lastPostBody).toEqual({
+        type: "schedule",
+        data: expect.objectContaining({
+          scheduledAt: expectedScheduledAt(nextAvailable!),
+        }),
+      });
+    });
   });
 });
 

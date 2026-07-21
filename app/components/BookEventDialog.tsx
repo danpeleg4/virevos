@@ -19,11 +19,12 @@ import {
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import type { Event } from "@/types/meeting";
 import { Switch } from "./ui/switch";
 import { cn } from "./ui/utils";
+import { timeOptions } from "@/lib/util/utils";
 
 interface BookMeetingDialogProps {
   dialogOpen: boolean;
@@ -42,14 +43,6 @@ export function BookEventDialog({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState(""); // "HH:MM"
   const [duration, setDuration] = useState("");
-
-  const [timeOpen, setTimeOpen] = useState(false);
-
-  const timeOptions = Array.from({ length: 48 }, (_, i) => {
-    const h = Math.floor(i / 2);
-    const m = i % 2 === 0 ? "00" : "30";
-    return `${String(h).padStart(2, "0")}:${m}`;
-  });
 
   function toUTC(d: Date, timeStr: string) {
     const [hours, minutes] = timeStr.split(":").map(Number);
@@ -111,16 +104,17 @@ export function BookEventDialog({
               <Label>Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
+                  <button
+                    type="button"
                     className={cn(
-                      "mt-2 w-full justify-start text-left font-normal",
+                      "border-input data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] mt-2 h-9 cursor-pointer",
                       !date && "text-muted-foreground"
                     )}
+                    data-placeholder={!date ? "" : undefined}
                   >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
                     {date ? date.toLocaleDateString() : "Select date"}
-                  </Button>
+                    <CalendarIcon className="size-4 opacity-50" />
+                  </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
@@ -137,43 +131,18 @@ export function BookEventDialog({
 
             <div>
               <Label>Time</Label>
-              <Popover open={timeOpen} onOpenChange={setTimeOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "mt-2 w-full justify-start text-left font-normal",
-                      !time && "text-muted-foreground"
-                    )}
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    {time || "Select time"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-32 p-0 h-60 overflow-y-auto overscroll-contain"
-                  align="start"
-                  onWheel={(e) => e.stopPropagation()}
-                >
-                  <div className="flex flex-col p-1">
-                    {timeOptions.map((t) => (
-                      <Button
-                        key={t}
-                        type="button"
-                        variant={time === t ? "default" : "ghost"}
-                        size="sm"
-                        className="w-full shrink-0 justify-start font-normal"
-                        onClick={() => {
-                          setTime(t);
-                          setTimeOpen(false);
-                        }}
-                      >
-                        {t}
-                      </Button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <Select value={time} onValueChange={setTime}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {timeOptions.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -183,9 +152,11 @@ export function BookEventDialog({
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="15">15 minutes</SelectItem>
                   <SelectItem value="30">30 minutes</SelectItem>
                   <SelectItem value="45">45 minutes</SelectItem>
                   <SelectItem value="60">60 minutes</SelectItem>
+                  <SelectItem value="90">90 minutes</SelectItem>
                 </SelectContent>
               </Select>
             </div>

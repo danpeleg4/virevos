@@ -35,12 +35,29 @@ import {
   ChevronRight,
   FileText,
   Target,
+  CalendarIcon,
 } from "lucide-react";
 import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
 import { type ScheduleEmailInput } from "@/lib/scheduled_emails";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
+import { Label } from "@/app/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover";
+import { cn } from "@/app/components/ui/utils";
+import { Calendar } from "@/app/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import { timeOptions } from "@/lib/util/utils";
 
 interface ScheduledMessagesProps {
   navContainer: HTMLDivElement | null;
@@ -60,7 +77,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [formToName, setFormToName] = useState("");
   const [formSubject, setFormSubject] = useState("");
   const [formBody, setFormBody] = useState("");
-  const [formDate, setFormDate] = useState("");
+  const [formDate, setFormDate] = useState<Date | undefined>(undefined);
   const [formTime, setFormTime] = useState("09:00");
 
   const queryClient = useQueryClient();
@@ -167,7 +184,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       setFormToName("");
       setFormSubject("");
       setFormBody("");
-      setFormDate("");
+      setFormDate(undefined);
       setFormTime("09:00");
     },
     onError: (_error, _input, context) => {
@@ -217,7 +234,16 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       return;
     }
 
-    const scheduledAt = new Date(`${formDate}T${formTime}`).toISOString();
+    const [hours, minutes] = formTime.split(":").map(Number);
+    const scheduledAt = new Date(
+      formDate.getFullYear(),
+      formDate.getMonth(),
+      formDate.getDate(),
+      hours,
+      minutes,
+      0,
+      0
+    ).toISOString();
     setIsCreating(false);
     scheduleMutation.mutate({
       toEmail: formToEmail,
@@ -277,6 +303,22 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         : statusFilter === "sent"
           ? "Sent"
           : "Failed";
+
+  const now = new Date();
+  const isFormDateToday =
+    !!formDate && formDate.toDateString() === now.toDateString();
+  const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes()
+  ).padStart(2, "0")}`;
+
+  const handleSelectDate = (d: Date | undefined) => {
+    setFormDate(d);
+    const selectedIsToday = !!d && d.toDateString() === now.toDateString();
+    if (selectedIsToday && formTime < currentTimeStr) {
+      const nextAvailable = timeOptions.find((t) => t >= currentTimeStr);
+      if (nextAvailable) setFormTime(nextAvailable);
+    }
+  };
 
   const navActions = (
     <>
@@ -384,21 +426,54 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm text-foreground">Date *</label>
-                <Input
-                  type="date"
-                  value={formDate}
-                  onChange={(e) => setFormDate(e.target.value)}
-                />
+              <div>
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Select date"
+                      className={cn(
+                        "border-input data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] mt-2 h-9 cursor-pointer",
+                        !formDate && "text-muted-foreground"
+                      )}
+                      data-placeholder={!formDate ? "" : undefined}
+                    >
+                      {formDate ? formDate.toLocaleDateString() : "Select date"}
+                      <CalendarIcon className="size-4 opacity-50" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formDate}
+                      onSelect={handleSelectDate}
+                      disabled={(d) =>
+                        d < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm text-foreground">Time *</label>
-                <Input
-                  type="time"
-                  value={formTime}
-                  onChange={(e) => setFormTime(e.target.value)}
-                />
+
+              <div>
+                <Label>Time</Label>
+                <Select value={formTime} onValueChange={setFormTime}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {timeOptions.map((t) => (
+                      <SelectItem
+                        key={t}
+                        value={t}
+                        disabled={isFormDateToday && t < currentTimeStr}
+                      >
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
