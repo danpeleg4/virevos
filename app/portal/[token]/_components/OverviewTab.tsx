@@ -27,7 +27,7 @@ export function OverviewTab({ data, messages, onNavigate }: OverviewTabProps) {
         {/* Left */}
         <div className="lg:col-span-2 space-y-6">
           {/* Cases table */}
-          <Card className="overflow-hidden p-0">
+          <Card className="overflow-hidden p-0 gap-0">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
               <FolderKanban className="h-4 w-4 text-blue-600" />
               <span className="text-sm font-medium text-foreground">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction } from "react";
 import axios from "axios";
 import {
   CardContent,
@@ -25,15 +25,16 @@ import {
 import {
   Globe,
   Palette,
-  ExternalLink,
   Copy,
   Eye,
-  Loader2,
   CalendarDays,
   Clock,
   CheckCircle2,
   XCircle,
   User,
+  Mail,
+  MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +45,18 @@ import type {
 } from "@/types/portal";
 interface ClientPortalSettingsProps {
   clientId: number;
+  portalEnabled: boolean;
+  onPortalEnabledChange: (enabled: boolean) => void;
+  title: string;
+  onTitleChange: (title: string) => void;
+  welcomeMessage: string;
+  onWelcomeMessage: (welcomeMessage: string) => void;
+  emailNotifications: boolean;
+  meetingSchedulingEnabled: boolean;
+  onMeetingSchedulingEnabledChange: (enabled: boolean) => void;
+  availability: PortalAvailability;
+  onAvailability: Dispatch<SetStateAction<PortalAvailability>>;
+  isProvisioningPortal: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -86,39 +99,22 @@ function generateTimeOptions(): { value: string; label: string }[] {
 
 const TIME_OPTIONS = generateTimeOptions();
 
-const DEFAULT_AVAILABILITY: PortalAvailability = {
-  weeklySchedule: {
-    monday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    tuesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    wednesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    thursday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    friday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
-    sunday: { enabled: false, startTime: "09:00", endTime: "17:00" },
-  },
-  meetingDurations: [15, 30, 45, 60],
-  bufferMinutes: 15,
-  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-};
-
-const DEFAULT_WELCOME =
-  "Your Visa Readiness Dashboard. Monitor your deadlines and keep your documents audit-ready";
-
-export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
+export function ClientPortalSettings({
+  clientId,
+  portalEnabled,
+  onPortalEnabledChange,
+  title,
+  onTitleChange,
+  welcomeMessage,
+  onWelcomeMessage,
+  emailNotifications,
+  meetingSchedulingEnabled,
+  onMeetingSchedulingEnabledChange,
+  availability,
+  onAvailability,
+  isProvisioningPortal,
+}: ClientPortalSettingsProps) {
   const queryClient = useQueryClient();
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [portalEnabled, setPortalEnabled] = useState(true);
-  const [chatEnabled, setChatEnabled] = useState(true);
-  const [fileSharing, setFileSharing] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [aiChatBot, setAiChatBot] = useState(true);
-  const [title, setTitle] = useState("");
-  const [welcomeMessage, setWelcomeMessage] = useState(DEFAULT_WELCOME);
-  const [meetingSchedulingEnabled, setMeetingSchedulingEnabled] =
-    useState(false);
-  const [availability, setAvailability] =
-    useState<PortalAvailability>(DEFAULT_AVAILABILITY);
 
   const portalQuery = useQuery({
     queryKey: ["clientPortal", clientId],
@@ -129,50 +125,6 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
       return data.portal;
     },
   });
-
-  useEffect(() => {
-    const portal = portalQuery.data;
-    if (portal) {
-      setPortalEnabled(portal.enabled);
-      setTitle(portal.settings?.title || "");
-      setWelcomeMessage(portal.settings?.welcomeMessage || DEFAULT_WELCOME);
-      setChatEnabled(portal.settings?.chatEnabled ?? true);
-      setFileSharing(portal.settings?.fileSharing ?? true);
-      setAiChatBot(portal.settings?.aiChatBot ?? true);
-      setEmailNotifications(portal.settings?.emailNotifications ?? true);
-      setMeetingSchedulingEnabled(
-        portal.settings?.meetingSchedulingEnabled ?? false
-      );
-      setAvailability(portal.settings?.availability ?? DEFAULT_AVAILABILITY);
-    }
-  }, [portalQuery.data]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await axios.post(`/api/clients/${clientId}/portal`, {
-        enabled: portalEnabled,
-        settings: {
-          title,
-          welcomeMessage,
-          chatEnabled,
-          fileSharing,
-          aiChatBot,
-          emailNotifications,
-          meetingSchedulingEnabled,
-          availability,
-        },
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["clientPortal", clientId],
-      });
-      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-    } catch (err: unknown) {
-      console.error("Failed to save settings:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const bookingsQuery = useQuery({
     queryKey: ["portalBookings"],
@@ -221,7 +173,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
     field: "enabled" | "startTime" | "endTime",
     value: boolean | string
   ) => {
-    setAvailability((prev) => ({
+    onAvailability((prev) => ({
       ...prev,
       weeklySchedule: {
         ...prev.weeklySchedule,
@@ -234,7 +186,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
   };
 
   const toggleDuration = (duration: number) => {
-    setAvailability((prev) => {
+    onAvailability((prev) => {
       const current = prev.meetingDurations;
       const next = current.includes(duration)
         ? current.filter((d) => d !== duration)
@@ -252,24 +204,6 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
       className="overflow-y-auto h-full"
       data-testid="client-portal-settings"
     >
-      {/* Action bar */}
-      <div className="flex items-center justify-end gap-2 px-6 py-4 border-b border-border">
-        {currentPortal && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(currentPortal.portalUrl, "_blank")}
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Preview Portal
-          </Button>
-        )}
-        <Button size="sm" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-          Save Changes
-        </Button>
-      </div>
-
       {/* Overview */}
       <CardHeader>
         <div className="flex items-start justify-between">
@@ -285,7 +219,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
           </div>
           <Switch
             checked={portalEnabled}
-            onCheckedChange={setPortalEnabled}
+            onCheckedChange={onPortalEnabledChange}
             aria-label="Portal enabled"
           />
         </div>
@@ -333,9 +267,16 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
             </div>
           ) : (
             <div className="bg-muted/50 border border-border rounded-lg p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                Save settings to generate a portal URL for this client
-              </p>
+              {isProvisioningPortal ? (
+                <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating portal URL...
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Save settings to generate a portal URL for this client
+                </p>
+              )}
             </div>
           )}
         </CardContent>
@@ -359,7 +300,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
               <Input
                 id="portal-title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => onTitleChange(e.target.value)}
                 placeholder="e.g. Acme Agency"
               />
               <p className="text-xs text-muted-foreground">
@@ -370,11 +311,15 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
             <Separator />
 
             <div className="space-y-2">
-              <Label htmlFor="welcome">Welcome Message</Label>
+              <CardTitle className="flex items-center mb-3">
+                <MessageSquare className="h-5 w-5 mr-2 text-orange-600" />
+                Welcome Message
+              </CardTitle>
               <Textarea
                 id="welcome"
+                placeholder={"Welcome to our portal!"}
                 value={welcomeMessage}
-                onChange={(e) => setWelcomeMessage(e.target.value)}
+                onChange={(e) => onWelcomeMessage(e.target.value)}
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mb-4">
@@ -389,7 +334,10 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1 py-6">
-                <Label>Email Notifications</Label>
+                <CardTitle className="flex items-center">
+                  <Mail className="h-5 w-5 mr-2 text-blue-600" />
+                  Email Notifications
+                </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Get notified when the client sends messages
                 </p>
@@ -397,7 +345,6 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
               <Switch
                 disabled
                 checked={emailNotifications}
-                onCheckedChange={setEmailNotifications}
                 aria-label="Email notifications"
               />
             </div>
@@ -419,7 +366,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
               </div>
               <Switch
                 checked={meetingSchedulingEnabled}
-                onCheckedChange={setMeetingSchedulingEnabled}
+                onCheckedChange={onMeetingSchedulingEnabledChange}
                 aria-label="Meeting scheduling enabled"
               />
             </div>
@@ -534,7 +481,7 @@ export function ClientPortalSettings({ clientId }: ClientPortalSettingsProps) {
                 <Select
                   value={String(availability.bufferMinutes)}
                   onValueChange={(val) =>
-                    setAvailability((prev) => ({
+                    onAvailability((prev) => ({
                       ...prev,
                       bufferMinutes: parseInt(val, 10),
                     }))

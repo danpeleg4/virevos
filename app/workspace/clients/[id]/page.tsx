@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Building2,
   Calendar,
+  ExternalLink,
   Flag,
   FolderOpen,
   Globe,
@@ -26,6 +27,7 @@ import { ClientPortalSettings } from "@/app/components/clients/ClientPortalSetti
 import { PortalChatPane } from "@/app/components/communications/PortalChatPane";
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
 import type { clients } from "@/types/clients";
+import type { PortalAvailability, PortalRecord } from "@/types/portal";
 
 type Section = "portal" | "cases" | "communications";
 
@@ -54,6 +56,63 @@ interface OutlookEmailRow {
 interface ClientDetailResponse {
   client: clients;
   portal: unknown;
+}
+
+const DEFAULT_WELCOME =
+  "Your Visa Readiness Dashboard. Monitor your deadlines and keep your documents audit-ready";
+
+const DEFAULT_AVAILABILITY: PortalAvailability = {
+  weeklySchedule: {
+    monday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    tuesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    wednesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    thursday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    friday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+    saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    sunday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+  },
+  meetingDurations: [15, 30, 45, 60],
+  bufferMinutes: 15,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+};
+
+interface PortalFormState {
+  portalEnabled: boolean;
+  title: string;
+  welcomeMessage: string;
+  chatEnabled: boolean;
+  fileSharing: boolean;
+  aiChatBot: boolean;
+  emailNotifications: boolean;
+  meetingSchedulingEnabled: boolean;
+  availability: PortalAvailability;
+}
+
+const DEFAULT_PORTAL_FORM_STATE: PortalFormState = {
+  portalEnabled: true,
+  title: "",
+  welcomeMessage: DEFAULT_WELCOME,
+  chatEnabled: true,
+  fileSharing: true,
+  aiChatBot: true,
+  emailNotifications: true,
+  meetingSchedulingEnabled: false,
+  availability: DEFAULT_AVAILABILITY,
+};
+
+function buildPortalFormState(portal: PortalRecord): PortalFormState {
+  return {
+    portalEnabled: portal.enabled,
+    title: portal.settings?.title || "",
+    welcomeMessage: portal.settings?.welcomeMessage || DEFAULT_WELCOME,
+    chatEnabled: portal.settings?.chatEnabled ?? true,
+    fileSharing: portal.settings?.fileSharing ?? true,
+    aiChatBot: portal.settings?.aiChatBot ?? true,
+    emailNotifications: portal.settings?.emailNotifications ?? true,
+    meetingSchedulingEnabled:
+      portal.settings?.meetingSchedulingEnabled ?? false,
+    availability: portal.settings?.availability ?? DEFAULT_AVAILABILITY,
+  };
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -119,6 +178,35 @@ export default function ClientDetailPage({
 
   const [activeSection, setActiveSection] = useState<Section>("portal");
   const [editOpen, setEditOpen] = useState(false);
+  const [portalEnabled, setPortalEnabled] = useState(
+    DEFAULT_PORTAL_FORM_STATE.portalEnabled
+  );
+  const [chatEnabled, setChatEnabled] = useState(
+    DEFAULT_PORTAL_FORM_STATE.chatEnabled
+  );
+  const [fileSharing, setFileSharing] = useState(
+    DEFAULT_PORTAL_FORM_STATE.fileSharing
+  );
+  const [emailNotifications, setEmailNotifications] = useState(
+    DEFAULT_PORTAL_FORM_STATE.emailNotifications
+  );
+  const [aiChatBot, setAiChatBot] = useState(
+    DEFAULT_PORTAL_FORM_STATE.aiChatBot
+  );
+  const [title, setTitle] = useState(DEFAULT_PORTAL_FORM_STATE.title);
+  const [welcomeMessage, setWelcomeMessage] = useState(
+    DEFAULT_PORTAL_FORM_STATE.welcomeMessage
+  );
+  const [meetingSchedulingEnabled, setMeetingSchedulingEnabled] = useState(
+    DEFAULT_PORTAL_FORM_STATE.meetingSchedulingEnabled
+  );
+  const [availability, setAvailability] = useState<PortalAvailability>(
+    DEFAULT_PORTAL_FORM_STATE.availability
+  );
+  const [savedSnapshot, setSavedSnapshot] = useState<PortalFormState>(
+    DEFAULT_PORTAL_FORM_STATE
+  );
+  const autoProvisionedRef = useRef(false);
 
   const clientQuery = useQuery({
     queryKey: ["client", id],
@@ -130,6 +218,18 @@ export default function ClientDetailPage({
     },
     enabled: !!id,
   });
+
+  const portalQuery = useQuery({
+    queryKey: ["clientPortal", id],
+    queryFn: async () => {
+      const { data } = await axios.get<{ portal: PortalRecord | null }>(
+        `/api/clients/${id}?type=portal`
+      );
+      return data.portal;
+    },
+  });
+
+  const currentPortal = portalQuery.data;
 
   const casesQuery = useQuery({
     queryKey: ["clientCases", id],
@@ -162,6 +262,83 @@ export default function ClientDetailPage({
       router.push("/workspace/clients");
     },
   });
+
+  useEffect(() => {
+    const portal = portalQuery.data;
+    if (portal) {
+      const snapshot = buildPortalFormState(portal);
+      setPortalEnabled(snapshot.portalEnabled);
+      setTitle(snapshot.title);
+      setWelcomeMessage(snapshot.welcomeMessage);
+      setChatEnabled(snapshot.chatEnabled);
+      setFileSharing(snapshot.fileSharing);
+      setAiChatBot(snapshot.aiChatBot);
+      setEmailNotifications(snapshot.emailNotifications);
+      setMeetingSchedulingEnabled(snapshot.meetingSchedulingEnabled);
+      setAvailability(snapshot.availability);
+      setSavedSnapshot(snapshot);
+    }
+  }, [portalQuery.data]);
+
+  const savePortalMutation = useMutation({
+    mutationFn: async (payload: {
+      enabled: boolean;
+      settings: Omit<PortalFormState, "portalEnabled">;
+    }) => {
+      await axios.post(`/api/clients/${id}/portal`, payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["clientPortal", id] });
+      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+    },
+    onError: (err: unknown) => {
+      console.error("Failed to save settings:", err);
+    },
+  });
+
+  const buildSavePayload = () => ({
+    enabled: portalEnabled,
+    settings: {
+      title,
+      welcomeMessage,
+      chatEnabled,
+      fileSharing,
+      aiChatBot,
+      emailNotifications,
+      meetingSchedulingEnabled,
+      availability,
+    },
+  });
+
+  useEffect(() => {
+    if (
+      portalQuery.isSuccess &&
+      portalQuery.data === null &&
+      !autoProvisionedRef.current
+    ) {
+      autoProvisionedRef.current = true;
+      savePortalMutation.mutate(buildSavePayload());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portalQuery.isSuccess, portalQuery.data]);
+
+  const currentFormState: PortalFormState = {
+    portalEnabled,
+    title,
+    welcomeMessage,
+    chatEnabled,
+    fileSharing,
+    aiChatBot,
+    emailNotifications,
+    meetingSchedulingEnabled,
+    availability,
+  };
+  const isPortalDirty =
+    JSON.stringify(currentFormState) !== JSON.stringify(savedSnapshot);
+
+  const handleSave = () => {
+    savePortalMutation.mutate(buildSavePayload());
+  };
 
   if (clientQuery.isLoading) {
     return (
@@ -278,7 +455,7 @@ export default function ClientDetailPage({
       {/* Tabbed Card */}
       <Card className="overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
-          <div className="flex items-center gap-1">
+          <div className="flex w-full items-center gap-1">
             {SECTIONS.map((s) => (
               <button
                 key={s.value}
@@ -293,11 +470,54 @@ export default function ClientDetailPage({
                 {s.label}
               </button>
             ))}
+            {activeSection === "portal" && (
+              <div className="ml-auto flex items-center gap-2">
+                {currentPortal && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      window.open(currentPortal.portalUrl, "_blank")
+                    }
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Preview Portal
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={savePortalMutation.isPending || !isPortalDirty}
+                >
+                  {savePortalMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : null}
+                  Save Changes
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
         {activeSection === "portal" && (
-          <ClientPortalSettings clientId={client.id} />
+          <ClientPortalSettings
+            clientId={client.id}
+            portalEnabled={portalEnabled}
+            onPortalEnabledChange={setPortalEnabled}
+            title={title}
+            onTitleChange={setTitle}
+            welcomeMessage={welcomeMessage}
+            onWelcomeMessage={setWelcomeMessage}
+            emailNotifications={emailNotifications}
+            meetingSchedulingEnabled={meetingSchedulingEnabled}
+            onMeetingSchedulingEnabledChange={setMeetingSchedulingEnabled}
+            availability={availability}
+            onAvailability={setAvailability}
+            isProvisioningPortal={
+              !currentPortal &&
+              (portalQuery.isLoading || savePortalMutation.isPending)
+            }
+          />
         )}
 
         {activeSection === "cases" && (
