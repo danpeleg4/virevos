@@ -1,6 +1,6 @@
 "use client";
 
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction } from "react";
 import axios from "axios";
 import {
   CardContent,
@@ -34,6 +34,7 @@ import {
   User,
   Mail,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,9 +45,18 @@ import type {
 } from "@/types/portal";
 interface ClientPortalSettingsProps {
   clientId: number;
+  portalEnabled: boolean;
+  onPortalEnabledChange: (enabled: boolean) => void;
+  title: string;
+  onTitleChange: (title: string) => void;
+  welcomeMessage: string;
+  onWelcomeMessage: (welcomeMessage: string) => void;
+  emailNotifications: boolean;
+  meetingSchedulingEnabled: boolean;
+  onMeetingSchedulingEnabledChange: (enabled: boolean) => void;
   availability: PortalAvailability;
   onAvailability: Dispatch<SetStateAction<PortalAvailability>>;
-  onWelcomeMessage: (welcomeMessage: string) => void;
+  isProvisioningPortal: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -91,16 +101,20 @@ const TIME_OPTIONS = generateTimeOptions();
 
 export function ClientPortalSettings({
   clientId,
+  portalEnabled,
+  onPortalEnabledChange,
+  title,
+  onTitleChange,
+  welcomeMessage,
+  onWelcomeMessage,
+  emailNotifications,
+  meetingSchedulingEnabled,
+  onMeetingSchedulingEnabledChange,
   availability,
   onAvailability,
-  onWelcomeMessage,
+  isProvisioningPortal,
 }: ClientPortalSettingsProps) {
   const queryClient = useQueryClient();
-  const [portalEnabled, setPortalEnabled] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [title, setTitle] = useState("");
-  const [meetingSchedulingEnabled, setMeetingSchedulingEnabled] =
-    useState(false);
 
   const portalQuery = useQuery({
     queryKey: ["clientPortal", clientId],
@@ -205,7 +219,7 @@ export function ClientPortalSettings({
           </div>
           <Switch
             checked={portalEnabled}
-            onCheckedChange={setPortalEnabled}
+            onCheckedChange={onPortalEnabledChange}
             aria-label="Portal enabled"
           />
         </div>
@@ -253,9 +267,16 @@ export function ClientPortalSettings({
             </div>
           ) : (
             <div className="bg-muted/50 border border-border rounded-lg p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                Save settings to generate a portal URL for this client
-              </p>
+              {isProvisioningPortal ? (
+                <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating portal URL...
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Save settings to generate a portal URL for this client
+                </p>
+              )}
             </div>
           )}
         </CardContent>
@@ -279,7 +300,7 @@ export function ClientPortalSettings({
               <Input
                 id="portal-title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => onTitleChange(e.target.value)}
                 placeholder="e.g. Acme Agency"
               />
               <p className="text-xs text-muted-foreground">
@@ -297,6 +318,7 @@ export function ClientPortalSettings({
               <Textarea
                 id="welcome"
                 placeholder={"Welcome to our portal!"}
+                value={welcomeMessage}
                 onChange={(e) => onWelcomeMessage(e.target.value)}
                 rows={3}
               />
@@ -323,7 +345,6 @@ export function ClientPortalSettings({
               <Switch
                 disabled
                 checked={emailNotifications}
-                onCheckedChange={setEmailNotifications}
                 aria-label="Email notifications"
               />
             </div>
@@ -345,7 +366,7 @@ export function ClientPortalSettings({
               </div>
               <Switch
                 checked={meetingSchedulingEnabled}
-                onCheckedChange={setMeetingSchedulingEnabled}
+                onCheckedChange={onMeetingSchedulingEnabledChange}
                 aria-label="Meeting scheduling enabled"
               />
             </div>

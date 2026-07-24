@@ -10,8 +10,19 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/app/components/clients/ClientPortalSettings", () => ({
-  ClientPortalSettings: ({ clientId }: { clientId: number }) => (
-    <div data-testid="portal-settings">Portal for {clientId}</div>
+  ClientPortalSettings: ({
+    clientId,
+    title,
+    onTitleChange,
+  }: {
+    clientId: number;
+    title: string;
+    onTitleChange: (title: string) => void;
+  }) => (
+    <div data-testid="portal-settings">
+      Portal for {clientId}
+      <button onClick={() => onTitleChange(`${title}!`)}>Change Title</button>
+    </div>
   ),
 }));
 
@@ -77,6 +88,12 @@ function fulfilledParams<T>(value: T): Promise<T> {
   return p;
 }
 
+// `portal` starts null (as if the client was just created) and is populated
+// once the page auto-provisions it via POST /api/clients/:id/portal — the
+// same endpoint a manual Save Changes hits.
+let portalRecord: Record<string, unknown> | null = null;
+let lastSavedSettings: Record<string, unknown> | undefined;
+
 function useClientHandlers(
   overrides: Partial<{
     clientPending: boolean;
@@ -98,8 +115,26 @@ function useClientHandlers(
       if (type === "cases") return HttpResponse.json({ cases: mockCases });
       if (type === "outlook-emails")
         return HttpResponse.json({ emails: mockEmails });
-      if (type === "portal") return HttpResponse.json({ portal: null });
+      if (type === "portal") return HttpResponse.json({ portal: portalRecord });
       return HttpResponse.json({ error: "Invalid type" }, { status: 400 });
+    }),
+    http.post("/api/clients/:id/portal", async ({ request, params }) => {
+      const body = (await request.json()) as {
+        enabled: boolean;
+        settings: Record<string, unknown>;
+      };
+      lastSavedSettings = body.settings;
+      portalRecord = {
+        id: 1,
+        clientId: Number(params.id),
+        clientName: mockClient.name,
+        token: "tok-123",
+        enabled: body.enabled,
+        settings: body.settings,
+        portalUrl: "https://example.com/portal/tok-123",
+        lastAccessedAt: null,
+      };
+      return HttpResponse.json(portalRecord);
     })
   );
 }
@@ -112,6 +147,8 @@ const renderPage = () =>
 describe("Client Detail Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    portalRecord = null;
+    lastSavedSettings = undefined;
   });
 
   it("shows a loader while client query is loading", async () => {
@@ -143,7 +180,7 @@ describe("Client Detail Page", () => {
     useClientHandlers();
     const screen = await renderPage();
     await expect
-      .element(screen.getByRole("button", { name: /portal/i }))
+      .element(screen.getByRole("button", { name: "Portal", exact: true }))
       .toBeInTheDocument();
     await expect
       .element(screen.getByRole("button", { name: /cases/i }))
@@ -184,5 +221,36 @@ describe("Client Detail Page", () => {
     const screen = await renderPage();
     await screen.getByRole("button", { name: /back to clients/i }).click();
     expect(mockPush).toHaveBeenCalledWith("/workspace/clients");
+  });
+
+  it("auto-provisions a portal (and shows its Preview Portal link) for a client with no portal yet", async () => {
+    useClientHandlers();
+    const screen = await renderPage();
+    await expect
+      .element(screen.getByRole("button", { name: /preview portal/i }))
+      .toBeInTheDocument();
+  });
+
+  it("keeps Save Changes disabled until a setting is changed, then saves and disables it again", async () => {
+    useClientHandlers();
+    const screen = await renderPage();
+
+    // wait for the auto-provisioned portal so the baseline snapshot settles
+    await expect
+      .element(screen.getByRole("button", { name: /preview portal/i }))
+      .toBeInTheDocument();
+
+    const saveButton = screen.getByRole("button", { name: /save changes/i });
+    await expect.element(saveButton).toBeDisabled();
+
+    await screen.getByRole("button", { name: /change title/i }).click();
+    await expect.element(saveButton).not.toBeDisabled();
+
+    await saveButton.click();
+
+    await vi.waitFor(() => {
+      expect(lastSavedSettings?.title).toBe("!");
+    });
+    await expect.element(saveButton).toBeDisabled();
   });
 });
