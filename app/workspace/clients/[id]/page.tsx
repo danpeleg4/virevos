@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Building2,
   Calendar,
+  ExternalLink,
   Flag,
   FolderOpen,
   Globe,
@@ -26,6 +27,7 @@ import { ClientPortalSettings } from "@/app/components/clients/ClientPortalSetti
 import { PortalChatPane } from "@/app/components/communications/PortalChatPane";
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
 import type { clients } from "@/types/clients";
+import type { PortalAvailability, PortalRecord } from "@/types/portal";
 
 type Section = "portal" | "cases" | "communications";
 
@@ -117,8 +119,38 @@ export default function ClientDetailPage({
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const DEFAULT_WELCOME =
+    "Your Visa Readiness Dashboard. Monitor your deadlines and keep your documents audit-ready";
+
+  const DEFAULT_AVAILABILITY: PortalAvailability = {
+    weeklySchedule: {
+      monday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+      tuesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+      wednesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+      thursday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+      friday: { enabled: true, startTime: "09:00", endTime: "17:00" },
+      saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+      sunday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    },
+    meetingDurations: [15, 30, 45, 60],
+    bufferMinutes: 15,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+
   const [activeSection, setActiveSection] = useState<Section>("portal");
   const [editOpen, setEditOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [portalEnabled, setPortalEnabled] = useState(true);
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [fileSharing, setFileSharing] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [aiChatBot, setAiChatBot] = useState(true);
+  const [title, setTitle] = useState("");
+  const [welcomeMessage, setWelcomeMessage] = useState(DEFAULT_WELCOME);
+  const [meetingSchedulingEnabled, setMeetingSchedulingEnabled] =
+    useState(false);
+  const [availability, setAvailability] =
+    useState<PortalAvailability>(DEFAULT_AVAILABILITY);
 
   const clientQuery = useQuery({
     queryKey: ["client", id],
@@ -130,6 +162,18 @@ export default function ClientDetailPage({
     },
     enabled: !!id,
   });
+
+  const portalQuery = useQuery({
+    queryKey: ["clientPortal", id],
+    queryFn: async () => {
+      const { data } = await axios.get<{ portal: PortalRecord | null }>(
+        `/api/clients/${id}?type=portal`
+      );
+      return data.portal;
+    },
+  });
+
+  const currentPortal = portalQuery.data;
 
   const casesQuery = useQuery({
     queryKey: ["clientCases", id],
@@ -162,6 +206,50 @@ export default function ClientDetailPage({
       router.push("/workspace/clients");
     },
   });
+
+  useEffect(() => {
+    const portal = portalQuery.data;
+    if (portal) {
+      setPortalEnabled(portal.enabled);
+      setTitle(portal.settings?.title || "");
+      setWelcomeMessage(portal.settings?.welcomeMessage || DEFAULT_WELCOME);
+      setChatEnabled(portal.settings?.chatEnabled ?? true);
+      setFileSharing(portal.settings?.fileSharing ?? true);
+      setAiChatBot(portal.settings?.aiChatBot ?? true);
+      setEmailNotifications(portal.settings?.emailNotifications ?? true);
+      setMeetingSchedulingEnabled(
+        portal.settings?.meetingSchedulingEnabled ?? false
+      );
+      setAvailability(portal.settings?.availability ?? DEFAULT_AVAILABILITY);
+    }
+  }, [portalQuery.data]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await axios.post(`/api/clients/${id}/portal`, {
+        enabled: portalEnabled,
+        settings: {
+          title,
+          welcomeMessage,
+          chatEnabled,
+          fileSharing,
+          aiChatBot,
+          emailNotifications,
+          meetingSchedulingEnabled,
+          availability,
+        },
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["clientPortal", id],
+      });
+      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+    } catch (err: unknown) {
+      console.error("Failed to save settings:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (clientQuery.isLoading) {
     return (
@@ -278,7 +366,7 @@ export default function ClientDetailPage({
       {/* Tabbed Card */}
       <Card className="overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
-          <div className="flex items-center gap-1">
+          <div className="flex w-full items-center gap-1">
             {SECTIONS.map((s) => (
               <button
                 key={s.value}
@@ -293,11 +381,38 @@ export default function ClientDetailPage({
                 {s.label}
               </button>
             ))}
+            {activeSection === "portal" && (
+              <div className="ml-auto flex items-center gap-2">
+                {currentPortal && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      window.open(currentPortal.portalUrl, "_blank")
+                    }
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Preview Portal
+                  </Button>
+                )}
+                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : null}
+                  Save Changes
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
         {activeSection === "portal" && (
-          <ClientPortalSettings clientId={client.id} />
+          <ClientPortalSettings
+            clientId={client.id}
+            availability={availability}
+            onAvailability={setAvailability}
+            onWelcomeMessage={setWelcomeMessage}
+          />
         )}
 
         {activeSection === "cases" && (

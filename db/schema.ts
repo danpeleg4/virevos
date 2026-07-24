@@ -42,11 +42,9 @@ export const clients = pgTable(
     phone: text("phone"),
     notes: text("notes"),
     status: text("status").notNull().default("active"),
-
     userId: varchar("user_id")
       .notNull()
       .references(() => users.userId, { onDelete: "cascade" }),
-
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -62,13 +60,11 @@ export const cases = pgTable(
     clientId: integer("client_id").references(() => clients.id, {
       onDelete: "set null",
     }),
-
     name: text("title").notNull(),
     description: text("description"),
     status: text("status").notNull().default("active"),
     dueDate: date("due_date"),
     priority: text("priority").notNull().default("low"),
-
     userId: varchar("user_id")
       .notNull()
       .references(() => users.userId, { onDelete: "cascade" }),
