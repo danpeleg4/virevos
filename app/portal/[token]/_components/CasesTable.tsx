@@ -1,9 +1,4 @@
-import {
-  FolderKanban,
-  Flag,
-  Clock,
-  Calendar as CalendarIcon,
-} from "lucide-react";
+import { Clock } from "lucide-react";
 import type { PortalData } from "@/types/portal";
 import { parseDateOnlyString } from "@/lib/util/date_utils";
 import { StatusBadge, PriorityBadge } from "./badges";
