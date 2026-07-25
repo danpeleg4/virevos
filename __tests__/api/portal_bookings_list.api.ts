@@ -1,6 +1,6 @@
 import { GET } from "@/app/api/portal/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { getPortalBookings } from "@/lib/portal_bookings";
+import { getPortalBookings } from "@/lib/portal/portal_bookings";
 import { portalBookingsDrizzle } from "@db/portal_bookings_db";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest } from "next/server";
@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/lib/portal_bookings", () => ({
+vi.mock("@/lib/portal/portal_bookings", () => ({
   getPortalBookings: vi.fn(),
 }));
 

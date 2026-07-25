@@ -9,8 +9,8 @@ import {
   requireInt,
   requireOneOf,
   requireString,
-} from "./util/validation";
-import { rateLimitHeaders } from "./util/rate_limit";
+} from "../util/validation";
+import { rateLimitHeaders } from "../util/rate_limit";
 
 const PORTAL_CHAT_ACTIONS = [
   "star",

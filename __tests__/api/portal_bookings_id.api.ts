@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import {
   acceptBookingWithCalendar,
   updateBookingStatus,
-} from "@/lib/portal_bookings";
+} from "@/lib/portal/portal_bookings";
 import { portalBookingsDrizzle } from "@db/portal_bookings_db";
 import { calendarDrizzle } from "@db/calendar_db";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
@@ -28,7 +28,7 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/lib/portal_bookings", () => ({
+vi.mock("@/lib/portal/portal_bookings", () => ({
   acceptBookingWithCalendar: vi.fn(),
   updateBookingStatus: vi.fn(),
 }));

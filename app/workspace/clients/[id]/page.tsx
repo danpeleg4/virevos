@@ -453,7 +453,7 @@ export default function ClientDetailPage({
       </div>
 
       {/* Tabbed Card */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden p-0 gap-0">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50 flex-wrap">
           <div className="flex w-full items-center gap-1">
             {SECTIONS.map((s) => (

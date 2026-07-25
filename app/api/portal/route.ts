@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getPortalBookings } from "@/lib/portal_bookings";
+import { getPortalBookings } from "@/lib/portal/portal_bookings";
 import { portalBookingsDrizzle } from "@db/portal_bookings_db";
 import { ValidationError } from "@/lib/util/validation";
 

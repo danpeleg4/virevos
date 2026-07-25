@@ -1,4 +1,4 @@
-import { uploadPortalFile } from "@/lib/portal_file_uploads";
+import { uploadPortalFile } from "@/lib/portal/portal_file_uploads";
 import {
   canonicalUploadsPortalToken,
   makeFakePortalUploadsDb,

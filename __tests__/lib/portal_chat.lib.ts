@@ -4,7 +4,7 @@ import {
   sendAgencyChatMessage,
   sendPortalChatMessage,
   updatePortalChat,
-} from "@/lib/portal_chat";
+} from "@/lib/portal/portal_chat";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import {
   canonicalChatMessage,

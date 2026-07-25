@@ -6,6 +6,7 @@ import {
   updateDocumentRequest,
 } from "@/lib/document_requests";
 import { documentRequestsDrizzle } from "@db/document_requests_db";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function PATCH(
   req: NextRequest,
@@ -51,7 +52,12 @@ export async function PATCH(
   } catch (err) {
     console.error("[api/document-requests/[id] PATCH]", err);
     const message = err instanceof Error ? err.message : "Update failed";
-    const status = message === "Unauthorized" ? 401 : 500;
-    return NextResponse.json({ error: message }, { status });
+    if (message === "Unauthorized")
+      return NextResponse.json({ error: message }, { status: 401 });
+    if (err instanceof ValidationError)
+      return NextResponse.json({ error: message }, { status: 400 });
+    if (message === "Document request not found")
+      return NextResponse.json({ error: message }, { status: 404 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

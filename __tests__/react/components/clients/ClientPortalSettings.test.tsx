@@ -180,4 +180,22 @@ describe("ClientPortalSettings", () => {
       .element(screen.getByText(/save settings to generate/i))
       .toBeInTheDocument();
   });
+
+  it("shows distinct start and end times for a day's availability", async () => {
+    usePortalHandlers(null);
+    const screen = await renderWithQueryClient(
+      <ClientPortalSettings
+        {...baseProps({ meetingSchedulingEnabled: true })}
+      />
+    );
+
+    const startTime = screen.getByRole("combobox", {
+      name: "Start time for Monday",
+    });
+    const endTime = screen.getByRole("combobox", {
+      name: "End time for Monday",
+    });
+    await expect.element(startTime).toHaveTextContent("09:00");
+    await expect.element(endTime).toHaveTextContent("17:00");
+  });
 });

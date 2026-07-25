@@ -1,5 +1,5 @@
 import { POST } from "@/app/api/portal/[token]/chat/route";
-import { sendPortalChatMessage } from "@/lib/portal_chat";
+import { sendPortalChatMessage } from "@/lib/portal/portal_chat";
 import { portalChatDrizzle } from "@db/portal_chat_db";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest } from "next/server";
@@ -15,7 +15,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@/lib/portal_chat", () => ({
+vi.mock("@/lib/portal/portal_chat", () => ({
   sendPortalChatMessage: vi.fn(),
 }));
 

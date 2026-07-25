@@ -1,5 +1,5 @@
 import { POST } from "@/app/api/portal/[token]/document-requests/[itemId]/upload/route";
-import { uploadDocumentRequestItem } from "@/lib/portal_document_uploads";
+import { uploadDocumentRequestItem } from "@/lib/portal/portal_document_uploads";
 import { portalUploadsDrizzle } from "@db/portal_uploads_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { openAIClient } from "@/api_client/openai_client";
@@ -19,7 +19,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@/lib/portal_document_uploads", () => ({
+vi.mock("@/lib/portal/portal_document_uploads", () => ({
   uploadDocumentRequestItem: vi.fn(),
 }));
 

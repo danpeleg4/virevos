@@ -26,7 +26,6 @@ export const users = pgTable("users", {
   aiCredits: integer("ai_credits").notNull().default(0),
   storage: bigint("storage", { mode: "number" }).notNull().default(0),
   recordingStatus: boolean("recordingStatus").notNull().default(true),
-  weeklySummary: boolean("weekly_summary").notNull().default(false),
   productUpdates: boolean("product_updates").notNull().default(false),
   creditsResetAt: timestamp("credits_reset_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),

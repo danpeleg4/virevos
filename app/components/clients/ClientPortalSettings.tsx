@@ -43,6 +43,7 @@ import type {
   PortalAvailability,
   PortalMeetingBooking,
 } from "@/types/portal";
+import { timeOptions } from "@/lib/util/utils";
 interface ClientPortalSettingsProps {
   clientId: number;
   portalEnabled: boolean;
@@ -81,23 +82,6 @@ const DAY_LABELS: Record<string, string> = {
 
 const DURATION_OPTIONS = [15, 30, 45, 60];
 const BUFFER_OPTIONS = [0, 5, 10, 15, 30];
-
-function generateTimeOptions(): { value: string; label: string }[] {
-  const options: { value: string; label: string }[] = [];
-  for (let h = 0; h < 24; h++) {
-    for (const m of [0, 30]) {
-      const hh = String(h).padStart(2, "0");
-      const mm = String(m).padStart(2, "0");
-      const value = `${hh}:${mm}`;
-      const period = h < 12 ? "AM" : "PM";
-      const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      options.push({ value, label: `${displayH}:${mm} ${period}` });
-    }
-  }
-  return options;
-}
-
-const TIME_OPTIONS = generateTimeOptions();
 
 export function ClientPortalSettings({
   clientId,
@@ -396,45 +380,61 @@ export function ClientPortalSettings({
                         <span className="w-24 text-sm text-foreground">
                           {DAY_LABELS[day]}
                         </span>
-                        <Select
-                          value={dayConfig.startTime}
-                          onValueChange={(val) =>
-                            updateDaySchedule(day, "startTime", val)
-                          }
-                          disabled={!dayConfig.enabled}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TIME_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div>
+                          <Label className="sr-only">
+                            Start time for {DAY_LABELS[day]}
+                          </Label>
+                          <Select
+                            value={dayConfig.startTime}
+                            onValueChange={(val) =>
+                              updateDaySchedule(day, "startTime", val)
+                            }
+                            disabled={!dayConfig.enabled}
+                          >
+                            <SelectTrigger
+                              className="mt-2"
+                              aria-label={`Start time for ${DAY_LABELS[day]}`}
+                            >
+                              <SelectValue placeholder="Select time" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <span className="text-sm text-muted-foreground">
                           to
                         </span>
-                        <Select
-                          value={dayConfig.endTime}
-                          onValueChange={(val) =>
-                            updateDaySchedule(day, "endTime", val)
-                          }
-                          disabled={!dayConfig.enabled}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TIME_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div>
+                          <Label className="sr-only">
+                            End time for {DAY_LABELS[day]}
+                          </Label>
+                          <Select
+                            value={dayConfig.endTime}
+                            onValueChange={(val) =>
+                              updateDaySchedule(day, "endTime", val)
+                            }
+                            disabled={!dayConfig.enabled}
+                          >
+                            <SelectTrigger
+                              className="mt-2"
+                              aria-label={`End time for ${DAY_LABELS[day]}`}
+                            >
+                              <SelectValue placeholder="Select time" />
+                            </SelectTrigger>
+                            <SelectContent className="">
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     );
                   })}
