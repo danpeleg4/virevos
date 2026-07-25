@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/lib/portal_settings", () => ({
+vi.mock("@/lib/portal/portal_settings", () => ({
   savePortalSettings: vi.fn(),
 }));
 

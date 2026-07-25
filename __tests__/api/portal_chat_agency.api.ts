@@ -15,7 +15,7 @@ vi.mock("@db/portal_chat_db", () => ({
   portalChatDrizzle: { __sentinel: "portalChatDrizzle" },
 }));
 
-vi.mock("@/lib/portal_chat", () => ({
+vi.mock("@/lib/portal/portal_chat", () => ({
   deletePortalChat: vi.fn(),
   getPortalChatThread: vi.fn(),
   sendAgencyChatMessage: vi.fn(),

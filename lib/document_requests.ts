@@ -5,6 +5,7 @@ import type {
   PendingDocRequest,
   UpdateDocumentRequestPatch,
 } from "@/types/document_requests";
+import { ValidationError } from "@/lib/util/validation";
 
 export async function listPendingDocumentRequests(
   userId: string,
@@ -83,7 +84,7 @@ export async function approveDocumentRequest(
 
   if (rows.length === 0) throw new Error("Document request not found");
   if (rows[0].clientId == null) {
-    throw new Error("Client must be selected before approval");
+    throw new ValidationError("Client must be selected before approval");
   }
 
   await documentRequestsDb.setRequestStatus(requestId, "approved", new Date());

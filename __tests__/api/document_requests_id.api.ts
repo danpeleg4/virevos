@@ -7,6 +7,7 @@ import {
   updateDocumentRequest,
 } from "@/lib/document_requests";
 import { documentRequestsDrizzle } from "@db/document_requests_db";
+import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -113,16 +114,42 @@ describe("PATCH /api/document-requests/[id]", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 500 with the error message for other failures", async () => {
+  it("returns 400 when the lib fn throws a ValidationError", async () => {
     (approveDocumentRequest as Mock).mockRejectedValueOnce(
-      new Error("Client must be selected before approval")
+      new ValidationError("Client must be selected before approval")
+    );
+
+    const res = await PATCH(patchRequest({ type: "approve" }), makeCtx("1"));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: "Client must be selected before approval",
+    });
+  });
+
+  it("returns 404 when the lib fn reports the request was not found", async () => {
+    (approveDocumentRequest as Mock).mockRejectedValueOnce(
+      new Error("Document request not found")
+    );
+
+    const res = await PATCH(patchRequest({ type: "approve" }), makeCtx("1"));
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({
+      error: "Document request not found",
+    });
+  });
+
+  it("returns 500 with the error message for unexpected failures", async () => {
+    (approveDocumentRequest as Mock).mockRejectedValueOnce(
+      new Error("Database connection lost")
     );
 
     const res = await PATCH(patchRequest({ type: "approve" }), makeCtx("1"));
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({
-      error: "Client must be selected before approval",
+      error: "Database connection lost",
     });
   });
 });

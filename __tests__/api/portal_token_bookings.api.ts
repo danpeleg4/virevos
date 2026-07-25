@@ -15,7 +15,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@/lib/portal_bookings", () => ({
+vi.mock("@/lib/portal/portal_bookings", () => ({
   createPortalBooking: vi.fn(),
 }));
 

@@ -6,6 +6,7 @@ import {
   updateDocumentRequest,
 } from "@/lib/document_requests";
 import { getCurrentUser } from "@/lib/supabase/auth";
+import { ValidationError } from "@/lib/util/validation";
 import {
   canonicalPendingRequest,
   canonicalRequestItem,
@@ -143,13 +144,21 @@ describe("approveDocumentRequest", () => {
     );
   });
 
-  it("throws when clientId is null", async () => {
+  it("throws a ValidationError when clientId is null", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     documentRequestsDb.getRequestClientId.mockResolvedValueOnce([
       { clientId: null },
     ]);
 
-    await expect(approveDocumentRequest(1, documentRequestsDb)).rejects.toThrow(
+    let error: unknown;
+    try {
+      await approveDocumentRequest(1, documentRequestsDb);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect((error as Error).message).toBe(
       "Client must be selected before approval"
     );
   });

@@ -13,13 +13,13 @@ import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/portal_page", () => ({
+vi.mock("@/lib/portal/portal_page", () => ({
   getPortalMainData: vi.fn(),
   getPortalAvailability: vi.fn(),
   downloadPortalFile: vi.fn(),
 }));
 
-vi.mock("@/lib/portal_chat", () => ({
+vi.mock("@/lib/portal/portal_chat", () => ({
   getPortalChatMessages: vi.fn(),
 }));
 

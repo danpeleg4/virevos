@@ -15,7 +15,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@/lib/portal_chat", () => ({
+vi.mock("@/lib/portal/portal_chat", () => ({
   sendPortalChatMessage: vi.fn(),
 }));
 

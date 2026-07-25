@@ -19,7 +19,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@/lib/portal_document_uploads", () => ({
+vi.mock("@/lib/portal/portal_document_uploads", () => ({
   uploadDocumentRequestItem: vi.fn(),
 }));
 

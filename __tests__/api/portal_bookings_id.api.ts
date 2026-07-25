@@ -28,7 +28,7 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/lib/portal_bookings", () => ({
+vi.mock("@/lib/portal/portal_bookings", () => ({
   acceptBookingWithCalendar: vi.fn(),
   updateBookingStatus: vi.fn(),
 }));

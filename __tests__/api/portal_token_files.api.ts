@@ -18,7 +18,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-vi.mock("@/lib/portal_file_uploads", () => ({
+vi.mock("@/lib/portal/portal_file_uploads", () => ({
   uploadPortalFile: vi.fn(),
 }));
 
