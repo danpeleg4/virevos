@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPortalBooking } from "@/lib/portal_bookings";
+import { createPortalBooking } from "@/lib/portal/portal_bookings";
 import { portalBookingsDrizzle } from "@db/portal_bookings_db";
 import { ValidationError } from "@/lib/util/validation";
 

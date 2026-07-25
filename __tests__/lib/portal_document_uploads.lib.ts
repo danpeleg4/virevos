@@ -1,4 +1,4 @@
-import { uploadDocumentRequestItem } from "@/lib/portal_document_uploads";
+import { uploadDocumentRequestItem } from "@/lib/portal/portal_document_uploads";
 import {
   canonicalDocRequestItem,
   canonicalUploadedFile,

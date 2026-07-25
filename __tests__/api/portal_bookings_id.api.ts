@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import {
   acceptBookingWithCalendar,
   updateBookingStatus,
-} from "@/lib/portal_bookings";
+} from "@/lib/portal/portal_bookings";
 import { portalBookingsDrizzle } from "@db/portal_bookings_db";
 import { calendarDrizzle } from "@db/calendar_db";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";

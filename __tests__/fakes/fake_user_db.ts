@@ -12,7 +12,6 @@ export const canonicalUserRow: UserRow = {
   aiCredits: 0,
   storage: 0,
   recordingStatus: false,
-  weeklySummary: false,
   productUpdates: false,
   creditsResetAt: null,
   createdAt: new Date(),

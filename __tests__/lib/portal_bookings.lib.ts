@@ -3,7 +3,7 @@ import {
   createPortalBooking,
   getPortalBookings,
   updateBookingStatus,
-} from "@/lib/portal_bookings";
+} from "@/lib/portal/portal_bookings";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import {
   canonicalBookingRow,

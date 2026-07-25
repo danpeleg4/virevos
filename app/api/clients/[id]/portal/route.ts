@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { savePortalSettings } from "@/lib/portal_settings";
+import { savePortalSettings } from "@/lib/portal/portal_settings";
 import { portalDrizzle } from "@db/portal_db";
 import { ValidationError } from "@/lib/util/validation";
 

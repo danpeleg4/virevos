@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadPortalFile } from "@/lib/portal_file_uploads";
+import { uploadPortalFile } from "@/lib/portal/portal_file_uploads";
 import { portalUploadsDrizzle } from "@db/portal_uploads_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { planLimitsDrizzle } from "@db/plan_limits_db";

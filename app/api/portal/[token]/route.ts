@@ -3,8 +3,8 @@ import {
   getPortalAvailability,
   getPortalMainData,
   downloadPortalFile,
-} from "@/lib/portal_page";
-import { getPortalChatMessages } from "@/lib/portal_chat";
+} from "@/lib/portal/portal_page";
+import { getPortalChatMessages } from "@/lib/portal/portal_chat";
 import { portalMainDrizzle } from "@db/portal_main_db";
 import { portalBookingsDrizzle } from "@db/portal_bookings_db";
 import { portalChatDrizzle } from "@db/portal_chat_db";

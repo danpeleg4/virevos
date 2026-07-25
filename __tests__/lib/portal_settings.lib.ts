@@ -1,4 +1,4 @@
-import { savePortalSettings } from "@/lib/portal_settings";
+import { savePortalSettings } from "@/lib/portal/portal_settings";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import {
   canonicalPortalTokenRow,

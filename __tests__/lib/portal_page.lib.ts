@@ -2,7 +2,7 @@ import {
   downloadPortalFile,
   getPortalAvailability,
   getPortalMainData,
-} from "@/lib/portal_page";
+} from "@/lib/portal/portal_page";
 import {
   canonicalPortalMainCase,
   canonicalPortalMainFile,
