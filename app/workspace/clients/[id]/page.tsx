@@ -229,8 +229,6 @@ export default function ClientDetailPage({
     },
   });
 
-  const currentPortal = portalQuery.data;
-
   const casesQuery = useQuery({
     queryKey: ["clientCases", id],
     queryFn: async () => {
@@ -263,9 +261,23 @@ export default function ClientDetailPage({
     },
   });
 
+  const currentFormState: PortalFormState = {
+    portalEnabled,
+    title,
+    welcomeMessage,
+    chatEnabled,
+    fileSharing,
+    aiChatBot,
+    emailNotifications,
+    meetingSchedulingEnabled,
+    availability,
+  };
+  const isPortalDirty =
+    JSON.stringify(currentFormState) !== JSON.stringify(savedSnapshot);
+
   useEffect(() => {
     const portal = portalQuery.data;
-    if (portal) {
+    if (portal && !isPortalDirty) {
       const snapshot = buildPortalFormState(portal);
       setPortalEnabled(snapshot.portalEnabled);
       setTitle(snapshot.title);
@@ -287,7 +299,11 @@ export default function ClientDetailPage({
     }) => {
       await axios.post(`/api/clients/${id}/portal`, payload);
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
+      setSavedSnapshot({
+        portalEnabled: variables.enabled,
+        ...variables.settings,
+      });
       await queryClient.invalidateQueries({ queryKey: ["clientPortal", id] });
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
     },
@@ -321,20 +337,6 @@ export default function ClientDetailPage({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portalQuery.isSuccess, portalQuery.data]);
-
-  const currentFormState: PortalFormState = {
-    portalEnabled,
-    title,
-    welcomeMessage,
-    chatEnabled,
-    fileSharing,
-    aiChatBot,
-    emailNotifications,
-    meetingSchedulingEnabled,
-    availability,
-  };
-  const isPortalDirty =
-    JSON.stringify(currentFormState) !== JSON.stringify(savedSnapshot);
 
   const handleSave = () => {
     savePortalMutation.mutate(buildSavePayload());
@@ -472,12 +474,12 @@ export default function ClientDetailPage({
             ))}
             {activeSection === "portal" && (
               <div className="ml-auto flex items-center gap-2">
-                {currentPortal && (
+                {portalQuery.data && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      window.open(currentPortal.portalUrl, "_blank")
+                      window.open(portalQuery.data?.portalUrl, "_blank")
                     }
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
@@ -514,7 +516,7 @@ export default function ClientDetailPage({
             availability={availability}
             onAvailability={setAvailability}
             isProvisioningPortal={
-              !currentPortal &&
+              !portalQuery.data &&
               (portalQuery.isLoading || savePortalMutation.isPending)
             }
           />
