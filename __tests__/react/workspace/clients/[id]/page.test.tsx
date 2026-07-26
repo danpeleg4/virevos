@@ -21,6 +21,7 @@ vi.mock("@/app/components/clients/ClientPortalSettings", () => ({
   }) => (
     <div data-testid="portal-settings">
       Portal for {clientId}
+      <span data-testid="portal-title">Title: {title}</span>
       <button onClick={() => onTitleChange(`${title}!`)}>Change Title</button>
     </div>
   ),
@@ -252,5 +253,83 @@ describe("Client Detail Page", () => {
       expect(lastSavedSettings?.title).toBe("!");
     });
     await expect.element(saveButton).toBeDisabled();
+  });
+
+  it("keeps a newer edit typed after Save, before the refetch lands", async () => {
+    useClientHandlers();
+    const screen = await renderPage();
+
+    // wait for the auto-provisioned portal so the baseline snapshot settles
+    await expect
+      .element(screen.getByRole("button", { name: /preview portal/i }))
+      .toBeInTheDocument();
+
+    const saveButton = screen.getByRole("button", { name: /save changes/i });
+    const changeTitleButton = screen.getByRole("button", {
+      name: /change title/i,
+    });
+
+    // first edit: title becomes "!"
+    await changeTitleButton.click();
+    await expect
+      .element(screen.getByTestId("portal-title"))
+      .toHaveTextContent("Title: !");
+
+    // hold the save request open so we can keep editing before it resolves
+    let resolveSave!: () => void;
+    worker.use(
+      http.post("/api/clients/:id/portal", async ({ request, params }) => {
+        const body = (await request.json()) as {
+          enabled: boolean;
+          settings: Record<string, unknown>;
+        };
+        await new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        });
+        lastSavedSettings = body.settings;
+        portalRecord = {
+          id: 1,
+          clientId: Number(params.id),
+          clientName: mockClient.name,
+          token: "tok-123",
+          enabled: body.enabled,
+          settings: body.settings,
+          portalUrl: "https://example.com/portal/tok-123",
+          lastAccessedAt: null,
+        };
+        return HttpResponse.json(portalRecord);
+      })
+    );
+
+    await saveButton.click();
+
+    // a newer edit arrives while the save (and the refetch it triggers) is
+    // still in flight — this must survive, not get clobbered by the sync
+    // effect once the refetch resolves with the older, already-stale value
+    await changeTitleButton.click();
+    await expect
+      .element(screen.getByTestId("portal-title"))
+      .toHaveTextContent("Title: !!");
+
+    resolveSave();
+
+    // the save resolves with the payload from *before* the second edit
+    await vi.waitFor(() => {
+      expect(lastSavedSettings?.title).toBe("!");
+    });
+
+    // give the invalidated ["clientPortal", id] query time to refetch and
+    // the sync effect a chance to (wrongly) run — the newer edit must remain
+    await vi.waitFor(() => {
+      expect(portalRecord?.settings).toEqual(
+        expect.objectContaining({ title: "!" })
+      );
+    });
+    await expect
+      .element(screen.getByTestId("portal-title"))
+      .toHaveTextContent("Title: !!");
+
+    // the unsaved "!!" edit means the form is still dirty
+    await expect.element(saveButton).not.toBeDisabled();
   });
 });
