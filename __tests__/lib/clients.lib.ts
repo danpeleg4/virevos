@@ -159,7 +159,7 @@ describe("addAClient", () => {
     (getCurrentUser as Mock).mockResolvedValue(null);
     const result = await callAddAClient(baseInput);
     expect(result).toEqual({ message: "Unauthorized" });
-    expect(clientsDb.insertClient).not.toHaveBeenCalled();
+    expect(clientsDb.txAddClientAndPortal).not.toHaveBeenCalled();
   });
 
   it("returns the plan-limit message when the limit is reached", async () => {
@@ -170,14 +170,14 @@ describe("addAClient", () => {
     const result = await callAddAClient(baseInput);
 
     expect(result).toEqual({ message: "Server error" });
-    expect(clientsDb.insertClient).not.toHaveBeenCalled();
+    expect(clientsDb.txAddClientAndPortal).not.toHaveBeenCalled();
   });
 
   it("returns a validation message for a missing name", async () => {
     const result = await callAddAClient({ ...baseInput, name: "  " });
 
     expect(result).toEqual({ message: "name is required" });
-    expect(clientsDb.insertClient).not.toHaveBeenCalled();
+    expect(clientsDb.txAddClientAndPortal).not.toHaveBeenCalled();
   });
 
   it("returns a validation message for an invalid email", async () => {
@@ -186,13 +186,13 @@ describe("addAClient", () => {
     expect(result).toEqual({
       message: expect.stringContaining("email"),
     });
-    expect(clientsDb.insertClient).not.toHaveBeenCalled();
+    expect(clientsDb.txAddClientAndPortal).not.toHaveBeenCalled();
   });
 
-  it("inserts the client and returns the created row", async () => {
+  it("inserts the client and its portal in one transaction, returning the created row", async () => {
     const result = await callAddAClient(baseInput);
 
-    expect(clientsDb.insertClient).toHaveBeenCalledWith({
+    expect(clientsDb.txAddClientAndPortal).toHaveBeenCalledWith({
       name: "John",
       email: "john@example.com",
       phone: null,
@@ -200,11 +200,18 @@ describe("addAClient", () => {
       notes: undefined,
       userId: "user_1",
     });
-    expect(result).toEqual(expect.objectContaining({ id: 42, name: "John" }));
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 42,
+        name: "John",
+        clientId: 42,
+        token: expect.any(String),
+      })
+    );
   });
 
-  it("returns Server error when the insert fails", async () => {
-    clientsDb.insertClient.mockRejectedValueOnce(new Error("db down"));
+  it("returns Server error when the transaction fails", async () => {
+    clientsDb.txAddClientAndPortal.mockRejectedValueOnce(new Error("db down"));
 
     const result = await callAddAClient(baseInput);
 

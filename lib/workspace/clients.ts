@@ -118,7 +118,7 @@ export async function addAClient(
     const phone = optionalString(body.phone, "phone", MAX_PHONE) ?? null;
     const notes = optionalString(body.notes, "notes", MAX_NOTES);
 
-    return await clientsDb.insertClient({
+    return await clientsDb.txAddClientAndPortal({
       name,
       email,
       phone,

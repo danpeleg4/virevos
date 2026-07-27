@@ -101,6 +101,9 @@ export interface ClientsDB {
     data: ClientUpdateData
   ): Promise<void>;
   deleteClient(clientId: number, userId: string): Promise<void>;
+  txAddClientAndPortal(
+    clientValues: NewClientRow
+  ): Promise<ClientRow & PortalTokenRow>;
 }
 
 export class ClientsDrizzle implements ClientsDB {
@@ -279,6 +282,28 @@ export class ClientsDrizzle implements ClientsDB {
     await this.db
       .delete(clients)
       .where(and(eq(clients.id, clientId), eq(clients.userId, userId)));
+  }
+
+  async txAddClientAndPortal(
+    clientValues: NewClientRow
+  ): Promise<ClientRow & PortalTokenRow> {
+    return await this.db.transaction(async (tx) => {
+      const client = await tx.insert(clients).values(clientValues).returning();
+      const portal = await tx
+        .insert(clientPortalTokens)
+        .values({
+          token: crypto.randomUUID(),
+          enabled: true,
+          settings: {},
+          userId: clientValues.userId,
+          clientId: client[0].id,
+        })
+        .returning();
+      return {
+        ...portal[0],
+        ...client[0],
+      };
+    });
   }
 }
 
