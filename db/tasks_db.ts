@@ -22,7 +22,7 @@ export interface TasksDB {
     userId: string
   ): Promise<{ tasks: TaskRow; caseName: string | null }[]>;
   getTasksByCase(userId: string, caseId: number): Promise<TaskRow[]>;
-  findTaskById(taskId: number): Promise<TaskRow | undefined>;
+  findTaskById(taskId: number, userId: string): Promise<TaskRow | undefined>;
   updateTask(
     taskId: number,
     userId: string,
@@ -57,9 +57,12 @@ export class TasksDrizzle implements TasksDB {
       .where(and(eq(tasks.userId, userId), eq(tasks.caseId, caseId)));
   }
 
-  async findTaskById(taskId: number): Promise<TaskRow | undefined> {
+  async findTaskById(
+    taskId: number,
+    userId: string
+  ): Promise<TaskRow | undefined> {
     return this.db.query.tasks.findFirst({
-      where: eq(tasks.id, taskId),
+      where: and(eq(tasks.id, taskId), eq(tasks.userId, userId)),
     });
   }
 
