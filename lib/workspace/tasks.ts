@@ -41,7 +41,7 @@ export async function updateTaskStatus(
   const validStatus = requireOneOf(status, "status", TASK_STATUSES);
 
   // get existing task
-  const existing = await tasksDb.findTaskById(taskId);
+  const existing = await tasksDb.findTaskById(taskId, user.id);
 
   if (!existing) {
     throw new Error("Task not found");
