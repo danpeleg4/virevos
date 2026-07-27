@@ -89,11 +89,25 @@ function fulfilledParams<T>(value: T): Promise<T> {
   return p;
 }
 
-// `portal` starts null (as if the client was just created) and is populated
-// once the page auto-provisions it via POST /api/clients/:id/portal — the
-// same endpoint a manual Save Changes hits.
+// Portals are now created server-side in the same transaction as the client
+// (see txAddClientAndPortal), so by the time this page loads, the client
+// already has a portal. `portalRecord` seeds that existing portal; Save
+// Changes still POSTs to /api/clients/:id/portal to update it.
 let portalRecord: Record<string, unknown> | null = null;
 let lastSavedSettings: Record<string, unknown> | undefined;
+
+function makeDefaultPortalRecord(clientId: number) {
+  return {
+    id: 1,
+    clientId,
+    clientName: mockClient.name,
+    token: "tok-123",
+    enabled: true,
+    settings: {},
+    portalUrl: "https://example.com/portal/tok-123",
+    lastAccessedAt: null,
+  };
+}
 
 function useClientHandlers(
   overrides: Partial<{
@@ -148,7 +162,7 @@ const renderPage = () =>
 describe("Client Detail Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    portalRecord = null;
+    portalRecord = makeDefaultPortalRecord(42);
     lastSavedSettings = undefined;
   });
 
@@ -224,7 +238,7 @@ describe("Client Detail Page", () => {
     expect(mockPush).toHaveBeenCalledWith("/workspace/clients");
   });
 
-  it("auto-provisions a portal (and shows its Preview Portal link) for a client with no portal yet", async () => {
+  it("shows the Preview Portal link for a client whose portal already exists", async () => {
     useClientHandlers();
     const screen = await renderPage();
     await expect
@@ -236,7 +250,7 @@ describe("Client Detail Page", () => {
     useClientHandlers();
     const screen = await renderPage();
 
-    // wait for the auto-provisioned portal so the baseline snapshot settles
+    // wait for the portal to load so the baseline snapshot settles
     await expect
       .element(screen.getByRole("button", { name: /preview portal/i }))
       .toBeInTheDocument();
@@ -259,7 +273,7 @@ describe("Client Detail Page", () => {
     useClientHandlers();
     const screen = await renderPage();
 
-    // wait for the auto-provisioned portal so the baseline snapshot settles
+    // wait for the portal to load so the baseline snapshot settles
     await expect
       .element(screen.getByRole("button", { name: /preview portal/i }))
       .toBeInTheDocument();

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -206,7 +206,6 @@ export default function ClientDetailPage({
   const [savedSnapshot, setSavedSnapshot] = useState<PortalFormState>(
     DEFAULT_PORTAL_FORM_STATE
   );
-  const autoProvisionedRef = useRef(false);
 
   const clientQuery = useQuery({
     queryKey: ["client", id],
@@ -275,10 +274,18 @@ export default function ClientDetailPage({
   const isPortalDirty =
     JSON.stringify(currentFormState) !== JSON.stringify(savedSnapshot);
 
-  useEffect(() => {
-    const portal = portalQuery.data;
-    if (portal && !isPortalDirty) {
-      const snapshot = buildPortalFormState(portal);
+  // Sync freshly-fetched portal data into local form state, but only when
+  // it actually changes and the user hasn't started editing — mirrors the
+  // old `useEffect(() => { ... }, [portalQuery.data])`, adjusted during
+  // render (per https://react.dev/learn/you-might-not-need-an-effect) so
+  // the sync lands in the same render instead of triggering an extra one.
+  const [lastSyncedPortal, setLastSyncedPortal] = useState<
+    PortalRecord | null | undefined
+  >(undefined);
+  if (portalQuery.data !== lastSyncedPortal) {
+    setLastSyncedPortal(portalQuery.data);
+    if (portalQuery.data && !isPortalDirty) {
+      const snapshot = buildPortalFormState(portalQuery.data);
       setPortalEnabled(snapshot.portalEnabled);
       setTitle(snapshot.title);
       setWelcomeMessage(snapshot.welcomeMessage);
@@ -290,7 +297,7 @@ export default function ClientDetailPage({
       setAvailability(snapshot.availability);
       setSavedSnapshot(snapshot);
     }
-  }, [portalQuery.data]);
+  }
 
   const savePortalMutation = useMutation({
     mutationFn: async (payload: {
@@ -325,18 +332,6 @@ export default function ClientDetailPage({
       availability,
     },
   });
-
-  useEffect(() => {
-    if (
-      portalQuery.isSuccess &&
-      portalQuery.data === null &&
-      !autoProvisionedRef.current
-    ) {
-      autoProvisionedRef.current = true;
-      savePortalMutation.mutate(buildSavePayload());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [portalQuery.isSuccess, portalQuery.data]);
 
   const handleSave = () => {
     savePortalMutation.mutate(buildSavePayload());

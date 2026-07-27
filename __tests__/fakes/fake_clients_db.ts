@@ -79,6 +79,19 @@ export function makeFakeClientsDb(
         status: values.status ?? "active",
       })
     ),
+    txAddClientAndPortal: vi.fn(
+      async (values: NewClientRow): Promise<ClientRow & PortalTokenRow> => ({
+        ...canonicalPortalTokenRow,
+        clientId: 42,
+        ...canonicalClientRow,
+        ...values,
+        id: 42,
+        email: values.email ?? null,
+        phone: values.phone ?? null,
+        notes: values.notes ?? null,
+        status: values.status ?? "active",
+      })
+    ),
     updateClient: vi.fn(async () => {}),
     deleteClient: vi.fn(async () => {}),
   } satisfies ClientsDB;
