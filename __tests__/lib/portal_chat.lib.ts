@@ -1,6 +1,7 @@
 import {
   deletePortalChat,
   getPortalChatMessages,
+  getPortalChatThread,
   sendAgencyChatMessage,
   sendPortalChatMessage,
   updatePortalChat,
@@ -232,6 +233,37 @@ describe("deletePortalChat", () => {
     expect(portalChatDb.resetChatFlags).toHaveBeenCalledWith(
       canonicalPortalChatToken.id
     );
+  });
+});
+
+// ─── getPortalChatThread ──────────────────────────────────────────────────
+
+describe("getPortalChatThread", () => {
+  it("throws when no userId", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(null);
+    await expect(() => getPortalChatThread(999, portalChatDb)).rejects.toThrow(
+      "Unauthorized"
+    );
+  });
+
+  it("throws when the portal is not found", async () => {
+    portalChatDb.getPortalForUser.mockResolvedValueOnce([]);
+    await expect(getPortalChatThread(1, portalChatDb)).rejects.toThrow(
+      "Portal not found"
+    );
+  });
+
+  it("returns portal chat thread on success", () => {
+    const created = canonicalChatMessage.createdAt;
+    expect(getPortalChatThread(1, portalChatDb)).resolves.toEqual({
+      portalId: canonicalPortalChatToken.id,
+      messages: [
+        {
+          ...canonicalChatMessage,
+          createdAt: created?.toISOString(),
+        },
+      ],
+    });
   });
 });
 

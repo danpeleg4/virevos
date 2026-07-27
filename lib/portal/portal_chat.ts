@@ -71,15 +71,14 @@ export interface PortalChatThread {
 export async function getPortalChatThread(
   clientId: number,
   portalChatDb: PortalChatDB
-): Promise<Promise<PortalChatThread> | Record<string, number>> {
+): Promise<PortalChatThread> {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
-
   const numericClientId = requireInt(clientId, "clientId");
 
   const rows = await portalChatDb.getPortalForUser(numericClientId, user.id);
   const portal = rows[0];
-  if (!portal) return { "Portal not found": 404 };
+  if (!portal) throw new ValidationError("Portal not found", 404);
 
   const rowsForPortal = await portalChatDb.getMessagesForPortal(portal.id);
   await portalChatDb.markClientMessagesRead(portal.id);
