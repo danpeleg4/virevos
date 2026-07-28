@@ -51,6 +51,7 @@ export type FakeCasesDb = {
 
 export function makeFakeCasesDb(overrides: Partial<CasesDB> = {}): FakeCasesDb {
   const fake = {
+    getCaseById: vi.fn(async () => [{ ...canonicalCaseRow }]),
     getCasesWithStats: vi.fn(async (_userId: string) => [
       { ...canonicalCaseWithStats },
     ]),

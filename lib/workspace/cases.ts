@@ -129,12 +129,18 @@ export async function addFileMetadata(
 ) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
+
   const file = formData.get("file") as File | null;
   if (!file) throw new Error("No file provided");
+
   await assertCanAddFile(user.id, file.size, planLimitsDb, billingDb);
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
   const filePath = `projects/${user.id}/${Date.now()}-${safeName}`;
   const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+  const [res] = await casesDb.getCaseById(input.caseId, user.id);
+  if (!res) throw new ValidationError("Case not found", 404);
+
   try {
     await storage.uploadFile(FILES_BUCKET, filePath, fileBuffer, file.type);
   } catch (uploadError) {
@@ -203,6 +209,9 @@ export async function addCaseNotes(
 ) {
   const user = await getCurrentUser();
   if (!user?.id) throw new Error("No user");
+
+  const [res] = await casesDb.getCaseById(caseId, user.id);
+  if (!res) throw new ValidationError("Case not found", 404);
 
   await casesDb.insertCaseNote(newNote, user.id, caseId);
 }
