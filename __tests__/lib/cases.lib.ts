@@ -223,6 +223,14 @@ describe("addFileMetadata", () => {
     expect(casesDb.insertCaseFileWithStorage).not.toHaveBeenCalled();
   });
 
+  it("throws 404 when caseId does not belong to the user", async () => {
+    casesDb.getCaseById.mockResolvedValueOnce([]);
+    await expect(callAddFileMetadata(makeFormData())).rejects.toThrow(
+      "Case not found"
+    );
+    expect(storage.uploadFile).not.toHaveBeenCalled();
+  });
+
   it("inserts metadata and returns { path, name, size } on success", async () => {
     const result = await callAddFileMetadata(makeFormData("doc.pdf", 2048));
 
@@ -319,6 +327,14 @@ describe("addCaseNotes", () => {
     await expect(addCaseNotes("Note content", 1, casesDb)).rejects.toThrow(
       "No user"
     );
+  });
+
+  it("throws 404 when caseId does not belong to the user", async () => {
+    casesDb.getCaseById.mockResolvedValueOnce([]);
+    await expect(addCaseNotes("Note content", 1, casesDb)).rejects.toThrow(
+      "Case not found"
+    );
+    expect(casesDb.insertCaseNote).not.toHaveBeenCalled();
   });
 
   it("inserts the note for the current user", async () => {

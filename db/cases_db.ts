@@ -88,10 +88,19 @@ export interface CasesDB {
     userId: string,
     data: CaseUpdateData
   ): Promise<void>;
+  getCaseById(caseId: number, userId: string): Promise<CaseRow[]>;
 }
 
 export class CasesDrizzle implements CasesDB {
   constructor(private readonly db: DrizzleDB) {}
+
+  async getCaseById(caseId: number, userId: string): Promise<CaseRow[]> {
+    return this.db
+      .select()
+      .from(cases)
+      .where(and(eq(cases.id, caseId), eq(cases.userId, userId)))
+      .limit(1);
+  }
 
   async getCasesWithStats(userId: string): Promise<CaseWithStatsRow[]> {
     return this.db
@@ -164,7 +173,10 @@ export class CasesDrizzle implements CasesDB {
         caseName: cases.name,
       })
       .from(caseFiles)
-      .leftJoin(cases, eq(caseFiles.caseId, cases.id))
+      .leftJoin(
+        cases,
+        and(eq(caseFiles.caseId, cases.id), eq(cases.userId, userId))
+      )
       .where(eq(caseFiles.userId, userId))
       .limit(100);
   }
