@@ -46,5 +46,4 @@ web/.next/
 /.claude/scheduled_tasks.lock
 /livekit/dist/
 /.vitest-attachments/
-/__tests__/react/components/clients/__screenshots__/ClientPortalSettings.test.tsx/ClientPortalSettings-updates-only-the-end-time-when-the-end-time-select-changes-1.png
-/__tests__/react/components/clients/ClientPortalSettings.test.tsx
+**/__screenshots__/
