@@ -287,9 +287,30 @@ describe("addProjectTasksAction", () => {
 
     await addProjectTasksAction({ ...baseTask, caseId: 5 }, tasksDb);
 
+    expect(tasksDb.getCaseById).toHaveBeenCalledWith(5);
     expect(tasksDb.insertTask).toHaveBeenCalledWith(
       expect.objectContaining({ caseId: 5 })
     );
+  });
+
+  it("rejects a directly supplied caseId owned by another user with 403 (#269)", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    tasksDb.getCaseById.mockResolvedValueOnce([{ id: 5, userId: "user_2" }]);
+
+    await expect(
+      addProjectTasksAction({ ...baseTask, caseId: 5 }, tasksDb)
+    ).rejects.toMatchObject({ message: "Unauthorized case", status: 403 });
+    expect(tasksDb.insertTask).not.toHaveBeenCalled();
+  });
+
+  it("throws 'Case not found' when a directly supplied caseId does not exist", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    tasksDb.getCaseById.mockResolvedValueOnce([]);
+
+    await expect(
+      addProjectTasksAction({ ...baseTask, caseId: 999 }, tasksDb)
+    ).rejects.toThrow("Case not found");
+    expect(tasksDb.insertTask).not.toHaveBeenCalled();
   });
 
   it("falls back to current ISO timestamp when dueDate not provided", async () => {

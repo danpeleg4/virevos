@@ -130,6 +130,13 @@ async function resolveCaseId(
   fallbackCaseId: number | null | undefined,
   tasksDb: TasksDB
 ): Promise<number | null> {
+  if (fallbackCaseId) {
+    const caseById = await tasksDb.getCaseById(fallbackCaseId);
+    if (!caseById.length) throw new ValidationError("Case not found");
+    if (caseById[0].userId !== userId) {
+      throw new ValidationError("Unauthorized case", 403);
+    }
+  }
   if (
     caseName === undefined ||
     caseName === null ||
