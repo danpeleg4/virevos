@@ -50,6 +50,9 @@ export function makeFakeCalendarDb(
     getEventById: vi.fn(async (eventId: string) => [
       { ...canonicalEventRow, id: eventId },
     ]),
+    getEventByTitle: vi.fn(async (_userId: string, title: string) => [
+      { ...canonicalEventRow, title },
+    ]),
     insertEvent: vi.fn(
       async (values: NewEventRow): Promise<EventRow> => ({
         ...canonicalEventRow,

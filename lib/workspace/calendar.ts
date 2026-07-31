@@ -93,7 +93,8 @@ export async function addMeetingToCalendar(
 
 export async function updateEvent(
   input: {
-    id: string;
+    id?: string;
+    eventTitle?: string;
     title?: string;
     description?: string;
     dateTime?: string;
@@ -119,14 +120,29 @@ export async function updateEvent(
 
   if (Object.keys(updateData).length === 0) return;
 
-  await calendarDb.updateEvent(input.id, user.id, updateData);
+  let targetId = input.id;
+  if (!targetId) {
+    if (!input.eventTitle) {
+      throw new ValidationError("id or eventTitle is required", 400);
+    }
+    const matches = await calendarDb.getEventByTitle(
+      user.id,
+      input.eventTitle
+    );
+    if (matches.length === 0) {
+      throw new ValidationError("No event found", 400);
+    }
+    targetId = matches[0].id;
+  }
+
+  await calendarDb.updateEvent(targetId, user.id, updateData);
 
   const hasExternalFields =
     input.title !== undefined ||
     input.description !== undefined ||
     input.dateTime !== undefined;
   if (hasExternalFields) {
-    const [eventRow] = await calendarDb.getEventById(input.id, user.id);
+    const [eventRow] = await calendarDb.getEventById(targetId, user.id);
 
     if (eventRow) {
       const outlookToken = await getFreshOutlookAccessToken(

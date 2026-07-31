@@ -1,6 +1,6 @@
 import { db, type DrizzleDB } from "./db";
 import { caseFiles, caseNotes, cases, clients, tasks, users } from "./schema";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, sql } from "drizzle-orm";
 
 export type CaseRow = typeof cases.$inferSelect;
 export type NewCaseRow = typeof cases.$inferInsert;
@@ -89,6 +89,8 @@ export interface CasesDB {
     data: CaseUpdateData
   ): Promise<void>;
   getCaseById(caseId: number, userId: string): Promise<CaseRow[]>;
+  getCaseByName(userId: string, caseName: string): Promise<CaseRow[]>;
+  getClientByName(userId: string, clientName: string): Promise<ClientRow[]>;
 }
 
 export class CasesDrizzle implements CasesDB {
@@ -99,6 +101,27 @@ export class CasesDrizzle implements CasesDB {
       .select()
       .from(cases)
       .where(and(eq(cases.id, caseId), eq(cases.userId, userId)))
+      .limit(1);
+  }
+
+  async getCaseByName(userId: string, caseName: string): Promise<CaseRow[]> {
+    return this.db
+      .select()
+      .from(cases)
+      .where(and(eq(cases.userId, userId), ilike(cases.name, caseName)))
+      .orderBy(cases.id)
+      .limit(1);
+  }
+
+  async getClientByName(
+    userId: string,
+    clientName: string
+  ): Promise<ClientRow[]> {
+    return this.db
+      .select()
+      .from(clients)
+      .where(and(eq(clients.userId, userId), ilike(clients.name, clientName)))
+      .orderBy(clients.id)
       .limit(1);
   }
 

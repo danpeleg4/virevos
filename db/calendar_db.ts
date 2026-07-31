@@ -1,6 +1,6 @@
 import { db, type DrizzleDB } from "./db";
 import { events, meetingAttendees } from "./schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 
 export type EventRow = typeof events.$inferSelect;
 export type NewEventRow = typeof events.$inferInsert;
@@ -20,6 +20,7 @@ export interface CalendarDB {
   /** No user scoping — meet pages resolve host status from the row itself. */
   getEventByIdUnscoped(eventId: string): Promise<EventRow[]>;
   getEventById(eventId: string, userId: string): Promise<EventRow[]>;
+  getEventByTitle(userId: string, title: string): Promise<EventRow[]>;
   insertEvent(values: NewEventRow): Promise<EventRow>;
   updateEvent(
     eventId: string,
@@ -59,6 +60,15 @@ export class CalendarDrizzle implements CalendarDB {
       .select()
       .from(events)
       .where(and(eq(events.id, eventId), eq(events.userId, userId)))
+      .limit(1);
+  }
+
+  async getEventByTitle(userId: string, title: string): Promise<EventRow[]> {
+    return this.db
+      .select()
+      .from(events)
+      .where(and(eq(events.userId, userId), ilike(events.title, title)))
+      .orderBy(events.id)
       .limit(1);
   }
 

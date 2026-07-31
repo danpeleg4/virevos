@@ -6,7 +6,7 @@ import {
   outlookEmails,
   tasks,
 } from "./schema";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, sql } from "drizzle-orm";
 
 export type ClientRow = typeof clients.$inferSelect;
 export type NewClientRow = typeof clients.$inferInsert;
@@ -75,6 +75,7 @@ export interface ClientsDB {
     clientId: number,
     userId: string
   ): Promise<ClientWithCaseCountsRow[]>;
+  getClientByName(userId: string, clientName: string): Promise<ClientRow[]>;
   getPortalTokenByClient(
     clientId: number,
     userId: string
@@ -134,6 +135,18 @@ export class ClientsDrizzle implements ClientsDB {
     return this.clientWithCaseCountsSelect()
       .where(eq(clients.userId, userId))
       .groupBy(clients.id);
+  }
+
+  async getClientByName(
+    userId: string,
+    clientName: string
+  ): Promise<ClientRow[]> {
+    return this.db
+      .select()
+      .from(clients)
+      .where(and(eq(clients.userId, userId), ilike(clients.name, clientName)))
+      .orderBy(clients.id)
+      .limit(1);
   }
 
   async getClientWithCaseCounts(

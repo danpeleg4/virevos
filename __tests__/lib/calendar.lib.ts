@@ -208,6 +208,53 @@ describe("updateEvent", () => {
     expect(calendarDb.updateEvent).not.toHaveBeenCalled();
   });
 
+  it("throws when neither id nor eventTitle is provided", async () => {
+    await expect(
+      updateEvent(
+        { status: "completed" },
+        calendarDb,
+        graphCalendar,
+        outlookDb,
+        graphAuthService
+      )
+    ).rejects.toThrow("id or eventTitle is required");
+    expect(calendarDb.updateEvent).not.toHaveBeenCalled();
+  });
+
+  it("throws Validation error when no event found via getEventByTitle", async () => {
+    calendarDb.getEventByTitle.mockResolvedValueOnce([]);
+    await expect(
+      updateEvent(
+        { eventTitle: "Nobody's Meeting", status: "completed" },
+        calendarDb,
+        graphCalendar,
+        outlookDb,
+        graphAuthService
+      )
+    ).rejects.toThrow("No event found");
+    expect(calendarDb.updateEvent).not.toHaveBeenCalled();
+  });
+
+  it("looks up the event by eventTitle when id is not provided", async () => {
+    calendarDb.getEventByTitle.mockResolvedValueOnce([
+      { ...canonicalEventRow, id: "evt-9" },
+    ]);
+    await updateEvent(
+      { eventTitle: "Team Sync", status: "completed" },
+      calendarDb,
+      graphCalendar,
+      outlookDb,
+      graphAuthService
+    );
+    expect(calendarDb.getEventByTitle).toHaveBeenCalledWith(
+      "user_1",
+      "Team Sync"
+    );
+    expect(calendarDb.updateEvent).toHaveBeenCalledWith("evt-9", "user_1", {
+      status: "completed",
+    });
+  });
+
   it("updates the row and mirrors external fields to Outlook", async () => {
     await updateEvent(
       { id: "evt-1", title: "Renamed" },

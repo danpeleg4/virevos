@@ -177,6 +177,41 @@ describe("updateTask", () => {
     expect(tasksDb.updateTask).not.toHaveBeenCalled();
   });
 
+  it("throws when neither id nor taskTitle is provided", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    await expect(
+      updateTask({ priority: "high" }, tasksDb)
+    ).rejects.toThrow("id or taskTitle is required");
+    expect(tasksDb.updateTask).not.toHaveBeenCalled();
+  });
+
+  it("throws Validation error when no task found via getTaskByTitle", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    tasksDb.getTaskByTitle.mockResolvedValueOnce([]);
+    await expect(
+      updateTask({ taskTitle: "Nobody's Task", priority: "high" }, tasksDb)
+    ).rejects.toThrow("No task found");
+    expect(tasksDb.updateTask).not.toHaveBeenCalled();
+  });
+
+  it("looks up the task by taskTitle when id is not provided", async () => {
+    (getCurrentUser as Mock).mockResolvedValue(mockUser);
+    tasksDb.getTaskByTitle.mockResolvedValueOnce([
+      { ...canonicalTaskRow, id: 11 },
+    ]);
+    await updateTask(
+      { taskTitle: "Design UI mockups", priority: "high" },
+      tasksDb
+    );
+    expect(tasksDb.getTaskByTitle).toHaveBeenCalledWith(
+      "user_1",
+      "Design UI mockups"
+    );
+    expect(tasksDb.updateTask).toHaveBeenCalledWith(11, "user_1", {
+      priority: "high",
+    });
+  });
+
   it("updates provided fields with correct where clause", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
     await updateTask({ id: 5, title: "New Title", priority: "high" }, tasksDb);
