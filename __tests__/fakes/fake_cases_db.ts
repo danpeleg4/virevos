@@ -5,6 +5,7 @@ import type {
   CaseWithStatsRow,
   NewCaseRow,
 } from "@db/cases_db";
+import { canonicalClientRow } from "./fake_clients_db";
 
 export const canonicalCaseRow: CaseRow = {
   id: 5,
@@ -52,10 +53,16 @@ export type FakeCasesDb = {
 export function makeFakeCasesDb(overrides: Partial<CasesDB> = {}): FakeCasesDb {
   const fake = {
     getCaseById: vi.fn(async () => [{ ...canonicalCaseRow }]),
+    getCaseByName: vi.fn(async (_userId: string, name: string) => [
+      { ...canonicalCaseRow, name },
+    ]),
     getCasesWithStats: vi.fn(async (_userId: string) => [
       { ...canonicalCaseWithStats },
     ]),
     getClientsForUser: vi.fn(async (_userId: string) => []),
+    getClientByName: vi.fn(async (_userId: string, name: string) => [
+      { ...canonicalClientRow, name },
+    ]),
     getCaseSummary: vi.fn(async (caseId: number, _userId: string) => [
       {
         id: caseId,

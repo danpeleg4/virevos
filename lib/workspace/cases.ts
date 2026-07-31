@@ -187,10 +187,24 @@ export async function createCase(
 
   const name = requireString(aCase.name, "name", MAX_NAME);
 
+  let clientId = aCase.clientId ?? undefined;
+  if (!clientId && aCase.clientName) {
+    const validClientName = requireString(
+      aCase.clientName,
+      "clientName",
+      MAX_NAME
+    );
+    const matches = await casesDb.getClientByName(user.id, validClientName);
+    if (matches.length === 0) {
+      throw new ValidationError("No client found", 400);
+    }
+    clientId = matches[0].id;
+  }
+
   const inserted = await casesDb.insertCase({
     name,
     userId: user.id,
-    clientId: aCase.clientId ?? undefined,
+    clientId,
     status: aCase.status ?? "active",
     dueDate: aCase.dueDate ?? undefined,
     priority: aCase.priority ?? "medium",
@@ -218,7 +232,8 @@ export async function addCaseNotes(
 
 export async function updateCase(
   input: {
-    id: number;
+    id?: number;
+    caseName?: string;
     name?: string;
     description?: string;
     status?: string;
@@ -242,7 +257,20 @@ export async function updateCase(
 
   if (Object.keys(updateData).length === 0) return;
 
-  await casesDb.updateCase(input.id, user.id, updateData);
+  let targetId = input.id;
+  if (!targetId) {
+    if (!input.caseName) {
+      throw new ValidationError("id or caseName is required", 400);
+    }
+    const validCaseName = requireString(input.caseName, "caseName", MAX_NAME);
+    const matches = await casesDb.getCaseByName(user.id, validCaseName);
+    if (matches.length === 0) {
+      throw new ValidationError("No case found", 400);
+    }
+    targetId = matches[0].id;
+  }
+
+  await casesDb.updateCase(targetId, user.id, updateData);
 }
 
 export async function changeCaseStatus(

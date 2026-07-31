@@ -22,7 +22,8 @@ type CreateClientInput = {
 };
 
 type UpdateClientInput = {
-  id: number;
+  id?: number;
+  clientName?: string;
   name?: string;
   email?: string;
   phone?: string;

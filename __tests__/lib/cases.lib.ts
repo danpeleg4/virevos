@@ -12,7 +12,8 @@ import {
 } from "@/lib/workspace/cases";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { assertCanAddFile } from "@/lib/plan_limits";
-import { makeFakeCasesDb } from "../fakes/fake_cases_db";
+import { canonicalCaseRow, makeFakeCasesDb } from "../fakes/fake_cases_db";
+import { canonicalClientRow } from "../fakes/fake_clients_db";
 import { makeFakeStorageClient } from "../fakes/fake_storage_client";
 import { makeFakeBillingDb } from "../fakes/fake_billing_db";
 import { makeFakePlanLimitsDb } from "../fakes/fake_plan_limits_db";
@@ -317,6 +318,49 @@ describe("createCase", () => {
       expect.objectContaining({ name: "My Case" })
     );
   });
+
+  it("inserts with no clientId when neither clientId nor clientName is given", async () => {
+    await callCreateCase(baseCase);
+
+    expect(casesDb.getClientByName).not.toHaveBeenCalled();
+    expect(casesDb.insertCase).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: undefined })
+    );
+  });
+
+  it("uses clientId directly when provided", async () => {
+    await callCreateCase({ ...baseCase, clientId: 3 });
+
+    expect(casesDb.getClientByName).not.toHaveBeenCalled();
+    expect(casesDb.insertCase).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: 3 })
+    );
+  });
+
+  it("resolves clientId from clientName when clientId is not given", async () => {
+    casesDb.getClientByName.mockResolvedValueOnce([
+      { ...canonicalClientRow, id: 8 },
+    ]);
+
+    await callCreateCase({ ...baseCase, clientName: "Jane Client" });
+
+    expect(casesDb.getClientByName).toHaveBeenCalledWith(
+      "user_1",
+      "Jane Client"
+    );
+    expect(casesDb.insertCase).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: 8 })
+    );
+  });
+
+  it("throws Validation error when no client found via getClientByName", async () => {
+    casesDb.getClientByName.mockResolvedValueOnce([]);
+
+    await expect(
+      callCreateCase({ ...baseCase, clientName: "Nobody" })
+    ).rejects.toThrow("No client found");
+    expect(casesDb.insertCase).not.toHaveBeenCalled();
+  });
 });
 
 // ─── addCaseNotes ──────────────────────────────────────────────────────
@@ -360,6 +404,38 @@ describe("updateCase", () => {
   it("does nothing when no fields provided", async () => {
     await updateCase({ id: 1 }, casesDb);
     expect(casesDb.updateCase).not.toHaveBeenCalled();
+  });
+
+  it("throws when neither id nor caseName is provided", async () => {
+    await expect(
+      updateCase({ name: "New Name" }, casesDb)
+    ).rejects.toThrow("id or caseName is required");
+    expect(casesDb.updateCase).not.toHaveBeenCalled();
+  });
+
+  it("throws Validation error when no case found via getCaseByName", async () => {
+    casesDb.getCaseByName.mockResolvedValueOnce([]);
+    await expect(
+      updateCase({ caseName: "Nobody's Case", priority: "high" }, casesDb)
+    ).rejects.toThrow("No case found");
+    expect(casesDb.updateCase).not.toHaveBeenCalled();
+  });
+
+  it("looks up the case by caseName when id is not provided", async () => {
+    casesDb.getCaseByName.mockResolvedValueOnce([
+      { ...canonicalCaseRow, id: 9 },
+    ]);
+    await updateCase(
+      { caseName: "Estate Case", priority: "high" },
+      casesDb
+    );
+    expect(casesDb.getCaseByName).toHaveBeenCalledWith(
+      "user_1",
+      "Estate Case"
+    );
+    expect(casesDb.updateCase).toHaveBeenCalledWith(9, "user_1", {
+      priority: "high",
+    });
   });
 
   it("updates provided fields with correct where clause", async () => {

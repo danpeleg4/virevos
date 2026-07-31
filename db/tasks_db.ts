@@ -1,6 +1,6 @@
 import { db, type DrizzleDB } from "./db";
 import { cases, tasks } from "./schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 
 export type TaskRow = typeof tasks.$inferSelect;
 export type NewTaskRow = typeof tasks.$inferInsert;
@@ -32,6 +32,7 @@ export interface TasksDB {
   insertTask(values: NewTaskRow): Promise<TaskRow>;
   getCaseById(caseId: number): Promise<CaseOwnerRow[]>;
   getCaseByName(name: string): Promise<CaseOwnerRow[]>;
+  getTaskByTitle(userId: string, title: string): Promise<TaskRow[]>;
 }
 
 export class TasksDrizzle implements TasksDB {
@@ -100,6 +101,15 @@ export class TasksDrizzle implements TasksDB {
       .select({ id: cases.id, userId: cases.userId })
       .from(cases)
       .where(eq(cases.name, name));
+  }
+
+  async getTaskByTitle(userId: string, title: string): Promise<TaskRow[]> {
+    return this.db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.userId, userId), ilike(tasks.title, title)))
+      .orderBy(tasks.id)
+      .limit(1);
   }
 }
 

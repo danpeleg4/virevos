@@ -11,6 +11,7 @@ import {
 import { getCurrentUser } from "@/lib/supabase/auth";
 import type { UpdateClientInput } from "@/types/clients";
 import {
+  canonicalClientRow,
   canonicalClientWithCounts,
   makeFakeClientsDb,
 } from "../fakes/fake_clients_db";
@@ -240,6 +241,41 @@ describe("updateExistingClient", () => {
       clientsDb
     );
     expect(clientsDb.updateClient).not.toHaveBeenCalled();
+  });
+
+  it("throws when neither id nor clientName is provided", async () => {
+    await expect(
+      updateExistingClient({ email: "new@x.com" }, clientsDb)
+    ).rejects.toThrow("id or clientName is required");
+    expect(clientsDb.updateClient).not.toHaveBeenCalled();
+  });
+
+  it("throws Validation error when no client found via getClientByName", async () => {
+    clientsDb.getClientByName.mockResolvedValueOnce([]);
+    await expect(
+      updateExistingClient(
+        { clientName: "Nobody", email: "new@x.com" },
+        clientsDb
+      )
+    ).rejects.toThrow("No client found");
+    expect(clientsDb.updateClient).not.toHaveBeenCalled();
+  });
+
+  it("looks up the client by clientName when id is not provided", async () => {
+    clientsDb.getClientByName.mockResolvedValueOnce([
+      { ...canonicalClientRow, id: 7, name: "Jane Client" },
+    ]);
+    await updateExistingClient(
+      { clientName: "Jane Client", email: "new@x.com" },
+      clientsDb
+    );
+    expect(clientsDb.getClientByName).toHaveBeenCalledWith(
+      "user_1",
+      "Jane Client"
+    );
+    expect(clientsDb.updateClient).toHaveBeenCalledWith(7, "user_1", {
+      email: "new@x.com",
+    });
   });
 
   it("updates the provided fields scoped to the user", async () => {

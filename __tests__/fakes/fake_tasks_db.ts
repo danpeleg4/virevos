@@ -53,6 +53,9 @@ export function makeFakeTasksDb(overrides: Partial<TasksDB> = {}): FakeTasksDb {
     getCaseByName: vi.fn(async (_name: string) => [
       { id: 5, userId: "user_1" },
     ]),
+    getTaskByTitle: vi.fn(async (_userId: string, title: string) => [
+      { ...canonicalTaskRow, title },
+    ]),
   } satisfies TasksDB;
 
   return Object.assign(fake, overrides) as FakeTasksDb;

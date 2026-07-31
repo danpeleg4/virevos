@@ -59,6 +59,9 @@ export function makeFakeClientsDb(
     getClientWithCaseCounts: vi.fn(async (clientId: number) => [
       { ...canonicalClientWithCounts, id: clientId },
     ]),
+    getClientByName: vi.fn(async (name: string) => [
+      { ...canonicalClientWithCounts, name },
+    ]),
     getPortalTokenByClient: vi.fn(
       async (): Promise<PortalTokenRow[]> => [{ ...canonicalPortalTokenRow }]
     ),

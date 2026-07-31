@@ -142,7 +142,7 @@ export async function updateExistingClient(
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
 
-  const { id, name, email, phone, notes, status } = newClient;
+  const { id, clientName, name, email, phone, notes, status } = newClient;
 
   const updateData: ClientUpdateData = {};
   if (name !== undefined && name !== null && name !== "") {
@@ -163,7 +163,20 @@ export async function updateExistingClient(
 
   if (Object.keys(updateData).length === 0) return;
 
-  await clientsDb.updateClient(id, user.id, updateData);
+  let targetId = id;
+  if (!targetId) {
+    if (!clientName) {
+      throw new ValidationError("id or clientName is required", 400);
+    }
+    const validClientName = requireString(clientName, "clientName", MAX_NAME);
+    const matches = await clientsDb.getClientByName(user.id, validClientName);
+    if (matches.length === 0) {
+      throw new ValidationError("No client found", 400);
+    }
+    targetId = matches[0].id;
+  }
+
+  await clientsDb.updateClient(targetId, user.id, updateData);
 }
 
 export async function deleteClient(

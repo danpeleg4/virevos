@@ -105,9 +105,9 @@ export const tools: OpenAI.Responses.Tool[] = [
           description: "Due date as ISO string",
         },
         priority: { type: ["string", "null"], description: "Case priority" },
-        clientId: {
-          type: ["number", "null"],
-          description: "Associated client ID",
+        clientName: {
+          type: ["string", "null"],
+          description: "Name of the associated client, or null for no client",
         },
       },
       required: [
@@ -116,7 +116,7 @@ export const tools: OpenAI.Responses.Tool[] = [
         "status",
         "dueDate",
         "priority",
-        "clientId",
+        "clientName",
       ],
       additionalProperties: false,
     },
@@ -129,13 +129,20 @@ export const tools: OpenAI.Responses.Tool[] = [
     parameters: {
       type: "object",
       properties: {
-        id: { type: "number", description: "The ID of the client to update" },
-        name: { type: ["string", "null"], description: "New name" },
+        clientName: {
+          type: "string",
+          description:
+            "The current name of the client to update (used to look up the client)",
+        },
+        name: {
+          type: ["string", "null"],
+          description: "New name, or null to keep it unchanged",
+        },
         email: { type: ["string", "null"], description: "New email" },
         phone: { type: ["string", "null"], description: "New phone number" },
         notes: { type: ["string", "null"], description: "New notes" },
       },
-      required: ["id", "name", "email", "phone", "notes"],
+      required: ["clientName", "name", "email", "phone", "notes"],
       additionalProperties: false,
     },
     strict: true,
@@ -147,8 +154,15 @@ export const tools: OpenAI.Responses.Tool[] = [
     parameters: {
       type: "object",
       properties: {
-        id: { type: "number", description: "The ID of the case to update" },
-        name: { type: ["string", "null"], description: "New name" },
+        caseName: {
+          type: "string",
+          description:
+            "The current name of the case to update (used to look up the case)",
+        },
+        name: {
+          type: ["string", "null"],
+          description: "New name, or null to keep it unchanged",
+        },
         description: {
           type: ["string", "null"],
           description: "New description",
@@ -160,7 +174,14 @@ export const tools: OpenAI.Responses.Tool[] = [
         },
         priority: { type: ["string", "null"], description: "New priority" },
       },
-      required: ["id", "name", "description", "status", "dueDate", "priority"],
+      required: [
+        "caseName",
+        "name",
+        "description",
+        "status",
+        "dueDate",
+        "priority",
+      ],
       additionalProperties: false,
     },
     strict: true,
@@ -199,8 +220,15 @@ export const tools: OpenAI.Responses.Tool[] = [
     parameters: {
       type: "object",
       properties: {
-        id: { type: "number", description: "The ID of the task to update" },
-        title: { type: ["string", "null"], description: "New title" },
+        taskTitle: {
+          type: "string",
+          description:
+            "The current title of the task to update (used to look up the task)",
+        },
+        title: {
+          type: ["string", "null"],
+          description: "New title, or null to keep it unchanged",
+        },
         description: {
           type: ["string", "null"],
           description: "New description",
@@ -212,7 +240,14 @@ export const tools: OpenAI.Responses.Tool[] = [
           description: "New due date as ISO string or null",
         },
       },
-      required: ["id", "title", "description", "priority", "status", "dueDate"],
+      required: [
+        "taskTitle",
+        "title",
+        "description",
+        "priority",
+        "status",
+        "dueDate",
+      ],
       additionalProperties: false,
     },
     strict: true,
@@ -259,8 +294,15 @@ export const tools: OpenAI.Responses.Tool[] = [
     parameters: {
       type: "object",
       properties: {
-        id: { type: "string", description: "The ID of the event to update" },
-        title: { type: ["string", "null"], description: "New title" },
+        eventTitle: {
+          type: "string",
+          description:
+            "The current title of the event to update (used to look up the event)",
+        },
+        title: {
+          type: ["string", "null"],
+          description: "New title, or null to keep it unchanged",
+        },
         description: {
           type: ["string", "null"],
           description: "New description",
@@ -276,7 +318,7 @@ export const tools: OpenAI.Responses.Tool[] = [
         status: { type: ["string", "null"], description: "New status" },
       },
       required: [
-        "id",
+        "eventTitle",
         "title",
         "description",
         "dateTime",
@@ -383,7 +425,7 @@ export async function executeTool(
   if (name === "updateCase") {
     await updateCase(
       args as unknown as {
-        id: number;
+        caseName?: string;
         name?: string;
         description?: string;
         status?: string;
@@ -411,7 +453,7 @@ export async function executeTool(
   if (name === "updateTask") {
     await updateTask(
       args as unknown as {
-        id: number;
+        taskTitle?: string;
         title?: string;
         description?: string;
         priority?: string;
@@ -442,7 +484,7 @@ export async function executeTool(
   if (name === "updateEvent") {
     await updateEvent(
       args as unknown as {
-        id: string;
+        eventTitle?: string;
         title?: string;
         description?: string;
         dateTime?: string;
