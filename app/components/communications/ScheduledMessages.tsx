@@ -500,7 +500,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   );
 
   return (
-    <div className="overflow-y-auto h-full p-4 sm:p-6">
+    <div className="overflow-y-auto h-full ">
       {navContainer && createPortal(navActions, navContainer)}
 
       {isPending ? (
@@ -520,7 +520,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="rounded-lg bg-card overflow-hidden">
           <div className="overflow-x-auto" ref={tableRef}>
             <table className="w-full">
               <thead className="border-b border-border">
