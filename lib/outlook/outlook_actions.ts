@@ -7,10 +7,13 @@ import type { StorageClientInterface } from "@/api_client/supabase_storage_clien
 import type { OpenAIClientInterface } from "@/api_client/openai_client";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
-import { FILES_BUCKET } from "@/lib/supabase/supabase";
 import { sanitizeEmailHtml } from "@/lib/util/html_sanitizer";
 import {
-  MAX_ATTACHMENTS,
+  appendAttachmentLinks,
+  resolveAttachmentBuffer,
+} from "@/lib/util/attachments";
+import {
+  type EmailAttachmentInput,
   MAX_HTML_BODY,
   MAX_NAME,
   MAX_RECIPIENTS,
@@ -22,6 +25,7 @@ import {
   requireInt,
   requireOneOf,
   requireString,
+  validateAttachmentsArray,
 } from "../util/validation";
 
 const LARGE_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;
@@ -37,14 +41,6 @@ const MESSAGE_ACTIONS = [
 ] as const;
 type MessageAction = (typeof MESSAGE_ACTIONS)[number];
 
-export interface OutlookAttachmentInput {
-  name: string;
-  data?: string;
-  path?: string;
-  url?: string;
-  mimeType?: string;
-}
-
 export interface SendOutlookEmailInput {
   to: string;
   toName?: string;
@@ -54,49 +50,11 @@ export interface SendOutlookEmailInput {
   cc?: string[];
   threadId?: string;
   replyToOutlookId?: string;
-  attachments?: OutlookAttachmentInput[];
+  attachments?: EmailAttachmentInput[];
 }
 
 function buildRecipient(address: string, name?: string) {
   return { emailAddress: { address, name: name ?? address } };
-}
-
-function buildBodyHtml(html: string, urlAttachments: OutlookAttachmentInput[]) {
-  if (urlAttachments.length === 0) return html;
-  const links = urlAttachments
-    .map((a) => `<a href="${a.url}">${a.name}</a>`)
-    .join("<br>");
-  return `${html}<br><br>${links}`;
-}
-
-async function resolveBuffer(
-  att: OutlookAttachmentInput,
-  storage: StorageClientInterface
-): Promise<Buffer | null> {
-  if (att.data) return Buffer.from(att.data, "base64");
-  if (att.path) {
-    const bytes = await storage.downloadFile(FILES_BUCKET, att.path);
-    return Buffer.from(bytes);
-  }
-  return null;
-}
-
-function validateAttachment(
-  att: OutlookAttachmentInput,
-  index: number
-): OutlookAttachmentInput {
-  const name = requireString(att.name, `attachments[${index}].name`, MAX_NAME);
-  const mimeType = optionalString(
-    att.mimeType,
-    `attachments[${index}].mimeType`,
-    MAX_SHORT
-  );
-  const url = optionalString(att.url, `attachments[${index}].url`, 2048);
-  const path = optionalString(att.path, `attachments[${index}].path`, 1024);
-  if (att.data && typeof att.data !== "string") {
-    throw new ValidationError(`attachments[${index}].data must be a string`);
-  }
-  return { name, mimeType, url, path, data: att.data };
 }
 
 function validateSendInput(raw: SendOutlookEmailInput): SendOutlookEmailInput {
@@ -124,15 +82,7 @@ function validateSendInput(raw: SendOutlookEmailInput): SendOutlookEmailInput {
     cc = raw.cc.map((c, i) => requireEmail(c, `cc[${i}]`));
   }
 
-  let attachments: OutlookAttachmentInput[] | undefined;
-  if (Array.isArray(raw.attachments)) {
-    if (raw.attachments.length > MAX_ATTACHMENTS) {
-      throw new ValidationError(
-        `attachments exceeds max of ${MAX_ATTACHMENTS}`
-      );
-    }
-    attachments = raw.attachments.map(validateAttachment);
-  }
+  const attachments = validateAttachmentsArray(raw.attachments);
 
   return {
     to,
@@ -280,7 +230,7 @@ export async function sendOutlookEmail(
       subject: input.subject,
       body: {
         contentType: "HTML",
-        content: buildBodyHtml(input.bodyHtml, urlAttachments),
+        content: appendAttachmentLinks(input.bodyHtml, urlAttachments),
       },
       toRecipients: [buildRecipient(input.to, input.toName)],
       ...(input.cc?.length
@@ -313,7 +263,7 @@ export async function sendOutlookEmail(
       }
 
       for (const att of fileAttachments) {
-        const buffer = await resolveBuffer(att, storage);
+        const buffer = await resolveAttachmentBuffer(att, storage);
         if (!buffer) continue;
         const contentType = att.mimeType ?? "application/octet-stream";
         if (buffer.length < LARGE_ATTACHMENT_THRESHOLD) {

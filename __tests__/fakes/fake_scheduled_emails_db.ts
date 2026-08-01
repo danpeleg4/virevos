@@ -20,6 +20,7 @@ export const canonicalScheduledEmail: ScheEmail = {
   recurring: "",
   sentAt: new Date(),
   errorMessage: null,
+  attachments: null,
   createdAt: new Date(),
 };
 

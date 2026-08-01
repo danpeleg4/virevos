@@ -4,6 +4,7 @@ import { scheduledEmailsDrizzle } from "@db/scheduled_emails_db";
 import { scheduledEmailService } from "@/api_client/ms_graph/scheduled_email_service";
 import { outlookDrizzle } from "@db/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 
 vi.mock("@db/scheduled_emails_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
@@ -25,6 +26,10 @@ vi.mock("@db/outlook_db", () => ({
 
 vi.mock("@/api_client/ms_graph/graph_auth_service", () => ({
   graphAuthService: { __sentinel: "graphAuthService" },
+}));
+
+vi.mock("@/api_client/supabase_storage_client", () => ({
+  supabaseStorageClient: { __sentinel: "supabaseStorageClient" },
 }));
 
 const cronRequest = (auth?: string) =>
@@ -62,7 +67,8 @@ describe("GET /api/cron/process-scheduled-emails", () => {
       scheduledEmailsDrizzle,
       scheduledEmailService,
       outlookDrizzle,
-      graphAuthService
+      graphAuthService,
+      supabaseStorageClient
     );
   });
 

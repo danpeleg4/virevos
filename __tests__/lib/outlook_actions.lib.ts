@@ -162,6 +162,31 @@ describe("sendOutlookEmail", () => {
     );
     expect(graphMailService.addSmallAttachment).toHaveBeenCalled();
   });
+
+  it("rejects more than the max number of attachments", async () => {
+    const tooMany = Array.from({ length: 26 }, (_, i) => ({
+      name: `file-${i}.txt`,
+      data: "aGk=",
+    }));
+
+    await expect(
+      send({ ...baseInput, attachments: tooMany })
+    ).rejects.toThrow("attachments exceeds max of 25");
+    expect(graphMailService.sendMail).not.toHaveBeenCalled();
+  });
+
+  it("appends url-only attachments as links in the body", async () => {
+    await send({
+      ...baseInput,
+      attachments: [{ name: "Shared doc", url: "https://example.com/doc" }],
+    });
+
+    const [, payload] = graphMailService.sendMail.mock.calls[0];
+    expect(
+      (payload as { body: { content: string } }).body.content
+    ).toContain("https://example.com/doc");
+    expect(graphMailService.addSmallAttachment).not.toHaveBeenCalled();
+  });
 });
 
 describe("updateOutlookMessage", () => {

@@ -57,6 +57,14 @@ export interface ActionItem {
   tags: string[];
 }
 
+export interface ScheduledEmailAttachment {
+  name: string;
+  mimeType?: string | null;
+  data?: string | null;
+  path?: string | null;
+  url?: string | null;
+}
+
 export interface ScheduledEmail {
   id: number;
   toEmail: string;
@@ -70,6 +78,7 @@ export interface ScheduledEmail {
   status: string;
   sentAt: string | null;
   errorMessage: string | null;
+  attachments?: ScheduledEmailAttachment[] | null;
   clientId: number | null;
   createdAt: string | null;
 }

@@ -53,6 +53,19 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // strip "data:<mime>;base64," prefix
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function getFileType(
   mimeType: string | null,
   name: string
@@ -108,8 +121,7 @@ export function AttachmentDialog({
     setIsReading(true);
     try {
       for (const file of files) {
-        const buffer = await file.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString("base64");
+        const base64 = await readFileAsBase64(file);
         const attachedFile: AttachedFile = {
           id: `local-${Date.now()}-${file.name}`,
           name: file.name,

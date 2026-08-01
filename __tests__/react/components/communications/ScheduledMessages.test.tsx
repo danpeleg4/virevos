@@ -584,6 +584,101 @@ describe("ScheduledMessages — Schedule New Message", () => {
   });
 });
 
+describe("ScheduledMessages — Attachments", () => {
+  const fileInput = () =>
+    page.elementLocator(
+      document.querySelector<HTMLInputElement>('input[type="file"]')!
+    );
+
+  beforeEach(() => {
+    worker.use(
+      http.get("/api/files/user-files", () => HttpResponse.json({ files: [] }))
+    );
+  });
+
+  it("shows an Attach Files button in the schedule dialog", async () => {
+    const { dialog } = await openScheduleDialog();
+    await expect
+      .element(dialog.getByRole("button", { name: /attach files/i }))
+      .toBeInTheDocument();
+  });
+
+  it("attaches a file and includes it in the schedule payload", async () => {
+    worker.use(
+      http.post("/api/scheduled-emails", async ({ request }) => {
+        lastPostBody = await request.json();
+        return HttpResponse.json({ success: true });
+      })
+    );
+
+    const { screen, dialog } = await openScheduleDialog();
+    await fillScheduleForm(screen, dialog);
+
+    await dialog.getByRole("button", { name: /attach files/i }).click();
+    const file = new File(["hello"], "report.pdf", {
+      type: "application/pdf",
+    });
+    await fileInput().upload(file);
+    await screen.getByRole("button", { name: /attach \(1\)/i }).click();
+
+    await expect.element(dialog.getByText("report.pdf")).toBeInTheDocument();
+
+    await dialog.getByRole("button", { name: /schedule message/i }).click();
+
+    await vi.waitFor(() => {
+      expect(lastPostBody).toMatchObject({
+        type: "schedule",
+        data: expect.objectContaining({
+          attachments: [
+            expect.objectContaining({
+              name: "report.pdf",
+              mimeType: "application/pdf",
+            }),
+          ],
+        }),
+      });
+    });
+  });
+
+  it("omits the attachments key entirely when nothing was attached", async () => {
+    worker.use(
+      http.post("/api/scheduled-emails", async ({ request }) => {
+        lastPostBody = await request.json();
+        return HttpResponse.json({ success: true });
+      })
+    );
+
+    const { screen, dialog } = await openScheduleDialog();
+    await fillScheduleForm(screen, dialog);
+    await dialog.getByRole("button", { name: /schedule message/i }).click();
+
+    await vi.waitFor(() => {
+      expect(lastPostBody).toBeDefined();
+    });
+    expect(
+      (lastPostBody as { data: object }).data
+    ).not.toHaveProperty("attachments");
+  });
+
+  it("removes an attached file when its remove button is clicked", async () => {
+    const { screen, dialog } = await openScheduleDialog();
+    await dialog.getByRole("button", { name: /attach files/i }).click();
+    const file = new File(["hello"], "notes.txt", { type: "text/plain" });
+    await fileInput().upload(file);
+    await screen.getByRole("button", { name: /attach \(1\)/i }).click();
+
+    await expect.element(dialog.getByText("notes.txt")).toBeInTheDocument();
+
+    await dialog
+      .getByRole("button", { name: /remove notes.txt/i })
+      .click();
+
+    await expect
+      .element(dialog.getByText("notes.txt"))
+      .not.toBeInTheDocument();
+  });
+});
+
 describe("ScheduledMessages — Pagination", () => {
   const makeEmails = (n: number): ScheduledEmail[] =>
     Array.from({ length: n }, (_, i) => ({
