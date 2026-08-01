@@ -15,6 +15,7 @@ export function makeFakeScheduledEmailService(
       id: "outlook-1",
       conversationId: "conv-1",
     })),
+    addAttachment: vi.fn(async () => {}),
     sendDraftMessage: vi.fn(async () => {}),
   } satisfies ScheduledEmailServiceInterface;
 

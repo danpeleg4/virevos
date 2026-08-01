@@ -36,10 +36,14 @@ import {
   FileText,
   Target,
   CalendarIcon,
+  Paperclip,
+  X,
 } from "lucide-react";
 import axios from "axios";
 import type { ScheduledEmail } from "@/types/communications";
 import { type ScheduleEmailInput } from "@/lib/scheduled_emails";
+import { AttachmentDialog, type AttachedFile } from "./AttachmentDialog";
+import { Badge } from "../ui/badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 import { Label } from "@/app/components/ui/label";
@@ -65,6 +69,8 @@ interface ScheduledMessagesProps {
 
 export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [isCreating, setIsCreating] = useState(false);
+  const [isAttachDialogOpen, setIsAttachDialogOpen] = useState(false);
+  const [formAttachments, setFormAttachments] = useState<AttachedFile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "sent" | "failed"
@@ -170,6 +176,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         status: "pending",
         sentAt: null,
         errorMessage: null,
+        attachments: input.attachments ?? [],
         clientId: input.clientId ?? null,
         createdAt: new Date().toISOString(),
       };
@@ -186,6 +193,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       setFormBody("");
       setFormDate(undefined);
       setFormTime("09:00");
+      setFormAttachments([]);
     },
     onError: (_error, _input, context) => {
       if (context?.previous) {
@@ -245,6 +253,15 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       0
     ).toISOString();
     setIsCreating(false);
+    const attachments = formAttachments
+      .filter((f) => f.data || f.path || f.url)
+      .map((f) => ({
+        name: f.name,
+        mimeType: f.mimeType,
+        data: f.data,
+        path: f.path,
+        url: f.url,
+      }));
     scheduleMutation.mutate({
       toEmail: formToEmail,
       toName: formToName || undefined,
@@ -253,6 +270,7 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       bodyText: formBody,
       scheduledAt,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      ...(attachments.length > 0 ? { attachments } : {}),
     });
   };
 
@@ -425,7 +443,31 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              {formAttachments.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formAttachments.map((file) => (
+                    <Badge key={file.id} variant="secondary" className="pr-1">
+                      {file.name}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${file.name}`}
+                        onClick={() =>
+                          setFormAttachments((prev) =>
+                            prev.filter((f) => f.id !== file.id)
+                          )
+                        }
+                        className="ml-2 hover:bg-accent rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3 cursor-pointer" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label>Date</Label>
                 <Popover>
@@ -475,6 +517,19 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Attach</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsAttachDialogOpen(true)}
+                  className="mt-2 p-4.5 bg-gray-100"
+                >
+                  <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+                  Attach Files
+                </Button>
+              </div>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4 border-t border-border">
@@ -496,6 +551,11 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
           </div>
         </DialogContent>
       </Dialog>
+      <AttachmentDialog
+        open={isAttachDialogOpen}
+        onOpenChange={setIsAttachDialogOpen}
+        onAttach={(files) => setFormAttachments((prev) => [...prev, ...files])}
+      />
     </>
   );
 

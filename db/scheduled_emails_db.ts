@@ -2,6 +2,14 @@ import { db, type DrizzleDB } from "./db";
 import { clients, outlookEmails, scheduledEmails, users } from "./schema";
 import { and, asc, eq, lte, ne } from "drizzle-orm";
 
+export type ScheduledEmailAttachment = {
+  name: string;
+  mimeType?: string | null;
+  data?: string | null;
+  path?: string | null;
+  url?: string | null;
+};
+
 export type InsertSchEmail = {
   toEmail: string;
   toName: string | null;
@@ -12,6 +20,7 @@ export type InsertSchEmail = {
   timezone: string;
   recurring: string | null;
   status: string;
+  attachments: ScheduledEmailAttachment[] | null;
   clientId: number | null;
   userId: string;
 };
@@ -29,6 +38,7 @@ export type Claimed = {
   status: string;
   sentAt: Date | null;
   errorMessage: string | null;
+  attachments: ScheduledEmailAttachment[] | null;
   clientId: number | null;
   userId: string;
   createdAt: Date | null;
@@ -52,6 +62,7 @@ export type ScheEmail = {
   status: string;
   sentAt: Date | null;
   errorMessage: string | null;
+  attachments: ScheduledEmailAttachment[] | null;
   clientId: number | null;
   userId: string;
   createdAt: Date | null;
@@ -188,6 +199,7 @@ export class ScheduledEmailsDrizzle implements ScheduledEmailsDB {
       isStarred: false,
       isArchived: false,
       isSent: true,
+      hasAttachments: (scheduledEmail.attachments?.length ?? 0) > 0,
       sentAt: new Date(),
       clientId,
       userId,
@@ -204,6 +216,7 @@ export class ScheduledEmailsDrizzle implements ScheduledEmailsDB {
     timezone,
     recurring,
     status,
+    attachments,
     clientId,
     userId,
   }: InsertSchEmail): Promise<InsertSchEmail> {
@@ -219,6 +232,7 @@ export class ScheduledEmailsDrizzle implements ScheduledEmailsDB {
         timezone,
         recurring,
         status: status,
+        attachments,
         clientId,
         userId: userId,
       })

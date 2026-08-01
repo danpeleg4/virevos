@@ -9,6 +9,8 @@ export const MAX_HTML_BODY = 200_000;
 export const MAX_ATTACHMENTS = 25;
 export const MAX_CHAT_HISTORY = 50;
 export const MAX_RECIPIENTS = 50;
+// Graph's simple (non-upload-session) attachment endpoint tops out around here.
+export const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -104,4 +106,43 @@ export function requireDateString(value: unknown, field: string): Date {
     throw new ValidationError(`${field} is not a valid date`);
   }
   return d;
+}
+
+export interface EmailAttachmentInput {
+  name: string;
+  data?: string;
+  path?: string;
+  url?: string;
+  mimeType?: string;
+}
+
+export function validateEmailAttachment(
+  att: EmailAttachmentInput,
+  index: number
+): EmailAttachmentInput {
+  const name = requireString(att.name, `attachments[${index}].name`, MAX_NAME);
+  const mimeType = optionalString(
+    att.mimeType,
+    `attachments[${index}].mimeType`,
+    MAX_SHORT
+  );
+  const url = optionalString(att.url, `attachments[${index}].url`, 2048);
+  const path = optionalString(att.path, `attachments[${index}].path`, 1024);
+  if (att.data && typeof att.data !== "string") {
+    throw new ValidationError(`attachments[${index}].data must be a string`);
+  }
+  return { name, mimeType, url, path, data: att.data };
+}
+
+export function validateAttachmentsArray(
+  raw: unknown,
+  maxCount: number = MAX_ATTACHMENTS
+): EmailAttachmentInput[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  if (raw.length > maxCount) {
+    throw new ValidationError(`attachments exceeds max of ${maxCount}`);
+  }
+  return raw.map((att: EmailAttachmentInput, i) =>
+    validateEmailAttachment(att, i)
+  );
 }

@@ -10,6 +10,7 @@ import { scheduledEmailsDrizzle } from "@db/scheduled_emails_db";
 import { scheduledEmailService } from "@/api_client/ms_graph/scheduled_email_service";
 import { outlookDrizzle } from "@db/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {
@@ -47,7 +48,8 @@ export async function POST(req: Request) {
         scheduledEmailsDrizzle,
         scheduledEmailService,
         outlookDrizzle,
-        graphAuthService
+        graphAuthService,
+        supabaseStorageClient
       );
     } else if (body.type == "schedule") {
       await createScheduledEmail(body.data, scheduledEmailsDrizzle);

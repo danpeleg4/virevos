@@ -382,6 +382,15 @@ export const scheduledEmails = pgTable(
     status: text("status").notNull().default("pending"),
     sentAt: timestamp("sent_at"),
     errorMessage: text("error_message"),
+    attachments: jsonb("attachments").$type<
+      Array<{
+        name: string;
+        mimeType?: string | null;
+        data?: string | null;
+        path?: string | null;
+        url?: string | null;
+      }>
+    >(),
     clientId: integer("client_id").references(() => clients.id, {
       onDelete: "set null",
     }),

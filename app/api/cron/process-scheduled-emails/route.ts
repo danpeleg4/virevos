@@ -4,6 +4,7 @@ import { processDueScheduledEmails } from "@/lib/scheduled_emails";
 import { scheduledEmailService } from "@/api_client/ms_graph/scheduled_email_service";
 import { outlookDrizzle } from "@db/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
+import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 
 /**
  * Handles a GET request to process due scheduled emails.
@@ -26,7 +27,8 @@ export async function GET(req: Request): Promise<Response> {
       scheduledEmailsDrizzle,
       scheduledEmailService,
       outlookDrizzle,
-      graphAuthService
+      graphAuthService,
+      supabaseStorageClient
     );
 
     return NextResponse.json({ processed });

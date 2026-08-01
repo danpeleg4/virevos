@@ -123,7 +123,11 @@ export async function updateTask(
     if (!input.taskTitle) {
       throw new ValidationError("id or taskTitle is required", 400);
     }
-    const validTaskTitle = requireString(input.taskTitle, "taskTitle", MAX_TITLE);
+    const validTaskTitle = requireString(
+      input.taskTitle,
+      "taskTitle",
+      MAX_TITLE
+    );
     const matches = await tasksDb.getTaskByTitle(user.id, validTaskTitle);
     if (matches.length === 0) {
       throw new ValidationError("No task found", 400);

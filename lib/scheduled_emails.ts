@@ -1,6 +1,8 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import type { ScheduledEmailsDB, UserRows } from "@db/scheduled_emails_db";
 import {
+  type EmailAttachmentInput,
+  MAX_ATTACHMENT_BYTES,
   MAX_HTML_BODY,
   MAX_NAME,
   MAX_SHORT,
@@ -12,12 +14,18 @@ import {
   requireInt,
   requireOneOf,
   requireString,
+  validateAttachmentsArray,
 } from "./util/validation";
 import { sanitizeEmailHtml } from "./util/html_sanitizer";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import { ScheduledEmailServiceInterface } from "@/api_client/ms_graph/scheduled_email_service";
 import type { OutlookDB } from "@db/outlook_db";
 import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
+import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
+import {
+  appendAttachmentLinks,
+  resolveAttachmentBuffer,
+} from "@/lib/util/attachments";
 
 const RECURRING_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
 
@@ -45,7 +53,8 @@ export async function sendScheduledEmail(
   dbDrizzle: ScheduledEmailsDB,
   apiClient: ScheduledEmailServiceInterface,
   outlookDb: OutlookDB,
-  graphAuthService: GraphAuthServiceInterface
+  graphAuthService: GraphAuthServiceInterface,
+  storage: StorageClientInterface
 ): Promise<SendScheduledEmailResult> {
   const claimed = await dbDrizzle.claimEmail(scheduledEmailId);
   if (!claimed.length) return { outcome: "skipped" }; // missing, already sent, or claimed by Send Now
@@ -105,11 +114,17 @@ export async function sendScheduledEmail(
       );
     }
 
+    const attachments = scheduledEmail.attachments ?? [];
+    const urlAttachments = attachments.filter(
+      (a) => a.url && !a.data && !a.path
+    );
+    const fileAttachments = attachments.filter((a) => a.data || a.path);
+
     const messagePayload = {
       subject: scheduledEmail.subject,
       body: {
         contentType: "HTML",
-        content: scheduledEmail.bodyHtml,
+        content: appendAttachmentLinks(scheduledEmail.bodyHtml, urlAttachments),
       },
       toRecipients: [
         {
@@ -124,6 +139,21 @@ export async function sendScheduledEmail(
     const draftRes = await apiClient.draftMessage(headers, messagePayload);
     const outlookId = draftRes.id;
     const conversationId = draftRes.conversationId;
+
+    for (const att of fileAttachments) {
+      const buffer = await resolveAttachmentBuffer(att, storage);
+      if (!buffer) continue;
+      if (buffer.length > MAX_ATTACHMENT_BYTES) {
+        throw new Error(
+          `Attachment "${att.name}" exceeds the ${MAX_ATTACHMENT_BYTES} byte limit for scheduled sends`
+        );
+      }
+      await apiClient.addAttachment(headers, outlookId, {
+        name: att.name,
+        contentType: att.mimeType ?? "application/octet-stream",
+        contentBytes: buffer.toString("base64"),
+      });
+    }
 
     await apiClient.sendDraftMessage(headers, outlookId);
 
@@ -178,7 +208,8 @@ export async function processDueScheduledEmails(
   dbDrizzle: ScheduledEmailsDB,
   apiClient: ScheduledEmailServiceInterface,
   outlookDb: OutlookDB,
-  graphAuthService: GraphAuthServiceInterface
+  graphAuthService: GraphAuthServiceInterface,
+  storage: StorageClientInterface
 ): Promise<{ processed: number }> {
   const dueEmails = await dbDrizzle.getDueScheduledEmailIds();
   const results = await Promise.allSettled(
@@ -188,7 +219,8 @@ export async function processDueScheduledEmails(
         dbDrizzle,
         apiClient,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     )
   );
@@ -215,6 +247,7 @@ export interface ScheduleEmailInput {
   timezone?: string | null;
   recurring?: string | null;
   clientId?: number | null;
+  attachments?: EmailAttachmentInput[];
 }
 
 export async function createScheduledEmail(
@@ -242,6 +275,17 @@ export async function createScheduledEmail(
     input.clientId !== undefined && input.clientId !== null
       ? requireInt(input.clientId, "clientId")
       : null;
+  const attachments = validateAttachmentsArray(input.attachments) ?? null;
+  attachments?.forEach((att) => {
+    if (
+      att.data &&
+      Buffer.from(att.data, "base64").length > MAX_ATTACHMENT_BYTES
+    ) {
+      throw new ValidationError(
+        `attachment "${att.name}" exceeds the ${MAX_ATTACHMENT_BYTES} byte limit`
+      );
+    }
+  });
 
   if (scheduledAt < new Date()) {
     throw new ValidationError("Scheduled date must be in the future");
@@ -257,6 +301,7 @@ export async function createScheduledEmail(
     timezone,
     recurring,
     status: "pending",
+    attachments,
     clientId,
     userId: user.id,
   });
@@ -267,7 +312,8 @@ export async function sendScheduledEmailNow(
   dbDrizzle: ScheduledEmailsDB,
   apiClient: ScheduledEmailServiceInterface,
   outlookDb: OutlookDB,
-  graphAuthService: GraphAuthServiceInterface
+  graphAuthService: GraphAuthServiceInterface,
+  storage: StorageClientInterface
 ) {
   const user = await getCurrentUser();
   if (!user?.id) throw new ValidationError("Unauthorized", 401);
@@ -285,7 +331,8 @@ export async function sendScheduledEmailNow(
     dbDrizzle,
     apiClient,
     outlookDb,
-    graphAuthService
+    graphAuthService,
+    storage
   );
   if (result.outcome === "skipped") {
     throw new ValidationError(

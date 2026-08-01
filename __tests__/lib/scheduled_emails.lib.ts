@@ -33,11 +33,14 @@ import {
 import { makeFakeScheduledEmailService } from "../fakes/fake_scheduled_email_service";
 import { makeFakeOutlookDb } from "../fakes/fake_outlook_db";
 import { makeFakeGraphAuthService } from "../fakes/fake_graph_auth_service";
+import { makeFakeStorageClient } from "../fakes/fake_storage_client";
+import { MAX_ATTACHMENT_BYTES } from "@/lib/util/validation";
 
 const fakeClass = makeFakeScheduledEmailsDb();
 const fakeScheduledEmailService = makeFakeScheduledEmailService();
 const outlookDb = makeFakeOutlookDb();
 const graphAuthService = makeFakeGraphAuthService();
+const storage = makeFakeStorageClient();
 
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
@@ -81,7 +84,8 @@ describe("sendScheduledEmail", () => {
       noPending,
       fakeScheduledEmailService,
       outlookDb,
-      graphAuthService
+      graphAuthService,
+      storage
     );
     expect(result).toEqual({ outcome: "skipped" });
   });
@@ -97,7 +101,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       outcome: "retry",
@@ -119,7 +124,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       outcome: "retry",
@@ -140,7 +146,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       outcome: "failed",
@@ -163,7 +170,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       outcome: "sent",
@@ -190,7 +198,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       outcome: "failed",
@@ -211,7 +220,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       outcome: "sent",
@@ -232,6 +242,122 @@ describe("sendScheduledEmail", () => {
     expect(fakeClass.claimEmail).toHaveBeenCalledTimes(1);
   });
 
+  it("sends inline data attachments via apiClient.addAttachment", async () => {
+    fakeClass.claimEmail.mockResolvedValueOnce([
+      {
+        ...canonicalScheduledEmail,
+        attachments: [
+          {
+            name: "doc.pdf",
+            mimeType: "application/pdf",
+            data: Buffer.from("pdf-bytes").toString("base64"),
+          },
+        ],
+      },
+    ]);
+
+    await expect(
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService,
+        storage
+      )
+    ).resolves.toEqual({ outcome: "sent" });
+
+    expect(fakeScheduledEmailService.addAttachment).toHaveBeenCalledWith(
+      expect.any(Object),
+      "outlook-1",
+      expect.objectContaining({
+        name: "doc.pdf",
+        contentType: "application/pdf",
+      })
+    );
+    expect(fakeScheduledEmailService.sendDraftMessage).toHaveBeenCalledWith(
+      expect.any(Object),
+      "outlook-1"
+    );
+  });
+
+  it("downloads path-based attachments from storage before attaching them", async () => {
+    storage.downloadFile.mockResolvedValueOnce(new Uint8Array([1, 2, 3]));
+    fakeClass.claimEmail.mockResolvedValueOnce([
+      {
+        ...canonicalScheduledEmail,
+        attachments: [{ name: "existing.pdf", path: "cases/user_1/x.pdf" }],
+      },
+    ]);
+
+    await sendScheduledEmail(
+      5,
+      fakeClass,
+      fakeScheduledEmailService,
+      outlookDb,
+      graphAuthService,
+      storage
+    );
+
+    expect(storage.downloadFile).toHaveBeenCalledWith(
+      "projectFiles",
+      "cases/user_1/x.pdf"
+    );
+    expect(fakeScheduledEmailService.addAttachment).toHaveBeenCalled();
+  });
+
+  it("appends url-only attachments as a link in the body instead of calling addAttachment", async () => {
+    fakeClass.claimEmail.mockResolvedValueOnce([
+      {
+        ...canonicalScheduledEmail,
+        attachments: [{ name: "Shared doc", url: "https://example.com/doc" }],
+      },
+    ]);
+
+    await sendScheduledEmail(
+      5,
+      fakeClass,
+      fakeScheduledEmailService,
+      outlookDb,
+      graphAuthService,
+      storage
+    );
+
+    const [, payload] = fakeScheduledEmailService.draftMessage.mock.calls[0];
+    expect((payload as { body: { content: string } }).body.content).toContain(
+      "https://example.com/doc"
+    );
+    expect(fakeScheduledEmailService.addAttachment).not.toHaveBeenCalled();
+  });
+
+  it("marks the email failed when a resolved attachment exceeds the size limit", async () => {
+    const oversized = Buffer.alloc(MAX_ATTACHMENT_BYTES + 1).toString("base64");
+    fakeClass.claimEmail.mockResolvedValueOnce([
+      {
+        ...canonicalScheduledEmail,
+        attachments: [{ name: "huge.zip", data: oversized }],
+      },
+    ]);
+
+    await expect(
+      sendScheduledEmail(
+        5,
+        fakeClass,
+        fakeScheduledEmailService,
+        outlookDb,
+        graphAuthService,
+        storage
+      )
+    ).resolves.toEqual({
+      outcome: "failed",
+      error: expect.stringContaining("huge.zip"),
+    });
+
+    expect(fakeScheduledEmailService.addAttachment).not.toHaveBeenCalled();
+    expect(fakeScheduledEmailService.sendDraftMessage).not.toHaveBeenCalled();
+    expect(fakeClass.catchFailedInsertOutlookEmail).toHaveBeenCalled();
+  });
+
   it("still reports sent when post-send bookkeeping fails — the email was delivered", async () => {
     fakeClass.insertOutlookEmail.mockRejectedValueOnce(new Error("db down"));
 
@@ -241,7 +367,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({ outcome: "sent" });
 
@@ -266,7 +393,8 @@ describe("sendScheduledEmail", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       outcome: "failed",
@@ -315,6 +443,7 @@ describe("createScheduledEmail", () => {
       timezone: "UTC",
       recurring: "none",
       status: "pending",
+      attachments: null,
       clientId: null,
       userId: "user_1",
       sentAt: null,
@@ -333,6 +462,50 @@ describe("createScheduledEmail", () => {
     );
     await expect(res).rejects.toThrow("Scheduled date must be in the future");
   });
+
+  it("persists validated attachments alongside the email", async () => {
+    const result = await createScheduledEmail(
+      {
+        ...fakeInput,
+        attachments: [
+          { name: "doc.pdf", mimeType: "application/pdf", data: "cGRm" },
+        ],
+      },
+      fakeClass
+    );
+    expect(result.attachments).toEqual([
+      {
+        name: "doc.pdf",
+        mimeType: "application/pdf",
+        data: "cGRm",
+        url: undefined,
+        path: undefined,
+      },
+    ]);
+  });
+
+  it("rejects more attachments than the allowed max", async () => {
+    const tooMany = Array.from({ length: 26 }, (_, i) => ({
+      name: `file-${i}.txt`,
+      data: "aGk=",
+    }));
+    await expect(
+      createScheduledEmail({ ...fakeInput, attachments: tooMany }, fakeClass)
+    ).rejects.toThrow("attachments exceeds max of 25");
+  });
+
+  it("rejects an inline attachment whose decoded size exceeds the limit", async () => {
+    const oversized = Buffer.alloc(MAX_ATTACHMENT_BYTES + 1).toString("base64");
+    await expect(
+      createScheduledEmail(
+        {
+          ...fakeInput,
+          attachments: [{ name: "huge.zip", data: oversized }],
+        },
+        fakeClass
+      )
+    ).rejects.toThrow(/exceeds the .* byte limit/);
+  });
 });
 
 describe("sendScheduledEmailNow", () => {
@@ -345,7 +518,8 @@ describe("sendScheduledEmailNow", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).rejects.toThrow("Unauthorized");
   });
@@ -357,7 +531,8 @@ describe("sendScheduledEmailNow", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).rejects.toThrow("id must be a number");
   });
@@ -369,7 +544,8 @@ describe("sendScheduledEmailNow", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).rejects.toThrow("Scheduled email not found", 404);
   });
@@ -386,7 +562,8 @@ describe("sendScheduledEmailNow", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).resolves.toEqual({
       success: true,
@@ -406,7 +583,8 @@ describe("sendScheduledEmailNow", () => {
         alreadySentFake,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).rejects.toThrow("Scheduled email was already sent or cancelled");
   });
@@ -422,7 +600,8 @@ describe("sendScheduledEmailNow", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).rejects.toMatchObject({
       message: "ECONNRESET",
@@ -442,7 +621,8 @@ describe("sendScheduledEmailNow", () => {
         fakeClass,
         fakeScheduledEmailService,
         outlookDb,
-        graphAuthService
+        graphAuthService,
+        storage
       )
     ).rejects.toThrow("Send failed");
   });
@@ -504,7 +684,8 @@ describe("processDueScheduledEmails", () => {
       fakeClass,
       fakeScheduledEmailService,
       outlookDb,
-      graphAuthService
+      graphAuthService,
+      storage
     );
 
     expect(result).toEqual({ processed: 1 });
@@ -519,7 +700,8 @@ describe("processDueScheduledEmails", () => {
       fakeClass,
       fakeScheduledEmailService,
       outlookDb,
-      graphAuthService
+      graphAuthService,
+      storage
     );
 
     expect(result).toEqual({ processed: 0 });
@@ -537,7 +719,8 @@ describe("processDueScheduledEmails", () => {
       fakeClass,
       fakeScheduledEmailService,
       outlookDb,
-      graphAuthService
+      graphAuthService,
+      storage
     );
 
     // the batch still completes; the rejection is logged per email

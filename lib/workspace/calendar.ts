@@ -125,10 +125,7 @@ export async function updateEvent(
     if (!input.eventTitle) {
       throw new ValidationError("id or eventTitle is required", 400);
     }
-    const matches = await calendarDb.getEventByTitle(
-      user.id,
-      input.eventTitle
-    );
+    const matches = await calendarDb.getEventByTitle(user.id, input.eventTitle);
     if (matches.length === 0) {
       throw new ValidationError("No event found", 400);
     }

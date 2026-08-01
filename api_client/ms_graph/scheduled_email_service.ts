@@ -9,6 +9,11 @@ export interface ScheduledEmailServiceInterface {
     headers: Record<string, string>,
     message: unknown
   ): Promise<{ id: string; conversationId: string }>;
+  addAttachment(
+    headers: Record<string, string>,
+    outlookId: string,
+    payload: { name: string; contentType: string; contentBytes: string }
+  ): Promise<void>;
   sendDraftMessage(
     headers: Record<string, string>,
     outlookId: string
@@ -36,6 +41,22 @@ export class ScheduledEmailService implements ScheduledEmailServiceInterface {
       return await this.api.post(`${GRAPH_BASE}/me/messages`, message, {
         headers,
       });
+    } catch (err) {
+      rethrowGraphError(err);
+    }
+  }
+
+  async addAttachment(
+    headers: Record<string, string>,
+    outlookId: string,
+    payload: { name: string; contentType: string; contentBytes: string }
+  ): Promise<void> {
+    try {
+      await this.api.post(
+        `${GRAPH_BASE}/me/messages/${outlookId}/attachments`,
+        { "@odata.type": "#microsoft.graph.fileAttachment", ...payload },
+        { headers }
+      );
     } catch (err) {
       rethrowGraphError(err);
     }
