@@ -179,9 +179,9 @@ describe("updateTask", () => {
 
   it("throws when neither id nor taskTitle is provided", async () => {
     (getCurrentUser as Mock).mockResolvedValue(mockUser);
-    await expect(
-      updateTask({ priority: "high" }, tasksDb)
-    ).rejects.toThrow("id or taskTitle is required");
+    await expect(updateTask({ priority: "high" }, tasksDb)).rejects.toThrow(
+      "id or taskTitle is required"
+    );
     expect(tasksDb.updateTask).not.toHaveBeenCalled();
   });
 

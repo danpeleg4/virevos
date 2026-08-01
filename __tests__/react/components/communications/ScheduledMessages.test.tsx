@@ -655,9 +655,9 @@ describe("ScheduledMessages — Attachments", () => {
     await vi.waitFor(() => {
       expect(lastPostBody).toBeDefined();
     });
-    expect(
-      (lastPostBody as { data: object }).data
-    ).not.toHaveProperty("attachments");
+    expect((lastPostBody as { data: object }).data).not.toHaveProperty(
+      "attachments"
+    );
   });
 
   it("removes an attached file when its remove button is clicked", async () => {
@@ -669,13 +669,9 @@ describe("ScheduledMessages — Attachments", () => {
 
     await expect.element(dialog.getByText("notes.txt")).toBeInTheDocument();
 
-    await dialog
-      .getByRole("button", { name: /remove notes.txt/i })
-      .click();
+    await dialog.getByRole("button", { name: /remove notes.txt/i }).click();
 
-    await expect
-      .element(dialog.getByText("notes.txt"))
-      .not.toBeInTheDocument();
+    await expect.element(dialog.getByText("notes.txt")).not.toBeInTheDocument();
   });
 });
 

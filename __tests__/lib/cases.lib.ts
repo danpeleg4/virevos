@@ -407,9 +407,9 @@ describe("updateCase", () => {
   });
 
   it("throws when neither id nor caseName is provided", async () => {
-    await expect(
-      updateCase({ name: "New Name" }, casesDb)
-    ).rejects.toThrow("id or caseName is required");
+    await expect(updateCase({ name: "New Name" }, casesDb)).rejects.toThrow(
+      "id or caseName is required"
+    );
     expect(casesDb.updateCase).not.toHaveBeenCalled();
   });
 
@@ -425,14 +425,8 @@ describe("updateCase", () => {
     casesDb.getCaseByName.mockResolvedValueOnce([
       { ...canonicalCaseRow, id: 9 },
     ]);
-    await updateCase(
-      { caseName: "Estate Case", priority: "high" },
-      casesDb
-    );
-    expect(casesDb.getCaseByName).toHaveBeenCalledWith(
-      "user_1",
-      "Estate Case"
-    );
+    await updateCase({ caseName: "Estate Case", priority: "high" }, casesDb);
+    expect(casesDb.getCaseByName).toHaveBeenCalledWith("user_1", "Estate Case");
     expect(casesDb.updateCase).toHaveBeenCalledWith(9, "user_1", {
       priority: "high",
     });

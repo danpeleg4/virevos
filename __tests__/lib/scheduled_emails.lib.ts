@@ -270,7 +270,10 @@ describe("sendScheduledEmail", () => {
     expect(fakeScheduledEmailService.addAttachment).toHaveBeenCalledWith(
       expect.any(Object),
       "outlook-1",
-      expect.objectContaining({ name: "doc.pdf", contentType: "application/pdf" })
+      expect.objectContaining({
+        name: "doc.pdf",
+        contentType: "application/pdf",
+      })
     );
     expect(fakeScheduledEmailService.sendDraftMessage).toHaveBeenCalledWith(
       expect.any(Object),
@@ -321,9 +324,9 @@ describe("sendScheduledEmail", () => {
     );
 
     const [, payload] = fakeScheduledEmailService.draftMessage.mock.calls[0];
-    expect(
-      (payload as { body: { content: string } }).body.content
-    ).toContain("https://example.com/doc");
+    expect((payload as { body: { content: string } }).body.content).toContain(
+      "https://example.com/doc"
+    );
     expect(fakeScheduledEmailService.addAttachment).not.toHaveBeenCalled();
   });
 

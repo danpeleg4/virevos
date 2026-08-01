@@ -31,6 +31,7 @@ beforeEach(() => {
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
+  vi.useRealTimers();
 });
 
 describe("getPortalMainData", () => {
@@ -153,6 +154,12 @@ describe("getPortalAvailability", () => {
   });
 
   it("computes available slots and marks conflicts", async () => {
+    // getPortalAvailability marks slots before "now" as unavailable, so pin
+    // the clock well before the requested day's slots — otherwise this test
+    // goes flaky once the real clock catches up to 2026-08-01 09:30.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T08:00:00"));
+
     portalMainDb.getPortalByToken.mockResolvedValueOnce([
       {
         ...canonicalPortalMainToken,

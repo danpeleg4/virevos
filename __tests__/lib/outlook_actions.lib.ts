@@ -169,9 +169,9 @@ describe("sendOutlookEmail", () => {
       data: "aGk=",
     }));
 
-    await expect(
-      send({ ...baseInput, attachments: tooMany })
-    ).rejects.toThrow("attachments exceeds max of 25");
+    await expect(send({ ...baseInput, attachments: tooMany })).rejects.toThrow(
+      "attachments exceeds max of 25"
+    );
     expect(graphMailService.sendMail).not.toHaveBeenCalled();
   });
 
@@ -182,9 +182,9 @@ describe("sendOutlookEmail", () => {
     });
 
     const [, payload] = graphMailService.sendMail.mock.calls[0];
-    expect(
-      (payload as { body: { content: string } }).body.content
-    ).toContain("https://example.com/doc");
+    expect((payload as { body: { content: string } }).body.content).toContain(
+      "https://example.com/doc"
+    );
     expect(graphMailService.addSmallAttachment).not.toHaveBeenCalled();
   });
 });

@@ -277,7 +277,10 @@ export async function createScheduledEmail(
       : null;
   const attachments = validateAttachmentsArray(input.attachments) ?? null;
   attachments?.forEach((att) => {
-    if (att.data && Buffer.from(att.data, "base64").length > MAX_ATTACHMENT_BYTES) {
+    if (
+      att.data &&
+      Buffer.from(att.data, "base64").length > MAX_ATTACHMENT_BYTES
+    ) {
       throw new ValidationError(
         `attachment "${att.name}" exceeds the ${MAX_ATTACHMENT_BYTES} byte limit`
       );
