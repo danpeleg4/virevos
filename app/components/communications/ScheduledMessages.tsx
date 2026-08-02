@@ -118,6 +118,12 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         description: "Message deleted successfully",
       });
     },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "Message failed to delete",
+      });
+    },
   });
 
   const sendNowMutation = useMutation({
@@ -150,6 +156,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       if (context?.previous) {
         queryClient.setQueryData(["scheduled-emails"], context.previous);
       }
+      toast.error({
+        title: "Failed",
+        description: "Message failed to send",
+      });
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
@@ -208,9 +218,17 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       if (context?.previous) {
         queryClient.setQueryData(["scheduled-emails"], context.previous);
       }
+      toast.error({
+        title: "Failed",
+        description: "Message scheduled failed",
+      });
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+      toast.success({
+        title: "Scheduled",
+        description: "Message scheduled successfully",
+      });
     },
   });
 

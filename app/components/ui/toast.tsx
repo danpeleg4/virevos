@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { CheckCircle2, AlertTriangle, XCircle, Info, XIcon } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Info,
+  XIcon,
+} from "lucide-react";
 
 import { cn } from "./utils";
 
@@ -33,7 +39,8 @@ const variantIcons = {
 } as const;
 
 interface ToastProps
-  extends React.HTMLAttributes<HTMLLIElement>,
+  extends
+    React.HTMLAttributes<HTMLLIElement>,
     VariantProps<typeof toastVariants> {
   ref?: React.Ref<HTMLLIElement>;
 }
@@ -68,17 +75,26 @@ function ToastTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="toast-title"
-      className={cn("text-sm font-medium leading-none tracking-tight", className)}
+      className={cn(
+        "text-sm font-medium leading-none tracking-tight",
+        className
+      )}
       {...props}
     />
   );
 }
 
-function ToastDescription({ className, ...props }: React.ComponentProps<"div">) {
+function ToastDescription({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="toast-description"
-      className={cn("text-muted-foreground text-sm [&_p]:leading-relaxed", className)}
+      className={cn(
+        "text-muted-foreground text-sm [&_p]:leading-relaxed",
+        className
+      )}
       {...props}
     />
   );

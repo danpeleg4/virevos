@@ -44,6 +44,7 @@ import type {
   PortalMeetingBooking,
 } from "@/types/portal";
 import { timeOptions } from "@/lib/util/utils";
+import { toast } from "@/app/components/ui/toast-store";
 interface ClientPortalSettingsProps {
   clientId: number;
   portalEnabled: boolean;
@@ -138,6 +139,18 @@ export function ClientPortalSettings({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
     },
+    onSettled: async () => {
+      toast.success({
+        title: "Confirmed",
+        description: "Booking confirmed successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "Booking confirmed failed",
+      });
+    },
   });
 
   const cancelBooking = useMutation({
@@ -149,6 +162,18 @@ export function ClientPortalSettings({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
+    },
+    onSettled: async () => {
+      toast.success({
+        title: "Cancelled",
+        description: "Booking cancelled successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "Booking cancelled failed",
+      });
     },
   });
 

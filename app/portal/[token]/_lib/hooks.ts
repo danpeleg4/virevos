@@ -9,6 +9,7 @@ import type {
   TimeSlot,
 } from "@/types/portal";
 import type { DocumentRequestItem } from "@/types/document_requests";
+import { toast } from "@/app/components/ui/toast-store";
 
 export const portalQueryKey = (token: string) => ["portal", token] as const;
 export const portalChatQueryKey = (token: string) =>
@@ -72,9 +73,19 @@ export function usePortalChat(token: string) {
     },
     onError: (_err, _body, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous);
+      toast.error({
+        title: "Failed",
+        description: "Message failed to send",
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey });
+    },
+    onSettled: async () => {
+      toast.success({
+        title: "Sent",
+        description: "Message sent successfully",
+      });
     },
   });
 
@@ -120,6 +131,18 @@ export function useFileUpload(token: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
     },
+    onSettled: async () => {
+      toast.success({
+        title: "Uploaded",
+        description: "File uploaded successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "File upload failed",
+      });
+    },
   });
 }
 
@@ -146,6 +169,16 @@ export function useDocumentItemUpload(token: string) {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
+      toast.success({
+        title: "Uploaded",
+        description: "File uploaded successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "File upload failed",
+      });
     },
   });
 }
@@ -157,6 +190,18 @@ export function useBookMeeting(token: string, onConfirmed: () => void) {
       const res = await axios.post(`/api/portal/${token}/bookings`, input);
       return res.data;
     },
-    onSuccess: () => onConfirmed(),
+    onSuccess: () => {
+      onConfirmed();
+      toast.success({
+        title: "Booked",
+        description: "Meeting booked successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "Meeting booking failed",
+      });
+    },
   });
 }
