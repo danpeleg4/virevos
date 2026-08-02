@@ -4,8 +4,8 @@ import {
   disconnectOutlook,
   getOutlookConnectionStatus,
 } from "@/lib/integrations";
-import { integrationsDrizzle } from "@db/integrations_db";
-import { outlookDrizzle } from "@db/outlook_db";
+import { integrationsDrizzle } from "@db/classes/integrations_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
 import { ValidationError } from "@/lib/util/validation";
@@ -19,12 +19,12 @@ vi.mock("@/lib/integrations", () => ({
   getOutlookConnectionStatus: vi.fn(),
 }));
 
-vi.mock("@db/integrations_db", () => ({
+vi.mock("@db/classes/integrations_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   integrationsDrizzle: { __sentinel: "integrationsDrizzle" },
 }));
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: { __sentinel: "outlookDrizzle" },
 }));
 

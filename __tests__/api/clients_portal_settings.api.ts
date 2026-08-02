@@ -2,7 +2,7 @@ import { POST } from "@/app/api/clients/[id]/portal/route";
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { savePortalSettings } from "@/lib/portal/portal_settings";
-import { portalDrizzle } from "@db/portal_db";
+import { portalDrizzle } from "@db/classes/portal_db";
 import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -13,7 +13,7 @@ vi.mock("@/lib/portal/portal_settings", () => ({
   savePortalSettings: vi.fn(),
 }));
 
-vi.mock("@db/portal_db", () => ({
+vi.mock("@db/classes/portal_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   portalDrizzle: { __sentinel: "portalDrizzle" },
 }));

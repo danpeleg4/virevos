@@ -1,10 +1,10 @@
-import { db, type DrizzleDB } from "./db";
+import { db, type DrizzleDB } from "../db";
 import {
   clients,
   outlookEmails,
   outlookSyncState,
   outlookTokens,
-} from "./schema";
+} from "../schema";
 import { and, desc, eq, ilike, lte, or, SQL } from "drizzle-orm";
 
 export type OutlookTokenRow = typeof outlookTokens.$inferSelect;

@@ -1,4 +1,4 @@
-import type { PortalDB, PortalTokenRow } from "@db/portal_db";
+import type { PortalDB, PortalTokenRow } from "@db/classes/portal_db";
 
 export const canonicalPortalTokenRow: PortalTokenRow = {
   id: 3,

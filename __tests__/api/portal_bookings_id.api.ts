@@ -4,10 +4,10 @@ import {
   acceptBookingWithCalendar,
   updateBookingStatus,
 } from "@/lib/portal/portal_bookings";
-import { portalBookingsDrizzle } from "@db/portal_bookings_db";
-import { calendarDrizzle } from "@db/calendar_db";
+import { portalBookingsDrizzle } from "@db/classes/portal_bookings_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
-import { outlookDrizzle } from "@db/outlook_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest } from "next/server";
@@ -33,12 +33,12 @@ vi.mock("@/lib/portal/portal_bookings", () => ({
   updateBookingStatus: vi.fn(),
 }));
 
-vi.mock("@db/portal_bookings_db", () => ({
+vi.mock("@db/classes/portal_bookings_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   portalBookingsDrizzle: { __sentinel: "portalBookingsDrizzle" },
 }));
 
-vi.mock("@db/calendar_db", () => ({
+vi.mock("@db/classes/calendar_db", () => ({
   calendarDrizzle: { __sentinel: "calendarDrizzle" },
 }));
 
@@ -46,7 +46,7 @@ vi.mock("@/api_client/ms_graph/graph_calendar_service", () => ({
   graphCalendarService: { __sentinel: "graphCalendarService" },
 }));
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: { __sentinel: "outlookDrizzle" },
 }));
 

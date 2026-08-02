@@ -6,9 +6,9 @@ import {
   getClients,
   getPortalEnabledClients,
 } from "@/lib/workspace/clients";
-import { clientsDrizzle } from "@db/clients_db";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { clientsDrizzle } from "@db/classes/clients_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -20,16 +20,16 @@ vi.mock("@/lib/workspace/clients", () => ({
   getPortalEnabledClients: vi.fn(),
 }));
 
-vi.mock("@db/clients_db", () => ({
+vi.mock("@db/classes/clients_db", () => ({
   // sentinel — the routes must pass this exact instance into the lib fns
   clientsDrizzle: { __sentinel: "clientsDrizzle" },
 }));
 
-vi.mock("@db/plan_limits_db", () => ({
+vi.mock("@db/classes/plan_limits_db", () => ({
   planLimitsDrizzle: { __sentinel: "planLimitsDrizzle" },
 }));
 
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 

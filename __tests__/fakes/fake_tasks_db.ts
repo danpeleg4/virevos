@@ -1,4 +1,4 @@
-import type { NewTaskRow, TaskRow, TasksDB } from "@db/tasks_db";
+import type { NewTaskRow, TaskRow, TasksDB } from "@db/classes/tasks_db";
 
 export const canonicalTaskRow: TaskRow = {
   id: 1,

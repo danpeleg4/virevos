@@ -2,7 +2,7 @@ import type {
   BookingRow,
   PortalBookingsDB,
   PortalTokenRow,
-} from "@db/portal_bookings_db";
+} from "@db/classes/portal_bookings_db";
 
 export const canonicalBookingToken: PortalTokenRow = {
   id: 3,

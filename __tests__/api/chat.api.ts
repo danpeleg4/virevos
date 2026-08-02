@@ -3,18 +3,18 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import { NextRequest } from "next/server";
 import { openAIClient } from "@/api_client/openai_client";
 import { tools, executeTool } from "@/lib/ai/ai_tools";
-import { clientsDrizzle } from "@db/clients_db";
-import { casesDrizzle } from "@db/cases_db";
-import { tasksDrizzle } from "@db/tasks_db";
-import { calendarDrizzle } from "@db/calendar_db";
-import { meetingsDrizzle } from "@db/meetings_db";
-import { emailsDrizzle } from "@db/emails_db";
-import { outlookDrizzle } from "@db/outlook_db";
+import { clientsDrizzle } from "@db/classes/clients_db";
+import { casesDrizzle } from "@db/classes/cases_db";
+import { tasksDrizzle } from "@db/classes/tasks_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
+import { emailsDrizzle } from "@db/classes/emails_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -35,34 +35,34 @@ vi.mock("@/lib/plan_limits", () => ({
   assertCanUseAI: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@db/clients_db", () => ({
+vi.mock("@db/classes/clients_db", () => ({
   clientsDrizzle: { __sentinel: "clientsDrizzle" },
 }));
-vi.mock("@db/cases_db", () => ({
+vi.mock("@db/classes/cases_db", () => ({
   casesDrizzle: { __sentinel: "casesDrizzle" },
 }));
-vi.mock("@db/tasks_db", () => ({
+vi.mock("@db/classes/tasks_db", () => ({
   tasksDrizzle: { __sentinel: "tasksDrizzle" },
 }));
-vi.mock("@db/calendar_db", () => ({
+vi.mock("@db/classes/calendar_db", () => ({
   calendarDrizzle: { __sentinel: "calendarDrizzle" },
 }));
-vi.mock("@db/meetings_db", () => ({
+vi.mock("@db/classes/meetings_db", () => ({
   meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
 }));
-vi.mock("@db/emails_db", () => ({
+vi.mock("@db/classes/emails_db", () => ({
   emailsDrizzle: { __sentinel: "emailsDrizzle" },
 }));
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: { __sentinel: "outlookDrizzle" },
 }));
-vi.mock("@db/plan_limits_db", () => ({
+vi.mock("@db/classes/plan_limits_db", () => ({
   planLimitsDrizzle: {
     __sentinel: "planLimitsDrizzle",
     incrementAiCredits: vi.fn().mockResolvedValue(undefined),
   },
 }));
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 vi.mock("@/api_client/supabase_storage_client", () => ({

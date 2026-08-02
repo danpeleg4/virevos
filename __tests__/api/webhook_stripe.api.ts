@@ -6,7 +6,7 @@ import {
   handleSubscriptionDeleted,
   handleSubscriptionUpsert,
 } from "@/lib/workspace/billing";
-import { billingDrizzle } from "@db/billing_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 
 vi.mock("@/lib/workspace/billing", () => ({
   handleInvoicePaymentFailed: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock("@/lib/workspace/billing", () => ({
   handleSubscriptionUpsert: vi.fn(),
 }));
 
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   // sentinel — the route must pass this exact instance into the handlers
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));

@@ -3,7 +3,7 @@ import { GET as GET_USER_FILES } from "@/app/api/files/user-files/route";
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getCaseFiles, getUserFiles } from "@/lib/workspace/cases";
-import { casesDrizzle } from "@db/cases_db";
+import { casesDrizzle } from "@db/classes/cases_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock("@/lib/workspace/cases", () => ({
   getUserFiles: vi.fn(),
 }));
 
-vi.mock("@db/cases_db", () => ({
+vi.mock("@db/classes/cases_db", () => ({
   // sentinel — the routes must pass this exact instance into the lib fns
   casesDrizzle: { __sentinel: "casesDrizzle" },
 }));

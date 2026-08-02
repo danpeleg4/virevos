@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getTasksByCase } from "@/lib/workspace/tasks";
-import { tasksDrizzle } from "@db/tasks_db";
+import { tasksDrizzle } from "@db/classes/tasks_db";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest, NextResponse } from "next/server";
 

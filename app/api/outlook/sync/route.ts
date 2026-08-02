@@ -4,8 +4,8 @@ import {
   listOutlookEmails,
   syncOutlookInbox,
 } from "@/lib/outlook/outlook_actions";
-import { outlookDrizzle } from "@db/outlook_db";
-import { calendarDrizzle } from "@db/calendar_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";

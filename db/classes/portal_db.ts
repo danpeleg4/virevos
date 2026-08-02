@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { clientPortalTokens, clients } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { clientPortalTokens, clients } from "../schema";
 import { and, eq } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 

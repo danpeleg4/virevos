@@ -6,7 +6,7 @@ import {
   declineDocumentRequest,
   updateDocumentRequest,
 } from "@/lib/document_requests";
-import { documentRequestsDrizzle } from "@db/document_requests_db";
+import { documentRequestsDrizzle } from "@db/classes/document_requests_db";
 import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -19,7 +19,7 @@ vi.mock("@/lib/document_requests", () => ({
   updateDocumentRequest: vi.fn(),
 }));
 
-vi.mock("@db/document_requests_db", () => ({
+vi.mock("@db/classes/document_requests_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   documentRequestsDrizzle: { __sentinel: "documentRequestsDrizzle" },
 }));

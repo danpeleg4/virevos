@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { events, meetingAttendees } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { events, meetingAttendees } from "../schema";
 import { and, eq, ilike } from "drizzle-orm";
 
 export type EventRow = typeof events.$inferSelect;

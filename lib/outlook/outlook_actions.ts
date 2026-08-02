@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { OutlookDB, OutlookEmailUpdateData } from "@db/outlook_db";
-import type { CalendarDB } from "@db/calendar_db";
+import type { OutlookDB, OutlookEmailUpdateData } from "@db/classes/outlook_db";
+import type { CalendarDB } from "@db/classes/calendar_db";
 import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import type { GraphMailServiceInterface } from "@/api_client/ms_graph/graph_mail_service";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";

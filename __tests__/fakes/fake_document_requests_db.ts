@@ -4,7 +4,7 @@ import type {
   DocumentRequestsDB,
   ItemWithFileRow,
   PendingRequestRow,
-} from "@db/document_requests_db";
+} from "@db/classes/document_requests_db";
 
 export const canonicalPendingRequest: PendingRequestRow = {
   id: 1,

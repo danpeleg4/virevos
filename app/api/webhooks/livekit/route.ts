@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { ParticipantInfo_Kind } from "@livekit/protocol";
 import { WebhookEvent } from "livekit-server-sdk";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import {
   analyzeMeetingTranscript,
   handleEgressEnded,
@@ -10,7 +10,7 @@ import {
   handleRoomFinished,
   handleRoomStarted,
 } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
 import { liveKitClient } from "@/api_client/livekit_client";
 import { openAIClient } from "@/api_client/openai_client";
 

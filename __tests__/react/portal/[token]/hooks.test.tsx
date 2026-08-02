@@ -27,12 +27,10 @@ describe("useDocumentItemUpload — verdict-aware toast", () => {
 
   it("shows a success toast with the AI reasoning when the document meets the requirement", async () => {
     worker.use(
-      http.post(
-        "/api/portal/:token/document-requests/:itemId/upload",
-        () =>
-          HttpResponse.json({
-            analysis: { verdict: "meets", reasoning: "Clear and valid ID." },
-          })
+      http.post("/api/portal/:token/document-requests/:itemId/upload", () =>
+        HttpResponse.json({
+          analysis: { verdict: "meets", reasoning: "Clear and valid ID." },
+        })
       )
     );
     const successSpy = vi.spyOn(toast, "success");
@@ -50,15 +48,13 @@ describe("useDocumentItemUpload — verdict-aware toast", () => {
 
   it("shows a warning toast with the AI reasoning when the document does not meet the requirement", async () => {
     worker.use(
-      http.post(
-        "/api/portal/:token/document-requests/:itemId/upload",
-        () =>
-          HttpResponse.json({
-            analysis: {
-              verdict: "does_not_meet",
-              reasoning: "Expired document.",
-            },
-          })
+      http.post("/api/portal/:token/document-requests/:itemId/upload", () =>
+        HttpResponse.json({
+          analysis: {
+            verdict: "does_not_meet",
+            reasoning: "Expired document.",
+          },
+        })
       )
     );
     const warningSpy = vi.spyOn(toast, "warning");
@@ -76,9 +72,8 @@ describe("useDocumentItemUpload — verdict-aware toast", () => {
 
   it("falls back to a generic success toast when no AI analysis is returned", async () => {
     worker.use(
-      http.post(
-        "/api/portal/:token/document-requests/:itemId/upload",
-        () => HttpResponse.json({})
+      http.post("/api/portal/:token/document-requests/:itemId/upload", () =>
+        HttpResponse.json({})
       )
     );
     const successSpy = vi.spyOn(toast, "success");
@@ -96,9 +91,8 @@ describe("useDocumentItemUpload — verdict-aware toast", () => {
 
   it("shows only an error toast — not a false success toast — when the upload request fails", async () => {
     worker.use(
-      http.post(
-        "/api/portal/:token/document-requests/:itemId/upload",
-        () => HttpResponse.json({ error: "too large" }, { status: 500 })
+      http.post("/api/portal/:token/document-requests/:itemId/upload", () =>
+        HttpResponse.json({ error: "too large" }, { status: 500 })
       )
     );
     const successSpy = vi.spyOn(toast, "success");

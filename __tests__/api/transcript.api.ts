@@ -2,7 +2,7 @@ import { GET } from "@/app/api/transcript/[id]/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { NextRequest } from "next/server";
 import { getTranscript } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("@/lib/workspace/meetings", () => ({
   getTranscript: vi.fn(),
 }));
 
-vi.mock("@db/meetings_db", () => ({
+vi.mock("@db/classes/meetings_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
 }));

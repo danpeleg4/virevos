@@ -14,9 +14,7 @@ function emptyEmailsHandler() {
     http.get("/api/outlook/sync", () =>
       HttpResponse.json({ messages: [], page: 1, limit: 50, hasMore: false })
     ),
-    http.get("/api/portal-chat", () =>
-      HttpResponse.json({ conversations: [] })
-    )
+    http.get("/api/portal-chat", () => HttpResponse.json({ conversations: [] }))
   );
 }
 

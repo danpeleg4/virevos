@@ -5,7 +5,7 @@ import {
   handleSubscriptionDeleted,
   handleSubscriptionUpsert,
 } from "@/lib/workspace/billing";
-import { billingDrizzle } from "@db/billing_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import { stripeApiClient } from "@/api_client/stripe_client";
 import type Stripe from "stripe";
 

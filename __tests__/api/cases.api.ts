@@ -8,9 +8,9 @@ import {
   getCaseSummary,
   updateCase,
 } from "@/lib/workspace/cases";
-import { casesDrizzle } from "@db/cases_db";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { casesDrizzle } from "@db/classes/cases_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { ValidationError } from "@/lib/util/validation";
 
@@ -25,16 +25,16 @@ vi.mock("@/lib/workspace/cases", () => ({
   updateCase: vi.fn(),
 }));
 
-vi.mock("@db/cases_db", () => ({
+vi.mock("@db/classes/cases_db", () => ({
   // sentinel — the routes must pass this exact instance into the lib fns
   casesDrizzle: { __sentinel: "casesDrizzle" },
 }));
 
-vi.mock("@db/plan_limits_db", () => ({
+vi.mock("@db/classes/plan_limits_db", () => ({
   planLimitsDrizzle: { __sentinel: "planLimitsDrizzle" },
 }));
 
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 

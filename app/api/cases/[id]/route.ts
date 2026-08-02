@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { deleteCase, getCaseSummary, updateCase } from "@/lib/workspace/cases";
-import { casesDrizzle } from "@db/cases_db";
+import { casesDrizzle } from "@db/classes/cases_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { ValidationError } from "@/lib/util/validation";
 

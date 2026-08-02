@@ -4,10 +4,10 @@ import type {
   CaseSummaryRow,
   CasesDB,
   CaseUpdateData,
-} from "@db/cases_db";
+} from "@db/classes/cases_db";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
-import type { BillingDB } from "@db/billing_db";
-import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { BillingDB } from "@db/classes/billing_db";
+import type { PlanLimitsDB } from "@db/classes/plan_limits_db";
 import { AddFileMetadataInput, Case } from "@/types/cases";
 import { FILES_BUCKET } from "../supabase/supabase";
 import { assertCanAddCase, assertCanAddFile } from "../plan_limits";

@@ -2,7 +2,7 @@ import { GET } from "@/app/api/recording/[id]/route";
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getRecordingUrl } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -13,7 +13,7 @@ vi.mock("@/lib/workspace/meetings", () => ({
   getRecordingUrl: vi.fn(),
 }));
 
-vi.mock("@db/meetings_db", () => ({
+vi.mock("@db/classes/meetings_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
 }));

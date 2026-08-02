@@ -1,5 +1,5 @@
-import type { OutlookDB, NewOutlookEmailRow } from "@db/outlook_db";
-import type { CalendarDB, NewEventRow } from "@db/calendar_db";
+import type { OutlookDB, NewOutlookEmailRow } from "@db/classes/outlook_db";
+import type { CalendarDB, NewEventRow } from "@db/classes/calendar_db";
 import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import type {
   GraphDeltaResponse,

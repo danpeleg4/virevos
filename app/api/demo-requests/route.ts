@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDemoRequest } from "@/lib/demo_requests";
-import { demoRequestsDrizzle } from "@db/demo_requests_db";
+import { demoRequestsDrizzle } from "@db/classes/demo_requests_db";
 import { resendApiClient } from "@/api_client/resend_client";
 import { ValidationError } from "@/lib/util/validation";
 

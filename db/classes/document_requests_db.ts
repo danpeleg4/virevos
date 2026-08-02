@@ -1,10 +1,10 @@
-import { db, type DrizzleDB } from "./db";
+import { db, type DrizzleDB } from "../db";
 import {
   caseFiles,
   documentRequestItems,
   events,
   meetingDocumentRequests,
-} from "./schema";
+} from "../schema";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 export type DocRequestRow = typeof meetingDocumentRequests.$inferSelect;

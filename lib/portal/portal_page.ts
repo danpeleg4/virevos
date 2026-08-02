@@ -1,6 +1,6 @@
-import type { PortalMainDB } from "@db/portal_main_db";
-import type { PortalBookingsDB } from "@db/portal_bookings_db";
-import type { DocumentRequestsDB } from "@db/document_requests_db";
+import type { PortalMainDB } from "@db/classes/portal_main_db";
+import type { PortalBookingsDB } from "@db/classes/portal_bookings_db";
+import type { DocumentRequestsDB } from "@db/classes/document_requests_db";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
 import { listApprovedRequestsForClient } from "@/lib/document_requests";
 import { FILES_BUCKET } from "@/lib/supabase/supabase";

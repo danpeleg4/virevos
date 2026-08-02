@@ -6,9 +6,9 @@ import {
   getScheduledEmails,
   sendScheduledEmailNow,
 } from "@/lib/scheduled_emails";
-import { scheduledEmailsDrizzle } from "@db/scheduled_emails_db";
+import { scheduledEmailsDrizzle } from "@db/classes/scheduled_emails_db";
 import { scheduledEmailService } from "@/api_client/ms_graph/scheduled_email_service";
-import { outlookDrizzle } from "@db/outlook_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { ValidationError } from "@/lib/util/validation";
@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@db/scheduled_emails_db", () => ({
+vi.mock("@db/classes/scheduled_emails_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   scheduledEmailsDrizzle: { __sentinel: "scheduledEmailsDrizzle" },
 }));
@@ -34,7 +34,7 @@ vi.mock("@/api_client/ms_graph/scheduled_email_service", () => ({
   scheduledEmailService: { __sentinel: "scheduledEmailService" },
 }));
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: { __sentinel: "outlookDrizzle" },
 }));
 

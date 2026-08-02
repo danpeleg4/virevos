@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { PortalChatDB } from "@db/portal_chat_db";
+import type { PortalChatDB } from "@db/classes/portal_chat_db";
 import type { PortalChatMessage } from "@/types/portal";
 import {
   MAX_MESSAGE,

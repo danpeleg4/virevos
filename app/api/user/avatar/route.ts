@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { uploadAvatar } from "@/lib/user";
-import { userDrizzle } from "@db/user_db";
+import { userDrizzle } from "@db/classes/user_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { ValidationError } from "@/lib/util/validation";
 

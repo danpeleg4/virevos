@@ -1,4 +1,4 @@
-import type { BillingDB, SubscriptionRow } from "@db/billing_db";
+import type { BillingDB, SubscriptionRow } from "@db/classes/billing_db";
 
 export const canonicalSubscriptionRow: SubscriptionRow = {
   id: 1,

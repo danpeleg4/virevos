@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { clientPortalTokens, clients, portalMeetingBookings } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { clientPortalTokens, clients, portalMeetingBookings } from "../schema";
 import { and, eq, gte, lt } from "drizzle-orm";
 
 export type PortalTokenRow = typeof clientPortalTokens.$inferSelect;

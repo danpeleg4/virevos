@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { TasksDB, TaskUpdateData } from "@db/tasks_db";
+import type { TasksDB, TaskUpdateData } from "@db/classes/tasks_db";
 import { Task } from "@/types/tasks";
 import {
   MAX_NOTES,

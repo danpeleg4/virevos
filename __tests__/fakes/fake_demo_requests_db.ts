@@ -1,4 +1,7 @@
-import type { DemoRequestRow, DemoRequestsDB } from "@db/demo_requests_db";
+import type {
+  DemoRequestRow,
+  DemoRequestsDB,
+} from "@db/classes/demo_requests_db";
 
 export const canonicalDemoRequestRow: DemoRequestRow = {
   id: 7,

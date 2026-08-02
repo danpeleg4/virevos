@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { outlookEmails, outlookTokens } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { outlookEmails, outlookTokens } from "../schema";
 import { eq } from "drizzle-orm";
 
 export interface IntegrationsDB {

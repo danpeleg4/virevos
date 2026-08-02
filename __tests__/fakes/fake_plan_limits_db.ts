@@ -1,4 +1,4 @@
-import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { PlanLimitsDB } from "@db/classes/plan_limits_db";
 
 export type FakePlanLimitsDb = {
   [K in keyof PlanLimitsDB]: Mock<PlanLimitsDB[K]>;

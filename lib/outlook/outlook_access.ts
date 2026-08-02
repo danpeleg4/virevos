@@ -1,4 +1,4 @@
-import type { OutlookDB } from "@db/outlook_db";
+import type { OutlookDB } from "@db/classes/outlook_db";
 import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import { OUTLOOK_SCOPES } from "@/api_client/ms_graph/graph_auth_service";
 

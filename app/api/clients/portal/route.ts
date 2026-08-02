@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getPortalEnabledClients } from "@/lib/workspace/clients";
-import { clientsDrizzle } from "@db/clients_db";
+import { clientsDrizzle } from "@db/classes/clients_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {

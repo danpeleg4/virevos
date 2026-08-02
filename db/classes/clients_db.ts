@@ -1,11 +1,11 @@
-import { db, type DrizzleDB } from "./db";
+import { db, type DrizzleDB } from "../db";
 import {
   cases,
   clientPortalTokens,
   clients,
   outlookEmails,
   tasks,
-} from "./schema";
+} from "../schema";
 import { and, desc, eq, ilike, sql } from "drizzle-orm";
 
 export type ClientRow = typeof clients.$inferSelect;

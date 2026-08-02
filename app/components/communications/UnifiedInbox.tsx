@@ -285,7 +285,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     try {
       await axios.post("/api/outlook/sync");
       await refetch();
-      toast.success({ title: "Synced", description: "Inbox synced successfully" });
+      toast.success({
+        title: "Synced",
+        description: "Inbox synced successfully",
+      });
     } catch (err) {
       console.error("Sync failed:", err);
       toast.error({ title: "Failed", description: "Inbox sync failed" });
@@ -433,7 +436,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         await queryClient.invalidateQueries({
           queryKey: ["portal-chat-thread", clientId],
         });
-        toast.success({ title: "Deleted", description: "Chat deleted successfully" });
+        toast.success({
+          title: "Deleted",
+          description: "Chat deleted successfully",
+        });
       } catch (err) {
         console.error("Delete failed:", err);
         toast.error({ title: "Failed", description: "Chat failed to delete" });
@@ -444,7 +450,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       await axios.delete(`/api/outlook/messages/${id}`);
       removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
-      toast.success({ title: "Deleted", description: "Message deleted successfully" });
+      toast.success({
+        title: "Deleted",
+        description: "Message deleted successfully",
+      });
     } catch (err) {
       console.error("Delete failed:", err);
       toast.error({ title: "Failed", description: "Message failed to delete" });
@@ -500,7 +509,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         setReplyText("");
         setPendingAttachments([]);
         await refetch();
-        toast.success({ title: "Sent", description: "Reply sent successfully" });
+        toast.success({
+          title: "Sent",
+          description: "Reply sent successfully",
+        });
       }
     } catch (err) {
       console.error("Failed to send reply:", err);
@@ -806,7 +818,11 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="More actions">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="More actions"
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -928,7 +944,11 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" aria-label="More actions">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="More actions"
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

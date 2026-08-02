@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadDocumentRequestItem } from "@/lib/portal/portal_document_uploads";
-import { portalUploadsDrizzle } from "@db/portal_uploads_db";
+import { portalUploadsDrizzle } from "@db/classes/portal_uploads_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { openAIClient } from "@/api_client/openai_client";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function POST(

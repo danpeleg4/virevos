@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { MAX_MESSAGE, requireInt, requireString } from "./util/validation";
 import { EMAILS_BUCKET, EMAILS_INDEX, createEmbedding } from "./embeddings";
-import type { EmailsDB } from "@db/emails_db";
+import type { EmailsDB } from "@db/classes/emails_db";
 import type { OpenAIClientInterface } from "@/api_client/openai_client";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
 

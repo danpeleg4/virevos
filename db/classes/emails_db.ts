@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { outlookEmails } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { outlookEmails } from "../schema";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 export type EmailSearchRow = {

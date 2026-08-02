@@ -1,6 +1,6 @@
 import { POST } from "@/app/api/outlook/messages/route";
 import { sendOutlookEmail } from "@/lib/outlook/outlook_actions";
-import { outlookDrizzle } from "@db/outlook_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
@@ -10,7 +10,7 @@ vi.mock("@/lib/outlook/outlook_actions", () => ({
   sendOutlookEmail: vi.fn(),
 }));
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: { __sentinel: "outlookDrizzle" },
 }));
 

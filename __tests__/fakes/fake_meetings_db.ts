@@ -1,4 +1,4 @@
-import type { ActionItem, EventRow, MeetingsDB } from "@db/meetings_db";
+import type { ActionItem, EventRow, MeetingsDB } from "@db/classes/meetings_db";
 
 export const canonicalMeetingRow: EventRow = {
   id: "evt-1",

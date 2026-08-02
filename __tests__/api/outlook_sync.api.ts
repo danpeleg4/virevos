@@ -4,8 +4,8 @@ import {
   listOutlookEmails,
   syncOutlookInbox,
 } from "@/lib/outlook/outlook_actions";
-import { outlookDrizzle } from "@db/outlook_db";
-import { calendarDrizzle } from "@db/calendar_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
@@ -21,11 +21,11 @@ vi.mock("@/lib/outlook/outlook_actions", () => ({
   syncOutlookInbox: vi.fn(),
 }));
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: { __sentinel: "outlookDrizzle" },
 }));
 
-vi.mock("@db/calendar_db", () => ({
+vi.mock("@db/classes/calendar_db", () => ({
   calendarDrizzle: { __sentinel: "calendarDrizzle" },
 }));
 

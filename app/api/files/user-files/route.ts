@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getUserFiles } from "@/lib/workspace/cases";
-import { casesDrizzle } from "@db/cases_db";
+import { casesDrizzle } from "@db/classes/cases_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {

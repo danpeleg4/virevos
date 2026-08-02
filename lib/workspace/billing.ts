@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { ensureUserRow } from "../user";
-import type { UserDB } from "@db/user_db";
-import type { BillingDB } from "@db/billing_db";
+import type { UserDB } from "@db/classes/user_db";
+import type { BillingDB } from "@db/classes/billing_db";
 import type { StripeClientInterface } from "@/api_client/stripe_client";
 import type Stripe from "stripe";
 

@@ -3,7 +3,7 @@ import type {
   InsertSchEmail,
   ScheEmail,
   ScheduledEmailsDB,
-} from "@db/scheduled_emails_db";
+} from "@db/classes/scheduled_emails_db";
 
 export const canonicalScheduledEmail: ScheEmail = {
   id: 5,

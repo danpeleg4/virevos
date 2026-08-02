@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { listPendingDocumentRequests } from "@/lib/document_requests";
-import { documentRequestsDrizzle } from "@db/document_requests_db";
+import { documentRequestsDrizzle } from "@db/classes/document_requests_db";
 import { getCurrentUser } from "@/lib/supabase/auth";
 
 export async function GET() {

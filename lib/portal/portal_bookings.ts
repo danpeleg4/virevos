@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { PortalBookingsDB } from "@db/portal_bookings_db";
-import type { CalendarDB } from "@db/calendar_db";
+import type { PortalBookingsDB } from "@db/classes/portal_bookings_db";
+import type { CalendarDB } from "@db/classes/calendar_db";
 import type { GraphCalendarServiceInterface } from "@/api_client/ms_graph/graph_calendar_service";
-import type { OutlookDB } from "@db/outlook_db";
+import type { OutlookDB } from "@db/classes/outlook_db";
 import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import type { BookingInput, PortalMeetingBooking } from "@/types/portal";
 import { addMeetingToCalendar } from "@/lib/workspace/calendar";

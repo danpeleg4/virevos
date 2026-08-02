@@ -1,8 +1,8 @@
 import { CreateClientInput, UpdateClientInput } from "@/types/clients";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { ClientsDB, ClientUpdateData } from "@db/clients_db";
-import type { BillingDB } from "@db/billing_db";
-import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { ClientsDB, ClientUpdateData } from "@db/classes/clients_db";
+import type { BillingDB } from "@db/classes/billing_db";
+import type { PlanLimitsDB } from "@db/classes/plan_limits_db";
 import { assertCanAddClient } from "../plan_limits";
 import {
   MAX_NAME,

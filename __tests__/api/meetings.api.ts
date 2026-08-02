@@ -1,7 +1,7 @@
 import { POST } from "@/app/api/meetings/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createInstantMeeting } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
 import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -12,7 +12,7 @@ vi.mock("@/lib/workspace/meetings", () => ({
   createInstantMeeting: vi.fn(),
 }));
 
-vi.mock("@db/meetings_db", () => ({
+vi.mock("@db/classes/meetings_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
 }));

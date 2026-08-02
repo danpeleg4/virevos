@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { cases, clients, users } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { cases, clients, users } from "../schema";
 import { count, eq, isNull, lte, or, sql } from "drizzle-orm";
 
 export interface PlanLimitsDB {

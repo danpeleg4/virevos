@@ -8,7 +8,7 @@ import {
   getClientPortal,
   updateExistingClient,
 } from "@/lib/workspace/clients";
-import { clientsDrizzle } from "@db/clients_db";
+import { clientsDrizzle } from "@db/classes/clients_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function GET(
