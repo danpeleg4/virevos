@@ -62,6 +62,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { timeOptions } from "@/lib/util/utils";
+import { toast } from "@/app/components/ui/toast-store";
 
 interface ScheduledMessagesProps {
   navContainer: HTMLDivElement | null;
@@ -112,6 +113,16 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+      toast.success({
+        title: "Deleted",
+        description: "Message deleted successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "Message failed to delete",
+      });
     },
   });
 
@@ -141,10 +152,20 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       );
       return { previous };
     },
+    onSuccess: () => {
+      toast.success({
+        title: "Sent",
+        description: "Message sent successfully",
+      });
+    },
     onError: (_error, _msg, context) => {
       if (context?.previous) {
         queryClient.setQueryData(["scheduled-emails"], context.previous);
       }
+      toast.error({
+        title: "Failed",
+        description: "Message failed to send",
+      });
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
@@ -194,11 +215,19 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
       setFormDate(undefined);
       setFormTime("09:00");
       setFormAttachments([]);
+      toast.success({
+        title: "Scheduled",
+        description: "Message scheduled successfully",
+      });
     },
     onError: (_error, _input, context) => {
       if (context?.previous) {
         queryClient.setQueryData(["scheduled-emails"], context.previous);
       }
+      toast.error({
+        title: "Failed",
+        description: "Message scheduled failed",
+      });
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
@@ -239,6 +268,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
 
   const handleSchedule = () => {
     if (!formToEmail || !formSubject || !formBody || !formDate || !formTime) {
+      toast.warning({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+      });
       return;
     }
 

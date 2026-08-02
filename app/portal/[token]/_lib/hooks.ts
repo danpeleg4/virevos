@@ -8,7 +8,11 @@ import type {
   PortalData,
   TimeSlot,
 } from "@/types/portal";
-import type { DocumentRequestItem } from "@/types/document_requests";
+import type {
+  DocumentRequestItem,
+  DocumentRequestItemAiVerdict,
+} from "@/types/document_requests";
+import { toast } from "@/app/components/ui/toast-store";
 
 export const portalQueryKey = (token: string) => ["portal", token] as const;
 export const portalChatQueryKey = (token: string) =>
@@ -72,9 +76,17 @@ export function usePortalChat(token: string) {
     },
     onError: (_err, _body, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous);
+      toast.error({
+        title: "Failed",
+        description: "Message failed to send",
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey });
+      toast.success({
+        title: "Sent",
+        description: "Message sent successfully",
+      });
     },
   });
 
@@ -119,6 +131,16 @@ export function useFileUpload(token: string) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
+      toast.success({
+        title: "Uploaded",
+        description: "File uploaded successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "File upload failed",
+      });
     },
   });
 }
@@ -127,6 +149,17 @@ interface DocumentAnalysis {
   verdict: DocumentRequestItem["aiVerdict"];
   reasoning: string;
 }
+
+const VERDICT_TOAST: Record<
+  DocumentRequestItemAiVerdict,
+  { title: string; variant: "success" | "warning" | "info" | "destructive" }
+> = {
+  meets: { title: "Looks good", variant: "success" },
+  does_not_meet: { title: "Does not meet requirement", variant: "warning" },
+  needs_review: { title: "Needs review", variant: "info" },
+  skipped: { title: "Uploaded", variant: "success" },
+  error: { title: "Review unavailable", variant: "warning" },
+};
 
 /** Uploads a file against a document-checklist item. */
 export function useDocumentItemUpload(token: string) {
@@ -144,8 +177,19 @@ export function useDocumentItemUpload(token: string) {
         analysis: (res.data.analysis ?? null) as DocumentAnalysis | null,
       };
     },
-    onSettled: () => {
+    onSuccess: ({ analysis }) => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
+      const copy = analysis?.verdict ? VERDICT_TOAST[analysis.verdict] : null;
+      toast[copy?.variant ?? "success"]({
+        title: copy?.title ?? "Uploaded",
+        description: analysis?.reasoning || "File uploaded successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "File upload failed",
+      });
     },
   });
 }
@@ -157,6 +201,18 @@ export function useBookMeeting(token: string, onConfirmed: () => void) {
       const res = await axios.post(`/api/portal/${token}/bookings`, input);
       return res.data;
     },
-    onSuccess: () => onConfirmed(),
+    onSuccess: () => {
+      onConfirmed();
+      toast.success({
+        title: "Booked",
+        description: "Meeting booked successfully",
+      });
+    },
+    onError: async () => {
+      toast.error({
+        title: "Failed",
+        description: "Meeting booking failed",
+      });
+    },
   });
 }

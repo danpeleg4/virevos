@@ -93,6 +93,7 @@ vi.mock("@/app/components/ui/select", async () => {
 });
 
 import { ScheduledMessages } from "@/app/components/communications/ScheduledMessages";
+import { toast } from "@/app/components/ui/toast-store";
 
 const pendingEmail: ScheduledEmail = {
   id: 1,
@@ -760,5 +761,100 @@ describe("ScheduledMessages — Pagination", () => {
         screen.getByRole("button", { name: /schedule your first message/i })
       )
       .not.toBeInTheDocument();
+  });
+});
+
+describe("ScheduledMessages — Toast feedback", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("warns instead of silently no-oping when required schedule fields are missing", async () => {
+    const warningSpy = vi.spyOn(toast, "warning");
+    const { dialog } = await openScheduleDialog();
+
+    await dialog.getByRole("button", { name: /schedule message/i }).click();
+
+    expect(warningSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Missing information" })
+    );
+  });
+
+  it("shows only a success toast — not a false failure toast — when Send Now succeeds", async () => {
+    worker.use(
+      http.post("/api/scheduled-emails", () => HttpResponse.json({ success: true }))
+    );
+    const successSpy = vi.spyOn(toast, "success");
+    const errorSpy = vi.spyOn(toast, "error");
+
+    const screen = await renderComponent();
+    await screen.getByRole("button", { name: /send now/i }).click();
+
+    await vi.waitFor(() => {
+      expect(successSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Sent" })
+      );
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows only an error toast — not a false success toast — when Send Now fails", async () => {
+    worker.use(
+      http.post("/api/scheduled-emails", () =>
+        HttpResponse.json({ error: "smtp down" }, { status: 500 })
+      )
+    );
+    const successSpy = vi.spyOn(toast, "success");
+    const errorSpy = vi.spyOn(toast, "error");
+
+    const screen = await renderComponent();
+    await screen.getByRole("button", { name: /send now/i }).click();
+
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Failed" })
+      );
+    });
+    expect(successSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows only a success toast — not a false failure toast — when scheduling succeeds", async () => {
+    worker.use(
+      http.post("/api/scheduled-emails", () => HttpResponse.json({ success: true }))
+    );
+    const successSpy = vi.spyOn(toast, "success");
+    const errorSpy = vi.spyOn(toast, "error");
+
+    const { screen, dialog } = await openScheduleDialog();
+    await fillScheduleForm(screen, dialog);
+    await dialog.getByRole("button", { name: /schedule message/i }).click();
+
+    await vi.waitFor(() => {
+      expect(successSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Scheduled" })
+      );
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows only an error toast — not a false success toast — when scheduling fails", async () => {
+    worker.use(
+      http.post("/api/scheduled-emails", () =>
+        HttpResponse.json({ error: "db down" }, { status: 500 })
+      )
+    );
+    const successSpy = vi.spyOn(toast, "success");
+    const errorSpy = vi.spyOn(toast, "error");
+
+    const { screen, dialog } = await openScheduleDialog();
+    await fillScheduleForm(screen, dialog);
+    await dialog.getByRole("button", { name: /schedule message/i }).click();
+
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Failed" })
+      );
+    });
+    expect(successSpy).not.toHaveBeenCalled();
   });
 });
