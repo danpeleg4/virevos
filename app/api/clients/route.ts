@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { addAClient, getClients } from "@/lib/workspace/clients";
-import { clientsDrizzle } from "@db/clients_db";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { clientsDrizzle } from "@db/classes/clients_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function GET() {

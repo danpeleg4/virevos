@@ -1,12 +1,12 @@
 import { GET } from "@/app/api/recording/status/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { userDrizzle } from "@db/user_db";
+import { userDrizzle } from "@db/classes/user_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@db/user_db", () => ({
+vi.mock("@db/classes/user_db", () => ({
   userDrizzle: { getUserRow: vi.fn() },
 }));
 

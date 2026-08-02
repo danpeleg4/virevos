@@ -4,10 +4,10 @@ import {
   acceptBookingWithCalendar,
   updateBookingStatus,
 } from "@/lib/portal/portal_bookings";
-import { portalBookingsDrizzle } from "@db/portal_bookings_db";
-import { calendarDrizzle } from "@db/calendar_db";
+import { portalBookingsDrizzle } from "@db/classes/portal_bookings_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
-import { outlookDrizzle } from "@db/outlook_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { ValidationError } from "@/lib/util/validation";
 

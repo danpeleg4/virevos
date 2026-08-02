@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { subscriptions, users } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { subscriptions, users } from "../schema";
 import { eq } from "drizzle-orm";
 
 export type SubscriptionRow = typeof subscriptions.$inferSelect;

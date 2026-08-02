@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createCase } from "@/lib/workspace/cases";
-import { casesDrizzle } from "@db/cases_db";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { casesDrizzle } from "@db/classes/cases_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function POST(req: Request) {

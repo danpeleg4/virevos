@@ -1,8 +1,8 @@
 import { GET } from "@/app/api/billing/setup-intent/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createSetupIntent } from "@/lib/workspace/billing";
-import { billingDrizzle } from "@db/billing_db";
-import { userDrizzle } from "@db/user_db";
+import { billingDrizzle } from "@db/classes/billing_db";
+import { userDrizzle } from "@db/classes/user_db";
 import { stripeApiClient } from "@/api_client/stripe_client";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -13,11 +13,11 @@ vi.mock("@/lib/workspace/billing", () => ({
   createSetupIntent: vi.fn(),
 }));
 
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 
-vi.mock("@db/user_db", () => ({
+vi.mock("@db/classes/user_db", () => ({
   userDrizzle: { __sentinel: "userDrizzle" },
 }));
 

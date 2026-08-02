@@ -1,4 +1,4 @@
-import { db, type DrizzleDB } from "./db";
+import { db, type DrizzleDB } from "../db";
 import {
   caseFiles,
   cases,
@@ -7,7 +7,7 @@ import {
   documentRequestItems,
   meetingDocumentRequests,
   users,
-} from "./schema";
+} from "../schema";
 import { and, eq, sql } from "drizzle-orm";
 
 export type PortalTokenRow = typeof clientPortalTokens.$inferSelect;

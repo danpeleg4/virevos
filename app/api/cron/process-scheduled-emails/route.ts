@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { scheduledEmailsDrizzle } from "@db/scheduled_emails_db";
+import { scheduledEmailsDrizzle } from "@db/classes/scheduled_emails_db";
 import { processDueScheduledEmails } from "@/lib/scheduled_emails";
 import { scheduledEmailService } from "@/api_client/ms_graph/scheduled_email_service";
-import { outlookDrizzle } from "@db/outlook_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 

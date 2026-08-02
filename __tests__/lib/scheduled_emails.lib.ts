@@ -1,4 +1,4 @@
-import type { Claimed } from "@db/scheduled_emails_db";
+import type { Claimed } from "@db/classes/scheduled_emails_db";
 
 const mockGetFreshOutlookAccessToken = vi.fn();
 const mockGetCurrentUser = vi.fn();

@@ -1,4 +1,4 @@
-import type { UserDB, UserRow } from "@db/user_db";
+import type { UserDB, UserRow } from "@db/classes/user_db";
 
 export const canonicalUserRow: UserRow = {
   id: 1,

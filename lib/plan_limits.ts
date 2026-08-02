@@ -1,5 +1,5 @@
-import type { BillingDB } from "@db/billing_db";
-import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { BillingDB } from "@db/classes/billing_db";
+import type { PlanLimitsDB } from "@db/classes/plan_limits_db";
 import { getUserSubscriptionByUserId } from "./workspace/billing";
 
 const AI_CREDIT_LIMITS: Record<PlanId, number> = {

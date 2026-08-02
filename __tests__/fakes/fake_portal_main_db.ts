@@ -4,7 +4,7 @@ import type {
   ClientRow,
   PortalMainDB,
   PortalTokenRow,
-} from "@db/portal_main_db";
+} from "@db/classes/portal_main_db";
 
 export const canonicalPortalMainToken: PortalTokenRow = {
   id: 3,

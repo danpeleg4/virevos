@@ -1,6 +1,6 @@
 import { POST } from "@/app/api/demo-requests/route";
 import { createDemoRequest } from "@/lib/demo_requests";
-import { demoRequestsDrizzle } from "@db/demo_requests_db";
+import { demoRequestsDrizzle } from "@db/classes/demo_requests_db";
 import { resendApiClient } from "@/api_client/resend_client";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest } from "next/server";
@@ -20,7 +20,7 @@ vi.mock("@/lib/demo_requests", () => ({
   createDemoRequest: vi.fn(),
 }));
 
-vi.mock("@db/demo_requests_db", () => ({
+vi.mock("@db/classes/demo_requests_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   demoRequestsDrizzle: { __sentinel: "demoRequestsDrizzle" },
 }));

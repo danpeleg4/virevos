@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { cases, tasks } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { cases, tasks } from "../schema";
 import { and, eq, ilike } from "drizzle-orm";
 
 export type TaskRow = typeof tasks.$inferSelect;

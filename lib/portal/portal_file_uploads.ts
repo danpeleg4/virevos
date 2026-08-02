@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
-import type { PortalUploadsDB } from "@db/portal_uploads_db";
+import type { PortalUploadsDB } from "@db/classes/portal_uploads_db";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
-import type { PlanLimitsDB } from "@db/plan_limits_db";
-import type { BillingDB } from "@db/billing_db";
+import type { PlanLimitsDB } from "@db/classes/plan_limits_db";
+import type { BillingDB } from "@db/classes/billing_db";
 import { FILES_BUCKET } from "@/lib/supabase/supabase";
 import { rateLimitHeaders } from "@/lib/util/rate_limit";
 import { assertCanAddFile } from "@/lib/plan_limits";

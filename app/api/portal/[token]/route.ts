@@ -5,10 +5,10 @@ import {
   downloadPortalFile,
 } from "@/lib/portal/portal_page";
 import { getPortalChatMessages } from "@/lib/portal/portal_chat";
-import { portalMainDrizzle } from "@db/portal_main_db";
-import { portalBookingsDrizzle } from "@db/portal_bookings_db";
-import { portalChatDrizzle } from "@db/portal_chat_db";
-import { documentRequestsDrizzle } from "@db/document_requests_db";
+import { portalMainDrizzle } from "@db/classes/portal_main_db";
+import { portalBookingsDrizzle } from "@db/classes/portal_bookings_db";
+import { portalChatDrizzle } from "@db/classes/portal_chat_db";
+import { documentRequestsDrizzle } from "@db/classes/document_requests_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { ValidationError } from "@/lib/util/validation";
 

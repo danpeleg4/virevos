@@ -3,7 +3,7 @@ import type {
   PortalChatDB,
   PortalMessageRow,
   PortalTokenRow,
-} from "@db/portal_chat_db";
+} from "@db/classes/portal_chat_db";
 
 export const canonicalPortalChatToken: PortalTokenRow = {
   id: 3,

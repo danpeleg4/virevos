@@ -1,7 +1,7 @@
 import { GET } from "@/app/api/cases/[id]/tasks/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getTasksByCase } from "@/lib/workspace/tasks";
-import { tasksDrizzle } from "@db/tasks_db";
+import { tasksDrizzle } from "@db/classes/tasks_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock("@/lib/workspace/tasks", () => ({
   getTasksByCase: vi.fn(),
 }));
 
-vi.mock("@db/tasks_db", () => ({
+vi.mock("@db/classes/tasks_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   tasksDrizzle: { __sentinel: "tasksDrizzle" },
 }));

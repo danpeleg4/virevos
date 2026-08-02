@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { PortalDB, PortalSettingsData } from "@db/portal_db";
+import type { PortalDB, PortalSettingsData } from "@db/classes/portal_db";
 import { ValidationError, requireInt } from "../util/validation";
 
 export type PortalSettings = PortalSettingsData;

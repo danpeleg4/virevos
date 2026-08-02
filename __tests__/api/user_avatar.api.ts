@@ -1,6 +1,6 @@
 import { GET } from "@/app/api/user/route";
 import { NextRequest } from "next/server";
-import { userDrizzle } from "@db/user_db";
+import { userDrizzle } from "@db/classes/user_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 
 const makeRequest = () =>
@@ -16,7 +16,7 @@ vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock("@db/user_db", () => ({
+vi.mock("@db/classes/user_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   userDrizzle: { __sentinel: "userDrizzle" },
 }));

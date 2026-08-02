@@ -9,8 +9,8 @@ import {
   resubscribe,
   updatePaymentMethod,
 } from "@/lib/workspace/billing";
-import { billingDrizzle } from "@db/billing_db";
-import { userDrizzle } from "@db/user_db";
+import { billingDrizzle } from "@db/classes/billing_db";
+import { userDrizzle } from "@db/classes/user_db";
 import { stripeApiClient } from "@/api_client/stripe_client";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -27,12 +27,12 @@ vi.mock("@/lib/workspace/billing", () => ({
   updatePaymentMethod: vi.fn(),
 }));
 
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 
-vi.mock("@db/user_db", () => ({
+vi.mock("@db/classes/user_db", () => ({
   userDrizzle: { __sentinel: "userDrizzle" },
 }));
 

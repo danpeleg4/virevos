@@ -8,7 +8,7 @@ import {
 } from "@/lib/util/validation";
 import { rateLimit } from "@/lib/util/rate_limit";
 import { createMeetingToken } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
 import { liveKitClient } from "@/api_client/livekit_client";
 
 export async function POST(req: NextRequest) {

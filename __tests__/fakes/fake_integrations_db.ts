@@ -1,4 +1,4 @@
-import type { IntegrationsDB } from "@db/integrations_db";
+import type { IntegrationsDB } from "@db/classes/integrations_db";
 
 export type FakeIntegrationsDb = {
   [K in keyof IntegrationsDB]: Mock<IntegrationsDB[K]>;

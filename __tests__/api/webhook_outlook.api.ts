@@ -1,20 +1,20 @@
 import { POST } from "@/app/api/webhooks/outlook/route";
-import { outlookDrizzle } from "@db/outlook_db";
-import { calendarDrizzle } from "@db/calendar_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { openAIClient } from "@/api_client/openai_client";
 import { performIncrementalSync } from "@/lib/outlook/outlook_sync";
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: {
     __sentinel: "outlookDrizzle",
     findSyncStateBySubscriptionId: vi.fn().mockResolvedValue([]),
   },
 }));
 
-vi.mock("@db/calendar_db", () => ({
+vi.mock("@db/classes/calendar_db", () => ({
   calendarDrizzle: { __sentinel: "calendarDrizzle" },
 }));
 

@@ -1,7 +1,7 @@
 import { GET } from "@/app/api/document-requests/pending/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { listPendingDocumentRequests } from "@/lib/document_requests";
-import { documentRequestsDrizzle } from "@db/document_requests_db";
+import { documentRequestsDrizzle } from "@db/classes/document_requests_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock("@/lib/document_requests", () => ({
   listPendingDocumentRequests: vi.fn(),
 }));
 
-vi.mock("@db/document_requests_db", () => ({
+vi.mock("@db/classes/document_requests_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   documentRequestsDrizzle: { __sentinel: "documentRequestsDrizzle" },
 }));

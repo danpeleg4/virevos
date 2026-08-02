@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import type { DemoRequestsDB } from "@db/demo_requests_db";
+import type { DemoRequestsDB } from "@db/classes/demo_requests_db";
 import type { ResendClientInterface } from "@/api_client/resend_client";
 import {
   MAX_MESSAGE,

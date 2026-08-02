@@ -782,7 +782,9 @@ describe("ScheduledMessages — Toast feedback", () => {
 
   it("shows only a success toast — not a false failure toast — when Send Now succeeds", async () => {
     worker.use(
-      http.post("/api/scheduled-emails", () => HttpResponse.json({ success: true }))
+      http.post("/api/scheduled-emails", () =>
+        HttpResponse.json({ success: true })
+      )
     );
     const successSpy = vi.spyOn(toast, "success");
     const errorSpy = vi.spyOn(toast, "error");
@@ -820,7 +822,9 @@ describe("ScheduledMessages — Toast feedback", () => {
 
   it("shows only a success toast — not a false failure toast — when scheduling succeeds", async () => {
     worker.use(
-      http.post("/api/scheduled-emails", () => HttpResponse.json({ success: true }))
+      http.post("/api/scheduled-emails", () =>
+        HttpResponse.json({ success: true })
+      )
     );
     const successSpy = vi.spyOn(toast, "success");
     const errorSpy = vi.spyOn(toast, "error");

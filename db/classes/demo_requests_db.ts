@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { demoRequests } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { demoRequests } from "../schema";
 import { eq } from "drizzle-orm";
 
 export type DemoRequestRow = typeof demoRequests.$inferSelect;

@@ -15,15 +15,15 @@ import type {
   AIFormField,
 } from "@/types/ai";
 import { assertCanUseAI } from "@/lib/plan_limits";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
-import { clientsDrizzle } from "@db/clients_db";
-import { casesDrizzle } from "@db/cases_db";
-import { tasksDrizzle } from "@db/tasks_db";
-import { calendarDrizzle } from "@db/calendar_db";
-import { meetingsDrizzle } from "@db/meetings_db";
-import { emailsDrizzle } from "@db/emails_db";
-import { outlookDrizzle } from "@db/outlook_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
+import { clientsDrizzle } from "@db/classes/clients_db";
+import { casesDrizzle } from "@db/classes/cases_db";
+import { tasksDrizzle } from "@db/classes/tasks_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
+import { emailsDrizzle } from "@db/classes/emails_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { openAIClient } from "@/api_client/openai_client";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";

@@ -9,8 +9,8 @@ import {
   resubscribe,
   updatePaymentMethod,
 } from "@/lib/workspace/billing";
-import { billingDrizzle } from "@db/billing_db";
-import { userDrizzle } from "@db/user_db";
+import { billingDrizzle } from "@db/classes/billing_db";
+import { userDrizzle } from "@db/classes/user_db";
 import { stripeApiClient } from "@/api_client/stripe_client";
 import { ValidationError } from "@/lib/util/validation";
 

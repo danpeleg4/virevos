@@ -1,4 +1,8 @@
-import type { EmailRecentRow, EmailSearchRow, EmailsDB } from "@db/emails_db";
+import type {
+  EmailRecentRow,
+  EmailSearchRow,
+  EmailsDB,
+} from "@db/classes/emails_db";
 
 export const canonicalEmailRow: EmailSearchRow = {
   outlookId: "outlook-1",

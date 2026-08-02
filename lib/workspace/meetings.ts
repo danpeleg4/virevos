@@ -1,10 +1,10 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { ActionItem, MeetingsDB } from "@db/meetings_db";
+import type { ActionItem, MeetingsDB } from "@db/classes/meetings_db";
 import type { OpenAIClientInterface } from "@/api_client/openai_client";
 import type { LiveKitClientInterface } from "@/api_client/livekit_client";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
-import type { BillingDB } from "@db/billing_db";
-import type { PlanLimitsDB } from "@db/plan_limits_db";
+import type { BillingDB } from "@db/classes/billing_db";
+import type { PlanLimitsDB } from "@db/classes/plan_limits_db";
 import {
   MAX_MESSAGE,
   MAX_SHORT,

@@ -4,7 +4,7 @@ import type {
   ClientWithCaseCountsRow,
   NewClientRow,
   PortalTokenRow,
-} from "@db/clients_db";
+} from "@db/classes/clients_db";
 
 export const canonicalClientRow: ClientRow = {
   id: 1,

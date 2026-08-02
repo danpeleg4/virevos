@@ -1,10 +1,10 @@
 import { POST } from "@/app/api/portal/[token]/document-requests/[itemId]/upload/route";
 import { uploadDocumentRequestItem } from "@/lib/portal/portal_document_uploads";
-import { portalUploadsDrizzle } from "@db/portal_uploads_db";
+import { portalUploadsDrizzle } from "@db/classes/portal_uploads_db";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
 import { openAIClient } from "@/api_client/openai_client";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest } from "next/server";
 
@@ -23,7 +23,7 @@ vi.mock("@/lib/portal/portal_document_uploads", () => ({
   uploadDocumentRequestItem: vi.fn(),
 }));
 
-vi.mock("@db/portal_uploads_db", () => ({
+vi.mock("@db/classes/portal_uploads_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   portalUploadsDrizzle: { __sentinel: "portalUploadsDrizzle" },
 }));
@@ -36,11 +36,11 @@ vi.mock("@/api_client/openai_client", () => ({
   openAIClient: { __sentinel: "openAIClient" },
 }));
 
-vi.mock("@db/plan_limits_db", () => ({
+vi.mock("@db/classes/plan_limits_db", () => ({
   planLimitsDrizzle: { __sentinel: "planLimitsDrizzle" },
 }));
 
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 

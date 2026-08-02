@@ -9,7 +9,7 @@ import {
   getClientPortal,
   updateExistingClient,
 } from "@/lib/workspace/clients";
-import { clientsDrizzle } from "@db/clients_db";
+import { clientsDrizzle } from "@db/classes/clients_db";
 import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -25,7 +25,7 @@ vi.mock("@/lib/workspace/clients", () => ({
   updateExistingClient: vi.fn(),
 }));
 
-vi.mock("@db/clients_db", () => ({
+vi.mock("@db/classes/clients_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   clientsDrizzle: { __sentinel: "clientsDrizzle" },
 }));

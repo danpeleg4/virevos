@@ -8,9 +8,9 @@ import {
   handleRoomFinished,
   handleRoomStarted,
 } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
-import { billingDrizzle } from "@db/billing_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
+import { billingDrizzle } from "@db/classes/billing_db";
 import { liveKitClient } from "@/api_client/livekit_client";
 import { openAIClient } from "@/api_client/openai_client";
 
@@ -27,15 +27,15 @@ vi.mock("@/lib/workspace/meetings", () => ({
   handleRoomStarted: vi.fn(),
 }));
 
-vi.mock("@db/meetings_db", () => ({
+vi.mock("@db/classes/meetings_db", () => ({
   meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
 }));
 
-vi.mock("@db/plan_limits_db", () => ({
+vi.mock("@db/classes/plan_limits_db", () => ({
   planLimitsDrizzle: { __sentinel: "planLimitsDrizzle" },
 }));
 
-vi.mock("@db/billing_db", () => ({
+vi.mock("@db/classes/billing_db", () => ({
   billingDrizzle: { __sentinel: "billingDrizzle" },
 }));
 

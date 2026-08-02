@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { addMeetingToCalendar, getEvents } from "@/lib/workspace/calendar";
-import { calendarDrizzle } from "@db/calendar_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
-import { outlookDrizzle } from "@db/outlook_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { ValidationError } from "@/lib/util/validation";
 

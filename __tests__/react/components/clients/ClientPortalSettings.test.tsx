@@ -243,7 +243,9 @@ describe("ClientPortalSettings — booking toast feedback", () => {
 
   const renderWithBooking = () =>
     renderWithQueryClient(
-      <ClientPortalSettings {...baseProps({ meetingSchedulingEnabled: true })} />
+      <ClientPortalSettings
+        {...baseProps({ meetingSchedulingEnabled: true })}
+      />
     );
 
   afterEach(() => {

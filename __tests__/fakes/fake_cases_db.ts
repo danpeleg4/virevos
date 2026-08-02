@@ -4,7 +4,7 @@ import type {
   CasesDB,
   CaseWithStatsRow,
   NewCaseRow,
-} from "@db/cases_db";
+} from "@db/classes/cases_db";
 import { canonicalClientRow } from "./fake_clients_db";
 
 export const canonicalCaseRow: CaseRow = {

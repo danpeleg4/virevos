@@ -3,7 +3,7 @@ import type {
   EventRow,
   EventWithAttendeesRow,
   NewEventRow,
-} from "@db/calendar_db";
+} from "@db/classes/calendar_db";
 
 export const canonicalEventRow: EventRow = {
   id: "evt-1",

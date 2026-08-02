@@ -1,12 +1,12 @@
 import { GET } from "@/app/api/cron/credit-reset/route";
 import { resetDueAiCredits } from "@/lib/plan_limits";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
 
 vi.mock("@/lib/plan_limits", () => ({
   resetDueAiCredits: vi.fn(),
 }));
 
-vi.mock("@db/plan_limits_db", () => ({
+vi.mock("@db/classes/plan_limits_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   planLimitsDrizzle: { __sentinel: "planLimitsDrizzle" },
 }));

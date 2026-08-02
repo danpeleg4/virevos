@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { DocumentRequestsDB } from "@db/document_requests_db";
+import type { DocumentRequestsDB } from "@db/classes/document_requests_db";
 import type {
   DocumentRequestItem,
   PendingDocRequest,

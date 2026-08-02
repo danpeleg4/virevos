@@ -1,7 +1,7 @@
 import { GET, POST } from "@/app/api/tasks/route";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { addProjectTasksAction, getAllTasks } from "@/lib/workspace/tasks";
-import { tasksDrizzle } from "@db/tasks_db";
+import { tasksDrizzle } from "@db/classes/tasks_db";
 import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -13,7 +13,7 @@ vi.mock("@/lib/workspace/tasks", () => ({
   addProjectTasksAction: vi.fn(),
 }));
 
-vi.mock("@db/tasks_db", () => ({
+vi.mock("@db/classes/tasks_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   tasksDrizzle: { __sentinel: "tasksDrizzle" },
 }));

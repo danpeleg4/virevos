@@ -7,7 +7,7 @@ import {
   updateProductUpdatesPreference,
   updateProfile,
 } from "@/lib/user";
-import { userDrizzle } from "@db/user_db";
+import { userDrizzle } from "@db/classes/user_db";
 import { ValidationError } from "@/lib/util/validation";
 
 vi.mock("@/lib/supabase/auth", () => ({
@@ -21,7 +21,7 @@ vi.mock("@/lib/user", () => ({
   updateProfile: vi.fn(),
 }));
 
-vi.mock("@db/user_db", () => ({
+vi.mock("@db/classes/user_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   userDrizzle: { __sentinel: "userDrizzle" },
 }));

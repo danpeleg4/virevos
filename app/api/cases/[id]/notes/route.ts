@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { addCaseNotes, getCaseNotes } from "@/lib/workspace/cases";
-import { casesDrizzle } from "@db/cases_db";
+import { casesDrizzle } from "@db/classes/cases_db";
 import {
   MAX_NOTES,
   requireString,

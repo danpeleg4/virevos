@@ -4,7 +4,7 @@ import type {
   OutlookEmailWithClientRow,
   OutlookSyncStateRow,
   OutlookTokenRow,
-} from "@db/outlook_db";
+} from "@db/classes/outlook_db";
 
 export const canonicalOutlookToken: OutlookTokenRow = {
   id: 1,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resetDueAiCredits } from "@/lib/plan_limits";
-import { planLimitsDrizzle } from "@db/plan_limits_db";
+import { planLimitsDrizzle } from "@db/classes/plan_limits_db";
 
 export async function GET(req: Request) {
   const authHeader = req.headers

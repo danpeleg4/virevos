@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendPortalChatMessage } from "@/lib/portal/portal_chat";
-import { portalChatDrizzle } from "@db/portal_chat_db";
+import { portalChatDrizzle } from "@db/classes/portal_chat_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function POST(

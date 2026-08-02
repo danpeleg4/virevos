@@ -1,6 +1,6 @@
 import { getCurrentUser } from "./supabase/auth";
 import { createServerSupabase } from "./supabase/server";
-import type { UserDB } from "@db/user_db";
+import type { UserDB } from "@db/classes/user_db";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
 import {
   ValidationError,

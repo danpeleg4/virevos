@@ -1,4 +1,4 @@
-import { db, type DrizzleDB } from "./db";
+import { db, type DrizzleDB } from "../db";
 import {
   clients,
   documentRequestItems,
@@ -7,7 +7,7 @@ import {
   meetingDocumentRequests,
   meetingTranscripts,
   users,
-} from "./schema";
+} from "../schema";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 
 export type EventRow = typeof events.$inferSelect;

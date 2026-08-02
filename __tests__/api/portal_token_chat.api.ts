@@ -1,6 +1,6 @@
 import { POST } from "@/app/api/portal/[token]/chat/route";
 import { sendPortalChatMessage } from "@/lib/portal/portal_chat";
-import { portalChatDrizzle } from "@db/portal_chat_db";
+import { portalChatDrizzle } from "@db/classes/portal_chat_db";
 import { ValidationError } from "@/lib/util/validation";
 import { NextRequest } from "next/server";
 
@@ -19,7 +19,7 @@ vi.mock("@/lib/portal/portal_chat", () => ({
   sendPortalChatMessage: vi.fn(),
 }));
 
-vi.mock("@db/portal_chat_db", () => ({
+vi.mock("@db/classes/portal_chat_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   portalChatDrizzle: { __sentinel: "portalChatDrizzle" },
 }));

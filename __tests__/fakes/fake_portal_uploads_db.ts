@@ -4,7 +4,7 @@ import type {
   DocRequestItemWithRequest,
   PortalTokenRow,
   PortalUploadsDB,
-} from "@db/portal_uploads_db";
+} from "@db/classes/portal_uploads_db";
 
 export const canonicalUploadsPortalToken: PortalTokenRow = {
   id: 3,

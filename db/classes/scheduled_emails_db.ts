@@ -1,5 +1,5 @@
-import { db, type DrizzleDB } from "./db";
-import { clients, outlookEmails, scheduledEmails, users } from "./schema";
+import { db, type DrizzleDB } from "../db";
+import { clients, outlookEmails, scheduledEmails, users } from "../schema";
 import { and, asc, eq, lte, ne } from "drizzle-orm";
 
 export type ScheduledEmailAttachment = {

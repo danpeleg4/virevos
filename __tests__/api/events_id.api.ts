@@ -6,12 +6,12 @@ import {
   updateEvent,
   updateEventDateTime,
 } from "@/lib/workspace/calendar";
-import { calendarDrizzle } from "@db/calendar_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
 import { graphCalendarService } from "@/api_client/ms_graph/graph_calendar_service";
-import { outlookDrizzle } from "@db/outlook_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { startMeeting, markActionItemAdded } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
 
 vi.mock("@/lib/supabase/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock("@/lib/workspace/calendar", () => ({
   updateEventDateTime: vi.fn(),
 }));
 
-vi.mock("@db/calendar_db", () => ({
+vi.mock("@db/classes/calendar_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fns
   calendarDrizzle: { __sentinel: "calendarDrizzle" },
 }));
@@ -33,7 +33,7 @@ vi.mock("@/api_client/ms_graph/graph_calendar_service", () => ({
   graphCalendarService: { __sentinel: "graphCalendarService" },
 }));
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: { __sentinel: "outlookDrizzle" },
 }));
 
@@ -46,7 +46,7 @@ vi.mock("@/lib/workspace/meetings", () => ({
   markActionItemAdded: vi.fn(),
 }));
 
-vi.mock("@db/meetings_db", () => ({
+vi.mock("@db/classes/meetings_db", () => ({
   meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
 }));
 

@@ -5,7 +5,7 @@ import {
   declineDocumentRequest,
   updateDocumentRequest,
 } from "@/lib/document_requests";
-import { documentRequestsDrizzle } from "@db/document_requests_db";
+import { documentRequestsDrizzle } from "@db/classes/document_requests_db";
 import { ValidationError } from "@/lib/util/validation";
 
 export async function PATCH(

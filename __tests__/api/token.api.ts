@@ -1,7 +1,7 @@
 import { POST } from "@/app/api/token/route";
 import { NextRequest } from "next/server";
 import { createMeetingToken } from "@/lib/workspace/meetings";
-import { meetingsDrizzle } from "@db/meetings_db";
+import { meetingsDrizzle } from "@db/classes/meetings_db";
 import { liveKitClient } from "@/api_client/livekit_client";
 
 vi.mock("next/navigation", () => ({
@@ -14,7 +14,7 @@ vi.mock("@/lib/workspace/meetings", () => ({
   createMeetingToken: vi.fn(),
 }));
 
-vi.mock("@db/meetings_db", () => ({
+vi.mock("@db/classes/meetings_db", () => ({
   // sentinel — the route must pass this exact instance into the lib fn
   meetingsDrizzle: { __sentinel: "meetingsDrizzle" },
 }));

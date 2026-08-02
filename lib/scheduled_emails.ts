@@ -1,5 +1,8 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { ScheduledEmailsDB, UserRows } from "@db/scheduled_emails_db";
+import type {
+  ScheduledEmailsDB,
+  UserRows,
+} from "@db/classes/scheduled_emails_db";
 import {
   type EmailAttachmentInput,
   MAX_ATTACHMENT_BYTES,
@@ -19,7 +22,7 @@ import {
 import { sanitizeEmailHtml } from "./util/html_sanitizer";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";
 import { ScheduledEmailServiceInterface } from "@/api_client/ms_graph/scheduled_email_service";
-import type { OutlookDB } from "@db/outlook_db";
+import type { OutlookDB } from "@db/classes/outlook_db";
 import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import type { StorageClientInterface } from "@/api_client/supabase_storage_client";
 import {

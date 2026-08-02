@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/supabase/auth";
-import type { CalendarDB, EventUpdateData } from "@db/calendar_db";
+import type { CalendarDB, EventUpdateData } from "@db/classes/calendar_db";
 import type { GraphCalendarServiceInterface } from "@/api_client/ms_graph/graph_calendar_service";
-import type { OutlookDB } from "@db/outlook_db";
+import type { OutlookDB } from "@db/classes/outlook_db";
 import type { GraphAuthServiceInterface } from "@/api_client/ms_graph/graph_auth_service";
 import { Event } from "@/types/meeting";
 import { getFreshOutlookAccessToken } from "@/lib/outlook/outlook_access";

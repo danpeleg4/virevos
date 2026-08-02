@@ -6,9 +6,9 @@ import {
   setupSubscriptions,
 } from "@/lib/outlook/outlook_sync";
 import { ensureUserRow } from "@/lib/user";
-import { outlookDrizzle } from "@db/outlook_db";
-import { calendarDrizzle } from "@db/calendar_db";
-import { userDrizzle } from "@db/user_db";
+import { outlookDrizzle } from "@db/classes/outlook_db";
+import { calendarDrizzle } from "@db/classes/calendar_db";
+import { userDrizzle } from "@db/classes/user_db";
 import { graphAuthService } from "@/api_client/ms_graph/graph_auth_service";
 import { graphMailService } from "@/api_client/ms_graph/graph_mail_service";
 import { supabaseStorageClient } from "@/api_client/supabase_storage_client";
@@ -31,7 +31,7 @@ vi.mock("@/lib/user", () => ({
   ensureUserRow: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@db/outlook_db", () => ({
+vi.mock("@db/classes/outlook_db", () => ({
   outlookDrizzle: {
     __sentinel: "outlookDrizzle",
     getTokenByUserId: vi.fn(),
@@ -40,11 +40,11 @@ vi.mock("@db/outlook_db", () => ({
   },
 }));
 
-vi.mock("@db/calendar_db", () => ({
+vi.mock("@db/classes/calendar_db", () => ({
   calendarDrizzle: { __sentinel: "calendarDrizzle" },
 }));
 
-vi.mock("@db/user_db", () => ({
+vi.mock("@db/classes/user_db", () => ({
   userDrizzle: { __sentinel: "userDrizzle" },
 }));
 
