@@ -8,7 +8,10 @@ import type {
   PortalData,
   TimeSlot,
 } from "@/types/portal";
-import type { DocumentRequestItem } from "@/types/document_requests";
+import type {
+  DocumentRequestItem,
+  DocumentRequestItemAiVerdict,
+} from "@/types/document_requests";
 import { toast } from "@/app/components/ui/toast-store";
 
 export const portalQueryKey = (token: string) => ["portal", token] as const;
@@ -80,8 +83,6 @@ export function usePortalChat(token: string) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey });
-    },
-    onSettled: async () => {
       toast.success({
         title: "Sent",
         description: "Message sent successfully",
@@ -130,8 +131,6 @@ export function useFileUpload(token: string) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
-    },
-    onSettled: async () => {
       toast.success({
         title: "Uploaded",
         description: "File uploaded successfully",
@@ -151,6 +150,17 @@ interface DocumentAnalysis {
   reasoning: string;
 }
 
+const VERDICT_TOAST: Record<
+  DocumentRequestItemAiVerdict,
+  { title: string; variant: "success" | "warning" | "info" | "destructive" }
+> = {
+  meets: { title: "Looks good", variant: "success" },
+  does_not_meet: { title: "Does not meet requirement", variant: "warning" },
+  needs_review: { title: "Needs review", variant: "info" },
+  skipped: { title: "Uploaded", variant: "success" },
+  error: { title: "Review unavailable", variant: "warning" },
+};
+
 /** Uploads a file against a document-checklist item. */
 export function useDocumentItemUpload(token: string) {
   const queryClient = useQueryClient();
@@ -167,11 +177,12 @@ export function useDocumentItemUpload(token: string) {
         analysis: (res.data.analysis ?? null) as DocumentAnalysis | null,
       };
     },
-    onSettled: () => {
+    onSuccess: ({ analysis }) => {
       void queryClient.invalidateQueries({ queryKey: portalQueryKey(token) });
-      toast.success({
-        title: "Uploaded",
-        description: "File uploaded successfully",
+      const copy = analysis?.verdict ? VERDICT_TOAST[analysis.verdict] : null;
+      toast[copy?.variant ?? "success"]({
+        title: copy?.title ?? "Uploaded",
+        description: analysis?.reasoning || "File uploaded successfully",
       });
     },
     onError: async () => {

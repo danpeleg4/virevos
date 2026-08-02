@@ -3,7 +3,12 @@ import { http, HttpResponse } from "msw";
 import { worker } from "../../../msw/worker";
 import { renderWithQueryClient } from "../../../_helpers/render";
 import { ClientPortalSettings } from "@/app/components/clients/ClientPortalSettings";
-import type { PortalAvailability, PortalRecord } from "@/types/portal";
+import { toast } from "@/app/components/ui/toast-store";
+import type {
+  PortalAvailability,
+  PortalMeetingBooking,
+  PortalRecord,
+} from "@/types/portal";
 
 const availability: PortalAvailability = {
   weeklySchedule: {
@@ -197,5 +202,112 @@ describe("ClientPortalSettings", () => {
     });
     await expect.element(startTime).toHaveTextContent("09:00");
     await expect.element(endTime).toHaveTextContent("17:00");
+  });
+});
+
+describe("ClientPortalSettings — booking toast feedback", () => {
+  const pendingBooking: PortalMeetingBooking & {
+    clientDisplayName: string | null;
+  } = {
+    id: 42,
+    portalId: mockPortal.id,
+    clientId: mockPortal.clientId,
+    userId: "user-1",
+    clientName: "Jane Client",
+    clientEmail: "jane@example.com",
+    dateTime: "2026-07-10T09:00:00.000Z",
+    duration: 30,
+    status: "pending",
+    notes: null,
+    meetingLink: null,
+    eventId: null,
+    createdAt: "2026-07-01T00:00:00.000Z",
+    clientDisplayName: "Jane Client",
+  };
+
+  function usePortalHandlersWithBooking() {
+    worker.use(
+      http.get("/api/clients/:id", ({ request }) => {
+        const type = new URL(request.url).searchParams.get("type");
+        if (type === "portal") return HttpResponse.json({ portal: mockPortal });
+        return HttpResponse.json({ error: "Invalid type" }, { status: 400 });
+      }),
+      http.get("/api/portal", ({ request }) => {
+        const type = new URL(request.url).searchParams.get("type");
+        if (type === "bookings")
+          return HttpResponse.json({ bookings: [pendingBooking] });
+        return HttpResponse.json({ error: "Invalid type" }, { status: 400 });
+      })
+    );
+  }
+
+  const renderWithBooking = () =>
+    renderWithQueryClient(
+      <ClientPortalSettings {...baseProps({ meetingSchedulingEnabled: true })} />
+    );
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows only a success toast when confirming a booking succeeds", async () => {
+    usePortalHandlersWithBooking();
+    worker.use(
+      http.patch("/api/portal-bookings/:id", () => HttpResponse.json({}))
+    );
+    const successSpy = vi.spyOn(toast, "success");
+    const errorSpy = vi.spyOn(toast, "error");
+
+    const screen = await renderWithBooking();
+    await screen.getByRole("button", { name: "Confirm" }).click();
+
+    await vi.waitFor(() => {
+      expect(successSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Confirmed" })
+      );
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows only an error toast — not a false success toast — when confirming fails", async () => {
+    usePortalHandlersWithBooking();
+    worker.use(
+      http.patch("/api/portal-bookings/:id", () =>
+        HttpResponse.json({ error: "db down" }, { status: 500 })
+      )
+    );
+    const successSpy = vi.spyOn(toast, "success");
+    const errorSpy = vi.spyOn(toast, "error");
+
+    const screen = await renderWithBooking();
+    await screen.getByRole("button", { name: "Confirm" }).click();
+
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Failed" })
+      );
+    });
+    expect(successSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows only an error toast — not a false success toast — when cancelling fails", async () => {
+    usePortalHandlersWithBooking();
+    worker.use(
+      http.patch("/api/portal-bookings/:id", () =>
+        HttpResponse.json({ error: "db down" }, { status: 500 })
+      )
+    );
+    const successSpy = vi.spyOn(toast, "success");
+    const errorSpy = vi.spyOn(toast, "error");
+
+    const screen = await renderWithBooking();
+    await screen.getByRole("button", { name: "Cancel" }).click();
+
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Failed" })
+      );
+    });
+    expect(successSpy).not.toHaveBeenCalled();
   });
 });

@@ -138,8 +138,6 @@ export function ClientPortalSettings({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-    },
-    onSettled: async () => {
       toast.success({
         title: "Confirmed",
         description: "Booking confirmed successfully",
@@ -162,8 +160,6 @@ export function ClientPortalSettings({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-    },
-    onSettled: async () => {
       toast.success({
         title: "Cancelled",
         description: "Booking cancelled successfully",

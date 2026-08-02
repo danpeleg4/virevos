@@ -52,6 +52,7 @@ import { AttachmentDialog } from "./AttachmentDialog";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 import { ComposeMessageDialog } from "./ComposeMessageDialog";
 import { PortalChatPane } from "./PortalChatPane";
+import { toast } from "../ui/toast-store";
 import axios from "axios";
 import type {
   InboxMessage,
@@ -284,8 +285,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
     try {
       await axios.post("/api/outlook/sync");
       await refetch();
+      toast.success({ title: "Synced", description: "Inbox synced successfully" });
     } catch (err) {
       console.error("Sync failed:", err);
+      toast.error({ title: "Failed", description: "Inbox sync failed" });
     } finally {
       setIsSyncing(false);
     }
@@ -430,8 +433,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         await queryClient.invalidateQueries({
           queryKey: ["portal-chat-thread", clientId],
         });
+        toast.success({ title: "Deleted", description: "Chat deleted successfully" });
       } catch (err) {
         console.error("Delete failed:", err);
+        toast.error({ title: "Failed", description: "Chat failed to delete" });
       }
       return;
     }
@@ -439,8 +444,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
       await axios.delete(`/api/outlook/messages/${id}`);
       removeMessageFromCache(id);
       if (selectedMessage?.id === id) setSelectedMessage(null);
+      toast.success({ title: "Deleted", description: "Message deleted successfully" });
     } catch (err) {
       console.error("Delete failed:", err);
+      toast.error({ title: "Failed", description: "Message failed to delete" });
     }
   };
 
@@ -468,6 +475,10 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         setReplyText("");
         setPendingAttachments([]);
         setPendingSchedule(null);
+        toast.success({
+          title: "Scheduled",
+          description: "Reply scheduled successfully",
+        });
       } else {
         await axios.post("/api/outlook/messages", {
           to: selectedMessage.fromEmail || selectedMessage.from,
@@ -489,9 +500,11 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
         setReplyText("");
         setPendingAttachments([]);
         await refetch();
+        toast.success({ title: "Sent", description: "Reply sent successfully" });
       }
     } catch (err) {
       console.error("Failed to send reply:", err);
+      toast.error({ title: "Failed", description: "Reply failed to send" });
     } finally {
       setIsSending(false);
     }
@@ -793,7 +806,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" aria-label="More actions">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -915,7 +928,7 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                   </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" aria-label="More actions">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -1295,8 +1308,16 @@ export function UnifiedInbox({ navContainer }: UnifiedInboxProps) {
                       });
                       setShowAIComposer(false);
                       await refetch();
+                      toast.success({
+                        title: "Sent",
+                        description: "Message sent successfully",
+                      });
                     } catch (err) {
                       console.error("Failed to send:", err);
+                      toast.error({
+                        title: "Failed",
+                        description: "Message failed to send",
+                      });
                     } finally {
                       setIsSending(false);
                     }
