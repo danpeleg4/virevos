@@ -62,6 +62,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { timeOptions } from "@/lib/util/utils";
+import { toast } from "@/app/components/ui/toast-store";
 
 interface ScheduledMessagesProps {
   navContainer: HTMLDivElement | null;
@@ -112,6 +113,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+      toast.success({
+        title: "Deleted",
+        description: "Message deleted successfully",
+      });
     },
   });
 
@@ -148,6 +153,10 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+      toast.success({
+        title: "Sent",
+        description: "Message sent successfully",
+      });
     },
   });
 
