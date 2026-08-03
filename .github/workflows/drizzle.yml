@@ -5,7 +5,9 @@ on:
     branches:
       - main
     paths:
-      - "db/**"
+      - "db/db.ts"
+      - "db/schema.ts"
+      - "db/migrations/**"
       - ".github/workflows/drizzle.yml"
 
 jobs:
