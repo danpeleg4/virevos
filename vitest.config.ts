@@ -42,6 +42,20 @@ export default defineConfig({
           setupFiles: ["./vitest.setup.ts"],
         },
       },
+      {
+        extends: true,
+        test: {
+          name: "integration",
+          environment: "node",
+          include: ["__tests__/integration/**/*.test.ts"],
+          globalSetup: ["./__tests__/integration/global-setup.ts"],
+          testTimeout: 30_000,
+          hookTimeout: 60_000,
+          // All files share one Postgres container and resetDb() truncates
+          // the whole database, so files must not run concurrently.
+          fileParallelism: false,
+        },
+      },
     ],
   },
 });

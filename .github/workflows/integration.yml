@@ -1,0 +1,26 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  integration-test:
+    name: Vitest (integration)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration
