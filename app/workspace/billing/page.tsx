@@ -53,6 +53,7 @@ import {
   Sparkles,
   Server,
 } from "lucide-react";
+import { useBilling } from "@/app/workspace/billing/_lib/hooks";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -136,22 +137,10 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
-  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const mutation = useMutation({
-    mutationFn: async (pmId: string) => {
-      await axios.post("/api/billing", {
-        type: "update-payment-method",
-        data: { paymentMethodId: pmId },
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["billing"] });
-      onSuccess();
-    },
-  });
+  const mutation = useBilling({ onSuccess });
 
   const handleSubmit = async () => {
     if (!stripe || !elements) return;
