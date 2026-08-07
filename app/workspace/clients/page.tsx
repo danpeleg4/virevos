@@ -39,11 +39,10 @@ import {
   Target,
   Trash2,
 } from "lucide-react";
-import axios from "axios";
-import { clients, CreateClientInput } from "@/types/clients";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clients } from "@/types/clients";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
+import { useAddClient, useClients, useDeleteClient } from "./_lib/hooks";
 
 const ROW_HEIGHT = 48; // px — matches py-2.5 rows with avatar content
 
@@ -90,7 +89,6 @@ export default function Clients() {
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const [editingClient, setEditingClient] = useState<clients | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   useEffect(() => {
@@ -108,22 +106,8 @@ export default function Clients() {
     return () => window.removeEventListener("resize", calculateItemsPerPage);
   }, []);
 
-  const getClients = useQuery({
-    queryKey: ["clients"],
-    queryFn: async () => {
-      const res = await axios.get("/api/clients");
-      return res.data as clients[];
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async ({ id }: { id: number }) => {
-      await axios.delete(`/api/clients/${id}`);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-  });
+  const getClients = useClients();
+  const deleteMutation = useDeleteClient();
 
   const filteredClients = (
     Array.isArray(getClients.data)
@@ -162,56 +146,15 @@ export default function Clients() {
     setCurrentPage((prev) => Math.min(totalPages, prev + 1));
   };
 
-  const addClient = useMutation({
-    mutationFn: async (newClient: CreateClientInput) => {
-      const res = await axios.post("/api/clients", newClient);
-      return res.data;
-    },
+  const addClient = useAddClient();
 
-    onMutate: async (newClient) => {
-      await queryClient.cancelQueries({ queryKey: ["clients"] });
-
-      const previousClients =
-        queryClient.getQueryData<clients[]>(["clients"]) ?? [];
-
-      const optimisticClient: clients = {
-        id: Date.now(),
-        name: newClient.name,
-        email: newClient.email,
-        phone: newClient.phone,
-        status: "active",
-        activeCases: 0,
-        completedCases: 0,
-        avatar: newClient.name[0],
-        notes: newClient.notes,
-        totalCases: 0,
-      };
-
-      queryClient.setQueryData<clients[]>(
-        ["clients"],
-        [...previousClients, optimisticClient]
-      );
-
-      setDialogOpen(false);
-      setName("");
-      setEmail("");
-      setPhone("");
-      setNotes("");
-
-      return { previousClients };
-    },
-
-    onError: (_err, _newClient, context) => {
-      if (context?.previousClients) {
-        queryClient.setQueryData(["clients"], context.previousClients);
-      }
-      alert("Failed to add client");
-    },
-
-    onSettled: () => {
-      return queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-  });
+  const resetAddClientForm = () => {
+    setDialogOpen(false);
+    setName("");
+    setEmail("");
+    setPhone("");
+    setNotes("");
+  };
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6 h-full">
@@ -382,12 +325,8 @@ export default function Clients() {
                         </Button>
                         <Button
                           onClick={() => {
-                            addClient.mutate({
-                              name,
-                              email,
-                              phone,
-                              notes,
-                            });
+                            addClient.mutate({ name, email, phone, notes });
+                            resetAddClientForm();
                           }}
                         >
                           Add Client
@@ -517,9 +456,7 @@ export default function Clients() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() =>
-                                deleteMutation.mutate({ id: client.id })
-                              }
+                              onClick={() => deleteMutation.mutate(client.id)}
                               className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />

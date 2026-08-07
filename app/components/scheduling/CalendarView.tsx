@@ -20,8 +20,12 @@ import {
 import { EventDetailsDialog } from "./EventDetailsDialog";
 import { BookEventDialog } from "@/app/components/BookEventDialog";
 import type { Event } from "@/types/meeting";
-import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useAddMeeting,
+  useDeleteMeeting,
+  useMeetings,
+  useUpdateMeetingTime,
+} from "./_lib/hooks";
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
 
@@ -57,7 +61,6 @@ interface DragState {
 }
 
 export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
-  const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [showMeetingDetails, setShowMeetingDetails] = useState(false);
@@ -79,74 +82,10 @@ export function CalendarView({ tabNav }: { tabNav?: React.ReactNode }) {
     return () => window.removeEventListener("resize", calculate);
   }, []);
 
-  const meetings = useQuery({
-    queryKey: ["meetings"],
-    queryFn: async () => {
-      const res = await axios.get("/api/events");
-      const data: Event[] = res.data;
-      return data.map((m) => ({ ...m, attendees: m.attendees ?? [] }));
-    },
-  });
-
-  const addMeetingMutation = useMutation({
-    mutationFn: async (meeting: Event) => {
-      const res = await axios.post("/api/events", meeting);
-      return res.data;
-    },
-    onMutate: async (newMeeting) => {
-      await queryClient.cancelQueries({ queryKey: ["meetings"] });
-      const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
-      queryClient.setQueryData<Event[]>(["meetings"], (old = []) => [
-        ...old,
-        {
-          ...newMeeting,
-          id: `temp-${Date.now()}`,
-          attendees: newMeeting.attendees ?? [],
-        },
-      ]);
-      return { previousMeetings };
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
-    onError: (err, _newMeeting, context) => {
-      console.error("Failed to save meeting:", err);
-      if (context?.previousMeetings) {
-        queryClient.setQueryData(["meetings"], context.previousMeetings);
-      }
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
-  });
-
-  const deleteEvent = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await axios.delete(`/api/events/${id}`);
-      return res.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
-  });
-
-  const updateEvent = useMutation({
-    mutationFn: async ({ id, dateTime }: { id: string; dateTime: Date }) => {
-      const res = await axios.patch(`/api/events/${id}`, {
-        type: "reschedule",
-        data: { dateTime: dateTime.toISOString() },
-      });
-      return res.data;
-    },
-    onMutate: async ({ id, dateTime }) => {
-      await queryClient.cancelQueries({ queryKey: ["meetings"] });
-      const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
-      queryClient.setQueryData<Event[]>(["meetings"], (old = []) =>
-        old.map((m) => (m.id === id ? { ...m, dateTime: dateTime } : m))
-      );
-      return { previousMeetings };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousMeetings) {
-        queryClient.setQueryData(["meetings"], context.previousMeetings);
-      }
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
-  });
+  const meetings = useMeetings();
+  const addMeetingMutation = useAddMeeting();
+  const deleteEvent = useDeleteMeeting();
+  const updateEvent = useUpdateMeetingTime();
 
   const handleDragStart = (
     e: React.DragEvent<HTMLDivElement>,

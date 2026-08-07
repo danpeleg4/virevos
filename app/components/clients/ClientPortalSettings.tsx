@@ -1,7 +1,6 @@
 "use client";
 
 import { Dispatch, SetStateAction } from "react";
-import axios from "axios";
 import {
   CardContent,
   CardHeader,
@@ -37,14 +36,14 @@ import {
   Loader2,
 } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type {
-  PortalRecord,
-  PortalAvailability,
-  PortalMeetingBooking,
-} from "@/types/portal";
+import type { PortalAvailability } from "@/types/portal";
 import { timeOptions } from "@/lib/util/utils";
-import { toast } from "@/app/components/ui/toast-store";
+import {
+  useCancelBooking,
+  useClientPortal,
+  useConfirmBooking,
+  usePortalBookings,
+} from "@/app/workspace/clients/_lib/hooks";
 interface ClientPortalSettingsProps {
   clientId: number;
   portalEnabled: boolean;
@@ -99,79 +98,18 @@ export function ClientPortalSettings({
   onAvailability,
   isProvisioningPortal,
 }: ClientPortalSettingsProps) {
-  const queryClient = useQueryClient();
+  const portalQuery = useClientPortal(clientId);
 
-  const portalQuery = useQuery({
-    queryKey: ["clientPortal", clientId],
-    queryFn: async () => {
-      const { data } = await axios.get<{ portal: PortalRecord | null }>(
-        `/api/clients/${clientId}?type=portal`
-      );
-      return data.portal;
-    },
-  });
-
-  const bookingsQuery = useQuery({
-    queryKey: ["portalBookings"],
-    queryFn: async () => {
-      const { data } = await axios.get<{
-        bookings: (PortalMeetingBooking & {
-          clientDisplayName: string | null;
-        })[];
-      }>("/api/portal", {
-        params: { type: "bookings" },
-      });
-      return data.bookings;
-    },
-    enabled: meetingSchedulingEnabled && !!portalQuery.data?.id,
-  });
+  const bookingsQuery = usePortalBookings(
+    meetingSchedulingEnabled && !!portalQuery.data?.id
+  );
 
   const currentPortalId = portalQuery.data?.id;
   const portalBookings =
     bookingsQuery.data?.filter((b) => b.portalId === currentPortalId) ?? [];
 
-  const confirmBooking = useMutation({
-    mutationFn: async (bookingId: number) => {
-      await axios.patch(`/api/portal-bookings/${bookingId}`, {
-        type: "accept",
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success({
-        title: "Confirmed",
-        description: "Booking confirmed successfully",
-      });
-    },
-    onError: async () => {
-      toast.error({
-        title: "Failed",
-        description: "Booking confirmed failed",
-      });
-    },
-  });
-
-  const cancelBooking = useMutation({
-    mutationFn: async (bookingId: number) => {
-      await axios.patch(`/api/portal-bookings/${bookingId}`, {
-        type: "status",
-        data: { status: "cancelled" },
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-      toast.success({
-        title: "Cancelled",
-        description: "Booking cancelled successfully",
-      });
-    },
-    onError: async () => {
-      toast.error({
-        title: "Failed",
-        description: "Booking cancelled failed",
-      });
-    },
-  });
+  const confirmBooking = useConfirmBooking();
+  const cancelBooking = useCancelBooking();
 
   const updateDaySchedule = (
     day: string,

@@ -18,10 +18,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/app/components/ui/select";
-import axios from "axios";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";
+import { useUpdateCase } from "./_lib/hooks";
 
 interface CaseEditDialogProps {
   aCase: Case;
@@ -76,23 +75,7 @@ function CaseEditForm({
   const [priority, setPriority] = useState(aCase.priority);
   const [status, setStatus] = useState(aCase.status);
 
-  const queryClient = useQueryClient();
-
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      await axios.patch(`/api/cases/${aCase.id}`, {
-        name,
-        dueDate: dueDate || undefined,
-        priority,
-        status,
-        clientId: clientId === "none" ? null : Number(clientId),
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["cases"] });
-      onOpenChange(false);
-    },
-  });
+  const updateMutation = useUpdateCase();
 
   return (
     <div className="space-y-4 mt-2">
@@ -179,7 +162,19 @@ function CaseEditForm({
         </Button>
         <Button
           className="cursor-pointer"
-          onClick={() => updateMutation.mutate()}
+          onClick={() =>
+            updateMutation.mutate(
+              {
+                id: aCase.id,
+                name,
+                dueDate: dueDate || undefined,
+                priority,
+                status,
+                clientId: clientId === "none" ? null : Number(clientId),
+              },
+              { onSuccess: () => onOpenChange(false) }
+            )
+          }
           disabled={updateMutation.isPending || !name.trim()}
         >
           {updateMutation.isPending ? "Saving…" : "Save Changes"}

@@ -47,13 +47,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
-import axios from "axios";
 import { TaskDetailModal } from "@/app/components/TaskDetailModal";
 import { task_percentage } from "@/lib/util/task_percentage";
 import AddNewTask from "@/app/components/AddNewTask";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Case, CaseFile, CaseNote } from "@/types/cases";
 import { Task } from "@/types/tasks";
+import {
+  useAddCaseFile,
+  useAddCaseNote,
+  useCase,
+  useCaseFiles,
+  useCaseNotes,
+  useDeleteCase,
+  useDeleteCaseFile,
+} from "@/app/workspace/cases/_lib/hooks";
+import {
+  useCaseTasks,
+  useChangeTaskStatus,
+  useDeleteTask,
+} from "@/app/workspace/tasks/_lib/hooks";
 
 function formatNoteDate(raw: Date | string | null | undefined): string {
   if (!raw) return "";
@@ -121,14 +134,7 @@ export default function CasePage({
   const { id } = use(params);
   const router = useRouter();
 
-  const caseQuery = useQuery({
-    queryKey: ["case", id],
-    queryFn: async () => {
-      const res = await axios.get(`/api/cases/${id}`);
-      return res.data as Case;
-    },
-    enabled: !!id,
-  });
+  const caseQuery = useCase(id);
 
   if (caseQuery.isLoading)
     return (
@@ -174,145 +180,16 @@ export function CaseDetailView({
   const [isDragging, setIsDragging] = useState(false);
   const queryClient = useQueryClient();
 
-  const handleUpload = async (file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      await axios.post(`/api/cases/${aCase.id}/files`, formData);
-      await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
-    } catch (err) {
-      console.error("Upload failed:", err);
-    }
-  };
+  const caseTasksQuery = useCaseTasks(aCase.id);
+  const caseNotesQuery = useCaseNotes(aCase.id);
+  const fileQuery = useCaseFiles(aCase.id);
 
-  const caseTasksQuery = useQuery({
-    queryKey: ["caseTasks", aCase.id],
-    enabled: !!aCase.id,
-    queryFn: async () => {
-      const res = await axios.get(`/api/cases/${aCase.id}/tasks`);
-      return res.data;
-    },
-  });
-
-  const caseNotesQuery = useQuery({
-    queryKey: ["caseNotes", aCase.id],
-    queryFn: async () => {
-      const res = await axios.get(`/api/cases/${aCase.id}/notes`);
-      return res.data;
-    },
-    enabled: !!aCase.id,
-  });
-
-  const fileQuery = useQuery({
-    queryKey: ["files", aCase.id],
-    enabled: !!aCase.id,
-    queryFn: async () => {
-      const res = await axios.get(`/api/files/${aCase.id}?type=get-files`);
-      return res.data;
-    },
-  });
-
-  const addFile = useMutation({
-    mutationFn: handleUpload,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
-    },
-  });
-
-  const addSomeNote = useMutation({
-    mutationFn: async ({
-      newNote,
-      caseId,
-    }: {
-      newNote: string;
-      caseId: number;
-    }) => {
-      await axios.post(`/api/cases/${caseId}/notes`, { note: newNote });
-    },
-    onSuccess: async () => {
-      setNewNote("");
-      setNoteDialogOpen(false);
-      await queryClient.invalidateQueries({
-        queryKey: ["caseNotes", aCase.id],
-      });
-    },
-  });
-
-  const deleteSomeTask = useMutation({
-    mutationFn: async (taskId: number) => {
-      await axios.delete(`/api/tasks/${taskId}`);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["caseTasks", aCase.id],
-      });
-    },
-  });
-
-  const deleteSomeCase = useMutation({
-    mutationFn: async (caseId: number) => {
-      await axios.delete(`/api/cases/${caseId}`);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["cases"] });
-      onBackAction();
-    },
-  });
-
-  const changeTaskStatus = useMutation({
-    mutationFn: async ({
-      status,
-      taskId,
-    }: {
-      status: string;
-      taskId: number;
-    }) => {
-      await axios.patch(`/api/tasks/${taskId}`, { status });
-    },
-
-    onMutate: async ({ status, taskId }) => {
-      await queryClient.cancelQueries({
-        queryKey: ["caseTasks", aCase.id],
-      });
-
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        "caseTasks",
-        aCase.id,
-      ]);
-
-      queryClient.setQueryData<Task[]>(["caseTasks", aCase.id], (old) =>
-        old?.map((task) => (task.id === taskId ? { ...task, status } : task))
-      );
-      return { previousTasks };
-    },
-
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(["caseTasks", aCase.id], context?.previousTasks);
-    },
-  });
-
-  const deleteCaseFileMutation = useMutation({
-    mutationFn: async (fileId: number) => {
-      await axios.delete(`/api/files/${fileId}`);
-    },
-    onMutate: async (fileId) => {
-      await queryClient.cancelQueries({ queryKey: ["files", aCase.id] });
-      const previousFiles = queryClient.getQueryData<CaseFile[]>([
-        "files",
-        aCase.id,
-      ]);
-      queryClient.setQueryData<CaseFile[]>(["files", aCase.id], (old) =>
-        old?.filter((f) => f.id !== fileId)
-      );
-      return { previousFiles };
-    },
-    onError: (_err, _fileId, context) => {
-      queryClient.setQueryData(["files", aCase.id], context?.previousFiles);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["files", aCase.id] });
-    },
-  });
+  const addFile = useAddCaseFile(aCase.id);
+  const addSomeNote = useAddCaseNote(aCase.id);
+  const deleteSomeTask = useDeleteTask(aCase.id);
+  const deleteSomeCase = useDeleteCase();
+  const changeTaskStatus = useChangeTaskStatus(aCase.id);
+  const deleteCaseFileMutation = useDeleteCaseFile(aCase.id);
 
   const onBackFunction = async () => {
     await queryClient.invalidateQueries({ queryKey: ["cases"] });
@@ -458,7 +335,9 @@ export function CaseDetailView({
             className="cursor-pointer shrink-0"
             variant="outline"
             size="sm"
-            onClick={() => deleteSomeCase.mutate(aCase.id)}
+            onClick={() =>
+              deleteSomeCase.mutate(aCase.id, { onSuccess: onBackAction })
+            }
           >
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
@@ -655,7 +534,12 @@ export function CaseDetailView({
                     <Button
                       disabled={addSomeNote.isPending || !newNote.trim()}
                       onClick={() =>
-                        addSomeNote.mutate({ newNote, caseId: aCase.id })
+                        addSomeNote.mutate(newNote, {
+                          onSuccess: () => {
+                            setNewNote("");
+                            setNoteDialogOpen(false);
+                          },
+                        })
                       }
                     >
                       {addSomeNote.isPending ? (

@@ -1,20 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-
-interface DemoRequestFormValues {
-  name: string;
-  email: string;
-  company: string;
-  message: string;
-  honeypot: string;
-}
+import { useSubmitDemoRequest, type DemoRequestFormValues } from "./_lib/hooks";
 
 const EMPTY_FORM: DemoRequestFormValues = {
   name: "",
@@ -37,12 +29,7 @@ function getErrorMessage(err: unknown): string {
 export function ContactForm() {
   const [values, setValues] = useState<DemoRequestFormValues>(EMPTY_FORM);
 
-  const mutation = useMutation({
-    mutationFn: async (payload: DemoRequestFormValues) => {
-      const res = await axios.post("/api/demo-requests", payload);
-      return res.data as { success: true; id: number };
-    },
-  });
+  const mutation = useSubmitDemoRequest();
 
   if (mutation.isSuccess) {
     return (

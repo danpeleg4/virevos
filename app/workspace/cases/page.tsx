@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { CaseList } from "./CaseList";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { Case } from "@/types/cases";
 import { useRouter } from "next/navigation";
+import { useCases, useUpdateCaseStatus } from "./_lib/hooks";
 
 export default function CasesPage() {
   const [search] = useState("");
@@ -13,28 +13,8 @@ export default function CasesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const casesQuery = useQuery({
-    queryKey: ["cases"],
-    queryFn: async () => {
-      const res = await axios.get(`/api/cases/get-cases`);
-      return res.data;
-    },
-  });
-
-  const completedMutation = useMutation({
-    mutationFn: async ({
-      aCase,
-      newStatus,
-    }: {
-      aCase: Case;
-      newStatus: string;
-    }) => {
-      await axios.patch(`/api/cases/${aCase.id}`, { status: newStatus });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["cases"] });
-    },
-  });
+  const casesQuery = useCases();
+  const completedMutation = useUpdateCaseStatus();
 
   // Update completed cases once data loads
   useEffect(() => {

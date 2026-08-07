@@ -25,12 +25,11 @@ import {
   Target,
 } from "lucide-react";
 import { TaskDetailModal } from "../../components/TaskDetailModal";
-import axios from "axios";
 import AddNewTask from "@/app/components/AddNewTask";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parseDateOnlyString } from "@/lib/util/date_utils";
 import { Task } from "@/types/tasks";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
+import { useAllTasks, useChangeTaskStatus } from "./_lib/hooks";
 
 const STATUS_TABS = ["all", "in-progress", "completed"] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
@@ -91,43 +90,10 @@ export default function Tasks() {
   const [selectedTask, setSelectedTask] = useState<Task>();
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const queryClient = useQueryClient();
   const { itemsPerPage, tableRef } = useCalcWindow();
 
-  const getTasks = useQuery({
-    queryKey: ["allTasks"],
-    queryFn: async () => {
-      const res = await axios.get(`/api/tasks`);
-      if (!Array.isArray(res.data)) return [];
-      return res.data.map((t: { tasks: Task; caseName: string }) => ({
-        ...t.tasks,
-        caseName: t.caseName || "No Case",
-      }));
-    },
-  });
-
-  const changeTaskStatus = useMutation({
-    mutationFn: async ({
-      status,
-      taskId,
-    }: {
-      status: string;
-      taskId: number;
-    }) => {
-      await axios.patch(`/api/tasks/${taskId}`, { status });
-    },
-    onMutate: async ({ status, taskId }) => {
-      await queryClient.cancelQueries({ queryKey: ["allTasks"] });
-      const previousTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-      queryClient.setQueryData<Task[]>(["allTasks"], (old) =>
-        old?.map((task) => (task.id === taskId ? { ...task, status } : task))
-      );
-      return { previousTasks };
-    },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(["allTasks"], context?.previousTasks);
-    },
-  });
+  const getTasks = useAllTasks();
+  const changeTaskStatus = useChangeTaskStatus();
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);

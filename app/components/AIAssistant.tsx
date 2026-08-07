@@ -33,9 +33,18 @@ import {
   CalendarClock,
   type LucideIcon,
 } from "lucide-react";
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { clients } from "@/types/clients";
+import { useClients } from "@/app/workspace/clients/_lib/hooks";
+import {
+  useAcceptPortalBooking,
+  useApproveDocumentRequest,
+  useDeclineDocumentRequest,
+  useDenyPortalBooking,
+  usePendingDocumentRequests,
+  useUpdateDocumentRequest,
+} from "./_lib/ai_assistant_hooks";
 import type {
   AIMessage,
   AIActionTone,
@@ -139,49 +148,13 @@ export function AIAssistant({
   const previousResponseIdRef = useRef<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const acceptMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
-      await axios.patch(`/api/portal-bookings/${bookingId}`, {
-        type: "accept",
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-    },
-  });
+  const acceptMutation = useAcceptPortalBooking();
+  const denyMutation = useDenyPortalBooking();
 
-  const denyMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
-      await axios.patch(`/api/portal-bookings/${bookingId}`, {
-        type: "status",
-        data: { status: "cancelled" },
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-    },
-  });
-
-  const pendingDocRequestsQuery = useQuery({
-    queryKey: ["documentRequests", "pending"],
-    queryFn: async () => {
-      const res = await axios.get<PendingDocRequest[]>(
-        "/api/document-requests/pending"
-      );
-      return res.data;
-    },
-    enabled: isOpen,
-  });
+  const pendingDocRequestsQuery = usePendingDocumentRequests(isOpen);
   const pendingDocRequests = pendingDocRequestsQuery.data ?? [];
 
-  const clientsQuery = useQuery({
-    queryKey: ["clients"],
-    queryFn: async () => {
-      const res = await axios.get<clients[]>("/api/clients");
-      return res.data;
-    },
-    enabled: isOpen && pendingDocRequests.length > 0,
-  });
+  const clientsQuery = useClients(isOpen && pendingDocRequests.length > 0);
   const clientsList = clientsQuery.data ?? [];
 
   const scrollToBottom = () => {
@@ -869,7 +842,6 @@ function DocRequestCard({
   request: PendingDocRequest;
   clients: clients[];
 }) {
-  const queryClient = useQueryClient();
   const [clientId, setClientId] = useState<number | null>(request.clientId);
   const [draftItems, setDraftItems] = useState<DraftItem[]>(() =>
     request.items.map((it) => ({
@@ -882,54 +854,17 @@ function DocRequestCard({
   );
   const [dirty, setDirty] = useState(false);
 
-  const updateMutation = useMutation({
-    mutationFn: async (patch: {
-      clientId?: number | null;
-      items?: DocumentRequestItemInput[];
-    }) => {
-      await axios.patch(`/api/document-requests/${request.id}`, {
-        type: "update",
-        data: patch,
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["documentRequests", "pending"],
-      });
-      setDirty(false);
-    },
-  });
-
-  const approveMutation = useMutation({
-    mutationFn: async () => {
-      await axios.patch(`/api/document-requests/${request.id}`, {
-        type: "approve",
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["documentRequests", "pending"],
-      });
-    },
-  });
-
-  const declineMutation = useMutation({
-    mutationFn: async () => {
-      await axios.patch(`/api/document-requests/${request.id}`, {
-        type: "decline",
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["documentRequests", "pending"],
-      });
-    },
-  });
+  const updateMutation = useUpdateDocumentRequest(request.id);
+  const approveMutation = useApproveDocumentRequest(request.id);
+  const declineMutation = useDeclineDocumentRequest(request.id);
 
   const handleClientChange = (value: string) => {
     const next = value === "__none__" ? null : parseInt(value, 10);
     setClientId(next);
-    updateMutation.mutate({ clientId: next });
+    updateMutation.mutate(
+      { clientId: next },
+      { onSuccess: () => setDirty(false) }
+    );
   };
 
   const handleAddItem = () => {
@@ -972,7 +907,10 @@ function DocRequestCard({
         description: it.description?.toString().trim() || null,
         sortOrder: idx,
       }));
-    updateMutation.mutate({ items: cleaned });
+    updateMutation.mutate(
+      { items: cleaned },
+      { onSuccess: () => setDirty(false) }
+    );
   };
 
   const eventDate = new Date(request.eventDateTime);

@@ -21,9 +21,7 @@ import {
 import { Plus } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
-import axios from "axios";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Case } from "@/types/cases";
+import { useCreateCase } from "./_lib/hooks";
 
 export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -32,16 +30,7 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
 
-  const queryClient = useQueryClient();
-
-  const createNewCase = useMutation({
-    mutationFn: async (aCase: Case) => {
-      await axios.post("/api/cases", aCase);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["cases"] });
-    },
-  });
+  const createNewCase = useCreateCase();
 
   const submit = async () => {
     const trimmedName = caseName.trim();

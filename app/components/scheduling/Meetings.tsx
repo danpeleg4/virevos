@@ -46,11 +46,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Event } from "@/types/meeting";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
+import { useCreateMeeting, useDeleteMeeting, useMeetings } from "./_lib/hooks";
 
 function StatusBadge({ status }: { status: string | undefined }) {
   if (status === "active") {
@@ -99,51 +99,12 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
   const [meetingToDelete, setMeetingToDelete] = useState<Event | null>(null);
   const [page, setPage] = useState(1);
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const { itemsPerPage, tableRef } = useCalcWindow();
 
-  const meetings = useQuery({
-    queryKey: ["meetings"],
-    queryFn: async () => {
-      const res = await axios.get("/api/events");
-      const data: Event[] = res.data;
-      return data;
-    },
-  });
-
-  const createMeeting = useMutation({
-    mutationFn: async () => {
-      const res = await axios.post("/api/meetings", { title: meetingName });
-      return res.data;
-    },
-    onSuccess: (data) => {
-      if (!data?.id || !data?.link) return;
-      setMeetingLink(data.link);
-      setCreatedMeetingId(data.id);
-    },
-  });
-
-  const deleteMeeting = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await axios.delete(`/api/events/${id}`);
-      return res.data;
-    },
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["meetings"] });
-      const previousMeetings = queryClient.getQueryData<Event[]>(["meetings"]);
-      queryClient.setQueryData<Event[]>(["meetings"], (old = []) =>
-        old.filter((m) => m.id !== id)
-      );
-      return { previousMeetings };
-    },
-    onError: (_err, _id, context) => {
-      if (context?.previousMeetings) {
-        queryClient.setQueryData(["meetings"], context.previousMeetings);
-      }
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
-  });
+  const meetings = useMeetings();
+  const createMeeting = useCreateMeeting();
+  const deleteMeeting = useDeleteMeeting();
 
   const handleCopyLink = () => {
     void navigator.clipboard.writeText(meetingLink).catch(() => {});
@@ -592,7 +553,15 @@ export function Meetings({ tabNav }: { tabNav?: React.ReactNode }) {
             {!meetingLink ? (
               <Button
                 className="w-full"
-                onClick={() => createMeeting.mutate()}
+                onClick={() =>
+                  createMeeting.mutate(meetingName, {
+                    onSuccess: (data) => {
+                      if (!data?.id || !data?.link) return;
+                      setMeetingLink(data.link);
+                      setCreatedMeetingId(data.id);
+                    },
+                  })
+                }
                 disabled={!meetingName || createMeeting.isPending}
               >
                 Start Meeting
