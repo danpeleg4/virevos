@@ -40,6 +40,10 @@ export default defineConfig({
           },
           include: ["__tests__/react/**/*.tsx"],
           setupFiles: ["./vitest.setup.ts"],
+          // All files share one headless Chromium instance/MSW worker, so
+          // running many files concurrently starves the event loop and can
+          // silently drop user-event interactions under load.
+          fileParallelism: false,
         },
       },
       {

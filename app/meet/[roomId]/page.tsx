@@ -33,8 +33,8 @@ import {
   LocalTrackPublication,
 } from "livekit-client";
 import axios from "axios";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatDateOnly, formatTimeOnly } from "@/lib/util/date_utils";
+import { useMeetingInfo, useStartMeeting } from "./_lib/hooks";
 
 export default function InMeetingView() {
   const params = useParams();
@@ -51,20 +51,8 @@ export default function InMeetingView() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [meetingTitle, setMeetingTitle] = useState("");
 
-  const meetingInfo = useQuery({
-    queryKey: ["meeting", meetingId],
-    queryFn: async () => {
-      const res = await axios.get(`/api/events/${meetingId}`);
-      return res.data;
-    },
-  });
-
-  const startMeetingMutation = useMutation({
-    mutationFn: async () => {
-      await axios.patch(`/api/events/${meetingId}`, { type: "start" });
-    },
-    onSuccess: () => setHasStarted(true),
-  });
+  const meetingInfo = useMeetingInfo(meetingId);
+  const startMeetingMutation = useStartMeeting(meetingId);
 
   const joinRoom = async () => {
     const res = await axios.post(`/api/token`, {
@@ -192,7 +180,11 @@ export default function InMeetingView() {
             {isHost ? (
               <button
                 className="w-full h-9 px-4 rounded-md bg-indigo-600 text-white text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                onClick={() => startMeetingMutation.mutate()}
+                onClick={() =>
+                  startMeetingMutation.mutate(undefined, {
+                    onSuccess: () => setHasStarted(true),
+                  })
+                }
                 disabled={startMeetingMutation.isPending}
               >
                 {startMeetingMutation.isPending

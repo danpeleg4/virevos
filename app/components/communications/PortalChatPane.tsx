@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import type { PortalChatMessage } from "@/types/portal";
+import {
+  portalChatConversationsQueryKey,
+  usePortalChatThread,
+  useSendPortalChatMessage,
+} from "./_lib/hooks";
 
 interface PortalChatPaneProps {
   clientId: number;
@@ -24,65 +27,9 @@ export function PortalChatPane({
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
-  const queryKey = ["portal-chat-thread", clientId] as const;
-
-  const { data, isLoading } = useQuery<{
-    portalId: number;
-    messages: PortalChatMessage[];
-  }>({
-    queryKey,
-    queryFn: async () => {
-      const res = await axios.get(`/api/portal-chat/${clientId}`);
-      return res.data;
-    },
-    refetchInterval: 5000,
-  });
-
+  const { data, isLoading } = usePortalChatThread(clientId);
   const messages = data?.messages ?? [];
-
-  const send = useMutation({
-    mutationFn: async (body: string) => {
-      const res = await axios.post(`/api/portal-chat/${clientId}`, {
-        message: body,
-      });
-      return res.data as PortalChatMessage;
-    },
-    onMutate: async (body) => {
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<{
-        portalId: number;
-        messages: PortalChatMessage[];
-      }>(queryKey);
-      const optimistic: PortalChatMessage = {
-        id: -Date.now(),
-        senderType: "agency",
-        body,
-        readAt: null,
-        createdAt: new Date().toISOString(),
-      };
-      queryClient.setQueryData<{
-        portalId: number;
-        messages: PortalChatMessage[];
-      }>(queryKey, (old) =>
-        old
-          ? { ...old, messages: [...old.messages, optimistic] }
-          : { portalId: 0, messages: [optimistic] }
-      );
-      return { previous };
-    },
-    onError: (_err, _body, ctx) => {
-      if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous);
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey }),
-        // Refresh the conversation list so unread/last-message updates
-        queryClient.invalidateQueries({
-          queryKey: ["portal-chat-conversations"],
-        }),
-      ]);
-    },
-  });
+  const send = useSendPortalChatMessage(clientId);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,7 +40,7 @@ export function PortalChatPane({
   useEffect(() => {
     if (data) {
       void queryClient.invalidateQueries({
-        queryKey: ["portal-chat-conversations"],
+        queryKey: portalChatConversationsQueryKey,
       });
     }
   }, [data, queryClient]);

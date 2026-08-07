@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -53,7 +51,16 @@ import {
   Sparkles,
   Server,
 } from "lucide-react";
-import { useBilling } from "@/app/workspace/billing/_lib/hooks";
+import {
+  useBilling,
+  useBillingOverview,
+  useBillingSetupIntent,
+  useCancelSubscription,
+  useChangePlan,
+  useResubscribe,
+} from "@/app/workspace/billing/_lib/hooks";
+import { useClients } from "@/app/workspace/clients/_lib/hooks";
+import { useCases } from "@/app/workspace/cases/_lib/hooks";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -198,64 +205,19 @@ function UpdatePaymentForm({ onSuccess }: { onSuccess: () => void }) {
 }
 
 export default function Billing() {
-  const queryClient = useQueryClient();
   const [changePlanOpen, setChangePlanOpen] = useState(false);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
   const [confirmPlan, setConfirmPlan] = useState<PlanId | null>(null);
 
-  const { data: billing, isLoading } = useQuery<BillingOverview>({
-    queryKey: ["billing"],
-    queryFn: () => axios.get("/api/billing").then((r) => r.data),
-  });
+  const { data: billing, isLoading } = useBillingOverview();
+  const { data: clientList } = useClients();
+  const { data: casesData } = useCases();
+  const projectList = casesData?.cases;
+  const { data: setupSecret } = useBillingSetupIntent(paymentMethodOpen);
 
-  const { data: clientList } = useQuery<{ id: number }[]>({
-    queryKey: ["clients"],
-    queryFn: () => axios.get("/api/clients").then((r) => r.data),
-  });
-
-  const { data: projectList } = useQuery<{ id: number }[]>({
-    queryKey: ["cases"],
-    queryFn: () => axios.get("/api/cases/get-cases").then((r) => r.data.cases),
-  });
-
-  const { data: setupSecret } = useQuery<string>({
-    queryKey: ["setup-intent-billing"],
-    queryFn: () =>
-      axios.get("/api/billing/setup-intent").then((r) => r.data.clientSecret),
-    enabled: paymentMethodOpen,
-    staleTime: Infinity,
-  });
-
-  const changePlanMutation = useMutation({
-    mutationFn: async (planId: PlanId) => {
-      await axios.post("/api/billing", {
-        type: "change-plan",
-        data: { planId },
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["billing"] });
-      setChangePlanOpen(false);
-    },
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: async () => {
-      await axios.post("/api/billing", { type: "cancel" });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["billing"] });
-    },
-  });
-
-  const resubscribeMutation = useMutation({
-    mutationFn: async () => {
-      await axios.post("/api/billing", { type: "resubscribe" });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["billing"] });
-    },
-  });
+  const changePlanMutation = useChangePlan();
+  const cancelMutation = useCancelSubscription();
+  const resubscribeMutation = useResubscribe();
 
   const currentPlan = billing?.subscription?.plan ?? "starter";
   const planInfo = PLAN_DETAILS[currentPlan] ?? PLAN_DETAILS.starter;
@@ -483,7 +445,9 @@ export default function Billing() {
                   <AlertDialogAction
                     onClick={() => {
                       if (confirmPlan) {
-                        changePlanMutation.mutate(confirmPlan);
+                        changePlanMutation.mutate(confirmPlan, {
+                          onSuccess: () => setChangePlanOpen(false),
+                        });
                         setConfirmPlan(null);
                       }
                     }}

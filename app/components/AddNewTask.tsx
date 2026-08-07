@@ -22,10 +22,10 @@ import {
 } from "@/app/components/ui/select";
 import { Separator } from "@/app/components/ui/separator";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
+import { useCases } from "@/app/workspace/cases/_lib/hooks";
+import { useAddTask } from "@/app/workspace/tasks/_lib/hooks";
 
 export default function AddNewTask({ caseId }: { caseId?: number }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -37,57 +37,8 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
   const [priority, setPriority] = useState("");
   const [dueDate, setDueDate] = useState("");
 
-  const queryClient = useQueryClient();
-
-  const casesQuery = useQuery<Case[]>({
-    queryKey: ["case"],
-    queryFn: async () => {
-      const res = await axios.get("/api/cases/get-cases");
-      return res.data.cases;
-    },
-  });
-
-  const addTask = useMutation({
-    mutationFn: async (task: Task) => {
-      await axios.post("/api/tasks", task);
-    },
-    onMutate: async (newTask: Task) => {
-      await queryClient.cancelQueries({
-        queryKey: ["caseTasks", caseId],
-      });
-      await queryClient.cancelQueries({ queryKey: ["allTasks"] });
-
-      const prevCaseTasks = queryClient.getQueryData<Task[]>([
-        "caseTasks",
-        caseId,
-      ]);
-      const prevAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-
-      const optimisticTask = { ...newTask };
-
-      queryClient.setQueryData(["caseTasks", caseId], (old: Task[] = []) => [
-        ...old,
-        optimisticTask,
-      ]);
-
-      queryClient.setQueryData(["allTasks"], (old: Task[] = []) => [
-        ...old,
-        optimisticTask,
-      ]);
-
-      return { prevCaseTasks, prevAllTasks };
-    },
-    onError: (_err, _newTask, context) => {
-      queryClient.setQueryData(["caseTasks", caseId], context?.prevCaseTasks);
-      queryClient.setQueryData(["allTasks"], context?.prevAllTasks);
-    },
-    onSettled: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["caseTasks", caseId] }),
-        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
-      ]);
-    },
-  });
+  const casesQuery = useCases();
+  const addTask = useAddTask(caseId);
 
   const resetForm = () => {
     setTitle("");
@@ -106,7 +57,8 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
       description,
       priority,
       caseName:
-        casesQuery?.data?.find((p) => p.id === selectedCaseId)?.name || "",
+        casesQuery?.data?.cases.find((p) => p.id === selectedCaseId)?.name ||
+        "",
       dueDate: dueDate || null,
       status: "in-progress",
       completed: false,
@@ -181,7 +133,7 @@ export default function AddNewTask({ caseId }: { caseId?: number }) {
                   <SelectValue placeholder="Select a case" />
                 </SelectTrigger>
                 <SelectContent>
-                  {casesQuery?.data?.map((aCase: Case) => (
+                  {casesQuery?.data?.cases.map((aCase: Case) => (
                     <SelectItem value={String(aCase.id)} key={aCase.id}>
                       {aCase.name}
                     </SelectItem>

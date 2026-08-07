@@ -15,9 +15,13 @@ import {
 } from "./ui/select";
 import { Separator } from "./ui/separator";
 import { Calendar, Flag, Trash2, AlignLeft, Clock } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import { Task, TaskDetailModalProps } from "@/types/tasks";
+import { TaskDetailModalProps } from "@/types/tasks";
+import {
+  useChangeTaskDueDate,
+  useChangeTaskPriority,
+  useChangeTaskStatus,
+  useDeleteTask,
+} from "@/app/workspace/tasks/_lib/hooks";
 
 const STATUS_CONFIG = {
   completed: {
@@ -46,8 +50,6 @@ export function TaskDetailModal({
   const [priority, setPriority] = useState(task?.priority);
   const [dueDate, setDueDate] = useState<string>("");
 
-  const queryKey = ["caseTasks", caseId];
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDueDate(task?.dueDate ? task.dueDate.slice(0, 10) : "");
@@ -63,154 +65,10 @@ export function TaskDetailModal({
     setPriority(task?.priority);
   }, [task?.id, task?.priority]);
 
-  const queryClient = useQueryClient();
-
-  const deleteSomeTask = useMutation({
-    mutationFn: async () => {
-      await axios.delete(`/api/tasks/${task.id}`);
-    },
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey });
-      await queryClient.cancelQueries({ queryKey: ["allTasks"] });
-
-      const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
-      const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-
-      queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
-        old.filter((t) => t.id !== task.id)
-      );
-      queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
-        old.filter((t) => t.id !== task.id)
-      );
-
-      return { previousProjectTasks, previousAllTasks };
-    },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(queryKey, context?.previousProjectTasks);
-      queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
-    },
-    onSettled: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey }),
-        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
-      ]);
-      onOpenChange(false);
-    },
-  });
-
-  const changeTaskStatus = useMutation({
-    mutationFn: async ({
-      status,
-      taskId,
-    }: {
-      status: string;
-      taskId: number;
-    }) => {
-      await axios.patch(`/api/tasks/${taskId}`, { status });
-    },
-    onMutate: async ({ status, taskId }) => {
-      await queryClient.cancelQueries({ queryKey });
-      await queryClient.cancelQueries({ queryKey: ["allTasks"] });
-
-      const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
-      const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-
-      queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
-        old.map((t) => (t.id === taskId ? { ...t, status } : t))
-      );
-      queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
-        old.map((t) => (t.id === taskId ? { ...t, status } : t))
-      );
-
-      return { previousProjectTasks, previousAllTasks };
-    },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(queryKey, context?.previousProjectTasks);
-      queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
-    },
-    onSettled: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey }),
-        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
-      ]);
-    },
-  });
-
-  const changeThePriorityStatus = useMutation({
-    mutationFn: async ({
-      priority,
-      taskId,
-    }: {
-      priority: string;
-      taskId: number;
-    }) => {
-      await axios.patch(`/api/tasks/${taskId}`, { priority });
-    },
-    onMutate: async ({ priority, taskId }) => {
-      await queryClient.cancelQueries({ queryKey });
-      await queryClient.cancelQueries({ queryKey: ["allTasks"] });
-
-      const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
-      const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-
-      queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
-        old.map((t) => (t.id === taskId ? { ...t, priority } : t))
-      );
-      queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
-        old.map((t) => (t.id === taskId ? { ...t, priority } : t))
-      );
-
-      return { previousProjectTasks, previousAllTasks };
-    },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(queryKey, context?.previousProjectTasks);
-      queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
-    },
-    onSettled: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey }),
-        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
-      ]);
-    },
-  });
-
-  const changeDueDate = useMutation({
-    mutationFn: async ({
-      taskId,
-      dueDate,
-    }: {
-      taskId: number;
-      dueDate: string | null;
-    }) => {
-      await axios.patch(`/api/tasks/${taskId}`, { dueDate });
-    },
-    onMutate: async ({ taskId, dueDate }) => {
-      await queryClient.cancelQueries({ queryKey });
-      await queryClient.cancelQueries({ queryKey: ["allTasks"] });
-
-      const previousProjectTasks = queryClient.getQueryData<Task[]>(queryKey);
-      const previousAllTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-
-      queryClient.setQueryData<Task[]>(queryKey, (old = []) =>
-        old.map((t) => (t.id === taskId ? { ...t, dueDate } : t))
-      );
-      queryClient.setQueryData<Task[]>(["allTasks"], (old = []) =>
-        old.map((t) => (t.id === taskId ? { ...t, dueDate } : t))
-      );
-
-      return { previousProjectTasks, previousAllTasks };
-    },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(queryKey, context?.previousProjectTasks);
-      queryClient.setQueryData(["allTasks"], context?.previousAllTasks);
-    },
-    onSettled: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey }),
-        queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
-      ]);
-    },
-  });
+  const deleteSomeTask = useDeleteTask(caseId);
+  const changeTaskStatus = useChangeTaskStatus(caseId);
+  const changeThePriorityStatus = useChangeTaskPriority(caseId);
+  const changeDueDate = useChangeTaskDueDate(caseId);
 
   function timeAgo(date?: Date | string | null) {
     if (!date) return "";
@@ -275,7 +133,11 @@ export function TaskDetailModal({
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground hover:text-red-500 hover:bg-red-50 cursor-pointer shrink-0"
-                onClick={() => deleteSomeTask.mutate()}
+                onClick={() =>
+                  deleteSomeTask.mutate(task.id, {
+                    onSettled: () => onOpenChange(false),
+                  })
+                }
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

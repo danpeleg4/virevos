@@ -19,9 +19,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/app/components/ui/select";
-import axios from "axios";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { clients, UpdateClientInput } from "@/types/clients";
+import type { clients } from "@/types/clients";
+import { useUpdateClient } from "./_lib/hooks";
 
 type ClientStatus = "active" | "inactive";
 
@@ -79,48 +78,7 @@ function ClientEditForm({
   );
   const [notes, setNotes] = useState(aClient.notes ?? "");
 
-  const queryClient = useQueryClient();
-
-  const updateMutation = useMutation({
-    mutationFn: async (input: UpdateClientInput) => {
-      await axios.patch(`/api/clients/${input.id}`, input);
-    },
-    onMutate: async (input) => {
-      await queryClient.cancelQueries({ queryKey: ["clients"] });
-
-      const previousClients =
-        queryClient.getQueryData<clients[]>(["clients"]) ?? [];
-
-      queryClient.setQueryData<clients[]>(
-        ["clients"],
-        previousClients.map((c) =>
-          c.id === input.id
-            ? {
-                ...c,
-                name: input.name ?? c.name,
-                email: input.email ?? c.email,
-                phone: input.phone ?? c.phone,
-                status: input.status ?? c.status,
-                notes: input.notes ?? c.notes,
-              }
-            : c
-        )
-      );
-
-      onOpenChange(false);
-
-      return { previousClients };
-    },
-    onError: (_err, _input, context) => {
-      if (context?.previousClients) {
-        queryClient.setQueryData(["clients"], context.previousClients);
-      }
-      alert("Failed to update client");
-    },
-    onSettled: () => {
-      return queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-  });
+  const updateMutation = useUpdateClient();
 
   return (
     <div className="space-y-4 mt-2">
@@ -192,7 +150,7 @@ function ClientEditForm({
         </Button>
         <Button
           className="cursor-pointer"
-          onClick={() =>
+          onClick={() => {
             updateMutation.mutate({
               id: aClient.id,
               name,
@@ -200,8 +158,9 @@ function ClientEditForm({
               phone,
               status,
               notes,
-            })
-          }
+            });
+            onOpenChange(false);
+          }}
           disabled={updateMutation.isPending || !name.trim()}
         >
           {updateMutation.isPending ? "Saving…" : "Save Changes"}

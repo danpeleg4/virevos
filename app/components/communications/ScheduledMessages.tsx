@@ -39,12 +39,8 @@ import {
   Paperclip,
   X,
 } from "lucide-react";
-import axios from "axios";
-import type { ScheduledEmail } from "@/types/communications";
-import { type ScheduleEmailInput } from "@/lib/scheduled_emails";
 import { AttachmentDialog, type AttachedFile } from "./AttachmentDialog";
 import { Badge } from "../ui/badge";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCalcWindow } from "@/app/hooks/useCalcWindow";
 import { Label } from "@/app/components/ui/label";
 import {
@@ -63,6 +59,13 @@ import {
 } from "@/app/components/ui/select";
 import { timeOptions } from "@/lib/util/utils";
 import { toast } from "@/app/components/ui/toast-store";
+import {
+  useDeleteScheduledMessage,
+  useEmailConnectionStatus,
+  useScheduleMessage,
+  useScheduledMessages,
+  useSendScheduledMessageNow,
+} from "./_lib/hooks";
 
 interface ScheduledMessagesProps {
   navContainer: HTMLDivElement | null;
@@ -87,152 +90,11 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
   const [formDate, setFormDate] = useState<Date | undefined>(undefined);
   const [formTime, setFormTime] = useState("09:00");
 
-  const queryClient = useQueryClient();
-
-  const { data: connected } = useQuery({
-    queryKey: ["email-connection"],
-    queryFn: async () => {
-      const res = await axios.get("/api/integrations/outlook");
-      return res.data.connected;
-    },
-  });
-
-  const { data: messages, isPending: isPending } = useQuery<ScheduledEmail[]>({
-    queryKey: ["scheduled-emails"],
-    queryFn: async () => {
-      const res = await axios.get("/api/scheduled-emails");
-      return res.data.scheduledEmails || [];
-    },
-  });
-
-  const deleteScheduledEmailMessage = useMutation({
-    mutationFn: async (id: number) => {
-      await axios.delete(`/api/scheduled-emails`, {
-        params: { id: id },
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
-      toast.success({
-        title: "Deleted",
-        description: "Message deleted successfully",
-      });
-    },
-    onError: async () => {
-      toast.error({
-        title: "Failed",
-        description: "Message failed to delete",
-      });
-    },
-  });
-
-  const sendNowMutation = useMutation({
-    mutationFn: async (msg: ScheduledEmail) => {
-      await axios.post("/api/scheduled-emails", {
-        data: msg.id,
-        type: "send-now",
-      });
-    },
-    onMutate: async (msg) => {
-      await queryClient.cancelQueries({ queryKey: ["scheduled-emails"] });
-      const previous = queryClient.getQueryData<ScheduledEmail[]>([
-        "scheduled-emails",
-      ]);
-      queryClient.setQueryData<ScheduledEmail[]>(["scheduled-emails"], (old) =>
-        old?.map((m) =>
-          m.id === msg.id
-            ? {
-                ...m,
-                status: "sent",
-                sentAt: new Date().toISOString(),
-                errorMessage: null,
-              }
-            : m
-        )
-      );
-      return { previous };
-    },
-    onSuccess: () => {
-      toast.success({
-        title: "Sent",
-        description: "Message sent successfully",
-      });
-    },
-    onError: (_error, _msg, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["scheduled-emails"], context.previous);
-      }
-      toast.error({
-        title: "Failed",
-        description: "Message failed to send",
-      });
-    },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
-    },
-  });
-
-  const scheduleMutation = useMutation({
-    mutationFn: async (input: ScheduleEmailInput) => {
-      await axios.post("/api/scheduled-emails", {
-        data: { ...input },
-        type: "schedule",
-      });
-    },
-    onMutate: async (input) => {
-      await queryClient.cancelQueries({ queryKey: ["scheduled-emails"] });
-      const previous = queryClient.getQueryData<ScheduledEmail[]>([
-        "scheduled-emails",
-      ]);
-      const optimistic: ScheduledEmail = {
-        id: -Date.now(),
-        toEmail: input.toEmail,
-        toName: input.toName ?? null,
-        subject: input.subject,
-        bodyHtml: input.bodyHtml,
-        bodyText: input.bodyText ?? null,
-        scheduledAt: input.scheduledAt,
-        timezone: input.timezone ?? "UTC",
-        recurring: input.recurring ?? "none",
-        status: "pending",
-        sentAt: null,
-        errorMessage: null,
-        attachments: input.attachments ?? [],
-        clientId: input.clientId ?? null,
-        createdAt: new Date().toISOString(),
-      };
-      queryClient.setQueryData<ScheduledEmail[]>(
-        ["scheduled-emails"],
-        (old) => [optimistic, ...(old ?? [])]
-      );
-      return { previous };
-    },
-    onSuccess: () => {
-      setFormToEmail("");
-      setFormToName("");
-      setFormSubject("");
-      setFormBody("");
-      setFormDate(undefined);
-      setFormTime("09:00");
-      setFormAttachments([]);
-      toast.success({
-        title: "Scheduled",
-        description: "Message scheduled successfully",
-      });
-    },
-    onError: (_error, _input, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["scheduled-emails"], context.previous);
-      }
-      toast.error({
-        title: "Failed",
-        description: "Message scheduled failed",
-      });
-    },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
-    },
-  });
+  const { data: connected } = useEmailConnectionStatus();
+  const { data: messages, isPending } = useScheduledMessages();
+  const deleteScheduledEmailMessage = useDeleteScheduledMessage();
+  const sendNowMutation = useSendScheduledMessageNow();
+  const scheduleMutation = useScheduleMessage();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -295,16 +157,29 @@ export function ScheduledMessages({ navContainer }: ScheduledMessagesProps) {
         path: f.path,
         url: f.url,
       }));
-    scheduleMutation.mutate({
-      toEmail: formToEmail,
-      toName: formToName || undefined,
-      subject: formSubject,
-      bodyHtml: `<p>${formBody.replace(/\n/g, "<br>")}</p>`,
-      bodyText: formBody,
-      scheduledAt,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      ...(attachments.length > 0 ? { attachments } : {}),
-    });
+    scheduleMutation.mutate(
+      {
+        toEmail: formToEmail,
+        toName: formToName || undefined,
+        subject: formSubject,
+        bodyHtml: `<p>${formBody.replace(/\n/g, "<br>")}</p>`,
+        bodyText: formBody,
+        scheduledAt,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ...(attachments.length > 0 ? { attachments } : {}),
+      },
+      {
+        onSuccess: () => {
+          setFormToEmail("");
+          setFormToName("");
+          setFormSubject("");
+          setFormBody("");
+          setFormDate(undefined);
+          setFormTime("09:00");
+          setFormAttachments([]);
+        },
+      }
+    );
   };
 
   const filteredMessages = (messages ?? []).filter((msg) => {

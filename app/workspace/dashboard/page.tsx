@@ -13,40 +13,27 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { task_percentage } from "@/lib/util/task_percentage";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Case } from "@/types/cases";
 import { Task } from "@/types/tasks";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { useClients } from "@/app/workspace/clients/_lib/hooks";
+import { useCases } from "@/app/workspace/cases/_lib/hooks";
+import {
+  useAllTasks,
+  useChangeTaskStatus,
+} from "@/app/workspace/tasks/_lib/hooks";
 
 export default function Dashboard() {
-  const queryClient = useQueryClient();
   const router = useRouter();
 
-  // Fetch clients count
-  const clientsQuery = useQuery({
-    queryKey: ["clients"],
-    queryFn: async () => {
-      const res = await axios.get("/api/clients");
-      return res.data;
-    },
-  });
-
+  const clientsQuery = useClients();
   const clientsCount = Array.isArray(clientsQuery.data)
     ? clientsQuery.data.length
     : 0;
 
-  // Fetch cases count and all cases
-  const casesQuery = useQuery({
-    queryKey: ["cases"],
-    queryFn: async () => {
-      const res = await axios.get("/api/cases/get-cases");
-      return res.data;
-    },
-  });
-
+  const casesQuery = useCases();
   const allCases: Case[] = Array.isArray(casesQuery.data?.cases)
     ? casesQuery.data.cases.map((p: Case) => {
         const isCompleted =
@@ -59,52 +46,10 @@ export default function Dashboard() {
       })
     : [];
 
-  // Fetch tasks and flatten
-  const tasksQuery = useQuery({
-    queryKey: ["allTasks"],
-    queryFn: async () => {
-      const res = await axios.get("/api/tasks");
-      if (!Array.isArray(res.data)) return [];
-      return res.data.map((t: { tasks: Task; caseName: string }) => ({
-        ...t.tasks,
-        caseName: t.caseName || "No Case",
-      }));
-    },
-  });
-
+  const tasksQuery = useAllTasks();
   const tasks: Task[] = tasksQuery.data ?? [];
 
-  const changeTaskStatus = useMutation({
-    mutationFn: async ({
-      status,
-      taskId,
-    }: {
-      status: string;
-      taskId: number;
-    }) => {
-      await axios.patch(`/api/tasks/${taskId}`, { status });
-    },
-
-    onMutate: async ({ status, taskId }) => {
-      await queryClient.cancelQueries({
-        queryKey: ["allTasks"],
-      });
-
-      const previousTasks = queryClient.getQueryData<Task[]>(["allTasks"]);
-
-      // Update ONLY the task, keep order
-      queryClient.setQueryData<Task[]>(["allTasks"], (old) =>
-        old?.map((task) => (task.id === taskId ? { ...task, status } : task))
-      );
-
-      return { previousTasks };
-    },
-
-    onError: (_err, _vars, context) => {
-      // rollback if API fails
-      queryClient.setQueryData(["allTasks"], context?.previousTasks);
-    },
-  });
+  const changeTaskStatus = useChangeTaskStatus();
 
   // Stats for dashboard cards
   const theStats = [

@@ -1,14 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiErrorMessage } from "@/lib/util/api_error";
-import {
-  type UserProfile,
-  type UpdateProfileInput,
-  type ChangePasswordInput,
-} from "@/types/user_profile";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
@@ -24,6 +16,16 @@ import {
 import { Bell, Plug, User, Shield, Upload, Loader2 } from "lucide-react";
 import { IntegrationSettings } from "@/app/components/scheduling/IntegrationSettings";
 import type { Integration } from "@/types/integrations";
+import {
+  useAvatarUrl,
+  useChangePassword,
+  useIntegrationsStatus,
+  useProductUpdatesSetting,
+  useToggleProductUpdates,
+  useUpdateProfile,
+  useUploadAvatar,
+  useUserProfile,
+} from "./_lib/hooks";
 
 const TABS = [
   { value: "profile", label: "Profile", icon: User },
@@ -98,28 +100,11 @@ function ProfileTab() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
 
-  const { data: avatarData } = useQuery<{ url: string | null }>({
-    queryKey: ["avatarUrl"],
-    queryFn: async () => {
-      const res = await axios.get("/api/user", {
-        params: { type: "avatar" },
-      });
-      return res.data;
-    },
-  });
+  const { data: avatarData } = useAvatarUrl();
   const avatarUrl = avatarData?.url ?? undefined;
 
-  const { data: profile } = useQuery<UserProfile>({
-    queryKey: ["userProfile"],
-    queryFn: async () => {
-      const res = await axios.get("/api/user", {
-        params: { type: "profile" },
-      });
-      return res.data;
-    },
-  });
+  const { data: profile } = useUserProfile();
 
   // Seed the editable fields from the loaded profile, re-seeding only when the
   // server values themselves change (e.g. after a save refetch). This
@@ -146,53 +131,7 @@ function ProfileTab() {
     setBio(profile.bio);
   }
 
-  const saveMutation = useMutation({
-    mutationFn: async (input: UpdateProfileInput) => {
-      try {
-        const res = await axios.patch<UserProfile>("/api/user", {
-          type: "profile",
-          data: input,
-        });
-        return res.data;
-      } catch (err) {
-        throw new Error(
-          apiErrorMessage(err, "Couldn't save. Please try again.")
-        );
-      }
-    },
-    onMutate: async (input) => {
-      setSaveError(null);
-      await queryClient.cancelQueries({ queryKey: ["userProfile"] });
-      const previous = queryClient.getQueryData<UserProfile>(["userProfile"]);
-      queryClient.setQueryData<UserProfile>(["userProfile"], (old) => {
-        const base: UserProfile = old ?? {
-          name: "",
-          email,
-          jobTitle: "",
-          company: "",
-          bio: "",
-        };
-        return {
-          ...base,
-          name: input.name,
-          jobTitle: input.jobTitle ?? base.jobTitle,
-          company: input.company ?? base.company,
-          bio: input.bio ?? base.bio,
-        };
-      });
-      return { previous };
-    },
-    onError: (error: Error, _input, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["userProfile"], context.previous);
-      }
-      setSaveError(error.message || "Couldn't save. Please try again.");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-      queryClient.invalidateQueries({ queryKey: ["auth-user"] });
-    },
-  });
+  const saveMutation = useUpdateProfile(email);
 
   const trimmedName = fullName.trim();
   const isDirty =
@@ -202,40 +141,18 @@ function ProfileTab() {
     bio !== (profile?.bio ?? "");
   const canSave = !saveMutation.isPending && trimmedName.length > 0 && isDirty;
 
-  const handleSave = () =>
-    saveMutation.mutate({
-      name: trimmedName,
-      jobTitle,
-      company,
-      bio,
-    });
-
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      try {
-        const res = await axios.post<{ url: string }>(
-          "/api/user/avatar",
-          formData
-        );
-        return res.data;
-      } catch (err) {
-        throw new Error(
-          apiErrorMessage(err, "Upload failed. Please try again.")
-        );
+  const handleSave = () => {
+    setSaveError(null);
+    saveMutation.mutate(
+      { name: trimmedName, jobTitle, company, bio },
+      {
+        onError: (error) =>
+          setSaveError(error.message || "Couldn't save. Please try again."),
       }
-    },
-    onSuccess: (data) => {
-      setAvatarError(null);
-      queryClient.setQueryData<{ url: string | null }>(["avatarUrl"], {
-        url: data.url,
-      });
-    },
-    onError: (error: Error) => {
-      setAvatarError(error.message || "Upload failed. Please try again.");
-    },
-  });
+    );
+  };
+
+  const uploadMutation = useUploadAvatar();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -253,7 +170,11 @@ function ProfileTab() {
     }
 
     setAvatarError(null);
-    uploadMutation.mutate(file);
+    uploadMutation.mutate(file, {
+      onSuccess: () => setAvatarError(null),
+      onError: (error) =>
+        setAvatarError(error.message || "Upload failed. Please try again."),
+    });
   };
 
   const initials = fullName
@@ -367,40 +288,16 @@ function ProfileTab() {
 }
 
 function NotificationsTab({ productUpdates }: { productUpdates?: boolean }) {
-  const queryClient = useQueryClient();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const productUpdatesMutation = useToggleProductUpdates();
 
-  const productUpdatesMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      try {
-        const res = await axios.patch<{ enabled: boolean }>("/api/user", {
-          type: "product-updates",
-          data: { enabled },
-        });
-        return res.data;
-      } catch (err) {
-        throw new Error(
-          apiErrorMessage(err, "Couldn't save. Please try again.")
-        );
-      }
-    },
-    onMutate: async (enabled) => {
-      setSaveError(null);
-      await queryClient.cancelQueries({ queryKey: ["productUpdates"] });
-      const previous = queryClient.getQueryData<boolean>(["productUpdates"]);
-      queryClient.setQueryData<boolean>(["productUpdates"], enabled);
-      return { previous };
-    },
-    onError: (error: Error, _enabled, context) => {
-      if (context?.previous !== undefined) {
-        queryClient.setQueryData(["productUpdates"], context.previous);
-      }
-      setSaveError(error.message || "Couldn't save. Please try again.");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["productUpdates"] });
-    },
-  });
+  const handleToggle = (next: boolean) => {
+    setSaveError(null);
+    productUpdatesMutation.mutate(next, {
+      onError: (error) =>
+        setSaveError(error.message || "Couldn't save. Please try again."),
+    });
+  };
 
   return (
     <CardContent className="pt-6 space-y-6 max-w-2xl">
@@ -411,7 +308,7 @@ function NotificationsTab({ productUpdates }: { productUpdates?: boolean }) {
             label="Product updates"
             description="News about features and improvements"
             checked={!!productUpdates}
-            onCheckedChange={(next) => productUpdatesMutation.mutate(next)}
+            onCheckedChange={handleToggle}
             disabled={productUpdatesMutation.isPending}
           />
         </div>
@@ -431,28 +328,7 @@ function SecurityTab() {
 
   const MIN_PASSWORD_LENGTH = 8;
 
-  const changePasswordMutation = useMutation({
-    mutationFn: async (input: ChangePasswordInput) => {
-      try {
-        const res = await axios.patch<{ success: true }>("/api/user", {
-          type: "password",
-          data: input,
-        });
-        return res.data;
-      } catch (err) {
-        throw new Error(apiErrorMessage(err, "Couldn't update password."));
-      }
-    },
-    onMutate: () => setPasswordError(null),
-    onSuccess: () => {
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    },
-    onError: (error: Error) => {
-      setPasswordError(error.message || "Couldn't update password.");
-    },
-  });
+  const changePasswordMutation = useChangePassword();
 
   const passwordsMatch = newPassword === confirmPassword;
   const canUpdatePassword =
@@ -473,7 +349,18 @@ function SecurityTab() {
       setPasswordError("Passwords do not match.");
       return;
     }
-    changePasswordMutation.mutate({ currentPassword, newPassword });
+    changePasswordMutation.mutate(
+      { currentPassword, newPassword },
+      {
+        onSuccess: () => {
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+        },
+        onError: (error) =>
+          setPasswordError(error.message || "Couldn't update password."),
+      }
+    );
   };
 
   return (
@@ -554,29 +441,9 @@ export default function Settings() {
     },
   ];
 
-  const { data: integrations = INITIAL_INTEGRATIONS } = useQuery({
-    queryKey: ["integrations"],
-    queryFn: async () => {
-      const outlookCheck = await axios.get("/api/integrations/outlook");
-      const outlookConnected = outlookCheck.data.connected;
-
-      return INITIAL_INTEGRATIONS.map((int) => {
-        if (int.id === "outlook")
-          return { ...int, connected: outlookConnected };
-        return int;
-      });
-    },
-  });
-
-  const { data: productUpdates } = useQuery<boolean>({
-    queryKey: ["productUpdates"],
-    queryFn: async () => {
-      const res = await axios.get("/api/user", {
-        params: { type: "product-updates" },
-      });
-      return res.data;
-    },
-  });
+  const { data: integrations = INITIAL_INTEGRATIONS } =
+    useIntegrationsStatus(INITIAL_INTEGRATIONS);
+  const { data: productUpdates } = useProductUpdatesSetting();
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

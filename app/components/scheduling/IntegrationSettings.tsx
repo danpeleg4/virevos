@@ -5,49 +5,21 @@ import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
 import { CheckCircle } from "lucide-react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ComponentType, SVGProps } from "react";
 import type { Integration } from "@/types/integrations";
 import { Separator } from "@/app/components/ui/separator";
+import {
+  useRecordingStatus,
+  useToggleIntegration,
+  useToggleRecordingStatus,
+} from "./_lib/hooks";
 
 export function VideoMeetingPreferences() {
-  const queryClient = useQueryClient();
   const [autoTranscription] = useState(true);
 
-  const { data: recordingStatus } = useQuery({
-    queryKey: ["recordingStatus"],
-    queryFn: async () => {
-      const res = await axios.get("/api/recording/status");
-      return res.data;
-    },
-  });
-
-  const changeRecordingStatusMutation = useMutation({
-    mutationFn: async () => {
-      await axios.patch("/api/user", { type: "recording-status" });
-    },
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ["recordingStatus"] });
-      const previous = queryClient.getQueryData<{
-        recording_status: boolean;
-      }>(["recordingStatus"]);
-      queryClient.setQueryData<{ recording_status: boolean }>(
-        ["recordingStatus"],
-        (old) => ({ recording_status: !(old?.recording_status ?? false) })
-      );
-      return { previous };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previous !== undefined) {
-        queryClient.setQueryData(["recordingStatus"], context.previous);
-      }
-    },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["recordingStatus"] });
-    },
-  });
+  const { data: recordingStatus } = useRecordingStatus();
+  const changeRecordingStatusMutation = useToggleRecordingStatus();
 
   return (
     <div className="p-6">
@@ -106,25 +78,8 @@ export function IntegrationSettings({
 }: {
   integrations: Integration[];
 }) {
-  const queryClient = useQueryClient();
   const router = useRouter();
-
-  const mutation = useMutation({
-    mutationFn: async ({
-      id,
-      action,
-    }: {
-      id: string;
-      action: "disconnect" | "connect";
-    }) => {
-      if (id === "outlook" && action === "disconnect") {
-        await axios.delete("/api/integrations/outlook");
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["integrations"] });
-    },
-  });
+  const mutation = useToggleIntegration();
 
   const toggleConnection = (id: string) => {
     const integration = integrations.find((i) => i.id === id);

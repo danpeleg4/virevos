@@ -2,8 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowLeft,
@@ -26,37 +25,17 @@ import { Badge } from "@/app/components/ui/badge";
 import { ClientPortalSettings } from "@/app/components/clients/ClientPortalSettings";
 import { PortalChatPane } from "@/app/components/communications/PortalChatPane";
 import { ClientEditDialog } from "@/app/workspace/clients/ClientEditDialog";
-import type { clients } from "@/types/clients";
 import type { PortalAvailability, PortalRecord } from "@/types/portal";
+import {
+  useClient,
+  useClientCases,
+  useClientOutlookEmails,
+  useClientPortal,
+  useDeleteClient,
+  useSavePortalSettings,
+} from "@/app/workspace/clients/_lib/hooks";
 
 type Section = "portal" | "cases" | "communications";
-
-interface ClientCaseRow {
-  id: number;
-  name: string;
-  status: string;
-  priority: string;
-  dueDate: string | null;
-  stats: { totalTasks: number; completedTasks: number; percentage: number };
-}
-
-interface OutlookEmailRow {
-  id: number;
-  subject: string | null;
-  snippet: string | null;
-  fromEmail: string | null;
-  fromName: string | null;
-  toEmails: string[] | null;
-  isRead: boolean | null;
-  isSent: boolean | null;
-  hasAttachments: boolean | null;
-  sentAt: string;
-}
-
-interface ClientDetailResponse {
-  client: clients;
-  portal: unknown;
-}
 
 const DEFAULT_WELCOME =
   "Your Visa Readiness Dashboard. Monitor your deadlines and keep your documents audit-ready";
@@ -207,58 +186,14 @@ export default function ClientDetailPage({
     DEFAULT_PORTAL_FORM_STATE
   );
 
-  const clientQuery = useQuery({
-    queryKey: ["client", id],
-    queryFn: async () => {
-      const { data } = await axios.get<ClientDetailResponse>(
-        `/api/clients/${id}?type=main`
-      );
-      return data;
-    },
-    enabled: !!id,
-  });
-
-  const portalQuery = useQuery({
-    queryKey: ["clientPortal", id],
-    queryFn: async () => {
-      const { data } = await axios.get<{ portal: PortalRecord | null }>(
-        `/api/clients/${id}?type=portal`
-      );
-      return data.portal;
-    },
-  });
-
-  const casesQuery = useQuery({
-    queryKey: ["clientCases", id],
-    queryFn: async () => {
-      const { data } = await axios.get<{ cases: ClientCaseRow[] }>(
-        `/api/clients/${id}?type=cases`
-      );
-      return data.cases;
-    },
-    enabled: !!id && activeSection === "cases",
-  });
-
-  const emailsQuery = useQuery({
-    queryKey: ["clientOutlookEmails", id],
-    queryFn: async () => {
-      const { data } = await axios.get<{ emails: OutlookEmailRow[] }>(
-        `/api/clients/${id}?type=outlook-emails`
-      );
-      return data.emails;
-    },
-    enabled: !!id && activeSection === "communications",
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (clientId: number) => {
-      await axios.delete(`/api/clients/${clientId}`);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["clients"] });
-      router.push("/workspace/clients");
-    },
-  });
+  const clientQuery = useClient(id);
+  const portalQuery = useClientPortal(Number(id));
+  const casesQuery = useClientCases(id, activeSection === "cases");
+  const emailsQuery = useClientOutlookEmails(
+    id,
+    activeSection === "communications"
+  );
+  const deleteMutation = useDeleteClient();
 
   const currentFormState: PortalFormState = {
     portalEnabled,
@@ -299,25 +234,7 @@ export default function ClientDetailPage({
     }
   }
 
-  const savePortalMutation = useMutation({
-    mutationFn: async (payload: {
-      enabled: boolean;
-      settings: Omit<PortalFormState, "portalEnabled">;
-    }) => {
-      await axios.post(`/api/clients/${id}/portal`, payload);
-    },
-    onSuccess: async (_, variables) => {
-      setSavedSnapshot({
-        portalEnabled: variables.enabled,
-        ...variables.settings,
-      });
-      await queryClient.invalidateQueries({ queryKey: ["clientPortal", id] });
-      await queryClient.invalidateQueries({ queryKey: ["portalBookings"] });
-    },
-    onError: (err: unknown) => {
-      console.error("Failed to save settings:", err);
-    },
-  });
+  const savePortalMutation = useSavePortalSettings(id);
 
   const buildSavePayload = () => ({
     enabled: portalEnabled,
@@ -334,7 +251,14 @@ export default function ClientDetailPage({
   });
 
   const handleSave = () => {
-    savePortalMutation.mutate(buildSavePayload());
+    savePortalMutation.mutate(buildSavePayload(), {
+      onSuccess: (_, variables) => {
+        setSavedSnapshot({
+          portalEnabled: variables.enabled,
+          ...variables.settings,
+        });
+      },
+    });
   };
 
   if (clientQuery.isLoading) {
@@ -439,7 +363,9 @@ export default function ClientDetailPage({
             size="sm"
             onClick={() => {
               if (confirm("Delete this client? This cannot be undone.")) {
-                deleteMutation.mutate(client.id);
+                deleteMutation.mutate(client.id, {
+                  onSuccess: () => router.push("/workspace/clients"),
+                });
               }
             }}
             aria-label="Delete client"
