@@ -4,6 +4,14 @@ export function parseDateOnlyString(dateStr: string): Date {
   return new Date(year, month - 1, day);
 }
 
+// Formats a Date as a YYYY-MM-DD string in local time (inverse of parseDateOnlyString)
+export function formatDateOnlyString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function formatDateOnly(date: Date) {
   return date.toLocaleDateString(undefined, {
     weekday: "short",

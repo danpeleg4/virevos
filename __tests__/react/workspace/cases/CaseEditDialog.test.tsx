@@ -149,4 +149,66 @@ describe("CaseEditDialog", () => {
       .toBeInTheDocument();
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
+
+  it("pre-fills the calendar trigger with the case's existing due date", async () => {
+    const screen = await renderWithQueryClient(
+      <CaseEditDialog
+        aCase={mockCase}
+        clients={mockClients}
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    );
+    await expect
+      .element(screen.getByText("Select date", { exact: true }))
+      .not.toBeInTheDocument();
+  });
+
+  it("opens the calendar date picker when the trigger is clicked", async () => {
+    const caseWithoutDueDate = { ...mockCase, dueDate: null };
+    const screen = await renderWithQueryClient(
+      <CaseEditDialog
+        aCase={caseWithoutDueDate}
+        clients={mockClients}
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    );
+    await expect
+      .element(screen.getByText("Select date", { exact: true }))
+      .toBeInTheDocument();
+
+    await screen.getByText("Select date", { exact: true }).click();
+    await expect.element(screen.getByRole("grid")).toBeInTheDocument();
+  });
+
+  it("PATCHes a newly selected due date as YYYY-MM-DD", async () => {
+    let patchBody: Record<string, unknown> | undefined;
+    worker.use(
+      http.patch("/api/cases/:id", async ({ request }) => {
+        patchBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ success: true, id: 1 });
+      })
+    );
+
+    const screen = await renderWithQueryClient(
+      <CaseEditDialog
+        aCase={mockCase}
+        clients={mockClients}
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    );
+
+    await screen.getByText(/6\/1\/2026/).click();
+    await screen.getByRole("button", { name: /go to the next month/i }).click();
+    const days = screen.getByRole("gridcell", { name: "10" });
+    await days.first().click();
+
+    await screen.getByRole("button", { name: /save changes/i }).click();
+
+    await vi.waitFor(() =>
+      expect(patchBody?.dueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    );
+  });
 });

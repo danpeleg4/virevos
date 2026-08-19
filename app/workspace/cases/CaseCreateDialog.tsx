@@ -18,19 +18,39 @@ import {
   SelectContent,
   SelectItem,
 } from "@/app/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Calendar as CalendarIcon } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import type { clients } from "@/types/clients";
 import { useCreateCase } from "./_lib/hooks";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover";
+import { Calendar } from "@/app/components/ui/calendar";
+import { cn } from "@/app/components/ui/utils";
+import { formatDateOnlyString } from "@/lib/util/date_utils";
 
 export function CaseCreateDialog({ clients }: { clients: clients[] }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [caseName, setCaseName] = useState("");
   const [client, setClient] = useState<string | null>(null);
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [priority, setPriority] = useState("medium");
 
   const createNewCase = useCreateCase();
+
+  const resetForm = () => {
+    setCaseName("");
+    setClient(null);
+    setDueDate(undefined);
+    setPriority("medium");
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) resetForm();
+  };
 
   const submit = async () => {
     const trimmedName = caseName.trim();
@@ -43,17 +63,17 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
       name: trimmedName,
       clientId: client ? Number(client) : null,
       priority,
-      dueDate: dueDate || null,
+      dueDate: dueDate ? formatDateOnlyString(dueDate) : null,
       status: "active",
       stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
     });
 
-    setDialogOpen(false);
+    handleOpenChange(false);
   };
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button className="cursor-pointer">
             <Plus className="h-4 w-4 mr-2" />
@@ -125,20 +145,41 @@ export function CaseCreateDialog({ clients }: { clients: clients[] }) {
             </div>
 
             <div>
-              <Label>Due Date</Label>
-              <Input
-                type="date"
-                className="mt-2"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
+              <Label>
+                Due Date{" "}
+                <span className="text-muted-foreground font-normal text-xs">
+                  (optional)
+                </span>
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "border-input data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] mt-2 h-9 cursor-pointer",
+                      !dueDate && "text-muted-foreground"
+                    )}
+                    data-placeholder={!dueDate ? "" : undefined}
+                  >
+                    {dueDate ? dueDate.toLocaleDateString() : "Select date"}
+                    <CalendarIcon className="size-4 opacity-50" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={setDueDate}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 className="cursor-pointer"
                 variant="outline"
-                onClick={() => setDialogOpen(false)}
+                onClick={() => handleOpenChange(false)}
               >
                 Cancel
               </Button>

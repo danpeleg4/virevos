@@ -21,6 +21,18 @@ import {
 import { Case } from "@/types/cases";
 import type { clients } from "@/types/clients";
 import { useUpdateCase } from "./_lib/hooks";
+import { Calendar as CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover";
+import { Calendar } from "@/app/components/ui/calendar";
+import { cn } from "@/app/components/ui/utils";
+import {
+  formatDateOnlyString,
+  parseDateOnlyString,
+} from "@/lib/util/date_utils";
 
 interface CaseEditDialogProps {
   aCase: Case;
@@ -71,7 +83,9 @@ function CaseEditForm({
   const [clientId, setClientId] = useState<string>(
     aCase.clientId ? String(aCase.clientId) : "none"
   );
-  const [dueDate, setDueDate] = useState(aCase.dueDate ?? "");
+  const [dueDate, setDueDate] = useState<Date | undefined>(
+    aCase.dueDate ? parseDateOnlyString(aCase.dueDate) : undefined
+  );
   const [priority, setPriority] = useState(aCase.priority);
   const [status, setStatus] = useState(aCase.status);
 
@@ -117,12 +131,24 @@ function CaseEditForm({
             (optional)
           </span>
         </Label>
-        <Input
-          type="date"
-          className="mt-2"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "border-input data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] mt-2 h-9 cursor-pointer",
+                !dueDate && "text-muted-foreground"
+              )}
+              data-placeholder={!dueDate ? "" : undefined}
+            >
+              {dueDate ? dueDate.toLocaleDateString() : "Select date"}
+              <CalendarIcon className="size-4 opacity-50" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={dueDate} onSelect={setDueDate} />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div>
@@ -167,7 +193,7 @@ function CaseEditForm({
               {
                 id: aCase.id,
                 name,
-                dueDate: dueDate || undefined,
+                dueDate: dueDate ? formatDateOnlyString(dueDate) : undefined,
                 priority,
                 status,
                 clientId: clientId === "none" ? null : Number(clientId),

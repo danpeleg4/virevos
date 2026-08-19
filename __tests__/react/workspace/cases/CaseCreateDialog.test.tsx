@@ -131,4 +131,65 @@ describe("CaseCreateDialog", () => {
       .click({ force: true });
     expect(postCalled).toBe(false);
   });
+
+  it("shows a placeholder and opens the calendar date picker on click", async () => {
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
+    await screen.getByRole("button", { name: /new case/i }).click();
+    await expect
+      .element(screen.getByText("Select date", { exact: true }))
+      .toBeInTheDocument();
+
+    await screen.getByText("Select date", { exact: true }).click();
+    await expect.element(screen.getByRole("grid")).toBeInTheDocument();
+  });
+
+  it("includes the selected due date in the POST payload as YYYY-MM-DD", async () => {
+    let postBody: Record<string, unknown> | undefined;
+    worker.use(
+      http.post("/api/cases", async ({ request }) => {
+        postBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          ...postBody,
+          id: 99,
+          stats: { totalTasks: 0, completedTasks: 0, percentage: 0 },
+        });
+      })
+    );
+
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
+    await screen.getByRole("button", { name: /new case/i }).click();
+    await screen.getByPlaceholder(/website redesign/i).fill("Case with date");
+
+    await screen.getByText("Select date", { exact: true }).click();
+    await screen.getByRole("button", { name: /go to the next month/i }).click();
+    const days = screen.getByRole("gridcell", { name: "10" });
+    await days.first().click();
+
+    await screen.getByRole("button", { name: /create case/i }).click();
+
+    await vi.waitFor(() =>
+      expect(postBody?.dueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    );
+  });
+
+  it("resets the selected due date when the dialog is cancelled", async () => {
+    const screen = await renderWithQueryClient(
+      <CaseCreateDialog clients={mockClients} />
+    );
+    await screen.getByRole("button", { name: /new case/i }).click();
+    await screen.getByText("Select date", { exact: true }).click();
+    await screen.getByRole("button", { name: /go to the next month/i }).click();
+    const days = screen.getByRole("gridcell", { name: "10" });
+    await days.first().click();
+
+    await screen.getByRole("button", { name: /cancel/i }).click();
+    await screen.getByRole("button", { name: /new case/i }).click();
+    await expect
+      .element(screen.getByText("Select date", { exact: true }))
+      .toBeInTheDocument();
+  });
 });
