@@ -98,8 +98,7 @@ export async function meetingTranscriptSemanticSearch(
   const arr: string[] = [];
   for (const hit of hits) {
     const meta = hit.metadata as
-      | { chunk_text?: string; room?: string }
-      | undefined;
+      { chunk_text?: string; room?: string } | undefined;
     if (meta?.chunk_text && meta.room === latestEvent.id) {
       arr.push(meta.chunk_text);
     }

@@ -62,26 +62,24 @@ export function makeFakeClientsDb(
     getClientByName: vi.fn(async (name: string) => [
       { ...canonicalClientWithCounts, name },
     ]),
-    getPortalTokenByClient: vi.fn(
-      async (): Promise<PortalTokenRow[]> => [{ ...canonicalPortalTokenRow }]
-    ),
+    getPortalTokenByClient: vi.fn(async (): Promise<PortalTokenRow[]> => [
+      { ...canonicalPortalTokenRow },
+    ]),
     getClientCasesWithStats: vi.fn(async () => []),
     getClientOutlookEmails: vi.fn(async () => []),
     getPortalDetails: vi.fn(async () => []),
     getPortalEnabledClients: vi.fn(async () => [
       { id: 1, name: "Jane Client", email: "jane@client.com" as string | null },
     ]),
-    insertClient: vi.fn(
-      async (values: NewClientRow): Promise<ClientRow> => ({
-        ...canonicalClientRow,
-        ...values,
-        id: 42,
-        email: values.email ?? null,
-        phone: values.phone ?? null,
-        notes: values.notes ?? null,
-        status: values.status ?? "active",
-      })
-    ),
+    insertClient: vi.fn(async (values: NewClientRow): Promise<ClientRow> => ({
+      ...canonicalClientRow,
+      ...values,
+      id: 42,
+      email: values.email ?? null,
+      phone: values.phone ?? null,
+      notes: values.notes ?? null,
+      status: values.status ?? "active",
+    })),
     txAddClientAndPortal: vi.fn(
       async (values: NewClientRow): Promise<ClientRow & PortalTokenRow> => ({
         ...canonicalPortalTokenRow,

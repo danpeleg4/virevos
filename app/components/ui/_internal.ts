@@ -289,9 +289,7 @@ export function useEscape(active: boolean, onEscape: () => void) {
 }
 
 type DismissableContent =
-  | HTMLElement
-  | null
-  | React.RefObject<HTMLElement | null>;
+  HTMLElement | null | React.RefObject<HTMLElement | null>;
 
 export function useDismissableLayer({
   open,

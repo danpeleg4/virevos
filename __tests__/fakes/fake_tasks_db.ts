@@ -34,19 +34,17 @@ export function makeFakeTasksDb(overrides: Partial<TasksDB> = {}): FakeTasksDb {
     ),
     updateTask: vi.fn(async () => {}),
     deleteTask: vi.fn(async () => {}),
-    insertTask: vi.fn(
-      async (values: NewTaskRow): Promise<TaskRow> => ({
-        ...canonicalTaskRow,
-        ...values,
-        id: 10,
-        description: values.description ?? null,
-        caseId: values.caseId ?? null,
-        priority: values.priority ?? "medium",
-        status: values.status ?? "in-progress",
-        dueDate: values.dueDate ?? null,
-        completed: values.completed ?? false,
-      })
-    ),
+    insertTask: vi.fn(async (values: NewTaskRow): Promise<TaskRow> => ({
+      ...canonicalTaskRow,
+      ...values,
+      id: 10,
+      description: values.description ?? null,
+      caseId: values.caseId ?? null,
+      priority: values.priority ?? "medium",
+      status: values.status ?? "in-progress",
+      dueDate: values.dueDate ?? null,
+      completed: values.completed ?? false,
+    })),
     getCaseById: vi.fn(async (caseId: number) => [
       { id: caseId, userId: "user_1" },
     ]),

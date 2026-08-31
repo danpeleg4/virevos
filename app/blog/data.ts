@@ -1,9 +1,5 @@
 export type Category =
-  | "Everything"
-  | "News"
-  | "Guides"
-  | "Company"
-  | "Engineering";
+  "Everything" | "News" | "Guides" | "Company" | "Engineering";
 
 export interface ContentBlock {
   type: "paragraph" | "heading" | "subheading" | "list" | "quote" | "code";
