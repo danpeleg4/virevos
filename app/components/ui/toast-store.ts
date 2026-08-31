@@ -1,11 +1,7 @@
 import * as React from "react";
 
 export type ToastVariant =
-  | "default"
-  | "success"
-  | "destructive"
-  | "warning"
-  | "info";
+  "default" | "success" | "destructive" | "warning" | "info";
 
 export interface ToastActionData {
   label: string;

@@ -53,20 +53,18 @@ export function makeFakeCalendarDb(
     getEventByTitle: vi.fn(async (_userId: string, title: string) => [
       { ...canonicalEventRow, title },
     ]),
-    insertEvent: vi.fn(
-      async (values: NewEventRow): Promise<EventRow> => ({
-        ...canonicalEventRow,
-        ...values,
-        description: values.description ?? null,
-        link: values.link ?? null,
-        status: values.status ?? "upcoming",
-      })
-    ),
+    insertEvent: vi.fn(async (values: NewEventRow): Promise<EventRow> => ({
+      ...canonicalEventRow,
+      ...values,
+      description: values.description ?? null,
+      link: values.link ?? null,
+      status: values.status ?? "upcoming",
+    })),
     updateEvent: vi.fn(async () => {}),
     deleteEvent: vi.fn(async () => {}),
-    getEventsForUser: vi.fn(
-      async (): Promise<EventRow[]> => [{ ...canonicalEventRow }]
-    ),
+    getEventsForUser: vi.fn(async (): Promise<EventRow[]> => [
+      { ...canonicalEventRow },
+    ]),
     insertEvents: vi.fn(async () => {}),
     deleteEventByOutlookEventId: vi.fn(async () => {}),
   } satisfies CalendarDB;

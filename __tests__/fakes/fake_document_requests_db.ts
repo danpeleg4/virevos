@@ -38,12 +38,12 @@ export function makeFakeDocumentRequestsDb(
   overrides: Partial<DocumentRequestsDB> = {}
 ): FakeDocumentRequestsDb {
   const fake = {
-    getPendingRequests: vi.fn(
-      async (): Promise<PendingRequestRow[]> => [{ ...canonicalPendingRequest }]
-    ),
-    getItemsByRequestIds: vi.fn(
-      async (): Promise<DocRequestItemRow[]> => [{ ...canonicalRequestItem }]
-    ),
+    getPendingRequests: vi.fn(async (): Promise<PendingRequestRow[]> => [
+      { ...canonicalPendingRequest },
+    ]),
+    getItemsByRequestIds: vi.fn(async (): Promise<DocRequestItemRow[]> => [
+      { ...canonicalRequestItem },
+    ]),
     getItemsWithFilesByRequestIds: vi.fn(
       async (): Promise<ItemWithFileRow[]> => [
         {

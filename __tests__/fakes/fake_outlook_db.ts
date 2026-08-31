@@ -63,11 +63,9 @@ export function makeFakeOutlookDb(
     updateToken: vi.fn(async () => {}),
 
     getEmailById: vi.fn(async () => [{ ...canonicalOutlookEmail }]),
-    getEmailsForUser: vi.fn(
-      async (): Promise<OutlookEmailWithClientRow[]> => [
-        { ...canonicalOutlookEmail, clientName: null },
-      ]
-    ),
+    getEmailsForUser: vi.fn(async (): Promise<OutlookEmailWithClientRow[]> => [
+      { ...canonicalOutlookEmail, clientName: null },
+    ]),
     getExistingEmailsForUser: vi.fn(async () => [{ ...canonicalOutlookEmail }]),
     insertEmails: vi.fn(async () => {}),
     updateEmail: vi.fn(async () => {}),

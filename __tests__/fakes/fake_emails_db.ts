@@ -22,14 +22,12 @@ export function makeFakeEmailsDb(
   overrides: Partial<EmailsDB> = {}
 ): FakeEmailsDb {
   const fake = {
-    getEmailsByOutlookIds: vi.fn(
-      async (): Promise<EmailSearchRow[]> => [{ ...canonicalEmailRow }]
-    ),
-    getRecentUnsentEmails: vi.fn(
-      async (): Promise<EmailRecentRow[]> => [
-        { ...canonicalEmailRow, bodyText: "Hello", bodyHtml: null },
-      ]
-    ),
+    getEmailsByOutlookIds: vi.fn(async (): Promise<EmailSearchRow[]> => [
+      { ...canonicalEmailRow },
+    ]),
+    getRecentUnsentEmails: vi.fn(async (): Promise<EmailRecentRow[]> => [
+      { ...canonicalEmailRow, bodyText: "Hello", bodyHtml: null },
+    ]),
   } satisfies EmailsDB;
 
   return Object.assign(fake, overrides) as FakeEmailsDb;

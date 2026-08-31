@@ -1,15 +1,9 @@
 export type DocumentRequestStatus =
-  | "pending_approval"
-  | "approved"
-  | "declined";
+  "pending_approval" | "approved" | "declined";
 export type DocumentRequestItemStatus = "pending" | "uploaded" | "rejected";
 
 export type DocumentRequestItemAiVerdict =
-  | "meets"
-  | "does_not_meet"
-  | "needs_review"
-  | "skipped"
-  | "error";
+  "meets" | "does_not_meet" | "needs_review" | "skipped" | "error";
 
 export interface DocumentRequestItem {
   id: number;

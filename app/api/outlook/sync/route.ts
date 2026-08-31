@@ -40,11 +40,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const search = searchParams.get("search") || "";
     const filter = (searchParams.get("filter") || "all") as
-      | "all"
-      | "unread"
-      | "starred"
-      | "sent"
-      | "archived";
+      "all" | "unread" | "starred" | "sent" | "archived";
 
     const result = await listOutlookEmails(
       user.id,

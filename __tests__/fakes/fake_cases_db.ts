@@ -84,18 +84,16 @@ export function makeFakeCasesDb(overrides: Partial<CasesDB> = {}): FakeCasesDb {
     deleteCaseCascade: vi.fn(async () => {}),
     insertCaseFileWithStorage: vi.fn(async () => {}),
     deleteCaseFileWithStorage: vi.fn(async () => {}),
-    insertCase: vi.fn(
-      async (values: NewCaseRow): Promise<CaseRow> => ({
-        ...canonicalCaseRow,
-        ...values,
-        id: 99,
-        description: values.description ?? null,
-        clientId: values.clientId ?? null,
-        status: values.status ?? "active",
-        dueDate: values.dueDate ?? null,
-        priority: values.priority ?? "medium",
-      })
-    ),
+    insertCase: vi.fn(async (values: NewCaseRow): Promise<CaseRow> => ({
+      ...canonicalCaseRow,
+      ...values,
+      id: 99,
+      description: values.description ?? null,
+      clientId: values.clientId ?? null,
+      status: values.status ?? "active",
+      dueDate: values.dueDate ?? null,
+      priority: values.priority ?? "medium",
+    })),
     insertCaseNote: vi.fn(async () => {}),
     updateCase: vi.fn(async () => {}),
   } satisfies CasesDB;

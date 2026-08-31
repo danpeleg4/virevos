@@ -1,11 +1,7 @@
 type PlanId = "starter" | "professional" | "business";
 
 type SubscriptionStatus =
-  | "active"
-  | "past_due"
-  | "canceled"
-  | "incomplete"
-  | "trialing";
+  "active" | "past_due" | "canceled" | "incomplete" | "trialing";
 
 type UserSubscription = {
   plan: PlanId;
