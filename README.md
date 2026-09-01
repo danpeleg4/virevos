@@ -28,26 +28,26 @@ Virevos is a SaaS platform that centralises the tools freelancers need to run th
 - **Outlook Integration** — Two-way email and calendar sync via Microsoft Graph with subscription (webhook) renewals
 - **Scheduled & Automated Email** — Queue and send email with HTML sanitization; transactional email via Resend
 - **Client Portal** — Shareable portals for client communication, bookings, and document/file requests
-- **Analytics & Weekly Summaries** — Revenue tracking, productivity metrics, and emailed weekly summaries
+- **Analytics Dashboard** — Revenue tracking and productivity metrics
 - **Subscription Billing** — Stripe-powered plans with feature limits and AI credit tracking
 
 ---
 
 ## Tech Stack
 
-| Layer            | Technologies                                                                                                      |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Frontend         | Next.js 16 (App Router), React 19 (React Compiler), TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion |
-| Backend          | Next.js API Routes (GET), Server Actions (mutations)                                                              |
-| AI               | OpenAI GPT-5 (Responses API, streaming, tool use); OpenAI embeddings for semantic search                          |
-| Voice Agent      | LiveKit Agents (`@livekit/agents`, OpenAI + Silero plugins)                                                       |
-| Video            | LiveKit (recording, transcription)                                                                                |
-| Database         | PostgreSQL, Drizzle ORM                                                                                           |
-| Auth             | Supabase Auth                                                                                                     |
-| Storage          | Supabase Storage (S3-compatible)                                                                                  |
-| Email / Calendar | Microsoft Outlook (Graph API); Resend for transactional email                                                     |
-| Payments         | Stripe                                                                                                            |
-| Testing          | Vitest (`@vitejs/plugin-react`, jsdom)                                                                            |
+| Layer            | Technologies                                                                                                               |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Frontend         | Next.js 16 (App Router), React 19 (React Compiler), TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion          |
+| Backend          | Next.js API Routes — all reads and mutations (GET/POST/PATCH/PUT/DELETE), no Server Actions                                |
+| AI               | OpenAI GPT-5 (Responses API, streaming, tool use); OpenAI embeddings for semantic search                                   |
+| Voice Agent      | LiveKit Agents (`@livekit/agents`, OpenAI + Silero plugins)                                                                |
+| Video            | LiveKit (recording, transcription)                                                                                         |
+| Database         | PostgreSQL, Drizzle ORM                                                                                                    |
+| Auth             | Supabase Auth                                                                                                              |
+| Storage          | Supabase Storage (S3-compatible)                                                                                           |
+| Email / Calendar | Microsoft Outlook (Graph API); Resend for transactional email                                                              |
+| Payments         | Stripe                                                                                                                     |
+| Testing          | Vitest — node project (API/lib), browser project (React, Playwright-driven), integration project (Testcontainers Postgres) |
 
 ---
 
@@ -56,38 +56,49 @@ Virevos is a SaaS platform that centralises the tools freelancers need to run th
 ```
 virevos/
 ├── app/
-│   ├── api/                  # GET endpoints and webhooks
+│   ├── api/                  # All GET/POST/PATCH/PUT/DELETE endpoints and webhooks
 │   │   ├── chat/             # AI assistant (streaming)
-│   │   ├── billing/
-│   │   ├── clients/  cases/  tasks/  events/  files/
-│   │   ├── outlook/          # Outlook OAuth, messages, sync
+│   │   ├── billing/  clients/  cases/  tasks/  events/  files/  meetings/
+│   │   ├── outlook/          # Outlook OAuth callback, messages, sync
 │   │   ├── integrations/     # Integration connect/disconnect (Outlook)
+│   │   ├── scheduled-emails/  document-requests/  demo-requests/  user/
 │   │   ├── token/            # LiveKit room tokens
 │   │   ├── recording/  transcript/
-│   │   ├── portal/  portal-chat/   # Client portal public API
-│   │   ├── scheduled-emails/  document-requests/  user/
+│   │   ├── portal/  portal-bookings/  portal-chat/   # Client portal public API
 │   │   ├── cron/             # Vercel cron jobs
 │   │   └── webhooks/         # stripe, outlook, livekit
-│   ├── workspace/            # Authenticated app pages
+│   ├── workspace/            # Authenticated app pages (dashboard, clients, cases, tasks,
+│   │   │                     #   calendar, billing, communications, settings)
 │   ├── meet/[roomId]/        # Video meeting room
 │   ├── portal/[token]/       # Client portal
-│   └── (marketing)/          # Landing, pricing, features
-├── lib/
+│   ├── hooks/                # Shared React hooks (useAuthUser, useCalcWindow)
+│   └── (marketing)/          # Landing, pricing, features, blog
+├── lib/                       # Business logic, called directly from app/api route handlers
 │   ├── ai/                   # ai_tools.ts (OpenAI tools/agent), document_analysis.ts
-│   ├── workspace/            # Mutations: clients, cases, tasks, meetings, calendar, billing
-│   ├── outlook/              # outlook_actions.ts, outlook_sync.ts, outlook_access.ts
-│   ├── supabase/             # Supabase server/client helpers
-│   ├── util/                 # validation.ts, html_sanitizer.ts
-│   ├── embeddings.ts         # OpenAI embeddings for semantic transcript search
-│   ├── resend.ts  weekly_summary.ts  scheduled_emails.ts  stripe.ts  storage.ts
-│   └── ...                   # portal_*, integrations, plan_limits, user, etc.
-├── livekit/
-│   ├── src/agent/agent.ts    # LiveKit Agents voice worker (bundled with esbuild)
-│   └── tsconfig.json
+│   ├── workspace/            # clients, cases, tasks, meetings, calendar, billing
+│   ├── outlook/               # outlook_actions.ts, outlook_sync.ts, outlook_access.ts, outlook_attachments.ts
+│   ├── portal/                # portal_settings.ts, portal_chat.ts, portal_bookings.ts, portal_page.ts,
+│   │                          #   portal_file_uploads.ts, portal_document_uploads.ts, portal_token_route.ts
+│   ├── supabase/              # Supabase server/client/middleware helpers
+│   ├── util/                  # validation.ts, html_sanitizer.ts, api_error.ts, rate_limit.ts, date_utils.ts, ...
+│   ├── embeddings.ts          # OpenAI embeddings for semantic transcript search
+│   ├── scheduled_emails.ts  plan_limits.ts  integrations.ts  document_requests.ts  user.ts  ...
+├── api_client/                 # Thin, mockable wrappers around external SDKs
+│   ├── axios_api_client.ts    # Axios wrapper interface used by lib/*
+│   ├── openai_client.ts  resend_client.ts  stripe_client.ts  livekit_client.ts
+│   ├── supabase_storage_client.ts
+│   └── ms_graph/               # graph_auth_service, graph_calendar_service, graph_mail_service, ...
 ├── db/
-│   ├── schema.ts             # Drizzle schema
+│   ├── schema.ts              # Drizzle schema
+│   ├── db.ts                  # Drizzle client (`db`, `DrizzleDB` type)
+│   ├── classes/                # Repository classes per domain (ClientsDB, TasksDB, ...),
+│   │   │                       #   each wraps typed Drizzle queries and is injected into lib/* functions
 │   └── migrations/
-└── __tests__/                # Vitest suites (api/, lib/, react/, _helpers/)
+├── livekit/
+│   ├── src/agent/agent.ts     # LiveKit Agents voice worker (bundled with esbuild)
+│   └── tsconfig.json
+├── types/                       # Shared TypeScript types (ai, billing, cases, clients, tasks, portal, ...)
+└── __tests__/                  # Vitest suites (api/, lib/, react/, integration/, fakes/, msw/, _helpers/)
 ```
 
 ---
@@ -181,18 +192,31 @@ CRON_SECRET=
 ## Scripts
 
 ```bash
-npm run dev        # Start development server
-npm run build      # Build for production
-npm start          # Start production server
-npm run lint       # Run ESLint
-npm test           # Run Vitest (single run)
-npm run test:watch # Vitest watch mode
-npm run format     # Prettier
+npm run dev              # Start development server
+npm run build            # Build for production
+npm start                # Start production server
+npm run lint             # Run ESLint
+npm test                 # Run Vitest node + browser projects (single run)
+npm run test:watch       # Vitest watch mode (node + browser projects)
+npm run test:integration # Run the integration project (Testcontainers Postgres)
+npm run format            # Prettier
+```
+
+Ad-hoc debug scripts (run directly against your configured environment, not part of CI):
+
+```bash
+npm run test-semantic-search  # Exercise embeddings-based transcript search
+npm run test-vector-upload    # Exercise embedding generation/upload
+npm run test-vector-create    # Exercise embedding creation
 ```
 
 ---
 
 ## Architecture Notes
+
+### API Routes & Business Logic
+
+All reads and mutations are implemented as Next.js API Routes under `app/api/**` (no Server Actions). Route handlers stay thin: they authenticate the request, then call into `lib/*` business-logic functions, which take a repository instance from `db/classes/` (e.g. `ClientsDB`, `TasksDB`) as a parameter for the actual Drizzle queries — this keeps the DB layer swappable/mockable in tests. External services (OpenAI, Stripe, Resend, LiveKit, Supabase Storage, Microsoft Graph) are wrapped by small typed clients in `api_client/` for the same reason. The frontend calls API routes via Axios and TanStack Query (`useQuery` for GET, `useMutation` for POST/PATCH/PUT/DELETE, with optimistic updates).
 
 ### AI Assistant
 
@@ -208,27 +232,30 @@ A LiveKit Agents worker (`livekit/src/agent/agent.ts`, built with esbuild) joins
 
 ### Outlook Integration
 
-Email and calendar sync via Microsoft Graph. OAuth is handled under `app/api/outlook/`; change notifications arrive at `/api/webhooks/outlook`. Graph subscriptions are renewed on a schedule by the `renew-outlook-subscriptions` cron job.
+Email and calendar sync via Microsoft Graph, via the `api_client/ms_graph/` services and `lib/outlook/`. OAuth is handled under `app/api/outlook/`; change notifications arrive at `/api/webhooks/outlook`. Graph subscriptions are renewed on a schedule by the `renew-outlook-subscriptions` cron job.
 
 ### Video Meetings
 
 LiveKit rooms with server-side token generation (`/api/token`). Recordings notify `/api/webhooks/livekit`, which kicks off transcription; transcripts are then embedded for semantic search.
 
-### Data Mutations
-
-POST/PATCH/PUT/DELETE operations are implemented as Next.js Server Actions, organized under `lib/workspace/`, `lib/outlook/`, and flat `lib/*.ts` modules, called via TanStack Query `useMutation` hooks. GET operations use `/api` routes with `useQuery`. Inputs are validated with `lib/util/validation.ts`; outbound email HTML is sanitized with `lib/util/html_sanitizer.ts`.
-
 ### Cron Jobs
 
-Vercel cron routes under `app/api/cron/`: `credit-reset`, `process-scheduled-emails`, `renew-outlook-subscriptions`, and `weekly-summary`. All are protected by `CRON_SECRET`.
+Vercel cron routes under `app/api/cron/`: `credit-reset`, `process-scheduled-emails`, and `renew-outlook-subscriptions`. All are protected by `CRON_SECRET`.
 
 ---
 
 ## Testing
 
 ```bash
-npm test              # Run all tests (vitest run)
-npm run test:watch    # Watch mode
+npm test               # Run node + browser test projects (vitest run)
+npm run test:watch     # Watch mode
+npm run test:integration # Integration project (spins up a real Postgres via Testcontainers)
 ```
 
-Tests live in `__tests__/` (`api/`, `lib/`, `react/`, `_helpers/`), covering success, error, and edge cases. Vitest is configured with `@vitejs/plugin-react` and a jsdom environment for React component tests. Note: the React Compiler is enabled in `next.config` for the app build but not in the Vitest run, so tests execute uncompiled.
+Tests live in `__tests__/` (`api/`, `lib/`, `react/`, `integration/`, `fakes/`, `msw/`, `_helpers/`), covering success, error, and edge cases. Vitest is configured with three projects:
+
+- **node** — API route and `lib/` unit tests (`__tests__/api/**`, `__tests__/lib/**`)
+- **browser** — React component tests run in a real headless Chromium via `@vitest/browser-playwright` (`__tests__/react/**`); files run sequentially since they share one browser instance and MSW worker
+- **integration** — end-to-end tests against a real Postgres container (`__tests__/integration/**`), also run sequentially since each file shares and resets the same database
+
+Note: the React Compiler is enabled in `next.config` for the app build but not in the Vitest run, so component tests execute uncompiled.
