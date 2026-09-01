@@ -35,18 +35,18 @@ Virevos is a SaaS platform that centralises the tools freelancers need to run th
 
 ## Tech Stack
 
-| Layer            | Technologies                                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Frontend         | Next.js 16 (App Router), React 19 (React Compiler), TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion |
-| Backend          | Next.js API Routes — all reads and mutations (GET/POST/PATCH/PUT/DELETE), no Server Actions                       |
-| AI               | OpenAI GPT-5 (Responses API, streaming, tool use); OpenAI embeddings for semantic search                          |
-| Voice Agent      | LiveKit Agents (`@livekit/agents`, OpenAI + Silero plugins)                                                       |
-| Video            | LiveKit (recording, transcription)                                                                                |
-| Database         | PostgreSQL, Drizzle ORM                                                                                           |
-| Auth             | Supabase Auth                                                                                                     |
-| Storage          | Supabase Storage (S3-compatible)                                                                                  |
-| Email / Calendar | Microsoft Outlook (Graph API); Resend for transactional email                                                     |
-| Payments         | Stripe                                                                                                            |
+| Layer            | Technologies                                                                                                               |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Frontend         | Next.js 16 (App Router), React 19 (React Compiler), TypeScript, Tailwind CSS v4, Radix UI, TanStack Query, Motion          |
+| Backend          | Next.js API Routes — all reads and mutations (GET/POST/PATCH/PUT/DELETE), no Server Actions                                |
+| AI               | OpenAI GPT-5 (Responses API, streaming, tool use); OpenAI embeddings for semantic search                                   |
+| Voice Agent      | LiveKit Agents (`@livekit/agents`, OpenAI + Silero plugins)                                                                |
+| Video            | LiveKit (recording, transcription)                                                                                         |
+| Database         | PostgreSQL, Drizzle ORM                                                                                                    |
+| Auth             | Supabase Auth                                                                                                              |
+| Storage          | Supabase Storage (S3-compatible)                                                                                           |
+| Email / Calendar | Microsoft Outlook (Graph API); Resend for transactional email                                                              |
+| Payments         | Stripe                                                                                                                     |
 | Testing          | Vitest — node project (API/lib), browser project (React, Playwright-driven), integration project (Testcontainers Postgres) |
 
 ---
