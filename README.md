@@ -1,12 +1,12 @@
 # Virevos
 
-**All-in-one platform for freelancers and service professionals** to manage clients, automate workflows, and collaborate — powered by AI.
+**All-in-one platform for immigration lawyers and legal professionals** to manage clients, automate workflows, and collaborate — powered by AI.
 
 ---
 
 ## Overview
 
-Virevos is a SaaS platform that centralises the tools freelancers need to run their business:
+Virevos is a SaaS platform that centralises the tools immigration lawyers need to run their practice:
 
 - Manage clients, cases, projects, and tasks in one place
 - Hold video meetings with automatic recording, transcription, and AI-generated summaries
