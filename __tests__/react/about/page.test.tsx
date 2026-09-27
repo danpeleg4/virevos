@@ -20,4 +20,11 @@ describe("About Page", () => {
     const screen = await render(<AboutPage />);
     await expect.element(screen.getByText(/our values/i)).toBeInTheDocument();
   });
+
+  it("does not render a contact email", async () => {
+    const screen = await render(<AboutPage />);
+    await expect
+      .element(screen.getByText(/@virevos\.com/i))
+      .not.toBeInTheDocument();
+  });
 });

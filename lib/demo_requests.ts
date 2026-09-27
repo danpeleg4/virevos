@@ -11,8 +11,6 @@ import {
 } from "@/lib/util/validation";
 import { rateLimitHeaders } from "@/lib/util/rate_limit";
 
-const TEAM_NOTIFICATION_EMAIL = "business@virevos.com";
-
 export interface DemoRequestInput {
   name: string;
   email: string;
@@ -82,11 +80,14 @@ export async function createDemoRequest(
   });
 
   try {
+    /*
+    If team email then enable (add a TEAM_NOTIFICATION_EMAIL constant)
     await resendClient.sendEmail({
       to: TEAM_NOTIFICATION_EMAIL,
       subject: `New demo request from ${name}`,
       html: buildNotificationHtml({ name, email, company, message }),
     });
+     */
     await demoRequestsDb.setDemoRequestStatus(request.id, "notified", null);
   } catch (err) {
     console.error("[createDemoRequest] notification email failed:", err);

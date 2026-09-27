@@ -69,19 +69,6 @@ export default function TermsPage() {
             The Services are provided “as is” without warranties of any kind.
           </p>
         </div>
-
-        <div>
-          <h2 className="text-xl font-medium mb-2">8. Contact</h2>
-          <p>
-            Questions? Contact{" "}
-            <a
-              href="mailto:business@virevos.com"
-              className="text-blue-600 hover:underline"
-            >
-              business@virevos.com
-            </a>
-          </p>
-        </div>
       </section>
     </main>
   );
