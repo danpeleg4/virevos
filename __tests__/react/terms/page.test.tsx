@@ -24,4 +24,11 @@ describe("Terms of Service Page", () => {
       .element(screen.getByText(/use of service/i))
       .toBeInTheDocument();
   });
+
+  it("does not render a contact email", async () => {
+    const screen = await render(<TermsPage />);
+    await expect
+      .element(screen.getByText(/@virevos\.com/i))
+      .not.toBeInTheDocument();
+  });
 });

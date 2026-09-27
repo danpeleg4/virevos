@@ -17,4 +17,11 @@ describe("Cookie Policy Page", () => {
       .element(screen.getByText(/what are cookies/i))
       .toBeInTheDocument();
   });
+
+  it("does not render a contact email", async () => {
+    const screen = await render(<CookiePolicyPage />);
+    await expect
+      .element(screen.getByText(/@virevos\.com/i))
+      .not.toBeInTheDocument();
+  });
 });

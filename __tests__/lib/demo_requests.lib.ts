@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 describe("createDemoRequest", () => {
-  it("persists the request and sends a notification email on success", async () => {
+  it("persists the request and marks it notified without sending an email", async () => {
     const result = await createDemoRequest(
       validInput,
       demoRequestsDb,
@@ -52,12 +52,7 @@ describe("createDemoRequest", () => {
       message: "Interested in a demo next week",
       status: "pending",
     });
-    expect(resendClient.sendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "business@virevos.com",
-        subject: expect.stringContaining("Jane Prospect"),
-      })
-    );
+    expect(resendClient.sendEmail).not.toHaveBeenCalled();
     expect(demoRequestsDb.setDemoRequestStatus).toHaveBeenCalledWith(
       canonicalDemoRequestRow.id,
       "notified",
@@ -81,8 +76,10 @@ describe("createDemoRequest", () => {
     });
   });
 
-  it("still persists the request when the notification email fails", async () => {
-    resendClient.sendEmail.mockRejectedValueOnce(new Error("resend down"));
+  it("marks the request notify_failed when the status update fails", async () => {
+    demoRequestsDb.setDemoRequestStatus.mockRejectedValueOnce(
+      new Error("db down")
+    );
 
     const result = await createDemoRequest(
       validInput,
@@ -95,8 +92,9 @@ describe("createDemoRequest", () => {
     expect(demoRequestsDb.setDemoRequestStatus).toHaveBeenCalledWith(
       canonicalDemoRequestRow.id,
       "notify_failed",
-      "resend down"
+      "db down"
     );
+    expect(resendClient.sendEmail).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid email", async () => {

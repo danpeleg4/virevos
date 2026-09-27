@@ -18,21 +18,6 @@ export default function ContactPage() {
       <section className="mb-16">
         <ContactForm />
       </section>
-
-      <section className="space-y-8 leading-relaxed">
-        <div>
-          <h2 className="text-xl font-medium mb-2">General Inquiries</h2>
-          <p>
-            Email us at{" "}
-            <a
-              href="mailto:business@virevos.com"
-              className="text-blue-600 hover:underline"
-            >
-              business@virevos.com
-            </a>
-          </p>
-        </div>
-      </section>
     </main>
   );
 }

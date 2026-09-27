@@ -9,17 +9,17 @@ describe("Contact Page", () => {
     await expect.element(screen.getByText(/contact us/i)).toBeInTheDocument();
   });
 
-  it("renders General Inquiries section", async () => {
-    const screen = await renderWithQueryClient(<ContactPage />);
-    await expect
-      .element(screen.getByText(/general inquiries/i))
-      .toBeInTheDocument();
-  });
-
   it("renders the demo request form", async () => {
     const screen = await renderWithQueryClient(<ContactPage />);
     await expect
       .element(screen.getByRole("button", { name: /schedule a demo/i }))
       .toBeInTheDocument();
+  });
+
+  it("does not render a contact email", async () => {
+    const screen = await renderWithQueryClient(<ContactPage />);
+    await expect
+      .element(screen.getByText(/@virevos\.com/i))
+      .not.toBeInTheDocument();
   });
 });

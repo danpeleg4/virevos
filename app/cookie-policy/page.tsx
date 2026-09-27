@@ -48,19 +48,6 @@ export default function CookiePolicyPage() {
             disabling certain cookies may affect platform functionality.
           </p>
         </div>
-
-        <div>
-          <h2 className="text-xl font-medium mb-2">4. Contact</h2>
-          <p>
-            Questions about our cookie use? Email{" "}
-            <a
-              href="mailto:business@virevos.com"
-              className="text-blue-600 hover:underline"
-            >
-              business@virevos.com
-            </a>
-          </p>
-        </div>
       </section>
     </main>
   );

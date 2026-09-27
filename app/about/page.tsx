@@ -59,19 +59,6 @@ export default function AboutPage() {
             their futures.
           </p>
         </div>
-
-        <div>
-          <h2 className="text-xl font-medium mb-2">Get in Touch</h2>
-          <p>
-            Have questions? Reach us at{" "}
-            <a
-              href="mailto:business@virevos.com"
-              className="text-blue-600 hover:underline"
-            >
-              business@virevos.com
-            </a>
-          </p>
-        </div>
       </section>
     </main>
   );
